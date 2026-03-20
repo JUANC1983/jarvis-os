@@ -1,0 +1,31 @@
+{
+  "courses": [
+    { "name": "Country Club Bogotá", "country": "Colombia", "region": "Cundinamarca", "city": "Bogotá", "latitude": 4.7420, "longitude": -74.0300, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Club Campestre Medellín", "country": "Colombia", "region": "Antioquia", "city": "Medellín", "latitude": 6.2050, "longitude": -75.5670, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Club Campestre de Cali", "country": "Colombia", "region": "Valle del Cauca", "city": "Cali", "latitude": 3.4516, "longitude": -76.5320, "holes": 18, "par_total": 72, "source": "starter" },
+
+    { "name": "Los Inkas Golf Club", "country": "Peru", "region": "Lima", "city": "Lima", "latitude": -12.0464, "longitude": -77.0428, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Olivos Golf Club", "country": "Argentina", "region": "Buenos Aires", "city": "Buenos Aires", "latitude": -34.6037, "longitude": -58.3816, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Prince of Wales Country Club", "country": "Chile", "region": "Santiago", "city": "Santiago", "latitude": -33.4489, "longitude": -70.6693, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "São Fernando Golf Club", "country": "Brazil", "region": "São Paulo", "city": "São Paulo", "latitude": -23.5505, "longitude": -46.6333, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Punta Espada Golf Club", "country": "Dominican Republic", "region": "La Altagracia", "city": "Cap Cana", "latitude": 18.4861, "longitude": -68.4140, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "El Camaleón Mayakoba", "country": "Mexico", "region": "Quintana Roo", "city": "Playa del Carmen", "latitude": 20.6296, "longitude": -87.0739, "holes": 18, "par_total": 72, "source": "starter" },
+
+    { "name": "Augusta National", "country": "USA", "region": "Georgia", "city": "Augusta", "latitude": 33.5021, "longitude": -82.0209, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Pebble Beach Golf Links", "country": "USA", "region": "California", "city": "Pebble Beach", "latitude": 36.5681, "longitude": -121.9501, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "TPC Sawgrass", "country": "USA", "region": "Florida", "city": "Ponte Vedra Beach", "latitude": 30.2044, "longitude": -81.3962, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Pine Valley", "country": "USA", "region": "New Jersey", "city": "Pine Valley", "latitude": 39.7910, "longitude": -74.9650, "holes": 18, "par_total": 70, "source": "starter" },
+    { "name": "Shinnecock Hills", "country": "USA", "region": "New York", "city": "Southampton", "latitude": 40.8840, "longitude": -72.3890, "holes": 18, "par_total": 70, "source": "starter" },
+
+    { "name": "St Andrews Old Course", "country": "Scotland", "region": "Fife", "city": "St Andrews", "latitude": 56.3430, "longitude": -2.8030, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Royal County Down", "country": "Northern Ireland", "region": "County Down", "city": "Newcastle", "latitude": 54.2180, "longitude": -5.8910, "holes": 18, "par_total": 71, "source": "starter" },
+    { "name": "Valderrama", "country": "Spain", "region": "Andalusia", "city": "Sotogrande", "latitude": 36.3000, "longitude": -5.3000, "holes": 18, "par_total": 71, "source": "starter" },
+    { "name": "Le Golf National", "country": "France", "region": "Île-de-France", "city": "Guyancourt", "latitude": 48.7570, "longitude": 2.0730, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Marco Simone Golf & Country Club", "country": "Italy", "region": "Lazio", "city": "Rome", "latitude": 41.9550, "longitude": 12.6470, "holes": 18, "par_total": 72, "source": "starter" },
+
+    { "name": "Mission Hills Shenzhen", "country": "China", "region": "Guangdong", "city": "Shenzhen", "latitude": 22.6920, "longitude": 114.0220, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Kasumigaseki Country Club", "country": "Japan", "region": "Saitama", "city": "Kawagoe", "latitude": 35.9250, "longitude": 139.4840, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Sentosa Golf Club", "country": "Singapore", "region": "Singapore", "city": "Singapore", "latitude": 1.2494, "longitude": 103.8303, "holes": 18, "par_total": 72, "source": "starter" },
+    { "name": "Royal Melbourne", "country": "Australia", "region": "Victoria", "city": "Melbourne", "latitude": -37.9730, "longitude": 145.0490, "holes": 18, "par_total": 72, "source": "starter" }
+  ]
+}

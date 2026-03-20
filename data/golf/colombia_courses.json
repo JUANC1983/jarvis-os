@@ -1,0 +1,36 @@
+{
+ "courses":[
+
+{"name":"Country Club de Bogota","country":"Colombia","region":"Cundinamarca","city":"Bogota","latitude":4.742,"longitude":-74.030,"holes":18,"par_total":72},
+{"name":"Club Campestre Guaymaral","country":"Colombia","region":"Cundinamarca","city":"Bogota","latitude":4.855,"longitude":-74.070,"holes":18,"par_total":72},
+{"name":"Club Los Arrayanes","country":"Colombia","region":"Cundinamarca","city":"Bogota","latitude":4.750,"longitude":-74.020,"holes":18,"par_total":72},
+{"name":"Hatogrande Golf & Tennis","country":"Colombia","region":"Cundinamarca","city":"Sopo","latitude":4.910,"longitude":-73.940,"holes":18,"par_total":72},
+{"name":"Centro de Alto Rendimiento de Golf","country":"Colombia","region":"Cundinamarca","city":"Bogota","latitude":4.710,"longitude":-74.110,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Medellin","country":"Colombia","region":"Antioquia","city":"Medellin","latitude":6.205,"longitude":-75.567,"holes":18,"par_total":72},
+{"name":"Club Campestre El Rodeo","country":"Colombia","region":"Antioquia","city":"Medellin","latitude":6.210,"longitude":-75.610,"holes":18,"par_total":72},
+{"name":"Club Campestre Llanogrande","country":"Colombia","region":"Antioquia","city":"Rionegro","latitude":6.123,"longitude":-75.412,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Cali","country":"Colombia","region":"Valle del Cauca","city":"Cali","latitude":3.451,"longitude":-76.531,"holes":18,"par_total":72},
+{"name":"Farallones Golf Club","country":"Colombia","region":"Valle del Cauca","city":"Cali","latitude":3.390,"longitude":-76.550,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Bucaramanga","country":"Colombia","region":"Santander","city":"Bucaramanga","latitude":7.125,"longitude":-73.119,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Pereira","country":"Colombia","region":"Risaralda","city":"Pereira","latitude":4.813,"longitude":-75.694,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Barranquilla","country":"Colombia","region":"Atlantico","city":"Barranquilla","latitude":10.968,"longitude":-74.781,"holes":18,"par_total":72},
+
+{"name":"Karibana Golf Club","country":"Colombia","region":"Bolivar","city":"Cartagena","latitude":10.540,"longitude":-75.510,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Armenia","country":"Colombia","region":"Quindio","city":"Armenia","latitude":4.535,"longitude":-75.675,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Ibague","country":"Colombia","region":"Tolima","city":"Ibague","latitude":4.438,"longitude":-75.232,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Manizales","country":"Colombia","region":"Caldas","city":"Manizales","latitude":5.068,"longitude":-75.517,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Neiva","country":"Colombia","region":"Huila","city":"Neiva","latitude":2.934,"longitude":-75.280,"holes":18,"par_total":72},
+
+{"name":"Club Campestre Cucuta","country":"Colombia","region":"Norte de Santander","city":"Cucuta","latitude":7.889,"longitude":-72.496,"holes":18,"par_total":72}
+
+ ]
+}

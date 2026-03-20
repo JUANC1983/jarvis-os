@@ -1,0 +1,30 @@
+{"timestamp": "2026-03-10T22:41:59.850159", "event_type": "chat_request", "payload": {"message": "hola jarvis", "domain": "general"}}
+{"timestamp": "2026-03-10T22:57:19.774572", "event_type": "chat_request", "payload": {"message": "Create my executive briefing for today", "domain": "general"}}
+{"timestamp": "2026-03-10T22:57:21.755443", "event_type": "chat_request", "payload": {"message": "Create my executive briefing for today", "domain": "general"}}
+{"timestamp": "2026-03-10T22:57:24.392559", "event_type": "chat_request", "payload": {"message": "What should I prioritize today?", "domain": "general"}}
+{"timestamp": "2026-03-10T22:57:33.609371", "event_type": "chat_request", "payload": {"message": "Review my capital protection posture", "domain": "general"}}
+{"timestamp": "2026-03-10T22:57:53.343095", "event_type": "chat_request", "payload": {"message": "Create my executive briefing for today", "domain": "general"}}
+{"timestamp": "2026-03-11T00:50:36.692662", "event_type": "chat_request", "payload": {"message": "hola", "domain": "general"}}
+{"timestamp": "2026-03-11T03:04:59.538326", "event_type": "chat_request", "payload": {"message": "Hola jarvis.", "domain": "general"}}
+{"timestamp": "2026-03-11T03:05:27.120890", "event_type": "chat_request", "payload": {"message": "Jarvis revisar las acciones de tsm.", "domain": "general"}}
+{"timestamp": "2026-03-11T03:06:06.438792", "event_type": "chat_request", "payload": {"message": "deberia comprar acciones hoy?", "domain": "general"}}
+{"timestamp": "2026-03-11T03:08:01.863856", "event_type": "chat_request", "payload": {"message": "busca accones que en el traffic light esten en azulpara comprar", "domain": "general"}}
+{"timestamp": "2026-03-11T03:15:28.961561", "event_type": "chat_request", "payload": {"message": "Hola jarvis.", "domain": "general"}}
+{"timestamp": "2026-03-11T03:26:46.310965", "event_type": "chat_request", "payload": {"message": "Habla jarvis.", "domain": "general"}}
+{"timestamp": "2026-03-11T03:27:40.198488", "event_type": "chat_request", "payload": {"message": "Charvis necesito que agentes una reunión para las 15:00 H de la tarde.", "domain": "general"}}
+{"timestamp": "2026-03-11T03:33:03.969614", "event_type": "chat_request", "payload": {"message": "crea la imagen de un perro", "domain": "general"}}
+{"timestamp": "2026-03-11T03:36:06.166134", "event_type": "chat_request", "payload": {"message": "analiza el video que acabo de subir", "domain": "general"}}
+{"timestamp": "2026-03-11T03:42:17.346829", "event_type": "chat_request", "payload": {"message": "agendar reunion mañana 3pm con juancmontenegro1983@otulook.com enviarle correo", "domain": "general"}}
+{"timestamp": "2026-03-11T03:43:07.606345", "event_type": "chat_request", "payload": {"message": "o, simplemente agendalo urgente, eenviale el correo ya", "domain": "general"}}
+{"timestamp": "2026-03-11T03:43:37.735983", "event_type": "chat_request", "payload": {"message": "ninguno, reunion urgente mañana 3pm asunto urgente", "domain": "general"}}
+{"timestamp": "2026-03-11T19:17:18.202992", "event_type": "chat_request", "payload": {"message": "hola que tal", "domain": "general"}}
+{"timestamp": "2026-03-11T19:49:10.097622", "event_type": "chat_request", "payload": {"message": "crea la imagen de un perro", "domain": "general"}}
+{"timestamp": "2026-03-11T19:49:57.110222", "event_type": "chat_request", "payload": {"message": "analiza el video que subi", "domain": "general"}}
+{"timestamp": "2026-03-11T19:50:43.991700", "event_type": "chat_request", "payload": {"message": "di, hola luca como te sientes", "domain": "general"}}
+{"timestamp": "2026-03-11T19:51:24.975843", "event_type": "chat_request", "payload": {"message": "quiero que le preguntes a mi hijo luca como se siente, esta enfermo de la garganta tiene mucha tos", "domain": "general"}}
+{"timestamp": "2026-03-11T19:52:50.372795", "event_type": "chat_request", "payload": {"message": "como se llama mi hijo?", "domain": "general"}}
+{"timestamp": "2026-03-11T19:54:19.623065", "event_type": "chat_request", "payload": {"message": "a cuanto puede subir y en cuanto las acciones de amazon", "domain": "general"}}
+{"timestamp": "2026-03-11T19:55:41.097658", "event_type": "chat_request", "payload": {"message": "que acciones comprrias ahora aprovechando la guerra, en cuales puedo ganar mas", "domain": "general"}}
+{"timestamp": "2026-03-11T19:56:41.157277", "event_type": "chat_request", "payload": {"message": "dame ejemplo de las 10 ejores, que no sean solo fomo o que encuentras en la red, empresas que realmente tengan potencial y la gente no las este viendo aun", "domain": "general"}}
+{"timestamp": "2026-03-11T19:57:27.554282", "event_type": "chat_request", "payload": {"message": "llego mi hijo luca, preguntale como le fue y como siguio ya que tiene tos", "domain": "general"}}
+{"timestamp": "2026-03-11T19:58:01.363563", "event_type": "chat_request", "payload": {"message": "preguntale a mi hijo luca como sigue el esta enfermo, tiene 3 años,", "domain": "general"}}

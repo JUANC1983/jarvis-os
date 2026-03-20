@@ -1,0 +1,16 @@
+{
+  "courses": [
+    {
+      "name": "Sample Golf Club",
+      "city": "Bogotá",
+      "country": "Colombia",
+      "latitude": 4.710989,
+      "longitude": -74.072092,
+      "holes": [
+        { "number": 1, "par": 4, "yardage": 385 },
+        { "number": 2, "par": 3, "yardage": 172 },
+        { "number": 3, "par": 5, "yardage": 520 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "JARVIS Command Center",
+  "short_name": "JARVIS",
+  "start_url": "/dashboard/app",
+  "display": "standalone",
+  "background_color": "#06111b",
+  "theme_color": "#08131f",
+  "description": "Strategic AI Operating System dashboard",
+  "icons": []
+}

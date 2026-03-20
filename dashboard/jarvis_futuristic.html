@@ -1,0 +1,752 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#08131f" />
+  <title>JARVIS // Command Center</title>
+  <link rel="manifest" href="/dashboard/manifest.json" />
+  <style>
+    :root{
+      --bg:#06111b;
+      --bg2:#091521;
+      --card:#0b1623;
+      --card2:#102133;
+      --line:rgba(0,230,255,.14);
+      --cyan:#7ff6ff;
+      --cyan2:#13dfff;
+      --white:#eef7ff;
+      --soft:#a3b7c9;
+      --ok:#45ffc1;
+      --warn:#ffbb55;
+      --bad:#ff6b6b;
+      --blue:#67a8ff;
+      --shadow:0 14px 38px rgba(0,0,0,.30);
+      --radius:24px;
+    }
+    body.light{
+      --bg:#f4f8fc;
+      --bg2:#ffffff;
+      --card:#ffffff;
+      --card2:#f6fbff;
+      --line:rgba(10,55,90,.10);
+      --cyan:#007db0;
+      --cyan2:#0aa6d8;
+      --white:#12212f;
+      --soft:#5a7286;
+      --shadow:0 10px 28px rgba(22,60,90,.08);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(0,230,255,.12), transparent 24%),
+        radial-gradient(circle at top right, rgba(76,255,198,.08), transparent 18%),
+        linear-gradient(180deg, var(--bg) 0%, #030913 100%);
+      color:var(--white);
+      min-height:100vh;
+    }
+    body.light{
+      background:linear-gradient(180deg, #f4f8fc 0%, #eef5fb 100%);
+    }
+
+    .shell{max-width:1520px;margin:0 auto;padding:18px}
+    .topbar{
+      display:grid;
+      grid-template-columns:1.25fr .75fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    .hero,.quick,.card{
+      background:linear-gradient(180deg, rgba(10,22,34,.96), rgba(7,16,25,.96));
+      border:1px solid var(--line);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+    }
+    body.light .hero, body.light .quick, body.light .card{
+      background:linear-gradient(180deg, #ffffff, #f7fbff);
+    }
+
+    .hero{
+      padding:24px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+    }
+    .hero-left{display:flex;gap:18px;align-items:center;min-width:0}
+    .orb{
+      width:84px;height:84px;border-radius:50%;
+      background: radial-gradient(circle, rgba(28,231,255,1) 0%, rgba(28,231,255,.46) 18%, rgba(9,22,34,.2) 58%, rgba(0,0,0,0) 72%);
+      box-shadow:0 0 28px rgba(28,231,255,.55), inset 0 0 26px rgba(28,231,255,.25);
+      animation:pulse 2.3s ease-in-out infinite;
+      flex:0 0 auto;
+    }
+    @keyframes pulse{
+      0%{transform:scale(.97);opacity:.82}
+      50%{transform:scale(1.03);opacity:1}
+      100%{transform:scale(.97);opacity:.82}
+    }
+    h1{margin:0;font-size:clamp(34px,4vw,58px);line-height:1}
+    .subtitle{margin-top:8px;color:var(--cyan);font-size:clamp(15px,2vw,22px)}
+    .meta{margin-top:12px;color:var(--soft);display:flex;flex-wrap:wrap;gap:12px;font-size:14px}
+    .header-actions{display:flex;align-items:center;gap:12px}
+    .theme-btn,.ghost-btn,.primary-btn{
+      border:none;border-radius:18px;padding:14px 16px;cursor:pointer;font-weight:700;
+    }
+    .theme-btn,.ghost-btn{
+      background:var(--card2);color:var(--white);border:1px solid rgba(255,255,255,.06)
+    }
+    .primary-btn{background:linear-gradient(180deg, var(--cyan2), #0fb8dd);color:#06202a}
+    .status-chip{
+      display:inline-flex;align-items:center;gap:8px;padding:12px 16px;
+      border-radius:999px;border:1px solid rgba(28,231,255,.22);color:var(--cyan);font-weight:700;
+    }
+    .status-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+
+    .quick{
+      padding:18px;
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+    .quick-card{
+      padding:16px 18px;border-radius:22px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
+    }
+    .quick-label{
+      font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px
+    }
+    .quick-value{
+      font-size:clamp(22px,2.3vw,28px);font-weight:800;line-height:1.2
+    }
+
+    .main{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+    .col{display:grid;gap:18px;align-content:start}
+    .card{padding:18px;border-radius:28px}
+    .section-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+    .section-title{margin:0;font-size:clamp(24px,2.4vw,36px);color:var(--cyan)}
+    .subtle{color:var(--soft);font-size:14px}
+
+    .command-bar{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+    .input,.select{
+      width:100%;border:none;outline:none;border-radius:18px;background:var(--card2);color:var(--white);
+      padding:16px 18px;font-size:16px;border:1px solid rgba(255,255,255,.05)
+    }
+
+    .chat-log{
+      margin-top:14px;display:grid;gap:12px;max-height:360px;overflow:auto;padding-right:4px
+    }
+    .bubble{
+      padding:14px 16px;border-radius:18px;line-height:1.5;font-size:15px;white-space:pre-wrap
+    }
+    .bubble.user{background:#16344d;border:1px solid rgba(28,231,255,.15)}
+    .bubble.jarvis{background:var(--card2);border:1px solid rgba(76,255,198,.10)}
+
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .stack{display:grid;gap:12px}
+    .row-card{
+      padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
+    }
+    .row-title{font-weight:700;font-size:15px}
+    .row-sub{font-size:13px;color:var(--soft);margin-top:4px}
+    .pill{
+      display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;
+      font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04)
+    }
+    .priority-high{color:#ffdf9e}
+    .priority-medium{color:#9be9ff}
+    .priority-low{color:#c7ffc2}
+
+    .task-item{
+      display:flex;justify-content:space-between;gap:10px;align-items:flex-start
+    }
+    .task-item.done .row-title{text-decoration:line-through;opacity:.7}
+    .check-btn{
+      width:22px;height:22px;border-radius:8px;border:1px solid rgba(255,255,255,.12);
+      background:#102030;color:var(--ok);cursor:pointer
+    }
+
+    .add-inline{display:grid;grid-template-columns:1fr 130px 110px auto;gap:10px;margin-top:12px}
+    .add-inline.meeting{grid-template-columns:1fr 120px 1fr auto}
+
+    .brief-list,.asset-grid,.recommendations{display:grid;gap:12px}
+    .brief{padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05);line-height:1.5}
+    .asset{
+      padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
+    }
+    .asset .name{font-weight:700;margin-bottom:6px;word-break:break-word}
+    .asset .meta{margin:0;color:var(--soft);font-size:12px}
+    .asset a{display:inline-block;margin-top:8px;color:var(--cyan);text-decoration:none}
+    .upload-zone{
+      border:1.5px dashed rgba(28,231,255,.28);background:linear-gradient(180deg, rgba(10,24,38,.78), rgba(9,18,29,.88));
+      border-radius:22px;padding:22px;text-align:center;color:var(--soft);cursor:pointer
+    }
+    body.light .upload-zone{background:#f6fbff}
+    .upload-zone.drag{border-color:var(--cyan2);background:rgba(28,231,255,.08)}
+    .upload-input{display:none}
+
+    .market-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .metric{padding:14px;border-radius:20px;background:var(--card2);border:1px solid rgba(255,255,255,.05)}
+    .metric-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+    .metric-value{font-size:28px;font-weight:800}
+    .trader-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .traffic{
+      width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle
+    }
+    .t-blue{background:var(--blue);box-shadow:0 0 12px var(--blue)}
+    .t-green{background:var(--ok);box-shadow:0 0 12px var(--ok)}
+    .t-orange{background:var(--warn);box-shadow:0 0 12px var(--warn)}
+    .t-red{background:var(--bad);box-shadow:0 0 12px var(--bad)}
+
+    @media (max-width: 1280px){
+      .topbar,.main{grid-template-columns:1fr}
+    }
+    @media (max-width: 860px){
+      .hero{flex-direction:column;align-items:flex-start}
+      .quick,.split,.market-head,.trader-grid{grid-template-columns:1fr}
+      .command-bar{grid-template-columns:1fr}
+      .add-inline,.add-inline.meeting{grid-template-columns:1fr}
+      .shell{padding:12px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <section class="hero">
+        <div class="hero-left">
+          <div class="orb"></div>
+          <div>
+            <h1>JARVIS</h1>
+            <div class="subtitle">Command Center // Strategic AI Operating System</div>
+            <div class="meta">
+              <span id="greeting">Loading...</span>
+              <span id="todayDate">--</span>
+              <span id="ownerName">Created by Juan Camilo Montenegro</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="themeBtn" class="theme-btn">ðŸŒ™</button>
+          <div class="status-chip">
+            <span class="status-dot"></span>
+            <span>SYSTEM ONLINE</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick">
+        <div class="quick-card">
+          <div class="quick-label">Top priority</div>
+          <div class="quick-value" id="topPriority">Loading...</div>
+        </div>
+        <div class="quick-card">
+          <div class="quick-label">Next meeting</div>
+          <div class="quick-value" id="nextMeeting">Loading...</div>
+        </div>
+        <div class="quick-card">
+          <div class="quick-label">Tasks open</div>
+          <div class="quick-value" id="tasksOpen">0</div>
+        </div>
+        <div class="quick-card">
+          <div class="quick-label">Assets in library</div>
+          <div class="quick-value" id="assetsCount">0</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="main">
+      <div class="col">
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Talk to JARVIS</h2>
+            <div class="subtle">Escribe o habla. JARVIS responde como una persona, corto y claro.</div>
+          </div>
+
+          <div class="command-bar">
+            <input id="chatInput" class="input" placeholder="EscrÃ­bele a JARVIS..." />
+            <button id="voiceBtn" class="ghost-btn">🎤 Voice</button>
+<button id="stopVoiceBtn" class="ghost-btn">⏹ Stop</button>
+<button id="toggleVoiceBtn" class="ghost-btn">🔇 Voice OFF</button>
+            <button id="sendBtn" class="primary-btn">Send</button>
+          </div>
+
+          <div class="chat-log" id="chatLog">
+            <div class="bubble jarvis">Hola. Â¿QuÃ© necesitas hoy?</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Tasks</h2>
+            <div class="subtle">Organizadas por prioridad y dÃ­a. Simple y usable.</div>
+          </div>
+
+          <div class="stack" id="tasksList"></div>
+
+          <div class="add-inline">
+            <input id="newTaskText" class="input" placeholder="Nueva tarea..." />
+            <select id="newTaskPriority" class="select">
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select id="newTaskDay" class="select">
+              <option value="today" selected>Today</option>
+              <option value="tomorrow">Tomorrow</option>
+              <option value="this_week">This week</option>
+            </select>
+            <button id="addTaskBtn" class="primary-btn">Add</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Meetings</h2>
+            <div class="subtle">Agenda reuniones rÃ¡pido desde aquÃ­.</div>
+          </div>
+
+          <div class="stack" id="meetingsList"></div>
+
+          <div class="add-inline meeting">
+            <input id="newMeetingTitle" class="input" placeholder="Meeting title..." />
+            <input id="newMeetingTime" class="input" placeholder="15:00" />
+            <input id="newMeetingNotes" class="input" placeholder="Notes..." />
+            <button id="addMeetingBtn" class="primary-btn">Add</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Markets & Trader</h2>
+            <div class="subtle">Puedes escribir ticker o nombre: Tesla, Google, Amazon, Nvidia.</div>
+          </div>
+
+          <div class="market-head">
+            <div class="metric">
+              <div class="metric-label">Symbol</div>
+              <div class="metric-value" id="traderSymbol">AAPL</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Setup score</div>
+              <div class="metric-value" id="setupScore">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Traffic light</div>
+              <div class="metric-value" id="trafficLightText">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Price now</div>
+              <div class="metric-value" id="priceNow">--</div>
+            </div>
+          </div>
+
+          <div class="add-inline" style="margin-top:12px;grid-template-columns:1fr auto;">
+            <input id="symbolInput" class="input" placeholder="AAPL, Tesla, Google..." value="AAPL" />
+            <button id="analyzeBtn" class="primary-btn">Analyze</button>
+          </div>
+
+          <div class="trader-grid">
+            <div class="stack" id="tradePlan"></div>
+            <div class="stack" id="tradeNarrative"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Recommended Stocks</h2>
+            <div class="subtle">Ideas del dÃ­a con base y argumento.</div>
+          </div>
+          <div class="recommendations" id="recommendations"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Asset Library</h2>
+            <div class="subtle">Sube documentos, fotos, videos y audio.</div>
+          </div>
+
+          <label id="uploadZone" class="upload-zone">
+            <input id="fileInput" class="upload-input" type="file" multiple />
+            <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;">Drop files here or click to upload</div>
+            <div>PDF, imÃ¡genes, videos, audio y archivos generales.</div>
+          </label>
+
+          <div class="asset-grid" id="assetGrid"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const qs = (id) => document.getElementById(id);
+  const state = {
+voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorage.getItem("jarvis-theme") || "dark" };
+
+  function setTheme(theme){
+    state.currentTheme = theme;
+    if(theme === "light"){
+      document.body.classList.add("light");
+      qs("themeBtn").textContent = "â˜€ï¸";
+    }else{
+      document.body.classList.remove("light");
+      qs("themeBtn").textContent = "ðŸŒ™";
+    }
+    localStorage.setItem("jarvis-theme", theme);
+  }
+
+  function trafficChip(name){
+    const value = (name || "").toLowerCase();
+    if(value === "blue") return `<span><span class="traffic t-blue"></span>Excellent</span>`;
+    if(value === "green") return `<span><span class="traffic t-green"></span>Good</span>`;
+    if(value === "orange") return `<span><span class="traffic t-orange"></span>Stand by</span>`;
+    return `<span><span class="traffic t-red"></span>Avoid</span>`;
+  }
+
+  function addBubble(text, who="jarvis"){
+    const div = document.createElement("div");
+    div.className = "bubble " + who;
+    div.textContent = text;
+    qs("chatLog").appendChild(div);
+    qs("chatLog").scrollTop = qs("chatLog").scrollHeight;
+  }
+
+  function speak(text){
+
+ if(!state.voiceEnabled) return;
+
+ if(!window.speechSynthesis) return;
+
+ const utter = new SpeechSynthesisUtterance(text);
+
+ utter.lang = "es-ES";
+ utter.rate = 1.0;
+
+ window.speechSynthesis.cancel();
+ window.speechSynthesis.speak(utter);
+
+}
+
+  async function loadHome(){
+    const res = await fetch("/dashboard/home");
+    const data = await res.json();
+
+    qs("greeting").textContent = data.greeting || "JARVIS ready";
+    qs("todayDate").textContent = data.date || "--";
+    qs("ownerName").textContent = "Owner: " + (data.owner_name || "Juan Camilo");
+    qs("topPriority").textContent = data.top_priority || "Protect capital";
+    qs("tasksOpen").textContent = data.tasks_open || 0;
+    qs("assetsCount").textContent = data.assets_count || 0;
+
+    if(data.next_meeting){
+      qs("nextMeeting").textContent = `${data.next_meeting.time} â€¢ ${data.next_meeting.title}`;
+    }else{
+      qs("nextMeeting").textContent = "No meetings";
+    }
+
+    renderTasks(data.tasks || []);
+    renderMeetings(data.meetings || []);
+  }
+
+  function renderTasks(items){
+    const box = qs("tasksList");
+    box.innerHTML = "";
+    if(!items.length){
+      box.innerHTML = `<div class="brief">No tasks yet.</div>`;
+      return;
+    }
+
+    const priorityOrder = {high:0, medium:1, low:2};
+    items.sort((a,b)=> (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9));
+
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "row-card task-item " + (item.done ? "done" : "");
+      div.innerHTML = `
+        <div>
+          <div class="row-title">${item.text}</div>
+          <div class="row-sub">${item.day || "today"} â€¢ <span class="priority-${item.priority}">${item.priority}</span></div>
+        </div>
+        <button class="check-btn">${item.done ? "âœ“" : ""}</button>
+      `;
+      div.querySelector(".check-btn").onclick = async () => {
+        await fetch(`/dashboard/tasks/${item.id}/toggle`, {method:"POST"});
+        await loadHome();
+      };
+      box.appendChild(div);
+    });
+  }
+
+  function renderMeetings(items){
+    const box = qs("meetingsList");
+    box.innerHTML = "";
+    if(!items.length){
+      box.innerHTML = `<div class="brief">No meetings yet.</div>`;
+      return;
+    }
+
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "row-card";
+      div.innerHTML = `
+        <div class="row-title">${item.time} â€¢ ${item.title}</div>
+        <div class="row-sub">${item.notes || ""}</div>
+      `;
+      box.appendChild(div);
+    });
+  }
+
+  async function addTask(){
+    const text = qs("newTaskText").value.trim();
+    const priority = qs("newTaskPriority").value;
+    const day = qs("newTaskDay").value;
+    if(!text) return;
+
+    await fetch("/dashboard/tasks", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text, priority, day})
+    });
+
+    qs("newTaskText").value = "";
+    await loadHome();
+  }
+
+  async function addMeeting(){
+    const title = qs("newMeetingTitle").value.trim();
+    const time = qs("newMeetingTime").value.trim();
+    const notes = qs("newMeetingNotes").value.trim();
+    if(!title || !time) return;
+
+    await fetch("/dashboard/meetings", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({title, time, notes})
+    });
+
+    qs("newMeetingTitle").value = "";
+    qs("newMeetingTime").value = "";
+    qs("newMeetingNotes").value = "";
+    await loadHome();
+  }
+
+  async function sendChat(messageOverride=null){
+    const input = qs("chatInput");
+    const message = (messageOverride || input.value).trim();
+    if(!message) return;
+
+    addBubble(message, "user");
+    input.value = "";
+
+    const res = await fetch("/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({message, domain:"general"})
+    });
+
+    const data = await res.json();
+    const reply = data.reply || "No reply.";
+    addBubble(reply, "jarvis");
+    speak(reply);
+  }
+
+  function initVoice(){
+    const btn = qs("voiceBtn");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      btn.textContent = "ðŸŽ¤ Unsupported";
+      btn.disabled = true;
+      return;
+    }
+
+    state.recognition = new SpeechRecognition();
+    state.recognition.lang = "es-ES";
+    state.recognition.interimResults = false;
+    state.recognition.maxAlternatives = 1;
+
+    state.recognition.onstart = () => {
+      state.listening = true;
+      btn.textContent = "â— Listening...";
+    };
+    state.recognition.onend = () => {
+      state.listening = false;
+      btn.textContent = "ðŸŽ¤ Voice";
+    };
+    state.recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      qs("chatInput").value = transcript;
+      await sendChat();
+    };
+
+    btn.onclick = () => {
+      if(state.listening){ state.recognition.stop(); }
+      else { state.recognition.start(); }
+    };
+  }
+
+  async function analyzeTrader(){
+    const raw = qs("symbolInput").value.trim() || "AAPL";
+    const res = await fetch("/dashboard/trader", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({symbol: raw})
+    });
+    const data = await res.json();
+
+    qs("traderSymbol").textContent = data.symbol || raw;
+    qs("setupScore").textContent = data.setup_score ?? "--";
+    qs("trafficLightText").innerHTML = trafficChip(data.traffic_light || "red");
+    qs("priceNow").textContent = data.technicals?.price ?? "--";
+
+    const plan = qs("tradePlan");
+    plan.innerHTML = "";
+    const p = data.trade_plan || {};
+    [
+      `Action: ${p.action || "-"}`,
+      `Entry zone: ${(p.entry_zone || []).join(" - ") || "-"}`,
+      `Stop loss: ${p.stop_loss ?? "-"}`,
+      `Target 1: ${p.target_1 ?? "-"}`,
+      `Target 2: ${p.target_2 ?? "-"}`,
+      `Risk/Reward: ${p.risk_reward_estimate ?? "-"}`,
+    ].forEach(line => {
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.textContent = line;
+      plan.appendChild(div);
+    });
+
+    const narrative = qs("tradeNarrative");
+    narrative.innerHTML = "";
+    (data.narrative || [data.summary || "No narrative"]).forEach(line => {
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.textContent = line;
+      narrative.appendChild(div);
+    });
+  }
+
+  async function loadRecommendations(){
+    const res = await fetch("/dashboard/recommendations");
+    const data = await res.json();
+    const box = qs("recommendations");
+    box.innerHTML = "";
+
+    const items = data.items || [];
+    if(!items.length){
+      box.innerHTML = `<div class="brief">No recommendations available.</div>`;
+      return;
+    }
+
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+          <strong>${item.symbol}</strong>
+          <span>${trafficChip(item.traffic_light)}</span>
+        </div>
+        <div style="margin-top:8px">Score: ${item.setup_score}</div>
+        <div style="margin-top:6px;color:var(--soft)">${item.reason || item.summary || ""}</div>
+      `;
+      box.appendChild(div);
+    });
+  }
+
+  async function loadAssets(){
+    const res = await fetch("/dashboard/assets");
+    const data = await res.json();
+    const items = data.assets || [];
+    qs("assetsCount").textContent = items.length;
+
+    const box = qs("assetGrid");
+    box.innerHTML = "";
+    if(!items.length){
+      box.innerHTML = `<div class="brief">No assets uploaded yet.</div>`;
+      return;
+    }
+
+    items.slice(0,8).forEach(asset => {
+      const div = document.createElement("div");
+      div.className = "asset";
+      div.innerHTML = `
+        <div class="name">${asset.filename}</div>
+        <div class="meta">${asset.kind} â€¢ ${asset.mime_type || "unknown"}</div>
+        <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
+      `;
+      box.appendChild(div);
+    });
+  }
+
+  async function uploadFiles(files){
+    for(const file of files){
+      const form = new FormData();
+      form.append("file", file);
+      await fetch("/dashboard/upload", {method:"POST", body:form});
+    }
+    await loadAssets();
+    await loadHome();
+  }
+
+  function initUpload(){
+    const zone = qs("uploadZone");
+    const input = qs("fileInput");
+
+    zone.onclick = () => input.click();
+
+    input.onchange = async (e) => {
+      if(e.target.files?.length) await uploadFiles(e.target.files);
+    };
+
+    ["dragenter","dragover"].forEach(ev => {
+      zone.addEventListener(ev, e => {
+        e.preventDefault();
+        zone.classList.add("drag");
+      });
+    });
+
+    ["dragleave","drop"].forEach(ev => {
+      zone.addEventListener(ev, e => {
+        e.preventDefault();
+        zone.classList.remove("drag");
+      });
+    });
+
+    zone.addEventListener("drop", async (e) => {
+      const files = e.dataTransfer?.files;
+      if(files?.length) await uploadFiles(files);
+    });
+  }
+
+  function initTheme(){
+    setTheme(state.currentTheme);
+    qs("themeBtn").onclick = () => setTheme(state.currentTheme === "dark" ? "light" : "dark");
+  }
+
+  function initEvents(){
+    qs("sendBtn").onclick = () => sendChat();
+    qs("chatInput").addEventListener("keydown", (e) => { if(e.key === "Enter") sendChat(); });
+    qs("addTaskBtn").onclick = addTask;
+    qs("addMeetingBtn").onclick = addMeeting;
+    qs("analyzeBtn").onclick = analyzeTrader;
+  }
+
+  async function boot(){
+    initTheme();
+    initEvents();
+    initVoice();
+    initUpload();
+    await loadHome();
+    await loadAssets();
+    await analyzeTrader();
+    await loadRecommendations();
+  }
+  boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{
+  "priorities": [
+    {
+      "id": "p1",
+      "text": "Protect capital and increase asymmetric upside",
+      "done": false
+    },
+    {
+      "id": "p2",
+      "text": "Review high-conviction opportunities",
+      "done": false
+    },
+    {
+      "id": "p3",
+      "text": "Keep health, family and execution aligned",
+      "done": false
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "Review portfolio risk",
+      "done": false
+    },
+    {
+      "id": "t2",
+      "text": "Check strategic meetings",
+      "done": false
+    },
+    {
+      "id": "t3",
+      "text": "Capture one premium insight for JARVIS memory",
+      "done": false
+    },
+    {
+      "id": "t_f4e1ca8e",
+      "text": "core",
+      "priority": "medium",
+      "day": "today",
+      "done": false
+    }
+  ],
+  "meetings": [
+    {
+      "id": "m2",
+      "title": "Deep Work Block",
+      "time": "09:00",
+      "notes": "Systems and execution"
+    },
+    {
+      "id": "m1",
+      "title": "Strategy Review",
+      "time": "15:00",
+      "notes": "Capital allocation and roadmap"
+    },
+    {
+      "id": "m_966cb85e",
+      "title": "sadasd",
+      "time": "15:30",
+      "notes": ""
+    }
+  ],
+  "assets": [
+    {
+      "id": "a_8193ce3f18",
+      "filename": "WhatsApp Video 2026-02-18 at 8.09.17 PM.mp4",
+      "stored_path": "uploads/WhatsApp Video 2026-02-18 at 8.09.17 PM.mp4",
+      "mime_type": "video/mp4",
+      "kind": "video",
+      "size_bytes": 1254036,
+      "created_at": "2026-03-11T03:35:34.465139"
+    }
+  ]
+}

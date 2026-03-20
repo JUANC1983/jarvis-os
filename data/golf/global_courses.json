@@ -1,0 +1,14 @@
+{
+ "courses":[
+  {"name":"Augusta National","country":"USA","city":"Augusta","latitude":33.502,"longitude":-82.020},
+  {"name":"Pebble Beach Golf Links","country":"USA","city":"Pebble Beach","latitude":36.568,"longitude":-121.950},
+  {"name":"St Andrews Old Course","country":"Scotland","city":"St Andrews","latitude":56.343,"longitude":-2.803},
+  {"name":"Royal Melbourne","country":"Australia","city":"Melbourne","latitude":-37.973,"longitude":145.049},
+  {"name":"Pine Valley","country":"USA","city":"New Jersey","latitude":39.791,"longitude":-74.965},
+  {"name":"TPC Sawgrass","country":"USA","city":"Florida","latitude":30.204,"longitude":-81.396},
+  {"name":"Valderrama","country":"Spain","city":"Sotogrande","latitude":36.300,"longitude":-5.300},
+  {"name":"Mission Hills","country":"China","city":"Shenzhen","latitude":22.692,"longitude":114.022},
+  {"name":"Club Campestre Medellin","country":"Colombia","city":"Medellin","latitude":6.205,"longitude":-75.567},
+  {"name":"Country Club Bogota","country":"Colombia","city":"Bogota","latitude":4.742,"longitude":-74.030}
+ ]
+}
