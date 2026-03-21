@@ -1,6 +1,14 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+def safe_import(module, name):
+    try:
+        mod = __import__(module, fromlist=[name])
+        return getattr(mod, name)
+    except Exception as e:
+        print(f"[IMPORT ERROR] {module}.{name}: {e}")
+        return None
+
 import os
 from typing import Any, Dict, List
 
@@ -140,9 +148,16 @@ except Exception:
 # =========================
 # ENGINE INSTANCES
 # =========================
-identity = OwnerDigitalTwin()
-audit = AuditEngine()
-memory = SuperMemorySystem()
+def safe_instance(cls):
+    try:
+        return cls()
+    except Exception as e:
+        print(f"[INIT ERROR] {cls}: {e}")
+        return None
+
+identity = safe_instance(OwnerDigitalTwin)
+audit = safe_instance(AuditEngine)
+memory = safe_instance(SuperMemorySystem)
 personality_engine = PersonalityEngine()
 knowledge_engine = KnowledgeEngine()
 reasoning_quality_engine = ReasoningQualityEngine()
