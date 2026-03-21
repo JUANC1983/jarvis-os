@@ -1,19 +1,15 @@
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
-python-dotenv==1.0.1
-reportlab==4.1.0
-openai==1.14.3
+
+# Core
 pydantic==2.6.4
+pydantic-settings==2.2.1
+python-dotenv==1.0.1
 
-# Data
-pandas==2.2.1
+# Data / Trading
 numpy==1.26.4
-scipy==1.11.4
-statsmodels==0.14.1
-
-# Trading
+pandas==2.2.1
 yfinance==0.2.37
-ta==0.11.0
 
 # HTTP / scraping
 requests==2.31.0
@@ -25,25 +21,39 @@ feedparser==6.0.11
 # Scheduling
 apscheduler==3.10.4
 
-# Files
-python-pptx==0.6.23
-python-multipart==0.0.9
-aiofiles==23.2.1
-Pillow==10.2.0
+# AI / NLP
+openai==1.14.3
+sentence-transformers==2.6.1
 
-# Email
-email-validator==2.1.1
+# Vector DB
+faiss-cpu==1.7.4
+pymilvus==2.4.4
 
 # Voice
+openai-whisper==20231117
 pydub==0.25.1
-gtts==2.5.1
 soundfile==0.12.1
-
-# AI utils
-tenacity==8.2.3
+elevenlabs==0.2.27
 
 # WhatsApp
 twilio==9.0.0
 
-twilio==9.0.0
-openai-whisper==20231117
+# Documents
+reportlab==4.1.0
+python-pptx==0.6.23
+python-docx==1.1.0
+pdfplumber==0.10.3
+
+# Vision
+opencv-python-headless==4.9.0.80
+pytesseract==0.3.10
+Pillow==10.2.0
+
+# Dashboard
+streamlit==1.32.2
+
+# Utils
+python-multipart==0.0.9
+email-validator==2.1.1
+aiofiles==23.2.1
+tenacity==8.2.3

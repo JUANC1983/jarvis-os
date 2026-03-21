@@ -35,36 +35,36 @@ from reportlab.pdfgen import canvas
 # =========================
 # CORE IMPORTS
 # =========================
-from core.owner_digital_twin import OwnerDigitalTwin
-from core.audit_engine import AuditEngine
-from core.super_memory_system import SuperMemorySystem
-from core.personality_engine import PersonalityEngine
-from core.knowledge_engine import KnowledgeEngine
-from core.reasoning_quality_engine import ReasoningQualityEngine
-from core.agent_learning_engine import AgentLearningEngine
-from core.presentation_engine import PresentationEngine
-from core.family_office_engine import FamilyOfficeEngine
-from core.wealth_optimizer import WealthOptimizer
-from core.market_monitor import MarketMonitor
-from core.data_fusion_engine import DataFusionEngine
-from core.geopolitical_intelligence_engine import GeopoliticalIntelligenceEngine
-from core.narrative_detection_engine import NarrativeDetectionEngine
-from core.macro_regime_engine import MacroRegimeEngine
-from core.alert_engine import AlertEngine
-from core.daily_ops_engine import DailyOpsEngine
-from core.scheduler_engine import JarvisScheduler
-from core.real_agent_council import RealAgentCouncil
-from core.email_intelligence_engine import EmailIntelligenceEngine
-from core.calendar_intelligence_engine import CalendarIntelligenceEngine
-from core.conversation_engine import ConversationEngine
-from core.voice_response_engine import VoiceResponseEngine
-from core.ticker_resolver import TickerResolver
-from core.trader_alpha_engine import TraderAlphaEngine
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
+# lazy loading enabled
 
 # =========================
 # MODELS
 # =========================
-from core.models import (
+# lazy loading enabled
     ChatRequest,
     ChatResponse,
     ReportRequest,
@@ -673,6 +673,7 @@ def calendar_plan(request: CalendarPlanRequest):
         request.duration_minutes,
         request.participants,
     )
+
 
 
 
