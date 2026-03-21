@@ -1,4 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 from openai import OpenAI
 
@@ -33,4 +34,5 @@ return "OpenAI not configured."
         )
 
         return response.choices[0].message.content
+
 
