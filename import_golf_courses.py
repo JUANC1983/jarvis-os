@@ -1,4 +1,4 @@
-from core.golf_ai_agent import GolfAIAgent
+﻿from core.golf_ai_agent import GolfAIAgent
 
 agent = GolfAIAgent()
 
@@ -11,3 +11,4 @@ print(result)
 print("Estado base de datos:")
 
 print(agent.database_stats())
+

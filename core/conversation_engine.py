@@ -1,3 +1,4 @@
+ï»¿# -*- coding: utf-8 -*-
 import os
 from openai import OpenAI
 
@@ -21,7 +22,7 @@ class ConversationEngine:
 
     def chat(self, message: str):
         if not self.available:
-            return "?? OpenAI no configurado todavía."
+return "OpenAI not configured."
 
         response = self.client.chat.completions.create(
             model="gpt-4o-mini",
@@ -32,3 +33,4 @@ class ConversationEngine:
         )
 
         return response.choices[0].message.content
+

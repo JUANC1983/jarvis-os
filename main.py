@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from core.jarvis_os import JarvisOS
 
 app = FastAPI()
@@ -27,3 +27,4 @@ def health():
 @app.get("/")
 def root():
     return {"message": "Jarvis OS running"}
+

@@ -1,4 +1,4 @@
-import ast
+﻿import ast
 import os
 from pathlib import Path
 
@@ -67,3 +67,4 @@ print("Dependency audit generated:")
 print(out.resolve())
 print("\nDetected imports:\n")
 print("\n".join(lines))
+
