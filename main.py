@@ -4,11 +4,13 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="JARVIS OS",
     version="1.0.0",
-    description="Safe boot runtime for Jarvis",
+    description="Jarvis backend + futuristic dashboard",
 )
 
 app.add_middleware(
@@ -23,6 +25,9 @@ jarvis = None
 jarvis_error: Optional[str] = None
 loaded_routers = []
 failed_routers = []
+
+DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "dashboard")
+DASHBOARD_HTML = os.path.join(DASHBOARD_DIR, "jarvis_futuristic.html")
 
 
 def safe_boot_jarvis() -> None:
@@ -64,38 +69,29 @@ safe_boot_jarvis()
 
 ROUTERS = [
     "api.secure_execution_routes",
-    "api.voice_routes",
-    "api.whatsapp_routes",
-    "api.dashboard_routes",
-    "api.trader_alpha_routes",
-    "api.golf_routes",
-    "api.golf_vision_routes",
     "api.operator_routes",
-    "api.opportunity_routes",
     "api.command_center_routes",
-    "api.communication_routes",
     "api.executive_intelligence_routes",
-    "api.global_market_routes",
-    "api.global_opportunity_radar_pro_routes",
     "api.strategic_council_routes",
     "api.strategic_foresight_pro_routes",
-    "api.apple_watch_routes",
     "api.autonomous_routes",
     "api.computer_agent_routes",
     "api.agent_orchestrator_routes",
     "api.agent_optimization_routes",
-    "api.ops_routes",
     "api.health_performance_routes",
-    "api.silicon_valley_routes",
-    "api.computer_control_routes",
 ]
 
 for module_path in ROUTERS:
     safe_include_router(module_path)
 
+if os.path.isdir(DASHBOARD_DIR):
+    app.mount("/static-dashboard", StaticFiles(directory=DASHBOARD_DIR), name="static-dashboard")
+
 
 @app.get("/")
 def root():
+    if os.path.isfile(DASHBOARD_HTML):
+        return RedirectResponse(url="/dashboard")
     return {
         "status": "ok",
         "service": "jarvis",
@@ -103,6 +99,16 @@ def root():
         "error": jarvis_error,
         "loaded_routers": loaded_routers,
         "failed_router_count": len(failed_routers),
+    }
+
+
+@app.get("/dashboard")
+def dashboard():
+    if os.path.isfile(DASHBOARD_HTML):
+        return FileResponse(DASHBOARD_HTML)
+    return {
+        "ok": False,
+        "error": "dashboard/jarvis_futuristic.html not found"
     }
 
 
@@ -115,7 +121,6 @@ def health():
         "openai_key_present": bool(os.getenv("OPENAI_API_KEY", "").strip()),
         "loaded_routers": loaded_routers,
         "failed_routers": failed_routers,
-        "jarvis_health": jarvis.health() if jarvis else None,
     }
 
 
