@@ -1,9 +1,2 @@
-﻿fastapi
-uvicorn
-openai
-python-dotenv
+streamlit
 requests
-pydantic
-streamlit
-
-streamlit
