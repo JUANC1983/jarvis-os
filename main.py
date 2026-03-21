@@ -78,3 +78,12 @@ for module_path, router_name in routes_to_load:
     router = safe_import_router(module_path, router_name)
     if router:
         app.include_router(router)
+
+# =========================
+# SECURE EXECUTION ROUTER
+# =========================
+try:
+    from api.secure_execution_routes import router as secure_execution_router
+    app.include_router(secure_execution_router)
+except Exception as e:
+    print(f"[WARNING] secure_execution_router not loaded: {e}")
