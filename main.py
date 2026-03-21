@@ -1,4 +1,18 @@
 from dotenv import load_dotenv
+def safe_import(module, name):
+    try:
+        mod = __import__(module, fromlist=[name])
+        return getattr(mod, name)
+    except Exception as e:
+        print(f"[SAFE IMPORT ERROR] {module}.{name}: {e}")
+        return None
+
+def safe_instance(cls):
+    try:
+        return cls() if cls else None
+    except Exception as e:
+        print(f"[SAFE INIT ERROR] {cls}: {e}")
+        return None
 load_dotenv()
 
 def safe_import(module, name):
@@ -650,6 +664,7 @@ def calendar_plan(request: CalendarPlanRequest):
         request.duration_minutes,
         request.participants,
     )
+
 
 
 
