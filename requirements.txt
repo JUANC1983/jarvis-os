@@ -44,3 +44,6 @@ tenacity==8.2.3
 
 # WhatsApp
 twilio==9.0.0
+
+twilio==9.0.0
+openai-whisper==20231117
