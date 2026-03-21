@@ -2,13 +2,12 @@
 
 WORKDIR /app
 
-COPY requirements.txt .
-
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
 COPY . .
 
-ENV PORT=8000
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "run.py"]
+ENV PORT=8080
+
+EXPOSE 8080
+
+CMD ["streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8080"]
