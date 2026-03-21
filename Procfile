@@ -1,1 +1,1 @@
-web: streamlit run dashboard/app.py
+web: streamlit run dashboard/app.py --server.port \ --server.address 0.0.0.0
