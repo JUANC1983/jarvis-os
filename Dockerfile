@@ -1,13 +1,9 @@
-﻿FROM python:3.10-slim
+FROM python:3.10
 
 WORKDIR /app
 
 COPY . .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir fastapi uvicorn
 
-ENV PORT=8080
-
-EXPOSE 8080
-
-CMD ["streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
