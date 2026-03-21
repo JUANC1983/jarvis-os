@@ -89,9 +89,18 @@ from core.models import (
 # =========================
 # INTERFACES
 # =========================
-from interfaces.whatsapp_real_interface import WhatsAppRealInterface
-from interfaces.voice_natural_interface import VoiceNaturalInterface
-from interfaces.premium_media_engine import PremiumMediaEngine
+try:
+    from interfaces.whatsapp_real_interface import WhatsAppRealInterface
+except Exception:
+    WhatsAppRealInterface = None
+try:
+    from interfaces.voice_natural_interface import VoiceNaturalInterface
+except Exception:
+    VoiceNaturalInterface = None
+try:
+    from interfaces.premium_media_engine import PremiumMediaEngine
+except Exception:
+    PremiumMediaEngine = None
 
 # =========================
 # BASE ROUTERS
@@ -193,9 +202,9 @@ voice_response_engine = VoiceResponseEngine()
 ticker_resolver = TickerResolver()
 trader_engine = TraderAlphaEngine()
 
-whatsapp = WhatsAppRealInterface()
-voice = VoiceNaturalInterface()
-media = PremiumMediaEngine()
+whatsapp = safe_instance(WhatsAppRealInterface)
+voice = safe_instance(VoiceNaturalInterface)
+media = safe_instance(PremiumMediaEngine)
 email_engine = EmailIntelligenceEngine()
 calendar_engine = CalendarIntelligenceEngine()
 
@@ -664,6 +673,7 @@ def calendar_plan(request: CalendarPlanRequest):
         request.duration_minutes,
         request.participants,
     )
+
 
 
 
