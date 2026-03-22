@@ -1,9 +1,19 @@
-﻿from fastapi import FastAPI
+﻿from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
 from core.product_brain import ProductBrain
 
 app = FastAPI()
 brain = ProductBrain()
+
+BASE_DIR = Path(__file__).resolve().parent
+DASHBOARD_DIR = BASE_DIR / "dashboard"
+DASHBOARD_HTML = DASHBOARD_DIR / "jarvis_futuristic.html"
+FALLBACK_HTML = DASHBOARD_DIR / "app.html"
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -14,31 +24,35 @@ def root():
     return {"status": "JARVIS RUNNING"}
 
 
-# ✅ FIX: endpoint que el dashboard espera
 @app.get("/dashboard")
 def dashboard_root():
-    return {"status": "dashboard connected"}
+    if DASHBOARD_HTML.exists():
+        return FileResponse(DASHBOARD_HTML)
+    if FALLBACK_HTML.exists():
+        return FileResponse(FALLBACK_HTML)
+    raise HTTPException(status_code=404, detail="Dashboard HTML not found")
 
 
-# ✅ CHAT BLINDADO
+@app.get("/favicon.ico")
+def favicon():
+    raise HTTPException(status_code=404, detail="Not Found")
+
+
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
         result = brain.chat(req.message)
-
         return {
             "status": "ok",
-            "response": result
+            "response": result,
         }
-
     except Exception as e:
         return {
             "status": "error",
-            "response": str(e)
+            "response": str(e),
         }
 
 
-# ✅ TRADER
 @app.post("/dashboard/trader")
 def trader(data: dict):
     try:
@@ -47,7 +61,6 @@ def trader(data: dict):
         return {"error": str(e)}
 
 
-# ✅ RECOMMENDATIONS
 @app.get("/dashboard/recommendations")
 def recommendations():
     try:
