@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from core.jarvis_os import JarvisOS
 
-app = FastAPI(title="JARVIS OS")
+app = FastAPI(title="JARVIS OS", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +24,7 @@ DASHBOARD_DIR = os.path.join(BASE_DIR, "dashboard")
 UPLOAD_DIR = os.path.join(DASHBOARD_DIR, "uploads")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
+os.makedirs(DASHBOARD_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -49,14 +50,16 @@ def save_json(path: str, data: Any) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-if os.path.isdir(DASHBOARD_DIR):
+if os.path.isdir(UPLOAD_DIR):
     app.mount("/dashboard/uploads", StaticFiles(directory=UPLOAD_DIR), name="dashboard_uploads")
-    app.mount("/dashboard/static", StaticFiles(directory=DASHBOARD_DIR), name="dashboard_static")
 
 
 @app.get("/")
 def root():
-    return {"status": "JARVIS OS RUNNING", "health": jarvis.health()}
+    return {
+        "status": "JARVIS OS RUNNING",
+        "health": jarvis.health(),
+    }
 
 
 @app.get("/health")
@@ -70,7 +73,15 @@ def health():
 
 @app.get("/dashboard")
 def dashboard():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "jarvis_futuristic.html"))
+    dashboard_file = os.path.join(DASHBOARD_DIR, "jarvis_futuristic.html")
+    if os.path.exists(dashboard_file):
+        return FileResponse(dashboard_file)
+    return JSONResponse({"ok": False, "error": "dashboard/jarvis_futuristic.html not found"}, status_code=404)
+
+
+@app.get("/docs-check")
+def docs_check():
+    return {"ok": True, "message": "Swagger docs should be available at /docs"}
 
 
 @app.get("/dashboard/home")
@@ -85,7 +96,7 @@ def dashboard_home():
         "greeting": "JARVIS ready",
         "date": "Today",
         "owner_name": "Juan Camilo",
-        "top_priority": "Protect capital",
+        "top_priority": "Protect capital and increase intelligent opportunities",
         "tasks_open": len([t for t in tasks if not t.get("done")]),
         "assets_count": len(assets),
         "tasks": tasks,
@@ -97,16 +108,22 @@ def dashboard_home():
 @app.post("/chat")
 async def chat(payload: Dict[str, Any]):
     message = str(payload.get("message", "")).strip()
-    domain = str(payload.get("domain", "general")).strip()
 
     if not message:
-        return JSONResponse({"reply": "Escribe un mensaje primero."}, status_code=400)
+        return JSONResponse(
+            {
+                "type": "general",
+                "summary": "Escribe un mensaje primero.",
+                "details": {},
+                "action": "Try again with a specific request.",
+                "confidence": 0.0,
+                "source": "validation",
+            },
+            status_code=400,
+        )
 
-    if domain and domain != "general":
-        message = f"[DOMAIN={domain}] {message}"
-
-    reply = jarvis.chat(message)
-    return {"reply": reply}
+    result = jarvis.chat(message)
+    return result
 
 
 @app.post("/dashboard/tasks")
@@ -165,18 +182,33 @@ def add_meeting(payload: Dict[str, Any]):
 @app.post("/dashboard/trader")
 def dashboard_trader(payload: Dict[str, Any]):
     symbol = str(payload.get("symbol", "AAPL")).strip() or "AAPL"
-    result = jarvis.trader(symbol)
-    return result
+    return jarvis.trader(symbol)
 
 
 @app.get("/dashboard/recommendations")
 def dashboard_recommendations():
-    defaults = [
-        {"symbol": "AAPL", "setup_score": 8, "traffic_light": "green", "summary": "Strong relative strength and clean structure."},
-        {"symbol": "NVDA", "setup_score": 9, "traffic_light": "blue", "summary": "AI leadership with strong institutional momentum."},
-        {"symbol": "MSFT", "setup_score": 7, "traffic_light": "green", "summary": "Defensive quality with durable cash flow."},
-    ]
-    return {"items": defaults}
+    return {
+        "items": [
+            {
+                "symbol": "AAPL",
+                "setup_score": 8,
+                "traffic_light": "green",
+                "summary": "High quality structure with favorable institutional profile.",
+            },
+            {
+                "symbol": "NVDA",
+                "setup_score": 9,
+                "traffic_light": "blue",
+                "summary": "Leadership asset with strong AI narrative and momentum.",
+            },
+            {
+                "symbol": "MSFT",
+                "setup_score": 7,
+                "traffic_light": "green",
+                "summary": "Durable enterprise quality with defensive upside.",
+            },
+        ]
+    }
 
 
 @app.post("/dashboard/upload")
