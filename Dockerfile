@@ -1,12 +1,15 @@
-FROM python:3.10
+﻿FROM python:3.10
 
 WORKDIR /app
 
-COPY requirements.txt .
+ARG CACHE_BUST=jarvis_build_v3
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /app/requirements.txt
 
-COPY . .
+RUN python -m pip install --upgrade pip
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY . /app
 
 EXPOSE 8000
 

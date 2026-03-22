@@ -1,9 +1,9 @@
-fastapi
+﻿fastapi
 uvicorn
 python-multipart
 openai
+requests
+python-dotenv
 pandas
 numpy
 matplotlib
-requests
-python-dotenv
