@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+Ôªø<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -177,25 +177,25 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Talk to JARVIS</h2>
-            <div class="subtle">Escribe o habla. JARVIS responde claro y ˙til.</div>
+            <div class="subtle">Escribe o habla. JARVIS responde claro y √∫til.</div>
           </div>
 
           <div class="command-bar">
-            <input id="chatInput" class="input" placeholder="EscrÌbele a JARVIS..." />
-            <button id="voiceBtn" class="ghost-btn">?? Voice</button>
-            <button id="stopVoiceBtn" class="ghost-btn">¶ Stop</button>
+            <input id="chatInput" class="input" placeholder="Escr√≠bele a JARVIS..." />
+            <button id="voiceBtn" class="ghost-btn">üé§ Voice</button>
+            <button id="stopVoiceBtn" class="ghost-btn">‚ñ† Stop</button>
             <button id="sendBtn" class="primary-btn">Send</button>
           </div>
 
           <div class="chat-log" id="chatLog">
-            <div class="bubble jarvis">Hola. øQuÈ necesitas hoy?</div>
+            <div class="bubble jarvis">Hola. ¬øQu√© necesitas hoy?</div>
           </div>
         </section>
 
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Tasks</h2>
-            <div class="subtle">Organizadas por prioridad y dÌa. Simple y usable.</div>
+            <div class="subtle">Organizadas por prioridad y d√≠a. Simple y usable.</div>
           </div>
 
           <div class="stack" id="tasksList"></div>
@@ -219,7 +219,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Meetings</h2>
-            <div class="subtle">Agenda reuniones r·pido desde aquÌ.</div>
+            <div class="subtle">Agenda reuniones r√°pido desde aqu√≠.</div>
           </div>
 
           <div class="stack" id="meetingsList"></div>
@@ -273,7 +273,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Recommended Stocks</h2>
-            <div class="subtle">Ideas del dÌa explicadas de forma simple.</div>
+            <div class="subtle">Ideas del d√≠a explicadas de forma simple.</div>
           </div>
           <div class="recommendations" id="recommendations"></div>
         </section>
@@ -287,7 +287,7 @@
           <label id="uploadZone" class="upload-zone">
             <input id="fileInput" class="upload-input" type="file" multiple />
             <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;">Drop files here or click to upload</div>
-            <div>PDF, im·genes, videos, audio y archivos generales.</div>
+            <div>PDF, im√°genes, videos, audio y archivos generales.</div>
           </label>
 
           <div class="asset-grid" id="assetGrid"></div>
@@ -317,9 +317,9 @@
 
   function trafficTag(level){
     const v = (level || "").toLowerCase();
-    if(v === "green") return `<span class="tag-ok">? Go</span>`;
-    if(v === "yellow") return `<span class="tag-warn">? Wait</span>`;
-    return `<span class="tag-bad">? Avoid</span>`;
+    if(v === "green") return `<span class="tag-ok">‚óè Go</span>`;
+    if(v === "yellow") return `<span class="tag-warn">‚óè Wait</span>`;
+    return `<span class="tag-bad">‚óè Avoid</span>`;
   }
 
   async function loadHome(){
@@ -334,7 +334,7 @@
     qs("assetsCount").textContent = data.assets_count || 0;
 
     if(data.next_meeting){
-      qs("nextMeeting").textContent = `${data.next_meeting.time} ï ${data.next_meeting.title}`;
+      qs("nextMeeting").textContent = `${data.next_meeting.time} ‚Ä¢ ${data.next_meeting.title}`;
     }else{
       qs("nextMeeting").textContent = "No meetings";
     }
@@ -357,9 +357,9 @@
       div.innerHTML = `
         <div>
           <div class="row-title">${item.text}</div>
-          <div class="row-sub">${item.day || "today"} ï ${item.priority || "medium"}</div>
+          <div class="row-sub">${item.day || "today"} ‚Ä¢ ${item.priority || "medium"}</div>
         </div>
-        <button class="check-btn">${item.done ? "?" : ""}</button>
+        <button class="check-btn">${item.done ? "‚úì" : ""}</button>
       `;
       div.querySelector(".check-btn").onclick = async () => {
         await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
@@ -381,7 +381,7 @@
       const div = document.createElement("div");
       div.className = "row-card";
       div.innerHTML = `
-        <div class="row-title">${item.time} ï ${item.title}</div>
+        <div class="row-title">${item.time} ‚Ä¢ ${item.title}</div>
         <div class="row-sub">${item.notes || ""}</div>
       `;
       box.appendChild(div);
@@ -437,7 +437,12 @@
     });
 
     const data = await res.json();
-    const reply = data.reply || data.summary || "No reply.";
+    const reply =
+      data.reply ||
+      data.summary ||
+      (data.response && (data.response.reply || data.response.summary || data.response.message)) ||
+      "No reply.";
+
     addBubble(reply, "jarvis");
   }
 
@@ -462,11 +467,10 @@
     state.recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       qs("chatInput").value = transcript;
-      await sendChat();
     };
 
     qs("voiceBtn").onclick = () => {
-      if(state.recognition) state.recognition.start();
+      if(state.recognition && !state.listening) state.recognition.start();
     };
 
     qs("stopVoiceBtn").onclick = () => {
@@ -489,7 +493,7 @@
     qs("priceNow").textContent = data.price_now ?? "--";
 
     const p = data.trade_plan || {};
-    const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
+    const entry = Array.isArray(p.entry_zone) && p.entry_zone.length ? p.entry_zone.join(" - ") : "-";
 
     qs("tradePlan").innerHTML = `
       <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
@@ -549,8 +553,7 @@
       div.className = "asset";
       div.innerHTML = `
         <div class="name">${asset.filename}</div>
-        <div class="meta">${asset.kind} ï ${asset.mime_type || "unknown"}</div>
-        <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
+        <div class="meta">${asset.kind} ‚Ä¢ ${asset.mime_type || "unknown"}</div>
       `;
       box.appendChild(div);
     });
@@ -608,37 +611,7 @@
     await loadRecommendations();
   }
 
-  function speak(text){
-  if(!window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'es-ES';
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
-
-const originalSendChat = sendChat;
-sendChat = async function(messageOverride=null){
-  const input = document.getElementById("chatInput");
-  const message = (messageOverride || input.value).trim();
-  if(!message) return;
-
-  addBubble(message, "user");
-  input.value = "";
-
-  const res = await fetch("/chat", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({message})
-  });
-
-  const data = await res.json();
-  const reply = data.reply || data.summary || "No reply.";
-
-  addBubble(reply, "jarvis");
-  speak(reply);
-};
-
-boot();
+  boot();
 </script>
 </body>
 </html>
