@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -10,19 +10,23 @@ app = FastAPI()
 brain = ProductBrain()
 
 BASE_DIR = Path(__file__).resolve().parent
-DASHBOARD_DIR = BASE_DIR / "dashboard"
-DASHBOARD_HTML = DASHBOARD_DIR / "jarvis_futuristic.html"
-
+DASHBOARD_HTML = BASE_DIR / "jarvis_futuristic.html"
 
 class ChatRequest(BaseModel):
     message: str
 
 
+# =====================
+# ROOT
+# =====================
 @app.get("/")
 def root():
     return {"status": "JARVIS RUNNING"}
 
 
+# =====================
+# SERVE DASHBOARD
+# =====================
 @app.get("/dashboard")
 def dashboard():
     if DASHBOARD_HTML.exists():
@@ -30,6 +34,9 @@ def dashboard():
     raise HTTPException(status_code=404, detail="Dashboard not found")
 
 
+# =====================
+# HOME DATA
+# =====================
 @app.get("/dashboard/home")
 def home():
     return {
@@ -45,26 +52,49 @@ def home():
     }
 
 
+# =====================
+# CHAT
+# =====================
 @app.post("/chat")
 def chat(req: ChatRequest):
-    result = brain.chat(req.message)
+    try:
+        result = brain.chat(req.message)
+        return {
+            "status": "ok",
+            "response": result
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "response": str(e)
+        }
 
-    return {
-        "status": "ok",
-        "response": result
-    }
 
-
+# =====================
+# TRADER
+# =====================
 @app.post("/dashboard/trader")
 def trader(data: dict):
-    return brain.trader(data.get("symbol", "AAPL"))
+    try:
+        return brain.trader(data.get("symbol", "AAPL"))
+    except Exception as e:
+        return {"error": str(e)}
 
 
+# =====================
+# RECOMMENDATIONS
+# =====================
 @app.get("/dashboard/recommendations")
 def recommendations():
-    return brain.recommendations()
+    try:
+        return brain.recommendations()
+    except Exception as e:
+        return {"error": str(e)}
 
 
+# =====================
+# EMPTY ENDPOINTS (UI NEEDS THEM)
+# =====================
 @app.get("/dashboard/assets")
 def assets():
     return {"assets": []}
