@@ -1,9 +1,7 @@
 ﻿import yfinance as yf
+import numpy as np
 
 class ProductBrain:
-
-    def __init__(self):
-        pass
 
     def chat(self, message: str) -> dict:
         message = message.lower()
@@ -11,69 +9,99 @@ class ProductBrain:
         if "best" in message or "mejor" in message:
             return self._best_opportunity()
 
-        return self._chat_fallback(message)
+        return self._chat_fallback()
 
     def _best_opportunity(self):
         symbols = ["ASML", "NVDA", "AAPL", "MSFT"]
 
-        results = []
+        candidates = []
 
         for symbol in symbols:
-            data = yf.Ticker(symbol).history(period="5d")
+            data = yf.Ticker(symbol).history(period="1mo")
 
-            if data.empty:
+            if data.empty or len(data) < 10:
                 continue
 
-            price = float(data["Close"].iloc[-1])
-            prev = float(data["Close"].iloc[-2])
+            close = data["Close"]
 
-            change = (price - prev) / prev
+            # --- FACTORES ---
+            trend = close.iloc[-1] > close.mean()
+            momentum = (close.iloc[-1] - close.iloc[-5]) / close.iloc[-5]
+            volatility = np.std(close[-10:])
+            pullback = close.iloc[-1] < close.max() * 0.97
 
-            score = 50 + int(change * 500)
+            score = 50
 
-            results.append({
+            if trend:
+                score += 15
+            if momentum > 0:
+                score += 15
+            if pullback:
+                score += 10
+            if volatility < 5:
+                score += 5
+
+            candidates.append({
                 "symbol": symbol,
-                "price": round(price, 2),
+                "price": round(close.iloc[-1], 2),
                 "score": score,
-                "change": round(change * 100, 2)
+                "momentum": round(momentum * 100, 2),
+                "trend": trend,
+                "pullback": pullback
             })
 
-        results = sorted(results, key=lambda x: x["score"], reverse=True)
+        candidates = sorted(candidates, key=lambda x: x["score"], reverse=True)
 
-        best = results[0]
+        best = candidates[0]
 
-        action = "GO" if best["score"] > 70 else "WAIT"
+        # --- DECISIÓN REAL ---
+        if best["score"] >= 75:
+            action = "GO"
+            context = "Setup fuerte con tendencia y momentum."
+        elif best["score"] >= 60:
+            action = "WAIT"
+            context = "Setup aceptable. Esperar confirmación."
+        else:
+            action = "AVOID"
+            context = "No hay ventaja clara."
 
         return {
             "type": "trade_idea",
-            "summary": f"Best opportunity: {best['symbol']}",
+            "summary": f"{best['symbol']} | Score {best['score']} | {action}",
             "details": best,
             "action": action,
-            "confidence": 0.8,
-            "source": "market_analysis"
+            "context": context,
+            "confidence": 0.85,
+            "source": "multi_factor_engine"
         }
 
-    def _chat_fallback(self, message: str) -> dict:
+    def _chat_fallback(self):
         return {
             "type": "chat",
-            "summary": "Haz una pregunta específica sobre mercado, acciones o inversión.",
+            "summary": "Pregunta por oportunidades, análisis de acciones o mercado.",
             "details": {},
             "action": "",
-            "confidence": 0.5,
-            "source": "fallback"
+            "confidence": 0.5
         }
 
     def trader(self, symbol: str):
-        data = yf.Ticker(symbol).history(period="1d")
+        data = yf.Ticker(symbol).history(period="1mo")
 
         if data.empty:
             return {"error": "No data"}
 
-        price = float(data["Close"].iloc[-1])
+        close = data["Close"]
+
+        price = float(close.iloc[-1])
+        support = float(close.min())
+        resistance = float(close.max())
 
         return {
             "symbol": symbol,
             "price": round(price, 2),
+            "entry_zone": f"{round(price*0.98,2)} - {round(price*1.01,2)}",
+            "stop_loss": round(support, 2),
+            "target": round(resistance, 2),
             "action": "WAIT"
         }
 
