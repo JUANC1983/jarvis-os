@@ -490,7 +490,7 @@
     qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
     qs("setupScore").textContent = data.setup_score ?? "--";
     qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
-    qs("priceNow").textContent = data.price_now ?? data.price ?? data.technicals?.price ?? "--";
+    qs("priceNow").textContent = data.price_now ?? "--";
 
     const p = data.trade_plan || {};
     const entry = Array.isArray(p.entry_zone) && p.entry_zone.length ? p.entry_zone.join(" - ") : "-";
@@ -504,7 +504,7 @@
       <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
     `;
 
-    const lines = data.insight_lines || data.narrative || [data.friendly_recommendation || data.summary || "No insight available."];
+    const lines = data.insight_lines || [data.summary || "No insight available."];
     qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
   }
 
@@ -615,4 +615,3 @@
 </script>
 </body>
 </html>
-
