@@ -30,6 +30,7 @@ class JarvisOS:
         if not self.brain:
             return {
                 "type": "general",
+                "reply": "JARVIS is online, but the brain is not available.",
                 "summary": "JARVIS is online, but the brain is not available.",
                 "details": {},
                 "action": "Check server health.",

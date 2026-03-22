@@ -1,5 +1,6 @@
 ﻿import json
 import os
+from datetime import datetime
 from typing import Any, Dict
 
 from fastapi import FastAPI, UploadFile, File
@@ -91,12 +92,13 @@ def dashboard_home():
     assets = load_json(ASSETS_FILE, [])
 
     next_meeting = meetings[0] if meetings else None
+    today = datetime.now().strftime("%A %d %B %Y")
 
     return {
         "greeting": "JARVIS ready",
-        "date": "Today",
+        "date": today,
         "owner_name": "Juan Camilo",
-        "top_priority": "Protect capital and increase intelligent opportunities",
+        "top_priority": "Protect capital and increase asymmetric upside",
         "tasks_open": len([t for t in tasks if not t.get("done")]),
         "assets_count": len(assets),
         "tasks": tasks,
@@ -113,6 +115,7 @@ async def chat(payload: Dict[str, Any]):
         return JSONResponse(
             {
                 "type": "general",
+                "reply": "Escribe un mensaje primero.",
                 "summary": "Escribe un mensaje primero.",
                 "details": {},
                 "action": "Try again with a specific request.",
@@ -123,6 +126,12 @@ async def chat(payload: Dict[str, Any]):
         )
 
     result = jarvis.chat(message)
+
+    # Compatibility with existing dashboard frontend
+    if isinstance(result, dict):
+        result.setdefault("reply", result.get("summary", "No reply."))
+        result.setdefault("summary", result.get("reply", "No reply."))
+
     return result
 
 
@@ -182,33 +191,46 @@ def add_meeting(payload: Dict[str, Any]):
 @app.post("/dashboard/trader")
 def dashboard_trader(payload: Dict[str, Any]):
     symbol = str(payload.get("symbol", "AAPL")).strip() or "AAPL"
-    return jarvis.trader(symbol)
+    result = jarvis.trader(symbol)
+
+    if isinstance(result, dict):
+        result.setdefault("symbol", symbol.upper())
+        result.setdefault("setup_score", None)
+        result.setdefault("traffic_light", "red")
+        result.setdefault("technicals", {"price": None})
+        result.setdefault(
+            "trade_plan",
+            {
+                "action": "NO TRADE",
+                "entry_zone": [],
+                "stop_loss": "-",
+                "target_1": "-",
+                "target_2": "-",
+                "risk_reward_estimate": "-",
+            },
+        )
+        result.setdefault("narrative", [result.get("summary", "No narrative.")])
+        result.setdefault("summary", "No summary available.")
+    return result
 
 
 @app.get("/dashboard/recommendations")
 def dashboard_recommendations():
-    return {
-        "items": [
+    watchlist = ["NVDA", "AAPL", "MSFT", "AMZN"]
+    items = []
+
+    for symbol in watchlist:
+        result = jarvis.trader(symbol)
+        items.append(
             {
-                "symbol": "AAPL",
-                "setup_score": 8,
-                "traffic_light": "green",
-                "summary": "High quality structure with favorable institutional profile.",
-            },
-            {
-                "symbol": "NVDA",
-                "setup_score": 9,
-                "traffic_light": "blue",
-                "summary": "Leadership asset with strong AI narrative and momentum.",
-            },
-            {
-                "symbol": "MSFT",
-                "setup_score": 7,
-                "traffic_light": "green",
-                "summary": "Durable enterprise quality with defensive upside.",
-            },
-        ]
-    }
+                "symbol": result.get("symbol", symbol),
+                "setup_score": result.get("setup_score"),
+                "traffic_light": result.get("traffic_light", "orange"),
+                "summary": result.get("summary", "No summary available."),
+            }
+        )
+
+    return {"items": items}
 
 
 @app.post("/dashboard/upload")
