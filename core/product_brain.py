@@ -1,120 +1,170 @@
-﻿from typing import Dict, Any
-from core.agent_orchestrator_pro import AgentOrchestratorPro
+﻿from __future__ import annotations
+from typing import Dict, Any, Optional
+
+try:
+    from core.agent_orchestrator_pro import AgentOrchestratorPro
+except:
+    AgentOrchestratorPro = None
 
 
 class ProductBrain:
 
-    def __init__(self):
-        self.orchestrator = AgentOrchestratorPro()
+    def __init__(self) -> None:
+        self.orchestrator = None
 
-    # =========================
-    # HEALTH
-    # =========================
-    def health(self):
-        return {
-            "status": "ok",
-            "orchestrator": self.orchestrator.health()
+        if AgentOrchestratorPro:
+            try:
+                self.orchestrator = AgentOrchestratorPro()
+            except Exception as e:
+                print(f"[ERROR] Orchestrator failed: {e}")
+
+        self.symbol_aliases = {
+            "tesla": "TSLA",
+            "apple": "AAPL",
+            "amazon": "AMZN",
+            "google": "GOOGL",
+            "microsoft": "MSFT",
+            "nvidia": "NVDA",
+            "meta": "META"
         }
 
-    # =========================
-    # CHAT
-    # =========================
-    def chat(self, message: str) -> dict:
-        try:
-            msg = message.lower()
+    # -----------------------------
+    # CORE ENTRY
+    # -----------------------------
+    def respond(self, message: str) -> Dict[str, Any]:
+        return self.chat(message)
 
-            # =========================
-            # MARKET INTENT
-            # =========================
-            if any(x in msg for x in ["stock", "acción", "apple", "tesla", "nvda", "msft", "trade", "invertir"]):
-                return self._handle_market_chat(message)
+    # -----------------------------
+    # CHAT (UNIFIED INTELLIGENCE)
+    # -----------------------------
+    def chat(self, message: str) -> Dict[str, Any]:
 
-            # =========================
-            # GENERAL INTELLIGENCE
-            # =========================
-            result = self.orchestrator.execute(message, domain="general")
+        if not self.orchestrator:
+            return self._fallback("Sistema disponible pero sin inteligencia central.")
 
-            return {
-                "type": "chat",
-                "summary": result.get("summary", "Procesado"),
-                "details": result,
-                "action": "processed",
-                "confidence": 0.9
-            }
+        domain = self._detect_domain(message)
 
-        except Exception as e:
-            return {
-                "type": "error",
-                "summary": f"Error en chat: {str(e)}",
-                "confidence": 0.2
-            }
-
-    # =========================
-    # MARKET CHAT
-    # =========================
-    def _handle_market_chat(self, message: str):
-
-        # usa trader directamente
-        trader = self.trader(message)
+        result = self.orchestrator.execute(message, domain)
 
         return {
-            "type": "trade_analysis",
-            "summary": trader.get("summary", "Análisis generado"),
-            "details": trader,
-            "action": trader.get("trade_plan", {}).get("action", "WAIT"),
-            "confidence": 0.9
+            "type": "intelligence",
+            "summary": self._natural_response(result),
+            "details": result,
+            "confidence": 0.95,
+            "source": "orchestrator"
         }
 
-    # =========================
-    # TRADER (CRÍTICO)
-    # =========================
+    # -----------------------------
+    # TRADER (SPECIALIZED FLOW)
+    # -----------------------------
     def trader(self, symbol_or_prompt: str) -> Dict[str, Any]:
 
-        try:
-            result = self.orchestrator.execute_trader(symbol_or_prompt)
+        if not self.orchestrator:
+            return self._fallback("Trader no disponible.")
 
-            # enriquecer salida
-            summary = result.get("summary", "")
-            action = result.get("trade_plan", {}).get("action", "WAIT")
+        symbol = self._resolve_symbol(symbol_or_prompt)
 
-            return {
-                "symbol": result.get("symbol"),
-                "setup_score": result.get("setup_score"),
-                "traffic_light": result.get("traffic_light"),
-                "price_now": result.get("technicals", {}).get("price"),
-                "trade_plan": result.get("trade_plan"),
-                "narrative": result.get("narrative"),
-                "summary": summary if summary else f"{result.get('symbol')} análisis generado",
-                "action": action,
-                "source": result.get("source", "orchestrator")
-            }
+        result = self.orchestrator.execute_trader(symbol)
 
-        except Exception as e:
-            return {
-                "error": str(e),
-                "source": "trader_fallback"
-            }
+        return self._normalize_trader(result)
 
-    # =========================
+    # -----------------------------
     # RECOMMENDATIONS
-    # =========================
+    # -----------------------------
     def recommendations(self):
 
-        symbols = ["NVDA", "MSFT", "AMZN", "META", "AAPL"]
+        symbols = ["NVDA","MSFT","META","GOOGL","AMZN","AAPL","TSLA"]
 
-        results = []
+        items = []
 
         for s in symbols:
             try:
                 r = self.trader(s)
-                if "error" not in r:
-                    results.append(r)
-            except:
-                pass
 
-        results = sorted(results, key=lambda x: x.get("setup_score") or 0, reverse=True)
+                if r.get("setup_score"):
+                    items.append({
+                        "symbol": r["symbol"],
+                        "setup_score": r["setup_score"],
+                        "traffic_light": r["traffic_light"],
+                        "price_now": r["technicals"]["price"],
+                        "friendly_recommendation": r.get("summary",""),
+                        "action": r["trade_plan"]["action"]
+                    })
+            except:
+                continue
+
+        items = sorted(items, key=lambda x: x["setup_score"], reverse=True)
+
+        return {"items": items[:5]}
+
+    # -----------------------------
+    # DOMAIN DETECTION
+    # -----------------------------
+    def _detect_domain(self, message: str) -> str:
+
+        msg = message.lower()
+
+        if any(x in msg for x in ["accion","stock","trade","tesla","apple","nvda"]):
+            return "finance"
+
+        if any(x in msg for x in ["salud","dolor","medico","fitness"]):
+            return "medical"
+
+        if any(x in msg for x in ["legal","contrato","ley"]):
+            return "legal"
+
+        return "general"
+
+    # -----------------------------
+    # SYMBOL RESOLUTION
+    # -----------------------------
+    def _resolve_symbol(self, text: str) -> str:
+
+        t = text.lower().strip()
+
+        if t in self.symbol_aliases:
+            return self.symbol_aliases[t]
+
+        return text.upper()
+
+    # -----------------------------
+    # NATURAL RESPONSE
+    # -----------------------------
+    def _natural_response(self, result: Dict) -> str:
+
+        if not result:
+            return "No tengo suficiente información."
+
+        res = result.get("result")
+
+        if isinstance(res, dict):
+            if "summary" in res:
+                return res["summary"]
+
+            if "consensus" in res:
+                return res["consensus"]
+
+        return result.get("summary", "Procesado.")
+
+    # -----------------------------
+    # NORMALIZE TRADER
+    # -----------------------------
+    def _normalize_trader(self, r: Dict):
 
         return {
-            "top": results[:3],
-            "all": results
+            "symbol": r.get("symbol"),
+            "setup_score": r.get("setup_score"),
+            "traffic_light": r.get("traffic_light"),
+            "technicals": r.get("technicals"),
+            "trade_plan": r.get("trade_plan"),
+            "narrative": r.get("narrative"),
+            "summary": r.get("summary"),
+            "source": r.get("source")
+        }
+
+    def _fallback(self, msg):
+        return {
+            "type": "fallback",
+            "summary": msg,
+            "confidence": 0.3
         }
