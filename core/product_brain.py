@@ -17,7 +17,7 @@ class ProductBrain:
         }
 
     # =========================
-    # CHAT (INTELIGENTE)
+    # CHAT INTELIGENTE
     # =========================
     def chat(self, message: str) -> Dict:
         try:
@@ -39,57 +39,80 @@ class ProductBrain:
             }
 
     # =========================
-    # TRADER (YA FUNCIONA BIEN)
+    # TRADER (FUNCIONANDO)
     # =========================
     def trader(self, symbol: str) -> Dict:
         return self.orchestrator.execute_trader(symbol)
 
     # =========================
-    # ?? NUEVO SISTEMA REAL DE RECOMMENDATIONS
+    # ?? RECOMMENDATIONS PROFESIONALES
     # =========================
     def recommendations(self) -> Dict:
 
-        try:
-            result = self.orchestrator.execute(
-                "Find the best stock opportunities right now with strong momentum, institutional flow, and asymmetric risk/reward.",
-                domain="finance"
-            )
+        opportunities: List[Dict] = []
 
-            data = result.get("result")
+        # ?? AGENTES CORRECTOS (NO risk_analyst)
+        preferred_agents = [
+            "opportunity_radar",
+            "trader_alpha",
+            "market_intelligence"
+        ]
 
-            # Si el engine devuelve lista de oportunidades
-            if isinstance(data, list):
-                return {"items": data}
+        for agent in preferred_agents:
 
-            # Si devuelve dict estructurado
-            if isinstance(data, dict):
+            engine = self.orchestrator._load_engine(agent)
 
-                # Caso: ya viene con items
-                if "items" in data:
-                    return {"items": data["items"]}
+            if engine is None:
+                continue
 
-                # Caso: respuesta simple ? convertir
-                return {
-                    "items": [
-                        {
-                            "symbol": "AUTO",
-                            "price": None,
-                            "setup_score": 70,
-                            "traffic_light": "green",
-                            "summary": str(data)
-                        }
-                    ]
-                }
+            try:
+                result = self.orchestrator._try_methods(
+                    engine,
+                    "Find top high-probability stock setups with strong momentum and institutional activity",
+                    "finance"
+                )
 
-            return {"items": []}
+                # Si devuelve lista válida
+                if isinstance(result, list):
+                    for item in result:
+                        if isinstance(item, dict):
+                            opportunities.append(item)
 
-        except Exception as e:
-            return {
-                "items": [
-                    {
-                        "symbol": "ERROR",
-                        "summary": str(e),
-                        "traffic_light": "red"
-                    }
-                ]
-            }
+                # Si devuelve dict
+                elif isinstance(result, dict):
+
+                    # Caso: lista interna
+                    if "items" in result:
+                        opportunities.extend(result["items"])
+
+                    # Caso: single result ? convertir
+                    elif "symbol" in result:
+                        opportunities.append(result)
+
+            except:
+                continue
+
+        # ?? FALLBACK INTELIGENTE SI NADA FUNCIONA
+        if not opportunities:
+
+            fallback_symbols = ["NVDA", "AMD", "MSFT", "META", "GOOGL"]
+
+            for sym in fallback_symbols:
+                data = self.trader(sym)
+                opportunities.append(data)
+
+        # ?? NORMALIZAR OUTPUT
+        clean = []
+
+        for o in opportunities[:10]:
+
+            clean.append({
+                "symbol": o.get("symbol"),
+                "price": o.get("price") or o.get("price_now"),
+                "setup_score": o.get("setup_score") or o.get("score", 50),
+                "traffic_light": o.get("traffic_light", "yellow"),
+                "summary": o.get("summary", f"{o.get('symbol')} opportunity detected"),
+                "source": o.get("source", "multi_engine")
+            })
+
+        return {"items": clean}
