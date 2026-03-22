@@ -2,14 +2,8 @@ fastapi
 uvicorn
 python-multipart
 openai
-requests
 pandas
 numpy
 matplotlib
-scikit-learn
-sqlalchemy
-psycopg2-binary
+requests
 python-dotenv
-pydantic
-aiofiles
-httpx
