@@ -54,61 +54,57 @@ class ProductBrain:
         entry_high = round(price * 1.01, 2)
 
         return {
-            "ok": True,
-            "symbol": symbol,
-            "setup_score": score,
-            "traffic_light": light,
-            "price_now": round(price, 2),
-            "trade_plan": {
-                "action": action,
-                "entry_zone": [entry_low, entry_high],
-                "stop_loss": round(price * 0.95, 2),
-                "target_1": round(price * 1.05, 2),
-                "target_2": round(price * 1.10, 2),
-                "risk_reward_estimate": 1.5,
-            },
-            "insight_lines": [
-                f"{symbol} activo en mercado.",
-                msg,
-                f"Precio actual: {round(price,2)}"
-            ],
-            "summary": f"{symbol}: {action}. {msg}",
-            "friendly_recommendation": msg,
-        }
+    "ok": True,
+    "symbol": symbol,
+    "setup_score": score,
+    "traffic_light": light,
+    "price_now": round(price, 2),
+    "action": action,
+    "entry_zone": [entry_low, entry_high],
+    "stop_loss": round(price * 0.95, 2),
+    "target_1": round(price * 1.05, 2),
+    "target_2": round(price * 1.10, 2),
+    "risk_reward": 1.5,
+    "summary": msg
+}
+   def _chat_fallback(self, message: str) -> dict:
 
-    def _chat_fallback(self, message: str) -> str:
+    msg = message.lower()
 
-        msg = message.lower()
+    if "oro" in msg:
+        text = (
+            "Oro = protección, no crecimiento.\n\n"
+            "✔ Compra si hay crisis o inflación.\n"
+            "❌ No si buscas crecer rápido.\n\n"
+            "Mejor opción: ETF de oro o mineras."
+        )
 
-        if "oro" in msg:
-            return (
-                "Oro = protección.\n\n"
-                "Compra si:\n"
-                "- Hay crisis o inflación\n\n"
-                "No compres si:\n"
-                "- Buscas crecimiento rápido\n\n"
-                "Mejor opción ahora: ETFs o mineras."
-            )
+    elif "acciones" in msg:
+        text = (
+            "Ahora mismo:\n\n"
+            "🟢 Tecnología fuerte: NVDA, MSFT\n"
+            "🟡 Esperar: AAPL\n"
+            "🔴 Evitar: setups débiles\n\n"
+            "Estrategia: entrar solo en retrocesos, no perseguir precio."
+        )
 
-        if "guerra" in msg:
-            return (
-                "En guerra, el dinero va a:\n\n"
-                "1. Defensa (Lockheed, etc)\n"
-                "2. Energía (petróleo/gas)\n"
-                "3. Oro\n\n"
-                "Estrategia simple:\n"
-                "- 60% energía\n"
-                "- 20% defensa\n"
-                "- 20% oro"
-            )
+    elif "negocio" in msg:
+        text = (
+            "3 formas rápidas de hacer dinero online:\n\n"
+            "1. Automatización con IA (más rentable)\n"
+            "2. Chatbots WhatsApp\n"
+            "3. Servicios freelance con AI\n\n"
+            "La mejor: vender automatización a empresas."
+        )
 
-        if "negocio" in msg:
-            return (
-                "Opciones reales para empezar YA:\n\n"
-                "1. Agencia IA para empresas\n"
-                "2. Automatizaciones con n8n\n"
-                "3. Chatbots WhatsApp\n\n"
-                "El más rápido: vender automatización."
-            )
+    else:
+        text = "Dime qué quieres lograr y te digo exactamente qué hacer."
 
-        return "Dime qué quieres lograr y te digo exactamente qué hacer."
+    return {
+        "type": "chat",
+        "summary": text,
+        "details": {},
+        "action": "",
+        "confidence": 0.9,
+        "source": "product_brain"
+    }
