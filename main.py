@@ -8,9 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from core.jarvis_os import JarvisOS
+from core.product_brain import ProductBrain
 
-app = FastAPI(title="JARVIS OS", version="1.0.0")
+app = FastAPI(title="JARVIS OS", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,7 +33,10 @@ TASKS_FILE = os.path.join(DATA_DIR, "tasks.json")
 MEETINGS_FILE = os.path.join(DATA_DIR, "meetings.json")
 ASSETS_FILE = os.path.join(DATA_DIR, "assets.json")
 
-jarvis = JarvisOS()
+brain = ProductBrain()
+
+if os.path.isdir(UPLOAD_DIR):
+    app.mount("/dashboard/uploads", StaticFiles(directory=UPLOAD_DIR), name="dashboard_uploads")
 
 
 def load_json(path: str, default: Any) -> Any:
@@ -51,15 +54,11 @@ def save_json(path: str, data: Any) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-if os.path.isdir(UPLOAD_DIR):
-    app.mount("/dashboard/uploads", StaticFiles(directory=UPLOAD_DIR), name="dashboard_uploads")
-
-
 @app.get("/")
 def root():
     return {
         "status": "JARVIS OS RUNNING",
-        "health": jarvis.health(),
+        "health": brain.health(),
     }
 
 
@@ -67,22 +66,16 @@ def root():
 def health():
     return {
         "status": "ok",
-        "jarvis_loaded": jarvis is not None,
-        "jarvis_health": jarvis.health(),
+        "brain": brain.health(),
     }
 
 
 @app.get("/dashboard")
 def dashboard():
-    dashboard_file = os.path.join(DASHBOARD_DIR, "jarvis_futuristic.html")
-    if os.path.exists(dashboard_file):
-        return FileResponse(dashboard_file)
-    return JSONResponse({"ok": False, "error": "dashboard/jarvis_futuristic.html not found"}, status_code=404)
-
-
-@app.get("/docs-check")
-def docs_check():
-    return {"ok": True, "message": "Swagger docs should be available at /docs"}
+    file_path = os.path.join(DASHBOARD_DIR, "jarvis_futuristic.html")
+    if not os.path.exists(file_path):
+        return JSONResponse({"ok": False, "error": "dashboard file not found"}, status_code=404)
+    return FileResponse(file_path)
 
 
 @app.get("/dashboard/home")
@@ -110,36 +103,57 @@ def dashboard_home():
 @app.post("/chat")
 async def chat(payload: Dict[str, Any]):
     message = str(payload.get("message", "")).strip()
-
     if not message:
         return JSONResponse(
             {
-                "type": "general",
                 "reply": "Escribe un mensaje primero.",
                 "summary": "Escribe un mensaje primero.",
-                "details": {},
-                "action": "Try again with a specific request.",
-                "confidence": 0.0,
-                "source": "validation",
             },
             status_code=400,
         )
 
-    result = jarvis.chat(message)
-
-    # Compatibility with existing dashboard frontend
-    if isinstance(result, dict):
-        result.setdefault("reply", result.get("summary", "No reply."))
-        result.setdefault("summary", result.get("reply", "No reply."))
-
+    result = brain.respond(message)
+    result.setdefault("reply", result.get("summary", "No reply."))
+    result.setdefault("summary", result.get("reply", "No reply."))
     return result
+
+
+@app.post("/jarvis/auto")
+def jarvis_auto():
+    return brain.auto_brief()
+
+
+@app.post("/dashboard/trader")
+def dashboard_trader(payload: Dict[str, Any]):
+    symbol = str(payload.get("symbol", "AAPL")).strip() or "AAPL"
+    result = brain.trader(symbol)
+    return result
+
+
+@app.get("/dashboard/recommendations")
+def dashboard_recommendations():
+    watchlist = ["NVDA", "AAPL", "MSFT", "ASML"]
+    items = []
+
+    for symbol in watchlist:
+        result = brain.trader(symbol)
+        items.append(
+            {
+                "symbol": result.get("symbol", symbol),
+                "setup_score": result.get("setup_score", 0),
+                "traffic_light": result.get("traffic_light", "yellow"),
+                "summary": result.get("summary", ""),
+                "friendly_recommendation": result.get("friendly_recommendation", ""),
+            }
+        )
+
+    return {"items": items}
 
 
 @app.post("/dashboard/tasks")
 def add_task(payload: Dict[str, Any]):
     tasks = load_json(TASKS_FILE, [])
-
-    task = {
+    item = {
         "id": len(tasks) + 1,
         "text": str(payload.get("text", "")).strip(),
         "priority": str(payload.get("priority", "medium")).strip() or "medium",
@@ -147,12 +161,12 @@ def add_task(payload: Dict[str, Any]):
         "done": False,
     }
 
-    if not task["text"]:
+    if not item["text"]:
         return JSONResponse({"ok": False, "error": "Task text is required"}, status_code=400)
 
-    tasks.append(task)
+    tasks.append(item)
     save_json(TASKS_FILE, tasks)
-    return {"ok": True, "task": task}
+    return {"ok": True, "task": item}
 
 
 @app.post("/dashboard/tasks/{task_id}/toggle")
@@ -173,7 +187,6 @@ def toggle_task(task_id: int):
 @app.post("/dashboard/meetings")
 def add_meeting(payload: Dict[str, Any]):
     meetings = load_json(MEETINGS_FILE, [])
-
     item = {
         "title": str(payload.get("title", "")).strip(),
         "time": str(payload.get("time", "")).strip(),
@@ -188,51 +201,6 @@ def add_meeting(payload: Dict[str, Any]):
     return {"ok": True, "meeting": item}
 
 
-@app.post("/dashboard/trader")
-def dashboard_trader(payload: Dict[str, Any]):
-    symbol = str(payload.get("symbol", "AAPL")).strip() or "AAPL"
-    result = jarvis.trader(symbol)
-
-    if isinstance(result, dict):
-        result.setdefault("symbol", symbol.upper())
-        result.setdefault("setup_score", None)
-        result.setdefault("traffic_light", "red")
-        result.setdefault("technicals", {"price": None})
-        result.setdefault(
-            "trade_plan",
-            {
-                "action": "NO TRADE",
-                "entry_zone": [],
-                "stop_loss": "-",
-                "target_1": "-",
-                "target_2": "-",
-                "risk_reward_estimate": "-",
-            },
-        )
-        result.setdefault("narrative", [result.get("summary", "No narrative.")])
-        result.setdefault("summary", "No summary available.")
-    return result
-
-
-@app.get("/dashboard/recommendations")
-def dashboard_recommendations():
-    watchlist = ["NVDA", "AAPL", "MSFT", "AMZN"]
-    items = []
-
-    for symbol in watchlist:
-        result = jarvis.trader(symbol)
-        items.append(
-            {
-                "symbol": result.get("symbol", symbol),
-                "setup_score": result.get("setup_score"),
-                "traffic_light": result.get("traffic_light", "orange"),
-                "summary": result.get("summary", "No summary available."),
-            }
-        )
-
-    return {"items": items}
-
-
 @app.post("/dashboard/upload")
 async def dashboard_upload(file: UploadFile = File(...)):
     filename = os.path.basename(file.filename)
@@ -243,15 +211,16 @@ async def dashboard_upload(file: UploadFile = File(...)):
         f.write(content)
 
     assets = load_json(ASSETS_FILE, [])
-    asset = {
-        "filename": filename,
-        "kind": "file",
-        "mime_type": file.content_type,
-    }
-    assets.append(asset)
+    assets.append(
+        {
+            "filename": filename,
+            "kind": "file",
+            "mime_type": file.content_type,
+        }
+    )
     save_json(ASSETS_FILE, assets)
 
-    return {"ok": True, "asset": asset}
+    return {"ok": True, "filename": filename}
 
 
 @app.get("/dashboard/assets")

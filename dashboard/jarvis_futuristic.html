@@ -3,176 +3,100 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#08131f" />
   <title>JARVIS // Command Center</title>
-  <link rel="manifest" href="/dashboard/manifest.json" />
   <style>
     :root{
-      --bg:#06111b;
-      --bg2:#091521;
-      --card:#0b1623;
-      --card2:#102133;
-      --line:rgba(0,230,255,.14);
-      --cyan:#7ff6ff;
-      --cyan2:#13dfff;
-      --white:#eef7ff;
-      --soft:#a3b7c9;
-      --ok:#45ffc1;
-      --warn:#ffbb55;
+      --bg:#07111a;
+      --card:#0b1723;
+      --card2:#112235;
+      --line:rgba(83,225,255,.14);
+      --cyan:#89f7ff;
+      --cyan2:#44f0ff;
+      --white:#eef8ff;
+      --soft:#9fb5c8;
+      --ok:#49ffc2;
+      --warn:#ffd45a;
       --bad:#ff6b6b;
-      --blue:#67a8ff;
-      --shadow:0 14px 38px rgba(0,0,0,.30);
+      --shadow:0 18px 40px rgba(0,0,0,.28);
       --radius:24px;
     }
-    body.light{
-      --bg:#f4f8fc;
-      --bg2:#ffffff;
-      --card:#ffffff;
-      --card2:#f6fbff;
-      --line:rgba(10,55,90,.10);
-      --cyan:#007db0;
-      --cyan2:#0aa6d8;
-      --white:#12212f;
-      --soft:#5a7286;
-      --shadow:0 10px 28px rgba(22,60,90,.08);
-    }
-
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: Inter, system-ui, Arial, sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(0,230,255,.12), transparent 24%),
-        radial-gradient(circle at top right, rgba(76,255,198,.08), transparent 18%),
-        linear-gradient(180deg, var(--bg) 0%, #030913 100%);
+        radial-gradient(circle at top left, rgba(68,240,255,.12), transparent 24%),
+        linear-gradient(180deg, #08131d 0%, #050c13 100%);
       color:var(--white);
       min-height:100vh;
     }
-    body.light{
-      background:linear-gradient(180deg, #f4f8fc 0%, #eef5fb 100%);
-    }
-
-    .shell{max-width:1520px;margin:0 auto;padding:18px}
-    .topbar{
-      display:grid;
-      grid-template-columns:1.25fr .75fr;
-      gap:18px;
-      margin-bottom:18px;
-    }
+    .shell{max-width:1500px;margin:0 auto;padding:18px}
+    .topbar{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px}
     .hero,.quick,.card{
-      background:linear-gradient(180deg, rgba(10,22,34,.96), rgba(7,16,25,.96));
+      background:linear-gradient(180deg, rgba(10,22,34,.98), rgba(7,16,25,.98));
       border:1px solid var(--line);
       border-radius:28px;
       box-shadow:var(--shadow);
     }
-    body.light .hero, body.light .quick, body.light .card{
-      background:linear-gradient(180deg, #ffffff, #f7fbff);
-    }
-
-    .hero{
-      padding:24px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:18px;
-    }
-    .hero-left{display:flex;gap:18px;align-items:center;min-width:0}
+    .hero{padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+    .hero-left{display:flex;gap:18px;align-items:center}
     .orb{
       width:84px;height:84px;border-radius:50%;
       background: radial-gradient(circle, rgba(28,231,255,1) 0%, rgba(28,231,255,.46) 18%, rgba(9,22,34,.2) 58%, rgba(0,0,0,0) 72%);
       box-shadow:0 0 28px rgba(28,231,255,.55), inset 0 0 26px rgba(28,231,255,.25);
-      animation:pulse 2.3s ease-in-out infinite;
-      flex:0 0 auto;
     }
-    @keyframes pulse{
-      0%{transform:scale(.97);opacity:.82}
-      50%{transform:scale(1.03);opacity:1}
-      100%{transform:scale(.97);opacity:.82}
-    }
-    h1{margin:0;font-size:clamp(34px,4vw,58px);line-height:1}
-    .subtitle{margin-top:8px;color:var(--cyan);font-size:clamp(15px,2vw,22px)}
+    h1{margin:0;font-size:56px;line-height:1}
+    .subtitle{margin-top:8px;color:var(--cyan);font-size:20px}
     .meta{margin-top:12px;color:var(--soft);display:flex;flex-wrap:wrap;gap:12px;font-size:14px}
     .header-actions{display:flex;align-items:center;gap:12px}
-    .theme-btn,.ghost-btn,.primary-btn{
+    .primary-btn,.ghost-btn{
       border:none;border-radius:18px;padding:14px 16px;cursor:pointer;font-weight:700;
     }
-    .theme-btn,.ghost-btn{
-      background:var(--card2);color:var(--white);border:1px solid rgba(255,255,255,.06)
-    }
+    .ghost-btn{background:var(--card2);color:var(--white);border:1px solid rgba(255,255,255,.06)}
     .primary-btn{background:linear-gradient(180deg, var(--cyan2), #0fb8dd);color:#06202a}
     .status-chip{
       display:inline-flex;align-items:center;gap:8px;padding:12px 16px;
       border-radius:999px;border:1px solid rgba(28,231,255,.22);color:var(--cyan);font-weight:700;
     }
     .status-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
-
-    .quick{
-      padding:18px;
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:12px;
-    }
-    .quick-card{
-      padding:16px 18px;border-radius:22px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
-    }
-    .quick-label{
-      font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px
-    }
-    .quick-value{
-      font-size:clamp(22px,2.3vw,28px);font-weight:800;line-height:1.2
-    }
-
+    .quick{padding:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .quick-card{padding:16px 18px;border-radius:22px;background:var(--card2);border:1px solid rgba(255,255,255,.05)}
+    .quick-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px}
+    .quick-value{font-size:28px;font-weight:800;line-height:1.2}
     .main{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
     .col{display:grid;gap:18px;align-content:start}
     .card{padding:18px;border-radius:28px}
     .section-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
-    .section-title{margin:0;font-size:clamp(24px,2.4vw,36px);color:var(--cyan)}
+    .section-title{margin:0;font-size:32px;color:var(--cyan)}
     .subtle{color:var(--soft);font-size:14px}
-
-    .command-bar{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+    .command-bar{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center}
     .input,.select{
       width:100%;border:none;outline:none;border-radius:18px;background:var(--card2);color:var(--white);
       padding:16px 18px;font-size:16px;border:1px solid rgba(255,255,255,.05)
     }
-
-    .chat-log{
-      margin-top:14px;display:grid;gap:12px;max-height:360px;overflow:auto;padding-right:4px
-    }
-    .bubble{
-      padding:14px 16px;border-radius:18px;line-height:1.5;font-size:15px;white-space:pre-wrap
-    }
+    .chat-log{margin-top:14px;display:grid;gap:12px;max-height:360px;overflow:auto;padding-right:4px}
+    .bubble{padding:14px 16px;border-radius:18px;line-height:1.5;font-size:15px;white-space:pre-wrap}
     .bubble.user{background:#16344d;border:1px solid rgba(28,231,255,.15)}
     .bubble.jarvis{background:var(--card2);border:1px solid rgba(76,255,198,.10)}
-
-    .split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .stack{display:grid;gap:12px}
-    .row-card{
+    .row-card,.brief{
       padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
     }
     .row-title{font-weight:700;font-size:15px}
     .row-sub{font-size:13px;color:var(--soft);margin-top:4px}
-    .pill{
-      display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;
-      font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04)
-    }
-    .priority-high{color:#ffdf9e}
-    .priority-medium{color:#9be9ff}
-    .priority-low{color:#c7ffc2}
-
-    .task-item{
-      display:flex;justify-content:space-between;gap:10px;align-items:flex-start
-    }
-    .task-item.done .row-title{text-decoration:line-through;opacity:.7}
+    .task-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
     .check-btn{
       width:22px;height:22px;border-radius:8px;border:1px solid rgba(255,255,255,.12);
       background:#102030;color:var(--ok);cursor:pointer
     }
-
     .add-inline{display:grid;grid-template-columns:1fr 130px 110px auto;gap:10px;margin-top:12px}
     .add-inline.meeting{grid-template-columns:1fr 120px 1fr auto}
-
-    .brief-list,.asset-grid,.recommendations{display:grid;gap:12px}
-    .brief{padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05);line-height:1.5}
+    .market-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .metric{padding:14px;border-radius:20px;background:var(--card2);border:1px solid rgba(255,255,255,.05)}
+    .metric-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+    .metric-value{font-size:28px;font-weight:800}
+    .trader-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .asset-grid,.recommendations{display:grid;gap:12px}
     .asset{
       padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
     }
@@ -183,29 +107,19 @@
       border:1.5px dashed rgba(28,231,255,.28);background:linear-gradient(180deg, rgba(10,24,38,.78), rgba(9,18,29,.88));
       border-radius:22px;padding:22px;text-align:center;color:var(--soft);cursor:pointer
     }
-    body.light .upload-zone{background:#f6fbff}
-    .upload-zone.drag{border-color:var(--cyan2);background:rgba(28,231,255,.08)}
     .upload-input{display:none}
-
-    .market-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .metric{padding:14px;border-radius:20px;background:var(--card2);border:1px solid rgba(255,255,255,.05)}
-    .metric-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
-    .metric-value{font-size:28px;font-weight:800}
-    .trader-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    .traffic{
-      width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle
+    .tag-ok,.tag-warn,.tag-bad{
+      display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:700
     }
-    .t-blue{background:var(--blue);box-shadow:0 0 12px var(--blue)}
-    .t-green{background:var(--ok);box-shadow:0 0 12px var(--ok)}
-    .t-orange{background:var(--warn);box-shadow:0 0 12px var(--warn)}
-    .t-red{background:var(--bad);box-shadow:0 0 12px var(--bad)}
-
+    .tag-ok{background:rgba(73,255,194,.12);color:var(--ok)}
+    .tag-warn{background:rgba(255,212,90,.12);color:var(--warn)}
+    .tag-bad{background:rgba(255,107,107,.12);color:var(--bad)}
     @media (max-width: 1280px){
       .topbar,.main{grid-template-columns:1fr}
     }
     @media (max-width: 860px){
       .hero{flex-direction:column;align-items:flex-start}
-      .quick,.split,.market-head,.trader-grid{grid-template-columns:1fr}
+      .market-head,.trader-grid{grid-template-columns:1fr}
       .command-bar{grid-template-columns:1fr}
       .add-inline,.add-inline.meeting{grid-template-columns:1fr}
       .shell{padding:12px}
@@ -224,13 +138,13 @@
             <div class="meta">
               <span id="greeting">Loading...</span>
               <span id="todayDate">--</span>
-              <span id="ownerName">Created by Juan Camilo Montenegro</span>
+              <span id="ownerName">Owner: Juan Camilo</span>
             </div>
           </div>
         </div>
 
         <div class="header-actions">
-          <button id="themeBtn" class="theme-btn">ðŸŒ™</button>
+          <button id="autoBtn" class="primary-btn">AUTO JARVIS</button>
           <div class="status-chip">
             <span class="status-dot"></span>
             <span>SYSTEM ONLINE</span>
@@ -263,26 +177,25 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Talk to JARVIS</h2>
-            <div class="subtle">Escribe o habla. JARVIS responde como una persona, corto y claro.</div>
+            <div class="subtle">Escribe o habla. JARVIS responde claro y útil.</div>
           </div>
 
           <div class="command-bar">
-            <input id="chatInput" class="input" placeholder="EscrÃ­bele a JARVIS..." />
+            <input id="chatInput" class="input" placeholder="Escríbele a JARVIS..." />
             <button id="voiceBtn" class="ghost-btn">🎤 Voice</button>
-<button id="stopVoiceBtn" class="ghost-btn">⏹ Stop</button>
-<button id="toggleVoiceBtn" class="ghost-btn">🔇 Voice OFF</button>
+            <button id="stopVoiceBtn" class="ghost-btn">■ Stop</button>
             <button id="sendBtn" class="primary-btn">Send</button>
           </div>
 
           <div class="chat-log" id="chatLog">
-            <div class="bubble jarvis">Hola. Â¿QuÃ© necesitas hoy?</div>
+            <div class="bubble jarvis">Hola. ¿Qué necesitas hoy?</div>
           </div>
         </section>
 
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Tasks</h2>
-            <div class="subtle">Organizadas por prioridad y dÃ­a. Simple y usable.</div>
+            <div class="subtle">Organizadas por prioridad y día. Simple y usable.</div>
           </div>
 
           <div class="stack" id="tasksList"></div>
@@ -306,7 +219,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Meetings</h2>
-            <div class="subtle">Agenda reuniones rÃ¡pido desde aquÃ­.</div>
+            <div class="subtle">Agenda reuniones rápido desde aquí.</div>
           </div>
 
           <div class="stack" id="meetingsList"></div>
@@ -360,7 +273,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Recommended Stocks</h2>
-            <div class="subtle">Ideas del dÃ­a con base y argumento.</div>
+            <div class="subtle">Ideas del día explicadas de forma simple.</div>
           </div>
           <div class="recommendations" id="recommendations"></div>
         </section>
@@ -374,7 +287,7 @@
           <label id="uploadZone" class="upload-zone">
             <input id="fileInput" class="upload-input" type="file" multiple />
             <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;">Drop files here or click to upload</div>
-            <div>PDF, imÃ¡genes, videos, audio y archivos generales.</div>
+            <div>PDF, imágenes, videos, audio y archivos generales.</div>
           </label>
 
           <div class="asset-grid" id="assetGrid"></div>
@@ -385,28 +298,7 @@
 
 <script>
   const qs = (id) => document.getElementById(id);
-  const state = {
-voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorage.getItem("jarvis-theme") || "dark" };
-
-  function setTheme(theme){
-    state.currentTheme = theme;
-    if(theme === "light"){
-      document.body.classList.add("light");
-      qs("themeBtn").textContent = "â˜€ï¸";
-    }else{
-      document.body.classList.remove("light");
-      qs("themeBtn").textContent = "ðŸŒ™";
-    }
-    localStorage.setItem("jarvis-theme", theme);
-  }
-
-  function trafficChip(name){
-    const value = (name || "").toLowerCase();
-    if(value === "blue") return `<span><span class="traffic t-blue"></span>Excellent</span>`;
-    if(value === "green") return `<span><span class="traffic t-green"></span>Good</span>`;
-    if(value === "orange") return `<span><span class="traffic t-orange"></span>Stand by</span>`;
-    return `<span><span class="traffic t-red"></span>Avoid</span>`;
-  }
+  const state = { recognition: null, listening: false };
 
   function addBubble(text, who="jarvis"){
     const div = document.createElement("div");
@@ -416,21 +308,19 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
     qs("chatLog").scrollTop = qs("chatLog").scrollHeight;
   }
 
-  function speak(text){
+  function trafficText(level){
+    const v = (level || "").toLowerCase();
+    if(v === "green") return "Go";
+    if(v === "yellow") return "Wait";
+    return "Avoid";
+  }
 
- if(!state.voiceEnabled) return;
-
- if(!window.speechSynthesis) return;
-
- const utter = new SpeechSynthesisUtterance(text);
-
- utter.lang = "es-ES";
- utter.rate = 1.0;
-
- window.speechSynthesis.cancel();
- window.speechSynthesis.speak(utter);
-
-}
+  function trafficTag(level){
+    const v = (level || "").toLowerCase();
+    if(v === "green") return `<span class="tag-ok">● Go</span>`;
+    if(v === "yellow") return `<span class="tag-warn">● Wait</span>`;
+    return `<span class="tag-bad">● Avoid</span>`;
+  }
 
   async function loadHome(){
     const res = await fetch("/dashboard/home");
@@ -444,7 +334,7 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
     qs("assetsCount").textContent = data.assets_count || 0;
 
     if(data.next_meeting){
-      qs("nextMeeting").textContent = `${data.next_meeting.time} â€¢ ${data.next_meeting.title}`;
+      qs("nextMeeting").textContent = `${data.next_meeting.time} • ${data.next_meeting.title}`;
     }else{
       qs("nextMeeting").textContent = "No meetings";
     }
@@ -461,21 +351,18 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
       return;
     }
 
-    const priorityOrder = {high:0, medium:1, low:2};
-    items.sort((a,b)=> (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9));
-
     items.forEach(item => {
       const div = document.createElement("div");
-      div.className = "row-card task-item " + (item.done ? "done" : "");
+      div.className = "row-card task-item";
       div.innerHTML = `
         <div>
           <div class="row-title">${item.text}</div>
-          <div class="row-sub">${item.day || "today"} â€¢ <span class="priority-${item.priority}">${item.priority}</span></div>
+          <div class="row-sub">${item.day || "today"} • ${item.priority || "medium"}</div>
         </div>
-        <button class="check-btn">${item.done ? "âœ“" : ""}</button>
+        <button class="check-btn">${item.done ? "✓" : ""}</button>
       `;
       div.querySelector(".check-btn").onclick = async () => {
-        await fetch(`/dashboard/tasks/${item.id}/toggle`, {method:"POST"});
+        await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
         await loadHome();
       };
       box.appendChild(div);
@@ -494,7 +381,7 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
       const div = document.createElement("div");
       div.className = "row-card";
       div.innerHTML = `
-        <div class="row-title">${item.time} â€¢ ${item.title}</div>
+        <div class="row-title">${item.time} • ${item.title}</div>
         <div class="row-sub">${item.notes || ""}</div>
       `;
       box.appendChild(div);
@@ -550,43 +437,40 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
     });
 
     const data = await res.json();
-    const reply = data.reply || "No reply.";
+    const reply = data.reply || data.summary || "No reply.";
     addBubble(reply, "jarvis");
-    speak(reply);
+  }
+
+  async function runAutoJarvis(){
+    const res = await fetch("/jarvis/auto", {method:"POST"});
+    const data = await res.json();
+    addBubble(data.reply || data.summary || "Auto JARVIS completed.", "jarvis");
+    await loadRecommendations();
   }
 
   function initVoice(){
-    const btn = qs("voiceBtn");
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if(!SpeechRecognition){
-      btn.textContent = "ðŸŽ¤ Unsupported";
-      btn.disabled = true;
-      return;
-    }
+    if(!SpeechRecognition) return;
 
     state.recognition = new SpeechRecognition();
     state.recognition.lang = "es-ES";
     state.recognition.interimResults = false;
     state.recognition.maxAlternatives = 1;
 
-    state.recognition.onstart = () => {
-      state.listening = true;
-      btn.textContent = "â— Listening...";
-    };
-    state.recognition.onend = () => {
-      state.listening = false;
-      btn.textContent = "ðŸŽ¤ Voice";
-    };
+    state.recognition.onstart = () => { state.listening = true; };
+    state.recognition.onend = () => { state.listening = false; };
     state.recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       qs("chatInput").value = transcript;
       await sendChat();
     };
 
-    btn.onclick = () => {
-      if(state.listening){ state.recognition.stop(); }
-      else { state.recognition.start(); }
+    qs("voiceBtn").onclick = () => {
+      if(state.recognition) state.recognition.start();
+    };
+
+    qs("stopVoiceBtn").onclick = () => {
+      if(state.recognition && state.listening) state.recognition.stop();
     };
   }
 
@@ -599,36 +483,25 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
     });
     const data = await res.json();
 
-    qs("traderSymbol").textContent = data.symbol || raw;
+    qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
     qs("setupScore").textContent = data.setup_score ?? "--";
-    qs("trafficLightText").innerHTML = trafficChip(data.traffic_light || "red");
-    qs("priceNow").textContent = data.technicals?.price ?? "--";
+    qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
+    qs("priceNow").textContent = data.price_now ?? "--";
 
-    const plan = qs("tradePlan");
-    plan.innerHTML = "";
     const p = data.trade_plan || {};
-    [
-      `Action: ${p.action || "-"}`,
-      `Entry zone: ${(p.entry_zone || []).join(" - ") || "-"}`,
-      `Stop loss: ${p.stop_loss ?? "-"}`,
-      `Target 1: ${p.target_1 ?? "-"}`,
-      `Target 2: ${p.target_2 ?? "-"}`,
-      `Risk/Reward: ${p.risk_reward_estimate ?? "-"}`,
-    ].forEach(line => {
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.textContent = line;
-      plan.appendChild(div);
-    });
+    const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
 
-    const narrative = qs("tradeNarrative");
-    narrative.innerHTML = "";
-    (data.narrative || [data.summary || "No narrative"]).forEach(line => {
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.textContent = line;
-      narrative.appendChild(div);
-    });
+    qs("tradePlan").innerHTML = `
+      <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
+      <div class="brief"><strong>Entry zone:</strong> ${entry}</div>
+      <div class="brief"><strong>Stop loss:</strong> ${p.stop_loss ?? "-"}</div>
+      <div class="brief"><strong>Target 1:</strong> ${p.target_1 ?? "-"}</div>
+      <div class="brief"><strong>Target 2:</strong> ${p.target_2 ?? "-"}</div>
+      <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
+    `;
+
+    const lines = data.insight_lines || [data.summary || "No insight available."];
+    qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
   }
 
   async function loadRecommendations(){
@@ -644,17 +517,17 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
     }
 
     items.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = `
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+      const card = document.createElement("div");
+      card.className = "brief";
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
           <strong>${item.symbol}</strong>
-          <span>${trafficChip(item.traffic_light)}</span>
+          ${trafficTag(item.traffic_light)}
         </div>
-        <div style="margin-top:8px">Score: ${item.setup_score}</div>
-        <div style="margin-top:6px;color:var(--soft)">${item.reason || item.summary || ""}</div>
+        <div style="margin-top:8px">Score: ${item.setup_score ?? "--"}</div>
+        <div style="margin-top:8px;color:var(--white)">${item.friendly_recommendation || item.summary || ""}</div>
       `;
-      box.appendChild(div);
+      box.appendChild(card);
     });
   }
 
@@ -676,7 +549,7 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
       div.className = "asset";
       div.innerHTML = `
         <div class="name">${asset.filename}</div>
-        <div class="meta">${asset.kind} â€¢ ${asset.mime_type || "unknown"}</div>
+        <div class="meta">${asset.kind} • ${asset.mime_type || "unknown"}</div>
         <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
       `;
       box.appendChild(div);
@@ -703,41 +576,29 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
       if(e.target.files?.length) await uploadFiles(e.target.files);
     };
 
-    ["dragenter","dragover"].forEach(ev => {
-      zone.addEventListener(ev, e => {
-        e.preventDefault();
-        zone.classList.add("drag");
-      });
+    zone.addEventListener("dragover", e => {
+      e.preventDefault();
     });
 
-    ["dragleave","drop"].forEach(ev => {
-      zone.addEventListener(ev, e => {
-        e.preventDefault();
-        zone.classList.remove("drag");
-      });
-    });
-
-    zone.addEventListener("drop", async (e) => {
+    zone.addEventListener("drop", async e => {
+      e.preventDefault();
       const files = e.dataTransfer?.files;
       if(files?.length) await uploadFiles(files);
     });
   }
 
-  function initTheme(){
-    setTheme(state.currentTheme);
-    qs("themeBtn").onclick = () => setTheme(state.currentTheme === "dark" ? "light" : "dark");
-  }
-
   function initEvents(){
     qs("sendBtn").onclick = () => sendChat();
-    qs("chatInput").addEventListener("keydown", (e) => { if(e.key === "Enter") sendChat(); });
+    qs("chatInput").addEventListener("keydown", e => {
+      if(e.key === "Enter") sendChat();
+    });
     qs("addTaskBtn").onclick = addTask;
     qs("addMeetingBtn").onclick = addMeeting;
     qs("analyzeBtn").onclick = analyzeTrader;
+    qs("autoBtn").onclick = runAutoJarvis;
   }
 
   async function boot(){
-    initTheme();
     initEvents();
     initVoice();
     initUpload();
@@ -746,6 +607,7 @@ voiceEnabled:false, listening:false, recognition:null, currentTheme: localStorag
     await analyzeTrader();
     await loadRecommendations();
   }
+
   boot();
 </script>
 </body>
