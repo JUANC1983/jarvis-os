@@ -1,0 +1,14 @@
+        self.engine_map: Dict[str, Tuple[str, str]] = {
+            "premium_trader": ("core.premium_trader_engine", "PremiumTraderEngine"),
+            "market_intelligence": ("core.market_intelligence_engine", "MarketIntelligenceEngine"),
+            "opportunity_radar": ("core.opportunity_radar_engine", "OpportunityRadarEngine"),
+            "wealth_optimizer": ("core.wealth_optimizer", "WealthOptimizer"),
+            "risk_analyst": ("core.global_risk_monitor", "GlobalRiskMonitor"),
+            "trader_alpha": ("core.trader_alpha_engine", "TraderAlphaEngine"),
+            "medical_supreme": ("core.medical_supreme_engine", "MedicalSupremeEngine"),
+            "fitness_performance": ("core.fitness_performance_engine", "FitnessPerformanceEngine"),
+            "legal_compliance": ("core.legal_compliance_engine", "LegalComplianceEngine"),
+            "executive_council": ("core.real_agent_council", "RealAgentCouncil"),
+            "daily_ops": ("core.daily_ops_engine", "DailyOpsEngine"),
+            "knowledge_engine": ("core.knowledge_engine", "KnowledgeEngine"),
+        }

@@ -154,7 +154,7 @@ class AgentOrchestratorPro:
         }
 
     def execute_trader(self, symbol_or_prompt: str) -> Dict[str, Any]:
-        preferred_agents = ["trader_alpha", "market_intelligence"]
+        preferred_agents = ["premium_trader", "trader_alpha"]
 
         for agent_name in preferred_agents:
             engine = self._load_engine(agent_name)
@@ -219,3 +219,4 @@ class AgentOrchestratorPro:
             "summary": "Trader engines unavailable.",
             "source": "fallback",
         }
+
