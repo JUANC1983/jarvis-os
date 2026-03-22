@@ -1,9 +1,17 @@
-﻿from fastapi import FastAPI
+﻿from pathlib import Path
+from datetime import datetime
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
 from core.product_brain import ProductBrain
 
 app = FastAPI()
 brain = ProductBrain()
+
+BASE_DIR = Path(__file__).resolve().parent
+DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
 
 
 class ChatRequest(BaseModel):
@@ -15,32 +23,71 @@ def root():
     return {"status": "JARVIS RUNNING"}
 
 
+@app.get("/health")
+def health():
+    try:
+        brain_health = brain.health() if hasattr(brain, "health") else {"status": "unknown"}
+    except Exception as e:
+        brain_health = {"status": "error", "error": str(e)}
+
+    return {
+        "status": "ok",
+        "brain": brain_health,
+        "dashboard_html_exists": DASHBOARD_HTML.exists(),
+        "dashboard_html": str(DASHBOARD_HTML),
+    }
+
+
 @app.get("/dashboard")
-def dashboard_root():
-    return {"status": "dashboard connected"}
+def dashboard():
+    if DASHBOARD_HTML.exists():
+        return FileResponse(DASHBOARD_HTML)
+    raise HTTPException(status_code=404, detail="Dashboard not found")
+
+
+@app.get("/dashboard/home")
+def dashboard_home():
+    return {
+        "greeting": "JARVIS ready",
+        "date": datetime.utcnow().strftime("%A %d %B %Y"),
+        "owner_name": "Juan Camilo",
+        "top_priority": "Protect capital",
+        "tasks_open": 0,
+        "assets_count": 0,
+        "next_meeting": None,
+        "tasks": [],
+        "meetings": [],
+    }
 
 
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
-        result = brain.respond(req.message)
+        if hasattr(brain, "respond"):
+            result = brain.respond(req.message)
+        elif hasattr(brain, "chat"):
+            result = brain.chat(req.message)
+        else:
+            raise Exception("ProductBrain has neither respond() nor chat()")
 
         return {
             "status": "ok",
-            "response": result
+            "response": result,
         }
 
     except Exception as e:
         return {
             "status": "error",
-            "response": str(e)
+            "reply": f"Error en chat: {e}",
+            "response": {},
         }
 
 
 @app.post("/dashboard/trader")
 def trader(data: dict):
     try:
-        return brain.trader(data.get("symbol", "AAPL"))
+        symbol = data.get("symbol", "AAPL")
+        return brain.trader(symbol)
     except Exception as e:
         return {"error": str(e)}
 
