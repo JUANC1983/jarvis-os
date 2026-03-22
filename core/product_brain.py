@@ -7,17 +7,13 @@ class ProductBrain:
     def health(self):
         return {"status": "ok", "brain": "connected"}
 
-    # =========================
-    # CHAT
-    # =========================
     def respond(self, message: str) -> dict:
         msg = message.lower()
 
-        # Routing inteligente
-        if any(x in msg for x in ["stock", "trade", "market", "ticker"]):
+        if any(x in msg for x in ["stock", "trade", "market", "ticker", "acciones"]):
             return self._best_opportunity()
 
-        if any(x in msg for x in ["best", "opportunity", "money"]):
+        if any(x in msg for x in ["best", "opportunity", "money", "invertir"]):
             return self._best_opportunity()
 
         return self._chat_natural(message)
@@ -25,14 +21,26 @@ class ProductBrain:
     def _chat_natural(self, message: str):
         return {
             "type": "chat",
-            "reply": f"Entendido. Estoy procesando: '{message}'. Pregunta por acciones, mercados o oportunidades.",
+            "reply": f"Entendido. Procesando: '{message}'. Puedo darte análisis de acciones en tiempo real.",
             "summary": "Conversación general",
-            "confidence": 0.7
+            "confidence": 0.8
         }
 
-    # =========================
-    # BEST OPPORTUNITY
-    # =========================
+    def _normalize_symbol(self, symbol: str) -> str:
+        symbol = symbol.upper().strip()
+
+        mapping = {
+            "TESLA": "TSLA",
+            "GOOGLE": "GOOGL",
+            "FACEBOOK": "META",
+            "AMAZON": "AMZN",
+            "APPLE": "AAPL",
+            "MICROSOFT": "MSFT",
+            "NVIDIA": "NVDA"
+        }
+
+        return mapping.get(symbol, symbol)
+
     def _best_opportunity(self):
 
         symbols = ["NVDA", "MSFT", "AAPL", "AMZN", "META"]
@@ -61,7 +69,7 @@ class ProductBrain:
                     "price": round(float(close.iloc[-1]), 2),
                     "setup_score": int(score),
                     "traffic_light": "green" if score >= 75 else "yellow" if score >= 60 else "red",
-                    "summary": f"{symbol} mostrando {'fuerza' if trend else 'debilidad'} con score {score}"
+                    "summary": f"{symbol} con {'fuerza' if trend else 'debilidad'} (score {score})"
                 })
 
             except:
@@ -77,15 +85,13 @@ class ProductBrain:
             "summary": f"{best['symbol']} | Score {best['setup_score']}",
             "details": best,
             "action": "BUY" if best["setup_score"] >= 75 else "WAIT",
-            "confidence": 0.85
+            "confidence": 0.9
         }
 
-    # =========================
-    # TRADER
-    # =========================
     def trader(self, symbol: str):
 
         try:
+            symbol = self._normalize_symbol(symbol)
             data = yf.Ticker(symbol).history(period="1mo")
 
             if data.empty:
@@ -124,9 +130,6 @@ class ProductBrain:
         except Exception as e:
             return {"error": str(e)}
 
-    # =========================
-    # RECOMMENDATIONS
-    # =========================
     def recommendations(self):
 
         symbols = ["NVDA", "MSFT", "AAPL", "META"]
