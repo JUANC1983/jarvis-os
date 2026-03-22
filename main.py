@@ -3,9 +3,7 @@ from pydantic import BaseModel
 from core.product_brain import ProductBrain
 
 app = FastAPI()
-
 brain = ProductBrain()
-
 
 class ChatRequest(BaseModel):
     message: str
@@ -13,9 +11,16 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "JARVIS OS RUNNING"}
+    return {"status": "JARVIS RUNNING"}
 
 
+# ✅ FIX: endpoint que el dashboard espera
+@app.get("/dashboard")
+def dashboard_root():
+    return {"status": "dashboard connected"}
+
+
+# ✅ CHAT BLINDADO
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
@@ -29,16 +34,23 @@ def chat(req: ChatRequest):
     except Exception as e:
         return {
             "status": "error",
-            "message": str(e)
+            "response": str(e)
         }
 
 
+# ✅ TRADER
 @app.post("/dashboard/trader")
 def trader(data: dict):
-    symbol = data.get("symbol", "AAPL")
-    return brain.trader(symbol)
+    try:
+        return brain.trader(data.get("symbol", "AAPL"))
+    except Exception as e:
+        return {"error": str(e)}
 
 
+# ✅ RECOMMENDATIONS
 @app.get("/dashboard/recommendations")
 def recommendations():
-    return brain.recommendations()
+    try:
+        return brain.recommendations()
+    except Exception as e:
+        return {"error": str(e)}
