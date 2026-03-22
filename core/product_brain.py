@@ -1,148 +1,120 @@
-﻿import yfinance as yf
-import numpy as np
+﻿from typing import Dict, Any
+from core.agent_orchestrator_pro import AgentOrchestratorPro
 
 
 class ProductBrain:
 
+    def __init__(self):
+        self.orchestrator = AgentOrchestratorPro()
+
+    # =========================
+    # HEALTH
+    # =========================
     def health(self):
-        return {"status": "ok", "brain": "connected"}
-
-    def respond(self, message: str) -> dict:
-        msg = message.lower()
-
-        if any(x in msg for x in ["stock", "trade", "market", "ticker", "acciones"]):
-            return self._best_opportunity()
-
-        if any(x in msg for x in ["best", "opportunity", "money", "invertir"]):
-            return self._best_opportunity()
-
-        return self._chat_natural(message)
-
-    def _chat_natural(self, message: str):
         return {
-            "type": "chat",
-            "reply": f"Entendido. Procesando: '{message}'. Puedo darte análisis de acciones en tiempo real.",
-            "summary": "Conversación general",
-            "confidence": 0.8
+            "status": "ok",
+            "orchestrator": self.orchestrator.health()
         }
 
-    def _normalize_symbol(self, symbol: str) -> str:
-        symbol = symbol.upper().strip()
-
-        mapping = {
-            "TESLA": "TSLA",
-            "GOOGLE": "GOOGL",
-            "FACEBOOK": "META",
-            "AMAZON": "AMZN",
-            "APPLE": "AAPL",
-            "MICROSOFT": "MSFT",
-            "NVIDIA": "NVDA"
-        }
-
-        return mapping.get(symbol, symbol)
-
-    def _best_opportunity(self):
-
-        symbols = ["NVDA", "MSFT", "AAPL", "AMZN", "META"]
-        results = []
-
-        for symbol in symbols:
-            try:
-                data = yf.Ticker(symbol).history(period="1mo")
-
-                if data.empty:
-                    continue
-
-                close = data["Close"]
-
-                trend = close.iloc[-1] > close.mean()
-                momentum = (close.iloc[-1] - close.iloc[-5]) / close.iloc[-5]
-                pullback = close.iloc[-1] < close.max() * 0.97
-
-                score = 50
-                if trend: score += 15
-                if momentum > 0: score += 15
-                if pullback: score += 10
-
-                results.append({
-                    "symbol": symbol,
-                    "price": round(float(close.iloc[-1]), 2),
-                    "setup_score": int(score),
-                    "traffic_light": "green" if score >= 75 else "yellow" if score >= 60 else "red",
-                    "summary": f"{symbol} con {'fuerza' if trend else 'debilidad'} (score {score})"
-                })
-
-            except:
-                continue
-
-        if not results:
-            return self._chat_natural("market unavailable")
-
-        best = sorted(results, key=lambda x: x["setup_score"], reverse=True)[0]
-
-        return {
-            "type": "trade_idea",
-            "summary": f"{best['symbol']} | Score {best['setup_score']}",
-            "details": best,
-            "action": "BUY" if best["setup_score"] >= 75 else "WAIT",
-            "confidence": 0.9
-        }
-
-    def trader(self, symbol: str):
-
+    # =========================
+    # CHAT
+    # =========================
+    def chat(self, message: str) -> dict:
         try:
-            symbol = self._normalize_symbol(symbol)
-            data = yf.Ticker(symbol).history(period="1mo")
+            msg = message.lower()
 
-            if data.empty:
-                return {"error": "No data"}
+            # =========================
+            # MARKET INTENT
+            # =========================
+            if any(x in msg for x in ["stock", "acción", "apple", "tesla", "nvda", "msft", "trade", "invertir"]):
+                return self._handle_market_chat(message)
 
-            close = data["Close"]
-            price = float(close.iloc[-1])
-
-            trend = close.iloc[-1] > close.mean()
-            momentum = (close.iloc[-1] - close.iloc[-5]) / close.iloc[-5]
-
-            score = 50
-            if trend: score += 20
-            if momentum > 0: score += 15
+            # =========================
+            # GENERAL INTELLIGENCE
+            # =========================
+            result = self.orchestrator.execute(message, domain="general")
 
             return {
-                "symbol": symbol.upper(),
-                "price_now": round(price, 2),
-                "setup_score": score,
-                "traffic_light": "green" if score >= 75 else "yellow" if score >= 60 else "red",
-                "trade_plan": {
-                    "action": "BUY" if score >= 75 else "WAIT",
-                    "entry_zone": [round(price * 0.98, 2), round(price * 1.01, 2)],
-                    "stop_loss": round(price * 0.95, 2),
-                    "target_1": round(price * 1.05, 2),
-                    "target_2": round(price * 1.1, 2),
-                    "risk_reward_estimate": "2:1"
-                },
-                "insight_lines": [
-                    f"Tendencia {'alcista' if trend else 'débil'}",
-                    f"Momentum {'positivo' if momentum > 0 else 'negativo'}"
-                ],
-                "summary": f"{symbol} análisis completo"
+                "type": "chat",
+                "summary": result.get("summary", "Procesado"),
+                "details": result,
+                "action": "processed",
+                "confidence": 0.9
             }
 
         except Exception as e:
-            return {"error": str(e)}
+            return {
+                "type": "error",
+                "summary": f"Error en chat: {str(e)}",
+                "confidence": 0.2
+            }
 
+    # =========================
+    # MARKET CHAT
+    # =========================
+    def _handle_market_chat(self, message: str):
+
+        # usa trader directamente
+        trader = self.trader(message)
+
+        return {
+            "type": "trade_analysis",
+            "summary": trader.get("summary", "Análisis generado"),
+            "details": trader,
+            "action": trader.get("trade_plan", {}).get("action", "WAIT"),
+            "confidence": 0.9
+        }
+
+    # =========================
+    # TRADER (CRÍTICO)
+    # =========================
+    def trader(self, symbol_or_prompt: str) -> Dict[str, Any]:
+
+        try:
+            result = self.orchestrator.execute_trader(symbol_or_prompt)
+
+            # enriquecer salida
+            summary = result.get("summary", "")
+            action = result.get("trade_plan", {}).get("action", "WAIT")
+
+            return {
+                "symbol": result.get("symbol"),
+                "setup_score": result.get("setup_score"),
+                "traffic_light": result.get("traffic_light"),
+                "price_now": result.get("technicals", {}).get("price"),
+                "trade_plan": result.get("trade_plan"),
+                "narrative": result.get("narrative"),
+                "summary": summary if summary else f"{result.get('symbol')} análisis generado",
+                "action": action,
+                "source": result.get("source", "orchestrator")
+            }
+
+        except Exception as e:
+            return {
+                "error": str(e),
+                "source": "trader_fallback"
+            }
+
+    # =========================
+    # RECOMMENDATIONS
+    # =========================
     def recommendations(self):
 
-        symbols = ["NVDA", "MSFT", "AAPL", "META"]
-        items = []
+        symbols = ["NVDA", "MSFT", "AMZN", "META", "AAPL"]
+
+        results = []
 
         for s in symbols:
-            r = self.trader(s)
-            if "error" not in r:
-                items.append({
-                    "symbol": s,
-                    "setup_score": r["setup_score"],
-                    "traffic_light": r["traffic_light"],
-                    "friendly_recommendation": r["summary"]
-                })
+            try:
+                r = self.trader(s)
+                if "error" not in r:
+                    results.append(r)
+            except:
+                pass
 
-        return {"items": items}
+        results = sorted(results, key=lambda x: x.get("setup_score") or 0, reverse=True)
+
+        return {
+            "top": results[:3],
+            "all": results
+        }
