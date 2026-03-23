@@ -235,118 +235,7 @@ class ProductBrain:
 
         # noticias automaticas por simbolo
         if symbol and any(x in lower for x in ["noticia", "noticias", "news", "catalizador", "catalizadores"]):
-            news = self._safe_news(symbol)
-            if not news:
-                return {
-                    "type": "chat",
-                    "reply": f"No encontre noticias recientes claras para {symbol}.",
-                    "summary": f"Sin noticias para {symbol}",
-                    "details": {"symbol": symbol, "news": []},
-                    "action": "",
-                    "confidence": 0.6,
-                    "source": "brain_news"
-                }
-
-            bullets = "; ".join([f"{n['publisher']}: {n['title']}" if n["publisher"] else n["title"] for n in news[:3]])
-            return {
-                "type": "chat",
-                "reply": f"Noticias clave de {symbol}: {bullets}",
-                "summary": f"Noticias de {symbol}",
-                "details": {"symbol": symbol, "news": news},
-                "action": "show_news",
-                "confidence": 0.85,
-                "source": "brain_news"
-            }
-
-        # si detecta simbolo pero no intencion exacta, guiar
-        if symbol:
-            return {
-                "type": "chat",
-                "reply": f"Detecte {symbol}. Si quieres te doy analisis, noticias o niveles de entrada.",
-                "summary": f"Ticker detectado: {symbol}",
-                "details": {"symbol": symbol},
-                "action": "ask_followup",
-                "confidence": 0.8,
-                "source": "brain_symbol_detect"
-            }
-
-        # fallback
-        return {
-            "type": "chat",
-            "reply": "Dime que necesitas: analisis de una accion, oportunidades de la semana, noticias o tareas.",
-            "summary": "Fallback",
-            "details": {},
-            "action": "",
-            "confidence": 0.6,
-            "source": "brain_simple"
-        }
-
-    # =========================
-    # TRADER
-    # =========================
-    def trader(self, symbol: str) -> Dict[str, Any]:
-        symbol = (symbol or "").upper().strip()
-
-        try:
-            data = yf.Ticker(symbol).history(period="3mo", interval="1d", auto_adjust=False)
-
-            if data is None or data.empty:
-                raise ValueError("No data")
-
-            close = data["Close"].dropna()
-            if len(close) < 20:
-                raise ValueError("Not enough data")
-
-            price = float(close.iloc[-1])
-            sma20 = float(close.rolling(20).mean().iloc[-1])
-            sma50 = float(close.rolling(min(50, len(close))).mean().iloc[-1])
-
-            momentum_5 = (close.iloc[-1] - close.iloc[-5]) / close.iloc[-5] * 100 if len(close) >= 5 else 0.0
-            momentum_20 = (close.iloc[-1] - close.iloc[-20]) / close.iloc[-20] * 100 if len(close) >= 20 else 0.0
-            vol = float(np.std(close.tail(min(10, len(close)))))
-
-            score = 50
-
-            if price > sma20:
-                score += 12
-            else:
-                score -= 10
-
-            if price > sma50:
-                score += 12
-            else:
-                score -= 10
-
-            if momentum_20 > 10:
-                score += 18
-            elif momentum_20 > 3:
-                score += 10
-            elif momentum_20 < -10:
-                score -= 18
-            elif momentum_20 < 0:
-                score -= 8
-
-            if momentum_5 > 3:
-                score += 8
-            elif momentum_5 > 0:
-                score += 4
-            elif momentum_5 < -3:
-                score -= 8
-            elif momentum_5 < 0:
-                score -= 4
-
-            if vol < 5:
-                score += 4
-            elif vol > 15:
-                score -= 6
-
-            # news impact
-news = self._safe_news(symbol)
-news_score = self._score_news_impact(news)
-
-score += news_score
-
-score = max(0, min(100, int(score)))
+            score = max(0, min(100, int(score)))
 
             if score >= 80:
                 action = "GO"
@@ -442,5 +331,6 @@ score = max(0, min(100, int(score)))
 
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
         return {"items": results[:8]}
+
 
 
