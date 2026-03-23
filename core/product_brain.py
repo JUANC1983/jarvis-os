@@ -58,9 +58,6 @@ class ProductBrain:
             "broadcom": "AVGO",
         }
 
-    # =========================
-    # HEALTH
-    # =========================
     def health(self) -> dict:
         return {
             "available": True,
@@ -68,9 +65,6 @@ class ProductBrain:
             "orchestrator_available": True,
         }
 
-    # =========================
-    # HELPERS
-    # =========================
     def _extract_symbol_from_text(self, text: str) -> Optional[str]:
         t = (text or "").lower().strip()
 
@@ -86,13 +80,22 @@ class ProductBrain:
 
         return None
 
-    def _safe_float(self, value: Any, default: float = 0.0) -> float:
-        try:
-            if value is None:
-                return default
-            return float(value)
-        except Exception:
-            return default
+    def _extract_multiple_symbols(self, text: str) -> List[str]:
+        t = (text or "").lower().strip()
+        found: List[str] = []
+
+        for key, value in self.aliases.items():
+            if re.search(rf"\b{re.escape(key)}\b", t):
+                if value not in found:
+                    found.append(value)
+
+        tokens = re.findall(r"\b[A-Za-z]{1,5}\b", text or "")
+        for token in tokens:
+            up = token.upper()
+            if up in set(self.aliases.values()) and up not in found:
+                found.append(up)
+
+        return found
 
     def _safe_news(self, symbol: str) -> List[dict]:
         try:
@@ -125,13 +128,9 @@ class ProductBrain:
 
         line1 = f"{symbol}: precio {price} | score {score} | accion {action}"
         if insight_lines:
-            line2 = insight_lines[0]
-            return f"{line1}. {line2}"
+            return f"{line1}. {insight_lines[0]}"
         return line1
 
-    # =========================
-    # CHAT
-    # =========================
     def chat(self, message: str) -> dict:
         text = (message or "").strip()
         lower = text.lower()
@@ -184,11 +183,50 @@ class ProductBrain:
                     "source": "brain_simple"
                 }
 
-        symbol = self._extract_symbol_from_text(text)
+        symbols = self._extract_multiple_symbols(text)
+        symbol = symbols[0] if symbols else None
+
         wants_analysis = any(x in lower for x in [
             "analiza", "analisis", "vale la pena", "comprar", "compra", "buy",
             "sell", "vender", "trader", "setup", "ticker", "accion", "stock"
         ])
+
+        if len(symbols) > 1 and wants_analysis:
+            results = []
+            detailed = []
+            for s in symbols[:5]:
+                r = self.trader(s)
+                results.append(f"{s} ({r['setup_score']})")
+                detailed.append(r)
+
+            return {
+                "type": "chat",
+                "reply": "Analisis rapido: " + ", ".join(results),
+                "summary": "Multi analisis",
+                "details": {"symbols": symbols[:5], "items": detailed},
+                "action": "show_multiple",
+                "confidence": 0.9,
+                "source": "brain_multi_trader"
+            }
+
+        if len(symbols) > 1 and any(x in lower for x in ["noticia", "noticias", "news", "catalizador", "catalizadores"]):
+            out = []
+            news_map = {}
+            for s in symbols[:5]:
+                news = self._safe_news(s)
+                news_map[s] = news
+                if news:
+                    out.append(f"{s}: {news[0]['title']}")
+
+            return {
+                "type": "chat",
+                "reply": " | ".join(out) if out else "No encontre noticias claras.",
+                "summary": "Multi noticias",
+                "details": {"symbols": symbols[:5], "news_by_symbol": news_map},
+                "action": "show_news",
+                "confidence": 0.85,
+                "source": "brain_multi_news"
+            }
 
         if symbol and wants_analysis:
             result = self.trader(symbol)
@@ -247,9 +285,6 @@ class ProductBrain:
             "source": "brain_simple"
         }
 
-    # =========================
-    # TRADER
-    # =========================
     def trader(self, symbol: str) -> Dict[str, Any]:
         symbol = (symbol or "").upper().strip()
 
@@ -384,9 +419,6 @@ class ProductBrain:
                 "source": "product_brain"
             }
 
-    # =========================
-    # RECOMMENDATIONS
-    # =========================
     def recommendations(self) -> Dict[str, Any]:
         symbols = [
             "NVDA", "AMD", "META", "MSFT", "GOOGL",
@@ -401,4 +433,4 @@ class ProductBrain:
                 results.append(r)
 
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
-        return {"items": results[:8]}
+        return {"items": results[:15]}
