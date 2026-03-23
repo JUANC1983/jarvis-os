@@ -184,3 +184,4 @@ class ProductBrain:
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
 
         return {"items": results[:8]}
+
