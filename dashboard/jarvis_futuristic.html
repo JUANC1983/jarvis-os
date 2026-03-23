@@ -74,7 +74,7 @@
       width:100%;border:none;outline:none;border-radius:18px;background:var(--card2);color:var(--white);
       padding:16px 18px;font-size:16px;border:1px solid rgba(255,255,255,.05)
     }
-    .chat-log{margin-top:14px;display:grid;gap:12px;max-height:360px;overflow:auto;padding-right:4px}
+    .chat-log{margin-top:14px;display:grid;gap:12px;max-height:260px;overflow:auto;padding-right:4px}
     .bubble{padding:14px 16px;border-radius:18px;line-height:1.5;font-size:15px;white-space:pre-wrap}
     .bubble.user{background:#16344d;border:1px solid rgba(28,231,255,.15)}
     .bubble.jarvis{background:var(--card2);border:1px solid rgba(76,255,198,.10)}
@@ -96,8 +96,8 @@
     .metric-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
     .metric-value{font-size:28px;font-weight:800}
     .trader-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    .asset-grid,.recommendations{display:grid;gap:12px}
-    .asset{
+    .asset-grid,.recommendations,.pro-grid{display:grid;gap:12px}
+    .asset,.pro-card{
       padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
     }
     .asset .name{font-weight:700;margin-bottom:6px;word-break:break-word}
@@ -114,6 +114,9 @@
     .tag-ok{background:rgba(73,255,194,.12);color:var(--ok)}
     .tag-warn{background:rgba(255,212,90,.12);color:var(--warn)}
     .tag-bad{background:rgba(255,107,107,.12);color:var(--bad)}
+    .news-title{font-weight:700;margin-bottom:6px}
+    .news-source{color:var(--soft);font-size:12px}
+    .pro-empty{padding:18px;border-radius:18px;background:var(--card2);border:1px dashed rgba(255,255,255,.08);color:var(--soft)}
     @media (max-width: 1280px){
       .topbar,.main{grid-template-columns:1fr}
     }
@@ -189,6 +192,16 @@
 
           <div class="chat-log" id="chatLog">
             <div class="bubble jarvis">Hola. ¿Qué necesitas hoy?</div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div class="section-top" style="margin-bottom:10px">
+              <h3 style="margin:0;font-size:22px;color:var(--cyan)">JARVIS Results</h3>
+              <div class="subtle">Render automático de análisis, multi-análisis y noticias.</div>
+            </div>
+            <div id="jarvisResults" class="pro-grid">
+              <div class="pro-empty">Todavía no hay resultados visuales. Escribe algo como “analiza tesla”, “analiza apple nvidia tesla”, o “noticias de nvidia”.</div>
+            </div>
           </div>
         </section>
 
@@ -422,6 +435,97 @@
     await loadHome();
   }
 
+  function renderJarvisEmpty(){
+    qs("jarvisResults").innerHTML = `<div class="pro-empty">No hay resultados visuales todavía. Prueba con análisis, múltiples acciones o noticias.</div>`;
+  }
+
+  function renderTraderCard(d){
+    qs("jarvisResults").innerHTML = `
+      <div class="pro-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <strong style="font-size:20px">${d.symbol || "-"}</strong>
+          ${trafficTag(d.traffic_light)}
+        </div>
+        <div style="margin-top:10px">Precio: ${d.price_now ?? d.price ?? "--"}</div>
+        <div style="margin-top:6px">Score: ${d.setup_score ?? "--"}</div>
+        <div style="margin-top:12px">${d.friendly_recommendation || ""}</div>
+        <div style="margin-top:12px;color:var(--soft)">${(d.insight_lines || []).join(" | ")}</div>
+      </div>
+    `;
+  }
+
+  function renderMultipleCards(items){
+    if(!items?.length){
+      renderJarvisEmpty();
+      return;
+    }
+    qs("jarvisResults").innerHTML = items.map(i => `
+      <div class="pro-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <strong>${i.symbol}</strong>
+          ${trafficTag(i.traffic_light)}
+        </div>
+        <div style="margin-top:8px">Precio: ${i.price_now ?? i.price ?? "--"}</div>
+        <div style="margin-top:6px">Score: ${i.setup_score ?? "--"}</div>
+        <div style="margin-top:8px">${i.friendly_recommendation || ""}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderNewsCards(details){
+    const newsBySymbol = details?.news_by_symbol || {};
+    const symbols = Object.keys(newsBySymbol);
+    if(!symbols.length){
+      renderJarvisEmpty();
+      return;
+    }
+
+    let html = "";
+    for(const sym of symbols){
+      const newsItems = newsBySymbol[sym] || [];
+      html += `<div class="pro-card"><div style="font-size:18px;font-weight:800;margin-bottom:10px">${sym}</div>`;
+      if(!newsItems.length){
+        html += `<div class="news-source">Sin noticias claras.</div>`;
+      } else {
+        html += newsItems.slice(0,3).map(n => `
+          <div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div class="news-title">${n.title || ""}</div>
+            <div class="news-source">${n.publisher || ""}</div>
+          </div>
+        `).join("");
+      }
+      html += `</div>`;
+    }
+
+    qs("jarvisResults").innerHTML = html;
+  }
+
+  function renderChatAction(data){
+    const action = data?.action || data?.response?.action || "";
+    const details = data?.details || data?.response?.details || {};
+
+    if(action === "show_trader"){
+      renderTraderCard(details);
+      return;
+    }
+
+    if(action === "show_multiple"){
+      renderMultipleCards(details.items || []);
+      return;
+    }
+
+    if(action === "show_news"){
+      if(details.news_by_symbol){
+        renderNewsCards(details);
+      } else if(details.news){
+        renderNewsCards({ news_by_symbol: { [details.symbol || "NEWS"]: details.news } });
+      } else {
+        renderJarvisEmpty();
+      }
+      return;
+    }
+  }
+
   async function sendChat(messageOverride=null){
     const input = qs("chatInput");
     const message = (messageOverride || input.value).trim();
@@ -437,13 +541,9 @@
     });
 
     const data = await res.json();
-    const reply =
-      data.reply ||
-      data.summary ||
-      (data.response && (data.response.reply || data.response.summary || data.response.message)) ||
-      "No reply.";
-
+    const reply = data.reply || data.summary || data.response?.reply || data.response?.summary || "No reply.";
     addBubble(reply, "jarvis");
+    renderChatAction(data);
   }
 
   async function runAutoJarvis(){
@@ -455,7 +555,11 @@
 
   function initVoice(){
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SpeechRecognition) return;
+    if(!SpeechRecognition){
+      qs("voiceBtn").disabled = true;
+      qs("stopVoiceBtn").disabled = true;
+      return;
+    }
 
     state.recognition = new SpeechRecognition();
     state.recognition.lang = "es-ES";
@@ -467,10 +571,11 @@
     state.recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript;
       qs("chatInput").value = transcript;
+      await sendChat();
     };
 
     qs("voiceBtn").onclick = () => {
-      if(state.recognition && !state.listening) state.recognition.start();
+      if(state.recognition) state.recognition.start();
     };
 
     qs("stopVoiceBtn").onclick = () => {
@@ -490,10 +595,10 @@
     qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
     qs("setupScore").textContent = data.setup_score ?? "--";
     qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
-    qs("priceNow").textContent = data.price_now ?? data.price ?? data.technicals?.price ?? "--";
+    qs("priceNow").textContent = data.price_now ?? "--";
 
     const p = data.trade_plan || {};
-    const entry = Array.isArray(p.entry_zone) && p.entry_zone.length ? p.entry_zone.join(" - ") : "-";
+    const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
 
     qs("tradePlan").innerHTML = `
       <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
@@ -504,7 +609,7 @@
       <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
     `;
 
-    const lines = data.insight_lines || data.narrative || [data.friendly_recommendation || data.summary || "No insight available."];
+    const lines = data.insight_lines || [data.summary || "No insight available."];
     qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
   }
 
@@ -528,6 +633,7 @@
           <strong>${item.symbol}</strong>
           ${trafficTag(item.traffic_light)}
         </div>
+        <div style="margin-top:8px">Precio: ${item.price_now ?? item.price ?? "--"}</div>
         <div style="margin-top:8px">Score: ${item.setup_score ?? "--"}</div>
         <div style="margin-top:8px;color:var(--white)">${item.friendly_recommendation || item.summary || ""}</div>
       `;
@@ -554,6 +660,7 @@
       div.innerHTML = `
         <div class="name">${asset.filename}</div>
         <div class="meta">${asset.kind} • ${asset.mime_type || "unknown"}</div>
+        <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
       `;
       box.appendChild(div);
     });
@@ -615,4 +722,3 @@
 </script>
 </body>
 </html>
-
