@@ -10,6 +10,7 @@ import numpy as np
 class ProductBrain:
     def __init__(self) -> None:
         self.available = True
+        self.last_symbols: List[str] = []
 
         self.aliases = {
             "tesla": "TSLA",
@@ -18,6 +19,7 @@ class ProductBrain:
             "aapl": "AAPL",
             "nvidia": "NVDA",
             "nvda": "NVDA",
+            "nvdia": "NVDA",
             "microsoft": "MSFT",
             "msft": "MSFT",
             "google": "GOOGL",
@@ -44,6 +46,19 @@ class ProductBrain:
             "cvx": "CVX",
             "uso": "USO",
             "xle": "XLE",
+            "xlf": "XLF",
+            "xlk": "XLK",
+            "xlv": "XLV",
+            "spy": "SPY",
+            "qqq": "QQQ",
+            "dia": "DIA",
+            "iwm": "IWM",
+            "tlt": "TLT",
+            "gld": "GLD",
+            "slv": "SLV",
+            "ibit": "IBIT",
+            "bito": "BITO",
+            "etha": "ETHA",
             "amd": "AMD",
             "oracle": "ORCL",
             "orcl": "ORCL",
@@ -56,6 +71,26 @@ class ProductBrain:
             "asml": "ASML",
             "avgo": "AVGO",
             "broadcom": "AVGO",
+            "bitcoin": "BTC",
+            "btc": "BTC",
+            "ethereum": "ETH",
+            "eth": "ETH",
+            "solana": "SOL",
+            "sol": "SOL",
+            "ripple": "XRP",
+            "xrp": "XRP",
+            "dogecoin": "DOGE",
+            "doge": "DOGE",
+            "cardano": "ADA",
+            "ada": "ADA",
+        }
+
+        self.direct_symbols = {
+            "TSLA", "AAPL", "NVDA", "MSFT", "GOOGL", "META", "AMZN", "NFLX",
+            "COIN", "PLTR", "ARM", "MRVL", "OXY", "XOM", "CVX", "USO", "XLE",
+            "XLF", "XLK", "XLV", "SPY", "QQQ", "DIA", "IWM", "TLT", "GLD", "SLV",
+            "IBIT", "BITO", "ETHA", "AMD", "ORCL", "ADBE", "SNOW", "CRM", "ASML",
+            "AVGO", "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA"
         }
 
     # =========================
@@ -71,20 +106,64 @@ class ProductBrain:
     # =========================
     # HELPERS
     # =========================
-    def _extract_symbol_from_text(self, text: str) -> Optional[str]:
+    def _remember_symbols(self, symbols: List[str]) -> None:
+        clean: List[str] = []
+        for s in symbols:
+            if s and s not in clean:
+                clean.append(s)
+        if clean:
+            self.last_symbols = clean[:10]
+
+    def _context_symbols(self, text: str) -> List[str]:
+        t = (text or "").lower()
+        context_triggers = [
+            "las que te pedi",
+            "las que te pedí",
+            "las mismas",
+            "esas",
+            "esas acciones",
+            "esas noticias",
+            "de esas",
+            "de las que te pedi",
+            "de las que te pedí",
+        ]
+        if any(trigger in t for trigger in context_triggers):
+            return self.last_symbols[:]
+        return []
+
+    def _extract_symbols_from_text(self, text: str) -> List[str]:
         t = (text or "").lower().strip()
+        found: List[str] = []
 
         for key, value in self.aliases.items():
             if re.search(rf"\b{re.escape(key)}\b", t):
-                return value
+                if value not in found:
+                    found.append(value)
 
-        tokens = re.findall(r"\b[A-Za-z]{1,5}\b", text or "")
+        tokens = re.findall(r"\b[A-Za-z]{1,10}\b", text or "")
         for token in tokens:
             up = token.upper()
-            if up in set(self.aliases.values()):
-                return up
+            if up in self.direct_symbols and up not in found:
+                found.append(up)
 
+        return found
+
+    def _resolve_symbol(self, text: str) -> Optional[str]:
+        symbols = self._extract_symbols_from_text(text)
+        if symbols:
+            return symbols[0]
         return None
+
+    def _normalize_market_symbol(self, symbol: str) -> str:
+        crypto_map = {
+            "BTC": "BTC-USD",
+            "ETH": "ETH-USD",
+            "SOL": "SOL-USD",
+            "XRP": "XRP-USD",
+            "DOGE": "DOGE-USD",
+            "ADA": "ADA-USD",
+        }
+        return crypto_map.get(symbol, symbol)
 
     def _safe_float(self, value: Any, default: float = 0.0) -> float:
         try:
@@ -96,7 +175,8 @@ class ProductBrain:
 
     def _safe_news(self, symbol: str) -> List[dict]:
         try:
-            ticker = yf.Ticker(symbol)
+            market_symbol = self._normalize_market_symbol(symbol)
+            ticker = yf.Ticker(market_symbol)
             news = getattr(ticker, "news", None)
             if not news:
                 return []
@@ -129,6 +209,12 @@ class ProductBrain:
             return f"{line1}. {line2}"
         return line1
 
+    def _format_multi_reply(self, items: List[Dict[str, Any]]) -> str:
+        parts = []
+        for item in items:
+            parts.append(f"{item['symbol']} ({item['setup_score']})")
+        return "Analisis rapido: " + ", ".join(parts)
+
     # =========================
     # CHAT
     # =========================
@@ -147,7 +233,17 @@ class ProductBrain:
                 "source": "brain_simple"
             }
 
-        if any(x in lower for x in ["oportunidad", "oportunidades", "recomiend", "mejor accion", "acciones para", "que comprar", "que ves esta semana"]):
+        symbols = self._extract_symbols_from_text(text)
+        if not symbols:
+            symbols = self._context_symbols(text)
+
+        if symbols:
+            self._remember_symbols(symbols)
+
+        if any(x in lower for x in [
+            "oportunidad", "oportunidades", "recomiend", "mejor accion", "acciones para",
+            "que comprar", "qué comprar", "que ves esta semana", "oportunidades para esta semana"
+        ]):
             try:
                 recs = self.recommendations()
                 items = recs.get("items", [])[:5]
@@ -162,6 +258,8 @@ class ProductBrain:
                         "confidence": 0.7,
                         "source": "brain_simple"
                     }
+
+                self._remember_symbols([x["symbol"] for x in items])
 
                 top = ", ".join([f"{x['symbol']} ({x['setup_score']})" for x in items[:3]])
                 return {
@@ -184,49 +282,86 @@ class ProductBrain:
                     "source": "brain_simple"
                 }
 
-        symbol = self._extract_symbol_from_text(text)
+        wants_news = any(x in lower for x in ["noticia", "noticias", "news", "catalizador", "catalizadores"])
         wants_analysis = any(x in lower for x in [
-            "analiza", "analisis", "vale la pena", "comprar", "compra", "buy",
-            "sell", "vender", "trader", "setup", "ticker", "accion", "stock"
+            "analiza", "analisis", "análisis", "vale la pena", "comprar", "compra", "buy",
+            "sell", "vender", "trader", "setup", "ticker", "accion", "acción", "stock", "niveles", "entrada"
         ])
 
-        if symbol and wants_analysis:
-            result = self.trader(symbol)
-            return {
-                "type": "chat",
-                "reply": self._format_trade_reply(result),
-                "summary": result.get("summary", f"{symbol} analizado"),
-                "details": result,
-                "action": "show_trader",
-                "confidence": 0.92,
-                "source": "brain_trader_router"
-            }
+        if symbols and wants_news:
+            if len(symbols) == 1:
+                symbol = symbols[0]
+                news = self._safe_news(symbol)
+                if not news:
+                    return {
+                        "type": "chat",
+                        "reply": f"No encontre noticias recientes claras para {symbol}.",
+                        "summary": f"Sin noticias para {symbol}",
+                        "details": {"symbol": symbol, "news": []},
+                        "action": "",
+                        "confidence": 0.6,
+                        "source": "brain_news"
+                    }
 
-        if symbol and any(x in lower for x in ["noticia", "noticias", "news", "catalizador", "catalizadores"]):
-            news = self._safe_news(symbol)
-            if not news:
+                bullets = "; ".join([f"{n['publisher']}: {n['title']}" if n["publisher"] else n["title"] for n in news[:3]])
                 return {
                     "type": "chat",
-                    "reply": f"No encontre noticias recientes claras para {symbol}.",
-                    "summary": f"Sin noticias para {symbol}",
-                    "details": {"symbol": symbol, "news": []},
-                    "action": "",
-                    "confidence": 0.6,
+                    "reply": f"Noticias clave de {symbol}: {bullets}",
+                    "summary": f"Noticias de {symbol}",
+                    "details": {"symbol": symbol, "news": news},
+                    "action": "show_news",
+                    "confidence": 0.85,
                     "source": "brain_news"
                 }
 
-            bullets = "; ".join([f"{n['publisher']}: {n['title']}" if n["publisher"] else n["title"] for n in news[:3]])
+            news_by_symbol: Dict[str, List[dict]] = {}
+            summary_parts: List[str] = []
+
+            for symbol in symbols:
+                news = self._safe_news(symbol)
+                news_by_symbol[symbol] = news
+                if news:
+                    summary_parts.append(f"{symbol}: {news[0]['title']}")
+                else:
+                    summary_parts.append(f"{symbol}: sin noticias claras")
+
             return {
                 "type": "chat",
-                "reply": f"Noticias clave de {symbol}: {bullets}",
-                "summary": f"Noticias de {symbol}",
-                "details": {"symbol": symbol, "news": news},
+                "reply": " | ".join(summary_parts),
+                "summary": "Multi noticias",
+                "details": {"symbols": symbols, "news_by_symbol": news_by_symbol},
                 "action": "show_news",
                 "confidence": 0.85,
-                "source": "brain_news"
+                "source": "brain_multi_news"
             }
 
-        if symbol:
+        if symbols and wants_analysis:
+            if len(symbols) == 1:
+                symbol = symbols[0]
+                result = self.trader(symbol)
+                return {
+                    "type": "chat",
+                    "reply": self._format_trade_reply(result),
+                    "summary": result.get("summary", f"{symbol} analizado"),
+                    "details": result,
+                    "action": "show_trader",
+                    "confidence": 0.92,
+                    "source": "brain_trader_router"
+                }
+
+            items = [self.trader(symbol) for symbol in symbols]
+            return {
+                "type": "chat",
+                "reply": self._format_multi_reply(items),
+                "summary": "Multi analisis",
+                "details": {"symbols": symbols, "items": items},
+                "action": "show_multiple",
+                "confidence": 0.9,
+                "source": "brain_multi_trader"
+            }
+
+        if len(symbols) == 1:
+            symbol = symbols[0]
             return {
                 "type": "chat",
                 "reply": f"Detecte {symbol}. Si quieres te doy analisis, noticias o niveles de entrada.",
@@ -252,9 +387,10 @@ class ProductBrain:
     # =========================
     def trader(self, symbol: str) -> Dict[str, Any]:
         symbol = (symbol or "").upper().strip()
+        market_symbol = self._normalize_market_symbol(symbol)
 
         try:
-            data = yf.Ticker(symbol).history(period="3mo", interval="1d", auto_adjust=False)
+            data = yf.Ticker(market_symbol).history(period="3mo", interval="1d", auto_adjust=False)
 
             if data is None or data.empty:
                 raise ValueError("No data")
@@ -391,7 +527,8 @@ class ProductBrain:
         symbols = [
             "NVDA", "AMD", "META", "MSFT", "GOOGL",
             "PLTR", "COIN", "ARM", "MRVL",
-            "XOM", "CVX", "OXY", "XLE", "USO"
+            "XOM", "CVX", "OXY", "XLE", "USO",
+            "SPY", "QQQ", "GLD", "BTC", "ETH"
         ]
 
         results = []
@@ -401,4 +538,4 @@ class ProductBrain:
                 results.append(r)
 
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
-        return {"items": results[:8]}
+        return {"items": results[:12]}
