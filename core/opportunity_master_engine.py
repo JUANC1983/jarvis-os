@@ -279,46 +279,51 @@ class OpportunityMasterEngine:
         except Exception:
             return None
 
-    def analyze_symbol(self, raw_symbol: str) -> Dict:
-        symbol = self.resolve_symbol(raw_symbol)
+   def analyze_symbol(self, raw_symbol: str) -> Dict:
+    symbol = self.resolve_symbol(raw_symbol)
 
-        try:
-            frame = yf.download(
-                tickers=symbol,
-                period="9mo",
-                interval="1d",
-                auto_adjust=False,
-                progress=False,
-                threads=True,
-            )
-        except Exception:
-            frame = None
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="9mo", interval="1d")
 
-        parsed = self._extract_symbol_frame(frame, symbol)
-        result = self._analyze_frame(symbol, parsed)
+        if hist is None or hist.empty:
+            raise ValueError("No data")
 
-        if result:
-            return result
+        frame = hist.rename(columns={
+            "Open": "Open",
+            "High": "High",
+            "Low": "Low",
+            "Close": "Close",
+            "Volume": "Volume"
+        })
 
-        return {
-            "symbol": symbol,
-            "price": None,
-            "price_now": None,
-            "setup_score": 0,
-            "traffic_light": "red",
-            "trade_plan": {
-                "action": "AVOID",
-                "entry_zone": [],
-                "stop_loss": "-",
-                "target_1": "-",
-                "target_2": "-",
-                "risk_reward_estimate": "-",
-            },
-            "insight_lines": [f"No se pudo obtener información suficiente para {symbol}."],
-            "summary": f"{symbol} sin suficiente contexto todavía.",
-            "friendly_recommendation": "No hay datos suficientes para una decisión seria.",
-            "source": "opportunity_master",
-        }
+    except Exception:
+        frame = None
+
+    result = self._analyze_frame(symbol, frame)
+
+    if result:
+        return result
+
+    return {
+        "symbol": symbol,
+        "price": None,
+        "price_now": None,
+        "setup_score": 0,
+        "traffic_light": "red",
+        "trade_plan": {
+            "action": "AVOID",
+            "entry_zone": [],
+            "stop_loss": "-",
+            "target_1": "-",
+            "target_2": "-",
+            "risk_reward_estimate": "-",
+        },
+        "insight_lines": [f"No se pudo obtener información suficiente para {symbol}."],
+        "summary": f"{symbol} sin suficiente contexto todavía.",
+        "friendly_recommendation": "No hay datos suficientes para una decisión seria.",
+        "source": "opportunity_master",
+    }
 
     def get_top_opportunities(self, limit: int = 8, force_refresh: bool = False) -> List[Dict]:
         ttl_seconds = int(os.getenv("OPPORTUNITY_CACHE_TTL_SECONDS", "900"))
