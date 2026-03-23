@@ -8,6 +8,32 @@ import numpy as np
 
 
 class ProductBrain:
+
+    def _score_news_impact(self, news_items):
+        score = 0
+
+        positive_keywords = [
+            "upgrade", "beats", "growth", "record", "ai", "strong",
+            "surge", "expansion", "profit", "demand"
+        ]
+
+        negative_keywords = [
+            "downgrade", "miss", "lawsuit", "risk", "decline",
+            "cut", "warning", "crash", "drop", "investigation"
+        ]
+
+        for n in news_items:
+            title = n.get("title", "").lower()
+
+            for word in positive_keywords:
+                if word in title:
+                    score += 2
+
+            for word in negative_keywords:
+                if word in title:
+                    score -= 2
+
+        return score
     def __init__(self) -> None:
         self.available = True
 
@@ -314,7 +340,13 @@ class ProductBrain:
             elif vol > 15:
                 score -= 6
 
-            score = max(0, min(100, int(score)))
+            # news impact
+news = self._safe_news(symbol)
+news_score = self._score_news_impact(news)
+
+score += news_score
+
+score = max(0, min(100, int(score)))
 
             if score >= 80:
                 action = "GO"
@@ -410,3 +442,5 @@ class ProductBrain:
 
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
         return {"items": results[:8]}
+
+
