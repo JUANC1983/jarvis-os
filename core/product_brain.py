@@ -8,32 +8,6 @@ import numpy as np
 
 
 class ProductBrain:
-
-    def _score_news_impact(self, news_items):
-        score = 0
-
-        positive_keywords = [
-            "upgrade", "beats", "growth", "record", "ai", "strong",
-            "surge", "expansion", "profit", "demand"
-        ]
-
-        negative_keywords = [
-            "downgrade", "miss", "lawsuit", "risk", "decline",
-            "cut", "warning", "crash", "drop", "investigation"
-        ]
-
-        for n in news_items:
-            title = n.get("title", "").lower()
-
-            for word in positive_keywords:
-                if word in title:
-                    score += 2
-
-            for word in negative_keywords:
-                if word in title:
-                    score -= 2
-
-        return score
     def __init__(self) -> None:
         self.available = True
 
@@ -100,12 +74,10 @@ class ProductBrain:
     def _extract_symbol_from_text(self, text: str) -> Optional[str]:
         t = (text or "").lower().strip()
 
-        # exact aliases first
         for key, value in self.aliases.items():
             if re.search(rf"\b{re.escape(key)}\b", t):
                 return value
 
-        # uppercase ticker-like token
         tokens = re.findall(r"\b[A-Za-z]{1,5}\b", text or "")
         for token in tokens:
             up = token.upper()
@@ -164,7 +136,6 @@ class ProductBrain:
         text = (message or "").strip()
         lower = text.lower()
 
-        # saludo simple
         if lower in ["hola", "hola jarvis", "hey", "hi", "buenas", "buenos dias", "buenas tardes", "buenas noches"]:
             return {
                 "type": "chat",
@@ -176,7 +147,6 @@ class ProductBrain:
                 "source": "brain_simple"
             }
 
-        # recomendaciones / oportunidades
         if any(x in lower for x in ["oportunidad", "oportunidades", "recomiend", "mejor accion", "acciones para", "que comprar", "que ves esta semana"]):
             try:
                 recs = self.recommendations()
@@ -214,7 +184,6 @@ class ProductBrain:
                     "source": "brain_simple"
                 }
 
-        # detectar ticker automatico para analisis
         symbol = self._extract_symbol_from_text(text)
         wants_analysis = any(x in lower for x in [
             "analiza", "analisis", "vale la pena", "comprar", "compra", "buy",
@@ -233,8 +202,110 @@ class ProductBrain:
                 "source": "brain_trader_router"
             }
 
-        # noticias automaticas por simbolo
         if symbol and any(x in lower for x in ["noticia", "noticias", "news", "catalizador", "catalizadores"]):
+            news = self._safe_news(symbol)
+            if not news:
+                return {
+                    "type": "chat",
+                    "reply": f"No encontre noticias recientes claras para {symbol}.",
+                    "summary": f"Sin noticias para {symbol}",
+                    "details": {"symbol": symbol, "news": []},
+                    "action": "",
+                    "confidence": 0.6,
+                    "source": "brain_news"
+                }
+
+            bullets = "; ".join([f"{n['publisher']}: {n['title']}" if n["publisher"] else n["title"] for n in news[:3]])
+            return {
+                "type": "chat",
+                "reply": f"Noticias clave de {symbol}: {bullets}",
+                "summary": f"Noticias de {symbol}",
+                "details": {"symbol": symbol, "news": news},
+                "action": "show_news",
+                "confidence": 0.85,
+                "source": "brain_news"
+            }
+
+        if symbol:
+            return {
+                "type": "chat",
+                "reply": f"Detecte {symbol}. Si quieres te doy analisis, noticias o niveles de entrada.",
+                "summary": f"Ticker detectado: {symbol}",
+                "details": {"symbol": symbol},
+                "action": "ask_followup",
+                "confidence": 0.8,
+                "source": "brain_symbol_detect"
+            }
+
+        return {
+            "type": "chat",
+            "reply": "Dime que necesitas: analisis de una accion, oportunidades de la semana, noticias o tareas.",
+            "summary": "Fallback",
+            "details": {},
+            "action": "",
+            "confidence": 0.6,
+            "source": "brain_simple"
+        }
+
+    # =========================
+    # TRADER
+    # =========================
+    def trader(self, symbol: str) -> Dict[str, Any]:
+        symbol = (symbol or "").upper().strip()
+
+        try:
+            data = yf.Ticker(symbol).history(period="3mo", interval="1d", auto_adjust=False)
+
+            if data is None or data.empty:
+                raise ValueError("No data")
+
+            close = data["Close"].dropna()
+            if len(close) < 20:
+                raise ValueError("Not enough data")
+
+            price = float(close.iloc[-1])
+            sma20 = float(close.rolling(20).mean().iloc[-1])
+            sma50 = float(close.rolling(min(50, len(close))).mean().iloc[-1])
+
+            momentum_5 = (close.iloc[-1] - close.iloc[-5]) / close.iloc[-5] * 100 if len(close) >= 5 else 0.0
+            momentum_20 = (close.iloc[-1] - close.iloc[-20]) / close.iloc[-20] * 100 if len(close) >= 20 else 0.0
+            vol = float(np.std(close.tail(min(10, len(close)))))
+
+            score = 50
+
+            if price > sma20:
+                score += 12
+            else:
+                score -= 10
+
+            if price > sma50:
+                score += 12
+            else:
+                score -= 10
+
+            if momentum_20 > 10:
+                score += 18
+            elif momentum_20 > 3:
+                score += 10
+            elif momentum_20 < -10:
+                score -= 18
+            elif momentum_20 < 0:
+                score -= 8
+
+            if momentum_5 > 3:
+                score += 8
+            elif momentum_5 > 0:
+                score += 4
+            elif momentum_5 < -3:
+                score -= 8
+            elif momentum_5 < 0:
+                score -= 4
+
+            if vol < 5:
+                score += 4
+            elif vol > 15:
+                score -= 6
+
             score = max(0, min(100, int(score)))
 
             if score >= 80:
@@ -331,6 +402,3 @@ class ProductBrain:
 
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
         return {"items": results[:8]}
-
-
-
