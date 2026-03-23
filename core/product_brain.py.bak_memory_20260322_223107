@@ -10,7 +10,6 @@ import numpy as np
 class ProductBrain:
     def __init__(self) -> None:
         self.available = True
-        self.last_symbols = []
 
         self.aliases = {
             "tesla": "TSLA",
@@ -435,4 +434,3 @@ class ProductBrain:
 
         results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
         return {"items": results[:15]}
-
