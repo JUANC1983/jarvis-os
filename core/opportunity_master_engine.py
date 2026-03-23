@@ -51,7 +51,7 @@ class OpportunityMasterEngine:
         except:
             return self._fallback(symbol)
 
-    def get_top_opportunities(self, limit: int = 8) -> List[Dict]:
+    def get_top_opportunities(self, limit: int = 8, force_refresh: bool = False) -> List[Dict]:
 
         results = []
 
