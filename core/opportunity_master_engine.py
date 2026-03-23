@@ -1,4 +1,6 @@
-﻿def analyze_symbol(self, raw_symbol: str) -> Dict:
+﻿
+def analyze_symbol(self, raw_symbol: str) -> Dict:
+    from typing import Dict   
     import yfinance as yf
     import numpy as np
     import time
