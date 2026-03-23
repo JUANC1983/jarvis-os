@@ -1,75 +1,92 @@
-﻿from typing import Dict, List
-import yfinance as yf
-import numpy as np
+﻿def analyze_symbol(self, raw_symbol: str) -> Dict:
+    import yfinance as yf
+    import numpy as np
 
-class OpportunityMasterEngine:
+    symbol = raw_symbol.upper()
 
-    def __init__(self):
-        self.symbols = [
-            "NVDA","AMD","MSFT","META","GOOGL","AMZN",
-            "TSLA","PLTR","COIN","NFLX","AAPL",
-            "SMCI","ARM","MRVL","AVGO","TSM",
-            "XLE","USO","GLD","SLV"
-        ]
+    try:
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(period="3mo")
 
-    def analyze_symbol(self, symbol: str) -> Dict:
-        try:
-            symbol = symbol.upper()
-
-            data = yf.Ticker(symbol).history(period="1mo")
-
-            if data.empty:
-                return self._fallback(symbol)
-
-            close = data["Close"]
-
-            price = float(close.iloc[-1])
-            momentum = (close.iloc[-1] - close.iloc[-5]) / close.iloc[-5]
-            trend = close.iloc[-1] > close.mean()
-
-            score = 50
-            if trend:
-                score += 20
-            if momentum > 0:
-                score += 20
-
-            traffic = "green" if score >= 80 else "yellow" if score >= 60 else "red"
-
-            return {
-                "symbol": symbol,
-                "price": round(price,2),
-                "price_now": round(price,2),
-                "setup_score": score,
-                "traffic_light": traffic,
-                "trade_plan": {
-                    "action": "GO" if score >= 80 else "WAIT"
-                },
-                "summary": f"{symbol} score {score}",
-                "source": "stable_pro"
-            }
-
-        except:
+        # 🔴 FALLBACK SI NO HAY DATA
+        if df is None or df.empty:
             return self._fallback(symbol)
 
-    def get_top_opportunities(self, limit: int = 8, force_refresh: bool = False) -> List[Dict]:
+        close = df["Close"]
 
-        results = []
+        # 🔴 SI MUY POCOS DATOS
+        if len(close) < 20:
+            return self._fallback(symbol)
 
-        for s in self.symbols:
-            r = self.analyze_symbol(s)
-            if r["price"] is not None:
-                results.append(r)
+        price = float(close.iloc[-1])
 
-        results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
+        # ===== METRICS =====
+        ma20 = close.rolling(20).mean().iloc[-1]
+        momentum = (close.iloc[-1] / close.iloc[-5]) - 1
 
-        return results[:limit]
+        # ===== SCORE =====
+        score = 50
 
-    def _fallback(self, symbol: str) -> Dict:
+        if price > ma20:
+            score += 15
+        else:
+            score -= 10
+
+        if momentum > 0.05:
+            score += 20
+        elif momentum > 0:
+            score += 10
+        elif momentum < -0.05:
+            score -= 20
+        else:
+            score -= 10
+
+        volatility = np.std(close[-10:])
+        if volatility < 5:
+            score += 5
+        else:
+            score -= 5
+
+        score = max(0, min(100, int(score)))
+
+        # ===== TRAFFIC LIGHT =====
+        if score >= 80:
+            light = "green"
+            action = "GO"
+        elif score >= 60:
+            light = "yellow"
+            action = "WAIT"
+        else:
+            light = "red"
+            action = "AVOID"
+
         return {
             "symbol": symbol,
-            "price": None,
-            "setup_score": 0,
-            "traffic_light": "red",
-            "summary": "No data",
-            "source": "fallback"
+            "price": price,
+            "price_now": price,
+            "setup_score": score,
+            "traffic_light": light,
+            "trade_plan": {
+                "action": action
+            },
+            "summary": f"{symbol} score {score}",
+            "source": "opportunity_master_stable"
         }
+
+    except Exception as e:
+        return self._fallback(symbol)
+
+
+def _fallback(self, symbol: str) -> Dict:
+    return {
+        "symbol": symbol,
+        "price": None,
+        "price_now": None,
+        "setup_score": 50,
+        "traffic_light": "yellow",
+        "trade_plan": {
+            "action": "WAIT"
+        },
+        "summary": f"{symbol} sin datos suficientes",
+        "source": "fallback_safe"
+    }
