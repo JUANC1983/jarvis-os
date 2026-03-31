@@ -1,5 +1,4 @@
-from datetime import datetime
-from pathlib import Path
+﻿from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -39,7 +38,7 @@ def dashboard():
 def dashboard_home():
     return {
         "greeting": "JARVIS ready",
-        "date": datetime.now().strftime("%A %d %B %Y"),
+        "date": "Sunday 22 March 2026",
         "owner_name": "Juan Camilo",
         "top_priority": "Protect capital",
         "tasks_open": 0,
@@ -128,4 +127,3 @@ def add_meeting(data: dict):
 @app.post("/dashboard/upload")
 def upload_placeholder():
     return {"status": "ok"}
-
