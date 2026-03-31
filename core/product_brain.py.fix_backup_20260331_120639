@@ -98,23 +98,7 @@ class ProductBrain:
             "smh": "SMH",
             "tan": "TAN",
             "bnb": "BNB",
-                        "avax": "AVAX",
-
-            # ibex / spain
-            "santander": "SAN.MC",
-            "bbva": "BBVA.MC",
-            "inditex": "ITX.MC",
-            "telefonica": "TEF.MC",
-            "telefónica": "TEF.MC",
-            "iberdrola": "IBE.MC",
-            "repsol": "REP.MC",
-
-            # india
-            "reliance": "RELIANCE.NS",
-            "tcs": "TCS.NS",
-            "infosys": "INFY.NS",
-            "hdfc": "HDFCBANK.NS",
-            "hdfc bank": "HDFCBANK.NS",
+            "avax": "AVAX",
         }
 
         self.direct_symbols = {
@@ -124,9 +108,7 @@ class ProductBrain:
             "IBIT", "BITO", "ETHA", "AMD", "ORCL", "ADBE", "SNOW", "CRM", "ASML",
             "AVGO", "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA",
             "TSM", "SHOP", "UBER", "RIVN", "HOOD", "SOFI", "SMCI",
-                        "ARKK", "SMH", "TAN", "BNB", "AVAX",
-            "SAN.MC", "BBVA.MC", "ITX.MC", "TEF.MC", "IBE.MC", "REP.MC",
-            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
+            "ARKK", "SMH", "TAN", "BNB", "AVAX",
         }
 
         self._ticker_stopwords = {
@@ -197,27 +179,15 @@ class ProductBrain:
                 if value not in found:
                     found.append(value)
 
-        # 2) exchange symbols typed directly (NSE / Madrid / others)
-        exchange_tokens = re.findall(
-            r"\b[A-Za-z]{1,15}\.(?:NS|BO|MC|PA|MI|AS|L|DE|SW)\b",
-            original,
-            flags=re.IGNORECASE
-        )
-        for token in exchange_tokens:
-            up = token.upper()
-            if up not in found:
-                found.append(up)
-
-        # 3) classic tokens
         tokens = re.findall(r"\b[A-Za-z]{1,10}\b", original)
 
-        # 4) direct symbols already known
+        # 2) direct symbols
         for token in tokens:
             up = token.upper()
             if up in self.direct_symbols and up not in found:
                 found.append(up)
 
-        # 5) detección universal prudente
+        # 3) detección universal prudente
         market_cue = any(x in t for x in [
             "analiza", "analisis", "análisis", "noticia", "noticias", "news",
             "ticker", "tickers", "stock", "stocks", "accion", "acción", "acciones",
@@ -231,7 +201,7 @@ class ProductBrain:
 
             if up in found:
                 continue
-            if len(up) > 6:
+            if len(up) > 5:
                 continue
             if up in self._ticker_stopwords:
                 continue
@@ -241,7 +211,7 @@ class ProductBrain:
                 found.append(up)
                 continue
 
-            # Caso 2: contexto de mercado
+            # Caso 2: estamos en contexto de mercado y no es una palabra común/alias
             if market_cue and low not in self.aliases and up not in self._ticker_stopwords:
                 found.append(up)
 
@@ -542,56 +512,37 @@ class ProductBrain:
     # TRADER
     # =========================
     
-    def _safe_ticker_info(self, symbol: str) -> Dict[str, Any]:
-        try:
-            market_symbol = self._normalize_market_symbol(symbol)
-            info = yf.Ticker(market_symbol).info
-            return info if isinstance(info, dict) else {}
-        except Exception:
-            return {}
-
     def _enrich_asset_metadata(self, symbol: str) -> dict:
         symbol = (symbol or "").upper()
-        info = self._safe_ticker_info(symbol)
 
-        quote_type = str(info.get("quoteType") or "").lower()
-        sector = str(info.get("sector") or info.get("industry") or "").strip()
+        ibex = ["SAN", "BBVA", "ITX", "TEF", "IBE"]
+        india = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"]
 
-        if not sector:
-            if symbol in ["BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "BNB", "AVAX"]:
-                sector = "crypto"
-            elif symbol in ["XOM", "CVX", "OXY", "XLE", "USO", "REP.MC"]:
-                sector = "energy"
-            elif symbol in ["NVDA", "AAPL", "MSFT", "GOOGL", "META", "AMD", "TSM", "SMCI", "ASML"]:
-                sector = "tech"
-            elif symbol.endswith(".MC"):
-                sector = "ibex"
-            elif symbol.endswith(".NS") or symbol.endswith(".BO"):
-                sector = "india"
-            else:
-                sector = "general"
+        crypto = ["BTC", "ETH", "SOL", "XRP"]
+        etf = ["SPY", "QQQ", "XLE", "GLD"]
 
-        if symbol in ["BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "BNB", "AVAX"] or symbol.endswith("-USD"):
-            asset_type = "crypto"
-            region = "global"
-        elif quote_type == "etf" or symbol in ["SPY", "QQQ", "DIA", "IWM", "XLE", "XLF", "XLK", "XLV", "GLD", "SLV", "IBIT", "BITO", "ETHA", "ARKK", "SMH", "TAN"]:
-            asset_type = "etf"
-            region = "usa"
-        elif symbol.endswith(".MC"):
-            asset_type = "stock"
-            region = "spain"
-        elif symbol.endswith(".NS") or symbol.endswith(".BO"):
-            asset_type = "stock"
-            region = "india"
-        else:
-            asset_type = "stock"
-            region = "usa"
+        if symbol in crypto:
+            return {"asset_type": "crypto", "region": "global", "sector": "crypto"}
 
-        return {
-            "asset_type": asset_type,
-            "region": region,
-            "sector": sector.lower()
-        }
+        if symbol in etf:
+            return {"asset_type": "etf", "region": "usa", "sector": "macro"}
+
+        if symbol in ibex:
+            return {"asset_type": "stock", "region": "spain", "sector": "ibex"}
+
+        if symbol in india or ".NS" in symbol:
+            return {"asset_type": "stock", "region": "india", "sector": "nse"}
+
+        tech = ["NVDA", "AAPL", "MSFT", "GOOGL", "META"]
+        energy = ["XOM", "CVX", "OXY"]
+
+        if symbol in tech:
+            return {"asset_type": "stock", "region": "usa", "sector": "tech"}
+
+        if symbol in energy:
+            return {"asset_type": "stock", "region": "usa", "sector": "energy"}
+
+        return {"asset_type": "stock", "region": "usa", "sector": "general"}
 
     def trader(self, symbol: str) -> Dict[str, Any]:
         symbol = (symbol or "").upper().strip()
@@ -703,8 +654,8 @@ class ProductBrain:
                 },
                 "insight_lines": insight_lines,
                 "summary": f"{symbol} | precio {round(price, 2)} | score {score} | accion {action}",
-                                "friendly_recommendation": friendly,
-                **self._enrich_asset_metadata(symbol),
+                "friendly_recommendation": friendly,
+                                **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }
 
@@ -725,8 +676,8 @@ class ProductBrain:
                 },
                 "insight_lines": ["No hay datos suficientes."],
                 "summary": f"{symbol} sin datos",
-                                "friendly_recommendation": "No operar.",
-                **self._enrich_asset_metadata(symbol),
+                "friendly_recommendation": "No operar.",
+                                **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }
 
@@ -734,38 +685,35 @@ class ProductBrain:
     # RECOMMENDATIONS
     # =========================
     def recommendations(self) -> Dict[str, Any]:
-        symbols = [
-            # USA tech / growth
+                symbols = [
+            # USA
             "NVDA", "AMD", "META", "MSFT", "GOOGL",
-            "PLTR", "COIN", "ARM", "MRVL", "TSM", "SMCI", "HOOD", "RIVN",
+            "PLTR", "COIN", "ARM", "MRVL",
 
-            # Energy
-            "XOM", "CVX", "OXY", "XLE", "USO", "REP.MC",
+            # ENERGY
+            "XOM", "CVX", "OXY", "XLE", "USO",
 
-            # ETFs / macro
-            "SPY", "QQQ", "GLD", "IBIT", "SMH", "ARKK",
+            # INDEX / MACRO
+            "SPY", "QQQ", "GLD",
 
-            # Crypto proxies / spot
-            "BTC", "ETH", "SOL",
+            # CRYPTO
+            "BTC", "ETH",
 
-            # IBEX / Spain
-            "SAN.MC", "BBVA.MC", "ITX.MC", "TEF.MC", "IBE.MC", "REP.MC",
+            # IBEX
+            "SAN", "BBVA", "ITX", "TEF", "IBE",
 
-            # India
-            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"
+            # INDIA
+            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
+
+            # IPO / HIGH BETA
+            "ARM", "SMCI", "HOOD", "RIVN"
         ]
 
         results = []
-        seen = set()
-
         for s in symbols:
-            if s in seen:
-                continue
-            seen.add(s)
-
             r = self.trader(s)
-            if r.get("price") is not None:
+            if r["price"] is not None:
                 results.append(r)
 
-        results = sorted(results, key=lambda x: x.get("setup_score", 0), reverse=True)
+        results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
         return {"items": results[:12]}
