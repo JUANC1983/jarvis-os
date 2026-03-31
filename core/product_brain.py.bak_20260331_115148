@@ -511,39 +511,6 @@ class ProductBrain:
     # =========================
     # TRADER
     # =========================
-    
-    def _enrich_asset_metadata(self, symbol: str) -> dict:
-        symbol = (symbol or "").upper()
-
-        ibex = ["SAN", "BBVA", "ITX", "TEF", "IBE"]
-        india = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"]
-
-        crypto = ["BTC", "ETH", "SOL", "XRP"]
-        etf = ["SPY", "QQQ", "XLE", "GLD"]
-
-        if symbol in crypto:
-            return {"asset_type": "crypto", "region": "global", "sector": "crypto"}
-
-        if symbol in etf:
-            return {"asset_type": "etf", "region": "usa", "sector": "macro"}
-
-        if symbol in ibex:
-            return {"asset_type": "stock", "region": "spain", "sector": "ibex"}
-
-        if symbol in india or ".NS" in symbol:
-            return {"asset_type": "stock", "region": "india", "sector": "nse"}
-
-        tech = ["NVDA", "AAPL", "MSFT", "GOOGL", "META"]
-        energy = ["XOM", "CVX", "OXY"]
-
-        if symbol in tech:
-            return {"asset_type": "stock", "region": "usa", "sector": "tech"}
-
-        if symbol in energy:
-            return {"asset_type": "stock", "region": "usa", "sector": "energy"}
-
-        return {"asset_type": "stock", "region": "usa", "sector": "general"}
-
     def trader(self, symbol: str) -> Dict[str, Any]:
         symbol = (symbol or "").upper().strip()
         market_symbol = self._normalize_market_symbol(symbol)
@@ -655,7 +622,6 @@ class ProductBrain:
                 "insight_lines": insight_lines,
                 "summary": f"{symbol} | precio {round(price, 2)} | score {score} | accion {action}",
                 "friendly_recommendation": friendly,
-                                **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }
 
@@ -677,7 +643,6 @@ class ProductBrain:
                 "insight_lines": ["No hay datos suficientes."],
                 "summary": f"{symbol} sin datos",
                 "friendly_recommendation": "No operar.",
-                                **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }
 
@@ -685,28 +650,11 @@ class ProductBrain:
     # RECOMMENDATIONS
     # =========================
     def recommendations(self) -> Dict[str, Any]:
-                symbols = [
-            # USA
+        symbols = [
             "NVDA", "AMD", "META", "MSFT", "GOOGL",
             "PLTR", "COIN", "ARM", "MRVL",
-
-            # ENERGY
             "XOM", "CVX", "OXY", "XLE", "USO",
-
-            # INDEX / MACRO
-            "SPY", "QQQ", "GLD",
-
-            # CRYPTO
-            "BTC", "ETH",
-
-            # IBEX
-            "SAN", "BBVA", "ITX", "TEF", "IBE",
-
-            # INDIA
-            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
-
-            # IPO / HIGH BETA
-            "ARM", "SMCI", "HOOD", "RIVN"
+            "SPY", "QQQ", "GLD", "BTC", "ETH"
         ]
 
         results = []
