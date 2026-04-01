@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -131,35 +131,7 @@
       .add-inline,.add-inline.meeting{grid-template-columns:1fr}
       .shell{padding:12px}
     }
-  
-  /* ===== OPS-X PRO LAYER ===== */
-
-  .asset-type-stock { border-left: 4px solid #44f0ff; }
-  .asset-type-crypto { border-left: 4px solid #ffd45a; }
-  .asset-type-etf { border-left: 4px solid #49ffc2; }
-
-  .result-card.top-pick {
-    border: 1px solid rgba(73,255,194,.4);
-    box-shadow: 0 0 20px rgba(73,255,194,.15);
-  }
-
-  .recent-bar {
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin-top:10px;
-  }
-
-  .recent-item {
-    padding:6px 10px;
-    border-radius:10px;
-    background:var(--card2);
-    border:1px solid rgba(255,255,255,.05);
-    cursor:pointer;
-    font-size:12px;
-  }
-
-</style>
+  </style>
 </head>
 <body>
   <div class="shell">
@@ -212,27 +184,27 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Talk to JARVIS</h2>
-            <div class="subtle">Escribe o habla. JARVIS responde claro y ?til.</div>
+            <div class="subtle">Escribe o habla. JARVIS responde claro y útil.</div>
           </div>
 
           <div class="command-bar">
-            <input id="chatInput" class="input" placeholder="Escr?bele a JARVIS..." />
-            <button id="voiceBtn" class="ghost-btn">?? Voice</button>
-            <button id="stopVoiceBtn" class="ghost-btn">? Stop</button>
+            <input id="chatInput" class="input" placeholder="Escríbele a JARVIS..." />
+            <button id="voiceBtn" class="ghost-btn">🎤 Voice</button>
+            <button id="stopVoiceBtn" class="ghost-btn">■ Stop</button>
             <button id="sendBtn" class="primary-btn">Send</button>
           </div>
 
           <div class="chat-log" id="chatLog">
-            <div class="bubble jarvis">Hola. ?Qu? necesitas hoy?</div>
+            <div class="bubble jarvis">Hola. ¿Qué necesitas hoy?</div>
           </div>
 
           <div style="margin-top:14px">
             <div class="section-top" style="margin-bottom:10px">
               <h2 class="section-title" style="font-size:24px">JARVIS Results</h2>
-              <div class="subtle">Visualizaci?n autom?tica de an?lisis, m?ltiples activos y noticias.</div>
+              <div class="subtle">Visualización automática de análisis, múltiples activos y noticias.</div>
             </div>
             <div id="jarvisResults" class="results-grid">
-              <div class="result-empty">Todav?a no hay resultados visuales. Prueba con ?analiza tesla?, ?analiza apple nvidia tesla? o ?noticias de nvidia?.</div>
+              <div class="result-empty">Todavía no hay resultados visuales. Prueba con “analiza tesla”, “analiza apple nvidia tesla” o “noticias de nvidia”.</div>
             </div>
           </div>
         </section>
@@ -240,7 +212,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Tasks</h2>
-            <div class="subtle">Organizadas por prioridad y d?a. Simple y usable.</div>
+            <div class="subtle">Organizadas por prioridad y día. Simple y usable.</div>
           </div>
 
           <div class="stack" id="tasksList"></div>
@@ -264,7 +236,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Meetings</h2>
-            <div class="subtle">Agenda reuniones r?pido desde aqu?.</div>
+            <div class="subtle">Agenda reuniones rápido desde aquí.</div>
           </div>
 
           <div class="stack" id="meetingsList"></div>
@@ -318,7 +290,7 @@
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Recommended Stocks</h2>
-            <div class="subtle">Ideas del d?a explicadas de forma simple.</div>
+            <div class="subtle">Ideas del día explicadas de forma simple.</div>
           </div>
           <div class="recommendations" id="recommendations"></div>
         </section>
@@ -332,7 +304,7 @@
           <label id="uploadZone" class="upload-zone">
             <input id="fileInput" class="upload-input" type="file" multiple />
             <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;">Drop files here or click to upload</div>
-            <div>PDF, im?genes, videos, audio y archivos generales.</div>
+            <div>PDF, imágenes, videos, audio y archivos generales.</div>
           </label>
 
           <div class="asset-grid" id="assetGrid"></div>
@@ -342,24 +314,6 @@
   </div>
 
 <script>
-
-let recentSymbols = [];
-
-function detectAssetType(symbol){
-  if(!symbol) return "stock";
-  symbol = symbol.toUpperCase();
-
-  if(["BTC","ETH","SOL","XRP"].includes(symbol)) return "crypto";
-  if(["SPY","QQQ","XLE","USO"].includes(symbol)) return "etf";
-
-  return "stock";
-}
-
-function saveRecent(symbol){
-  if(!symbol) return;
-  recentSymbols = [symbol, ...recentSymbols.filter(s => s !== symbol)].slice(0,8);
-}
-
   const qs = (id) => document.getElementById(id);
   const state = { recognition: null, listening: false };
 
@@ -373,9 +327,9 @@ function saveRecent(symbol){
 
   function trafficTag(level){
     const v = (level || "").toLowerCase();
-    if(v === "green") return `<span class="tag-ok">? Go</span>`;
-    if(v === "yellow") return `<span class="tag-warn">? Wait</span>`;
-    return `<span class="tag-bad">? Avoid</span>`;
+    if(v === "green") return `<span class="tag-ok">● Go</span>`;
+    if(v === "yellow") return `<span class="tag-warn">● Wait</span>`;
+    return `<span class="tag-bad">● Avoid</span>`;
   }
 
   async function loadHome(){
@@ -390,7 +344,7 @@ function saveRecent(symbol){
     qs("assetsCount").textContent = data.assets_count || 0;
 
     if(data.next_meeting){
-      qs("nextMeeting").textContent = `${data.next_meeting.time} ? ${data.next_meeting.title}`;
+      qs("nextMeeting").textContent = `${data.next_meeting.time} • ${data.next_meeting.title}`;
     } else {
       qs("nextMeeting").textContent = "No meetings";
     }
@@ -406,6 +360,25 @@ function saveRecent(symbol){
       box.innerHTML = `<div class="brief">No tasks yet.</div>`;
       return;
     }
+
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "row-card task-item";
+      div.innerHTML = `
+        <div>
+          <div class="row-title">${item.text}</div>
+          <div class="row-sub">${item.day || "today"} • ${item.priority || "medium"}</div>
+        </div>
+        <button class="check-btn">${item.done ? "✓" : ""}</button>
+      `;
+      div.querySelector(".check-btn").onclick = async () => {
+        await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
+        await loadHome();
+      };
+      box.appendChild(div);
+    });
+  }
+
   function renderMeetings(items){
     const box = qs("meetingsList");
     box.innerHTML = "";
@@ -418,39 +391,271 @@ function saveRecent(symbol){
       const div = document.createElement("div");
       div.className = "row-card";
       div.innerHTML = `
-        <div class="row-title">${item.time} � ${item.title}</div>
+        <div class="row-title">${item.time} • ${item.title}</div>
         <div class="row-sub">${item.notes || ""}</div>
       `;
       box.appendChild(div);
     });
   }
 
-    items.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "row-card task-item";
-      div.innerHTML = `
-        <div>
-          <div class="row-title">${item.text}</div>
-          <div class="row-sub">${item.day || "today"} � ${item.priority || "medium"}</div>
-        </div>
-        <button class="check-btn">${item.done ? "?" : ""}</button>
-      `;
-      div.querySelector(".check-btn").onclick = async () => {
-        await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
-        await loadHome();
-      };
-      box.appendChild(div);
+  async function addTask(){
+    const text = qs("newTaskText").value.trim();
+    const priority = qs("newTaskPriority").value;
+    const day = qs("newTaskDay").value;
+    if(!text) return;
+
+    await fetch("/dashboard/tasks", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text, priority, day})
     });
+
+    qs("newTaskText").value = "";
+    await loadHome();
   }
 
-    let html = "";
+  async function addMeeting(){
+    const title = qs("newMeetingTitle").value.trim();
+    const time = qs("newMeetingTime").value.trim();
+    const notes = qs("newMeetingNotes").value.trim();
+    if(!title || !time) return;
 
-items.forEach((item, i) => {
-    html += renderStockCard(item, i);
-});
+    await fetch("/dashboard/meetings", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({title, time, notes})
+    });
 
-box.innerHTML = html;
-  
+    qs("newMeetingTitle").value = "";
+    qs("newMeetingTime").value = "";
+    qs("newMeetingNotes").value = "";
+    await loadHome();
+  }
+
+  function renderResultsEmpty(){
+    qs("jarvisResults").innerHTML = `<div class="result-empty">Todavía no hay resultados visuales. Escribe algo como análisis, noticias o múltiples activos.</div>`;
+  }
+
+  function renderSingleTrader(details){
+    qs("jarvisResults").innerHTML = `
+      <div class="result-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div class="result-title">${details.symbol || "-"}</div>
+          ${trafficTag(details.traffic_light)}
+        </div>
+        <div class="pill-row">
+          <span class="tag-warn">Precio: ${details.price_now ?? details.price ?? "--"}</span>
+          <span class="tag-warn">Score: ${details.setup_score ?? "--"}</span>
+        </div>
+        <div style="margin-top:12px">${details.friendly_recommendation || details.summary || ""}</div>
+        <div style="margin-top:12px;color:var(--soft)">${(details.insight_lines || []).join(" | ")}</div>
+      </div>
+    `;
+  }
+
+  function renderMultiple(details){
+    const items = details?.items || [];
+    if(!items.length){
+      renderResultsEmpty();
+      return;
+    }
+
+    qs("jarvisResults").innerHTML = items.map(item => `
+      <div class="result-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div class="result-title">${item.symbol}</div>
+          ${trafficTag(item.traffic_light)}
+        </div>
+        <div class="pill-row">
+          <span class="tag-warn">Precio: ${item.price_now ?? item.price ?? "--"}</span>
+          <span class="tag-warn">Score: ${item.setup_score ?? "--"}</span>
+        </div>
+        <div style="margin-top:10px">${item.friendly_recommendation || item.summary || ""}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderNews(details){
+    if(details?.news_by_symbol){
+      const newsBySymbol = details.news_by_symbol;
+      const symbols = Object.keys(newsBySymbol);
+      if(!symbols.length){
+        renderResultsEmpty();
+        return;
+      }
+
+      let html = "";
+      for(const sym of symbols){
+        const list = newsBySymbol[sym] || [];
+        html += `<div class="result-card"><div class="result-title" style="font-size:18px">${sym}</div>`;
+        if(!list.length){
+          html += `<div class="news-source" style="margin-top:10px">Sin noticias claras.</div>`;
+        } else {
+          html += list.slice(0,3).map(n => `
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+              <div class="news-title">${n.title || ""}</div>
+              <div class="news-source">${n.publisher || ""}</div>
+            </div>
+          `).join("");
+        }
+        html += `</div>`;
+      }
+      qs("jarvisResults").innerHTML = html;
+      return;
+    }
+
+    if(details?.news){
+      qs("jarvisResults").innerHTML = `
+        <div class="result-card">
+          <div class="result-title" style="font-size:18px">${details.symbol || "News"}</div>
+          ${(details.news || []).slice(0,3).map(n => `
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+              <div class="news-title">${n.title || ""}</div>
+              <div class="news-source">${n.publisher || ""}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      return;
+    }
+
+    renderResultsEmpty();
+  }
+
+  function renderChatAction(payload){
+    const action = payload?.action || payload?.response?.action || "";
+    const details = payload?.details || payload?.response?.details || {};
+
+    if(action === "show_trader"){
+      renderSingleTrader(details);
+      return;
+    }
+
+    if(action === "show_multiple"){
+      renderMultiple(details);
+      return;
+    }
+
+    if(action === "show_news"){
+      renderNews(details);
+      return;
+    }
+  }
+
+  async function sendChat(messageOverride=null){
+    const input = qs("chatInput");
+    const message = (messageOverride || input.value).trim();
+    if(!message) return;
+
+    addBubble(message, "user");
+    input.value = "";
+
+    const res = await fetch("/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({message, domain:"general"})
+    });
+
+    const data = await res.json();
+    const reply = data.reply || data.summary || data.response?.reply || data.response?.summary || "No reply.";
+    addBubble(reply, "jarvis");
+    renderChatAction(data);
+  }
+
+  async function runAutoJarvis(){
+    const res = await fetch("/jarvis/auto", {method:"POST"});
+    const data = await res.json();
+    addBubble(data.reply || data.summary || "Auto JARVIS completed.", "jarvis");
+    await loadRecommendations();
+  }
+
+  function initVoice(){
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SpeechRecognition){
+      qs("voiceBtn").disabled = true;
+      qs("stopVoiceBtn").disabled = true;
+      return;
+    }
+
+    state.recognition = new SpeechRecognition();
+    state.recognition.lang = "es-ES";
+    state.recognition.interimResults = false;
+    state.recognition.maxAlternatives = 1;
+
+    state.recognition.onstart = () => { state.listening = true; };
+    state.recognition.onend = () => { state.listening = false; };
+    state.recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      qs("chatInput").value = transcript;
+      await sendChat();
+    };
+
+    qs("voiceBtn").onclick = () => {
+      if(state.recognition) state.recognition.start();
+    };
+
+    qs("stopVoiceBtn").onclick = () => {
+      if(state.recognition && state.listening) state.recognition.stop();
+    };
+  }
+
+  async function analyzeTrader(){
+    const raw = qs("symbolInput").value.trim() || "AAPL";
+    const res = await fetch("/dashboard/trader", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({symbol: raw})
+    });
+    const data = await res.json();
+
+    qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
+    qs("setupScore").textContent = data.setup_score ?? "--";
+    qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
+    qs("priceNow").textContent = data.price_now ?? "--";
+
+    const p = data.trade_plan || {};
+    const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
+
+    qs("tradePlan").innerHTML = `
+      <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
+      <div class="brief"><strong>Entry zone:</strong> ${entry}</div>
+      <div class="brief"><strong>Stop loss:</strong> ${p.stop_loss ?? "-"}</div>
+      <div class="brief"><strong>Target 1:</strong> ${p.target_1 ?? "-"}</div>
+      <div class="brief"><strong>Target 2:</strong> ${p.target_2 ?? "-"}</div>
+      <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
+    `;
+
+    const lines = data.insight_lines || [data.summary || "No insight available."];
+    qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
+  }
+
+  async function loadRecommendations(){
+    const res = await fetch("/dashboard/recommendations");
+    const data = await res.json();
+    const box = qs("recommendations");
+    box.innerHTML = "";
+
+    const items = data.items || [];
+    if(!items.length){
+      box.innerHTML = `<div class="brief">No recommendations available.</div>`;
+      return;
+    }
+
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "brief";
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <strong>${item.symbol}</strong>
+          ${trafficTag(item.traffic_light)}
+        </div>
+        <div style="margin-top:8px">Precio: ${item.price_now ?? item.price ?? "--"}</div>
+        <div style="margin-top:8px">Score: ${item.setup_score ?? "--"}</div>
+        <div style="margin-top:8px;color:var(--white)">${item.friendly_recommendation || item.summary || ""}</div>
+      `;
+      box.appendChild(card);
+    });
+  }
 
   async function loadAssets(){
     const res = await fetch("/dashboard/assets");
@@ -470,7 +675,7 @@ box.innerHTML = html;
       div.className = "asset";
       div.innerHTML = `
         <div class="name">${asset.filename}</div>
-        <div class="meta">${asset.kind} ? ${asset.mime_type || "unknown"}</div>
+        <div class="meta">${asset.kind} • ${asset.mime_type || "unknown"}</div>
         <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
       `;
       box.appendChild(div);
@@ -529,32 +734,7 @@ box.innerHTML = html;
     await loadRecommendations();
   }
 
-  
-async function loadRecommendations(){
-  const res = await fetch("/dashboard/recommendations");
-  const data = await res.json();
-
-  const box = document.getElementById("recommendations");
-
-  if(!data.items || !data.items.length){
-    box.innerHTML = <div class="result-empty">No recommendations yet</div>;
-    return;
-  }
-
-  let html = "";
-
-  data.items.forEach((item, i) => {
-    html += renderStockCard(item, i);
-  });
-
-  box.innerHTML = html;
-}
-
-boot();
+  boot();
 </script>
 </body>
 </html>
-
-
-
-
