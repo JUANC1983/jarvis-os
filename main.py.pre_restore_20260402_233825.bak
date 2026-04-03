@@ -1,0 +1,89 @@
+﻿from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+app = FastAPI()
+
+BASE_DIR = Path(__file__).resolve().parent
+DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
+
+# =========================
+# DASHBOARD
+# =========================
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    if DASHBOARD_HTML.exists():
+        return DASHBOARD_HTML.read_text(encoding="utf-8")
+    return HTMLResponse("<h1>Dashboard not found</h1>", status_code=404)
+
+# =========================
+# HOME DATA
+# =========================
+
+@app.get("/dashboard/home")
+def dashboard_home():
+    now = datetime.now(ZoneInfo("America/Bogota"))
+
+    return {
+        "greeting": "JARVIS ready",
+        "date": now.strftime("%Y-%m-%d %I:%M %p COT"),
+        "owner_name": "Juan Camilo",
+        "top_priority": "Protect capital",
+        "tasks_open": 0,
+        "assets_count": 0,
+        "next_meeting": None,
+        "tasks": [],
+        "meetings": []
+    }
+
+# =========================
+# CHAT (SAFE)
+# =========================
+
+@app.post("/chat")
+def chat(payload: dict):
+    message = payload.get("message", "")
+
+    return {
+        "reply": f"Procesado: {message}",
+        "type": "text"
+    }
+
+# =========================
+# TRADER (SAFE MOCK)
+# =========================
+
+@app.post("/dashboard/trader")
+def trader(payload: dict):
+    symbol = payload.get("symbol", "AAPL").upper()
+
+    return {
+        "symbol": symbol,
+        "price_now": 100,
+        "setup_score": 50,
+        "traffic_light": "yellow",
+        "trade_plan": {
+            "action": "WAIT",
+            "entry_zone": [95, 105],
+            "stop_loss": 90,
+            "target_1": 110,
+            "target_2": 120,
+            "risk_reward_estimate": 1.2
+        },
+        "insight_lines": ["Sistema en modo recuperación"]
+    }
+
+# =========================
+# RECOMMENDATIONS (SAFE)
+# =========================
+
+@app.get("/dashboard/recommendations")
+def recommendations():
+    return {
+        "items": [],
+        "mode": "safe_recovery"
+    }

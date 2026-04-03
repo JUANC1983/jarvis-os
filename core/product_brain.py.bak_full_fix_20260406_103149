@@ -720,13 +720,16 @@ class ProductBrain:
     # RECOMMENDATIONS
     # =========================
     def recommendations(self) -> Dict[str, Any]:
-        symbols = [
-            # USA TECH / GROWTH
+                symbols = [
+            # USA
             "NVDA", "AMD", "META", "MSFT", "GOOGL",
             "PLTR", "COIN", "ARM", "MRVL",
 
-            # ENERGY / MACRO
+            # ENERGY
             "XOM", "CVX", "OXY", "XLE", "USO",
+
+            # INDEX / MACRO
+            "SPY", "QQQ", "GLD",
 
             # CRYPTO
             "BTC", "ETH",
@@ -742,12 +745,12 @@ class ProductBrain:
         ]
 
         results = []
-
         for s in symbols:
             r = self.trader(s)
             if r.get("price") is not None:
                 results.append(r)
 
-        results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
-
+        results = sorted(results, key=lambda x: x["setup_score"], reverse=True), reverse=True)
         return {"items": results[:12]}
+
+
