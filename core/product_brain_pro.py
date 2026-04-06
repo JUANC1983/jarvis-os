@@ -1,0 +1,173 @@
+from __future__ import annotations
+
+from typing import Dict, Any, List
+
+from core.agent_orchestrator_pro import AgentOrchestratorPro
+from core.market_data_engine import MarketDataEngine
+from core.market_intelligence_engine import MarketIntelligenceEngine
+from core.global_market_intelligence_system import GlobalMarketIntelligenceSystem
+from core.news_intelligence_engine import NewsIntelligenceEngine
+from core.opportunity_discovery_engine import OpportunityDiscoveryEngine
+from core.opportunity_scoring_engine import OpportunityScoringEngine
+from core.decision_engine import DecisionEngine
+
+
+class ProductBrainPro:
+
+    def __init__(self) -> None:
+
+        self.orchestrator = AgentOrchestratorPro()
+
+        self.market_data = MarketDataEngine()
+        self.market_intel = MarketIntelligenceEngine()
+        self.global_intel = GlobalMarketIntelligenceSystem()
+        self.news_engine = NewsIntelligenceEngine()
+        self.opportunity_engine = OpportunityDiscoveryEngine()
+        self.opportunity_scoring = OpportunityScoringEngine()
+        self.decision_engine = DecisionEngine()
+
+    def analyze_asset(self, symbol: str) -> Dict[str, Any]:
+
+        symbol = symbol.upper().strip()
+
+        quotes = self.market_data.get_quotes([symbol])
+        quote = quotes[0] if quotes else {}
+
+        micro = self.market_intel.analyze_symbol(symbol)
+        macro = self.global_intel.scan()
+        news = self.news_engine.fetch_news()
+        opportunities = self.opportunity_engine.scan()
+
+        trader = self.orchestrator.execute_trader(symbol)
+
+        opportunity_context = self.opportunity_scoring.score(symbol)
+
+        trader_score = trader.get("setup_score", 0) or 0
+        opportunity_score = opportunity_context.get("opportunity_score", 50)
+
+        macro_state = macro.get("volatility_and_liquidity_regime", {})
+        volatility = macro_state.get("volatility_regime", "neutral")
+
+        macro_adjustment = 0
+        if volatility == "stress":
+            macro_adjustment = -10
+        elif volatility == "calm":
+            macro_adjustment = +5
+
+        final_score = int(
+            (trader_score * 0.6) +
+            (opportunity_score * 0.3) +
+            macro_adjustment
+        )
+
+        final_score = max(0, min(100, final_score))
+
+        decision = self.decision_engine.evaluate(
+            f"{symbol} score {final_score}"
+        )
+
+        return {
+            "symbol": symbol,
+            "price": quote.get("price"),
+            "change_pct": quote.get("change_pct"),
+            "setup_score": final_score,
+            "trader": trader,
+            "micro": micro,
+            "macro_summary": macro.get("executive_summary"),
+            "news_count": len(news),
+            "opportunity": opportunity_context,
+            "decision": decision,
+            "confidence": decision.get("score"),
+            "source": "product_brain_pro"
+        }
+
+    def recommendations(self) -> Dict[str, Any]:
+
+        symbols = [
+            "NVDA", "AAPL", "MSFT", "AMZN", "META",
+            "TSLA", "PLTR", "COIN", "SMCI",
+            "XOM", "CVX", "BTC", "ETH"
+        ]
+
+        results: List[Dict[str, Any]] = []
+
+        for s in symbols:
+            try:
+                r = self.analyze_asset(s)
+                if r.get("price") is not None:
+                    results.append(r)
+            except Exception:
+                continue
+
+        results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
+
+        return {
+            "items": results[:10],
+            "engine": "PRO",
+        }
+
+    def _compute_final_score(
+        self,
+        trader_score: float,
+        micro: dict,
+        macro_summary: str,
+        opportunity: dict
+    ) -> float:
+
+        micro_score = 50
+
+        trend = micro.get("trend")
+        momentum = micro.get("momentum")
+
+        if trend == "bullish":
+            micro_score += 25
+        elif trend == "bearish":
+            micro_score -= 25
+
+        if momentum == "strong":
+            micro_score += 15
+        elif momentum == "neutral":
+            micro_score += 0
+        else:
+            micro_score -= 10
+
+        micro_score = max(0, min(100, micro_score))
+
+        macro_score = 50
+        text = (macro_summary or "").lower()
+
+        if "stress" in text or "tightening" in text:
+            macro_score -= 15
+
+        if "supportive" in text:
+            macro_score += 15
+
+        macro_score = max(0, min(100, macro_score))
+
+        opportunity_score = opportunity.get("opportunity_score", 50)
+
+        final = (
+            (micro_score * 0.40) +
+            (trader_score * 0.25) +
+            (macro_score * 0.20) +
+            (opportunity_score * 0.15)
+        )
+
+        if (
+            micro.get("trend") == "bullish" and
+            trader_score >= 70 and
+            opportunity_score >= 70
+        ):
+            final += 8
+
+        if micro.get("trend") == "bearish" and trader_score >= 65:
+            final -= 10
+
+        if opportunity_score < 40:
+            final -= 5
+
+        final = max(0, min(100, int(final)))
+
+        return final
+
+
