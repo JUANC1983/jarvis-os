@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1775524176,
+    "title": "Board Meeting",
+    "datetime": "2026-04-07T15:00:00",
+    "notes": "",
+    "created_at": "2026-04-06T20:09:36.480561"
+  },
+  {
+    "id": 1775545136,
+    "title": "Test Meeting",
+    "datetime": "15:00",
+    "notes": "demo",
+    "created_at": "2026-04-07T01:58:56.920243"
+  }
+]
