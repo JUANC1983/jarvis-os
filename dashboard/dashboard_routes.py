@@ -1,5 +1,8 @@
-from fastapi import APIRouter
+﻿from fastapi import APIRouter
 from datetime import datetime
+from core.meetings_engine import MeetingsEngine
+
+meetings_engine = MeetingsEngine()
 
 router = APIRouter(prefix="/dashboard")
 
@@ -23,12 +26,11 @@ def dashboard_summary():
             {"task":"Prepare strategy meeting","priority":"medium"}
         ],
 
-        "meetings":[
-            {"time":"15:00","title":"Strategy Review"}
-        ],
+        "meetings": meetings_engine.get_upcoming(),
 
         "recommended_stocks":[
             {"symbol":"NVDA","score":88},
             {"symbol":"MSFT","score":82}
         ]
     }
+

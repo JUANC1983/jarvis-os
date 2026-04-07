@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 from uuid import uuid4
+from core.meetings_engine import MeetingsEngine
 
 
 class DashboardWorkspaceEngine:
@@ -13,6 +14,7 @@ class DashboardWorkspaceEngine:
         self.base_path.parent.mkdir(parents=True, exist_ok=True)
         self.uploads_dir = Path(uploads_dir)
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
+        self.meetings_engine = MeetingsEngine()
 
         if not self.base_path.exists():
             self.base_path.write_text(json.dumps({
@@ -33,8 +35,9 @@ class DashboardWorkspaceEngine:
     def home(self, owner_name: str) -> Dict[str, Any]:
         data = self._read()
         tasks = data.get("tasks", [])
-        meetings = data.get("meetings", [])
+        meetings = self.meetings_engine.get_meetings()
         assets = data.get("assets", [])
+        meetings = sorted(meetings, key=lambda x: x.get('time') or x.get('datetime', '99:99'))
         next_meeting = meetings[0] if meetings else None
 
         return {
@@ -75,17 +78,7 @@ class DashboardWorkspaceEngine:
         raise ValueError("task not found")
 
     def add_meeting(self, title: str, time_value: str, notes: str = "") -> Dict[str, Any]:
-        data = self._read()
-        item = {
-            "id": f"m_{uuid4().hex[:8]}",
-            "title": title,
-            "time": time_value,
-            "notes": notes
-        }
-        data["meetings"].append(item)
-        data["meetings"] = sorted(data["meetings"], key=lambda x: x.get("time", "99:99"))
-        self._write(data)
-        return item
+        return self.meetings_engine.add_meeting(title, time_value, notes)
 
     def register_asset(self, filename: str, stored_path: str, mime_type: str | None = None, size_bytes: int | None = None) -> Dict[str, Any]:
         data = self._read()
@@ -101,3 +94,5 @@ class DashboardWorkspaceEngine:
         data["assets"].insert(0, item)
         self._write(data)
         return item
+
+

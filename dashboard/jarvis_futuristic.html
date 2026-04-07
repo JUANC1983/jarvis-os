@@ -738,3 +738,35 @@
 </script>
 </body>
 </html>
+
+<script>
+async function loadDashboard() {
+    try {
+        const res = await fetch("http://127.0.0.1:8000/dashboard/summary");
+        const data = await res.json();
+
+        console.log("JARVIS DATA:", data);
+
+        // SAFE updates (only if elements exist)
+
+        const nextEl = document.querySelector("#next-meeting");
+        if (nextEl && data.meetings.length > 0) {
+            nextEl.innerText = data.meetings[0].time + " - " + data.meetings[0].title;
+        }
+
+        const meetingsEl = document.querySelector("#meetings");
+        if (meetingsEl) {
+            meetingsEl.innerHTML = "";
+            data.meetings.forEach(m => {
+                meetingsEl.innerHTML += <div> - </div>;
+            });
+        }
+
+    } catch (e) {
+        console.error("Dashboard load error:", e);
+    }
+}
+
+loadDashboard();
+</script>
+
