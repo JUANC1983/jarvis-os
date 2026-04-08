@@ -183,7 +183,31 @@
       <div class="col">
         <section class="card">
           <div class="section-top">
-            <h2 class="section-title">Talk to JARVIS</h2>
+            <section class="card">
+  <div class="section-top">
+    <h2 class="section-title">System Metrics</h2>
+  </div>
+
+  <div class="market-head">
+    <div class="metric">
+      <div class="metric-label">Signals</div>
+      <div class="metric-value" id="signalsCount">--</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Accuracy</div>
+      <div class="metric-value" id="accuracy">--</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Risk</div>
+      <div class="metric-value" id="riskLevel">--</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Exposure</div>
+      <div class="metric-value" id="exposure">--</div>
+    </div>
+  </div>
+</section>
+
             <div class="subtle">Escribe o habla. JARVIS responde claro y útil.</div>
           </div>
 
@@ -211,7 +235,13 @@
 
         <section class="card">
           <div class="section-top">
-            <h2 class="section-title">Tasks</h2>
+            <section class="card">
+  <div class="section-top">
+    <h2 class="section-title">Agent Status</h2>
+  </div>
+  <div id="agentStatus" class="stack"></div>
+</section>
+
             <div class="subtle">Organizadas por prioridad y día. Simple y usable.</div>
           </div>
 
@@ -308,9 +338,20 @@
           </label>
 
           <div class="asset-grid" id="assetGrid"></div>
-        </section>
-      </div>
-    </div>
+        
+<section class="card">
+  <div class="section-top">
+    <h2 class="section-title">JARVIS Pipeline</h2>
+    <div class="subtle">Estado del sistema en tiempo real</div>
+  </div>
+  <div id="pipelineBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+    <div class="metric">SCAN</div>
+    <div class="metric">RESEARCH</div>
+    <div class="metric">ANALYZE</div>
+    <div class="metric">DECIDE</div>
+    <div class="metric">EXECUTE</div>
+  </div>
+</section>
   </div>
 
 <script>
@@ -735,6 +776,55 @@
   }
 
   boot();
+
+async function loadSystemMetrics(){
+  try{
+    const res = await fetch("/dashboard/system");
+    const data = await res.json();
+
+    qs("signalsCount").textContent = data.signals || 0;
+    qs("accuracy").textContent = data.accuracy || "--";
+    qs("riskLevel").textContent = data.risk || "--";
+    qs("exposure").textContent = data.exposure || "--";
+  }catch(e){}
+}
+
+async function loadAgents(){
+  try{
+    const res = await fetch("/dashboard/agents");
+    const data = await res.json();
+
+    const box = qs("agentStatus");
+    box.innerHTML = "";
+
+    (data.items || []).forEach(a=>{
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = <strong></strong> • ;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
+
+async function loadNews(){
+  try{
+    const res = await fetch("/dashboard/news");
+    const data = await res.json();
+
+    const box = qs("newsFeed");
+    box.innerHTML = "";
+
+    (data.items || []).forEach(n=>{
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = 
+        <div class="news-title"></div>
+        <div class="news-source"></div>
+      ;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
 </script>
 </body>
 </html>
@@ -768,6 +858,55 @@ async function loadDashboard() {
 }
 
 loadDashboard();
+
+async function loadSystemMetrics(){
+  try{
+    const res = await fetch("/dashboard/system");
+    const data = await res.json();
+
+    qs("signalsCount").textContent = data.signals || 0;
+    qs("accuracy").textContent = data.accuracy || "--";
+    qs("riskLevel").textContent = data.risk || "--";
+    qs("exposure").textContent = data.exposure || "--";
+  }catch(e){}
+}
+
+async function loadAgents(){
+  try{
+    const res = await fetch("/dashboard/agents");
+    const data = await res.json();
+
+    const box = qs("agentStatus");
+    box.innerHTML = "";
+
+    (data.items || []).forEach(a=>{
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = <strong></strong> • ;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
+
+async function loadNews(){
+  try{
+    const res = await fetch("/dashboard/news");
+    const data = await res.json();
+
+    const box = qs("newsFeed");
+    box.innerHTML = "";
+
+    (data.items || []).forEach(n=>{
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = 
+        <div class="news-title"></div>
+        <div class="news-source"></div>
+      ;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
 </script>
 
 
@@ -795,6 +934,55 @@ async function scheduleMeeting() {
     location.reload();
 }
 
+
+async function loadSystemMetrics(){
+  try{
+    const res = await fetch("/dashboard/system");
+    const data = await res.json();
+
+    qs("signalsCount").textContent = data.signals || 0;
+    qs("accuracy").textContent = data.accuracy || "--";
+    qs("riskLevel").textContent = data.risk || "--";
+    qs("exposure").textContent = data.exposure || "--";
+  }catch(e){}
+}
+
+async function loadAgents(){
+  try{
+    const res = await fetch("/dashboard/agents");
+    const data = await res.json();
+
+    const box = qs("agentStatus");
+    box.innerHTML = "";
+
+    (data.items || []).forEach(a=>{
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = <strong></strong> • ;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
+
+async function loadNews(){
+  try{
+    const res = await fetch("/dashboard/news");
+    const data = await res.json();
+
+    const box = qs("newsFeed");
+    box.innerHTML = "";
+
+    (data.items || []).forEach(n=>{
+      const div = document.createElement("div");
+      div.className = "brief";
+      div.innerHTML = 
+        <div class="news-title"></div>
+        <div class="news-source"></div>
+      ;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
 </script>
 
 <button onclick="scheduleMeeting()" style="
@@ -811,4 +999,5 @@ async function scheduleMeeting() {
 ">
 ➕ Schedule Meeting
 </button>
+
 
