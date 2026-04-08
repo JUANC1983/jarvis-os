@@ -806,15 +806,26 @@ async function loadAgents(){
   }catch(e){}
 }
 
+</div>
+        <div class="news-source">${n.source || ""}</div>
+      `;
+      box.appendChild(div);
+    });
+  }catch(e){
+    console.warn("loadNews failed", e);
+  }
+}
+
 async function loadNews(){
   try{
     const res = await fetch("/dashboard/news");
     const data = await res.json();
 
     const box = qs("newsFeed");
+    if (!box) return;
     box.innerHTML = "";
 
-    (data.items || []).forEach(n=>{
+    (data.items || []).forEach(n => {
       const div = document.createElement("div");
       div.className = "brief";
       div.innerHTML = 
@@ -823,58 +834,11 @@ async function loadNews(){
       ;
       box.appendChild(div);
     });
-  }catch(e){}
+  }catch(e){
+    console.warn("loadNews error", e);
+  }
 }
 </script>
-
-<!-- ========================= -->
-<!-- JARVIS PIPELINE START -->
-<!-- ========================= -->
-
-<section class="card">
-  <div class="section-top">
-    <h2 class="section-title">JARVIS Pipeline</h2>
-    <div class="subtle">Estado del sistema en tiempo real</div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
-    <div class="metric">SCAN</div>
-    <div class="metric">RESEARCH</div>
-    <div class="metric">ANALYZE</div>
-    <div class="metric">DECIDE</div>
-    <div class="metric">EXECUTE</div>
-  </div>
-</section>
-
-<section class="card">
-  <div class="section-top">
-    <h2 class="section-title">System Metrics</h2>
-  </div>
-  <div class="market-head">
-    <div class="metric"><div class="metric-label">Signals</div><div id="signalsCount">--</div></div>
-    <div class="metric"><div class="metric-label">Accuracy</div><div id="accuracy">--</div></div>
-    <div class="metric"><div class="metric-label">Risk</div><div id="riskLevel">--</div></div>
-    <div class="metric"><div class="metric-label">Exposure</div><div id="exposure">--</div></div>
-  </div>
-</section>
-
-<section class="card">
-  <div class="section-top">
-    <h2 class="section-title">Agent Status</h2>
-  </div>
-  <div id="agentStatus" class="stack"></div>
-</section>
-
-<section class="card">
-  <div class="section-top">
-    <h2 class="section-title">News & Golf</h2>
-    <div class="subtle">Markets • Tech • AI • Golf</div>
-  </div>
-  <div id="newsFeed" class="stack"></div>
-</section>
-
-<!-- ========================= -->
-<!-- JARVIS PIPELINE END -->
-<!-- ========================= -->
 
 </body>
 </html>
@@ -938,15 +902,26 @@ async function loadAgents(){
   }catch(e){}
 }
 
+</div>
+        <div class="news-source">${n.source || ""}</div>
+      `;
+      box.appendChild(div);
+    });
+  }catch(e){
+    console.warn("loadNews failed", e);
+  }
+}
+
 async function loadNews(){
   try{
     const res = await fetch("/dashboard/news");
     const data = await res.json();
 
     const box = qs("newsFeed");
+    if (!box) return;
     box.innerHTML = "";
 
-    (data.items || []).forEach(n=>{
+    (data.items || []).forEach(n => {
       const div = document.createElement("div");
       div.className = "brief";
       div.innerHTML = 
@@ -955,22 +930,15 @@ async function loadNews(){
       ;
       box.appendChild(div);
     });
-  }catch(e){}
+  }catch(e){
+    console.warn("loadNews error", e);
+  }
 }
 </script>
 
-
-
 <script>
 
-async function scheduleMeeting() {
-
-    const objective = prompt("Meeting objective:");
-    const datetime = prompt("Datetime (YYYY-MM-DD HH:MM):");
-
-    const res = await fetch('/dashboard/schedule-meeting', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+,
         body: JSON.stringify({
             objective: objective,
             datetime: datetime
@@ -1014,15 +982,26 @@ async function loadAgents(){
   }catch(e){}
 }
 
+</div>
+        <div class="news-source">${n.source || ""}</div>
+      `;
+      box.appendChild(div);
+    });
+  }catch(e){
+    console.warn("loadNews failed", e);
+  }
+}
+
 async function loadNews(){
   try{
     const res = await fetch("/dashboard/news");
     const data = await res.json();
 
     const box = qs("newsFeed");
+    if (!box) return;
     box.innerHTML = "";
 
-    (data.items || []).forEach(n=>{
+    (data.items || []).forEach(n => {
       const div = document.createElement("div");
       div.className = "brief";
       div.innerHTML = 
@@ -1031,24 +1010,11 @@ async function loadNews(){
       ;
       box.appendChild(div);
     });
-  }catch(e){}
+  }catch(e){
+    console.warn("loadNews error", e);
+  }
 }
 </script>
-
-<button onclick="scheduleMeeting()" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #00f0ff;
-    color: black;
-    padding: 12px 18px;
-    border-radius: 10px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-">
-➕ Schedule Meeting
-</button>
 
 
 
