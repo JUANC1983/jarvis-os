@@ -144,3 +144,38 @@ def add_meeting(data: dict):
 def upload_placeholder():
     return {"status": "ok"}
 
+
+# =========================
+# SYSTEM METRICS
+# =========================
+@app.get("/dashboard/system")
+def system_metrics():
+    return {
+        "signals": 3,
+        "accuracy": "72%",
+        "risk": "medium",
+        "exposure": "45%"
+    }
+
+# =========================
+# AGENTS
+# =========================
+@app.get("/dashboard/agents")
+def agents():
+    return {
+        "items": [
+            {"name": "Trader Agent", "status": "active"},
+            {"name": "News Agent", "status": "active"},
+            {"name": "Macro Agent", "status": "idle"}
+        ]
+    }
+
+# =========================
+# NEWS
+# =========================
+@app.get("/dashboard/news")
+def news():
+    return {
+        "items": []
+    }
+
