@@ -1,16 +1,24 @@
 from datetime import datetime
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+import shutil
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from core.product_brain import ProductBrain
+from core.dashboard_workspace_engine import DashboardWorkspaceEngine
+from core.meetings_engine import MeetingsEngine
 
 app = FastAPI(title="JARVIS OS")
 brain = ProductBrain()
+workspace = DashboardWorkspaceEngine()
+meetings_engine = MeetingsEngine()
 
 BASE_DIR = Path(__file__).resolve().parent
 DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
+UPLOADS_DIR = BASE_DIR / "dashboard" / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class ChatRequest(BaseModel):
@@ -35,26 +43,17 @@ def dashboard():
     raise HTTPException(status_code=404, detail="Dashboard not found")
 
 
+# =========================
+# HOME — persistent tasks + meetings
+# =========================
 @app.get("/dashboard/home")
 def dashboard_home():
     try:
-        now = datetime.now()
-
+        return workspace.home("Juan Camilo")
+    except Exception as e:
         return {
             "greeting": "JARVIS ready",
-            "date": now.strftime("%A %d %B %Y"),
-            "owner_name": "Juan Camilo",
-            "top_priority": "Protect capital",
-            "tasks_open": 0,
-            "assets_count": 0,
-            "next_meeting": None,
-            "tasks": [],
-            "meetings": [],
-        }
-    except Exception:
-        return {
-            "greeting": "JARVIS ready",
-            "date": "Live",
+            "date": datetime.now().strftime("%A %d %B %Y"),
             "owner_name": "Juan Camilo",
             "top_priority": "Protect capital",
             "tasks_open": 0,
@@ -65,6 +64,9 @@ def dashboard_home():
         }
 
 
+# =========================
+# CHAT
+# =========================
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
@@ -103,6 +105,30 @@ def chat(req: ChatRequest):
         )
 
 
+# =========================
+# AUTO JARVIS
+# =========================
+@app.post("/jarvis/auto")
+def jarvis_auto():
+    try:
+        recs = brain.recommendations()
+        items = recs.get("items", [])[:5]
+
+        if not items:
+            return {"reply": "No encuentro setups claros en este momento.", "items": []}
+
+        top = ", ".join([f"{x['symbol']} (score {x['setup_score']})" for x in items[:3]])
+        return {
+            "reply": f"Auto JARVIS completado. Mejores setups ahora: {top}.",
+            "items": items,
+        }
+    except Exception as e:
+        return {"reply": f"Auto JARVIS error: {e}", "items": []}
+
+
+# =========================
+# TRADER
+# =========================
 @app.post("/dashboard/trader")
 def trader(data: dict):
     try:
@@ -112,6 +138,9 @@ def trader(data: dict):
         return {"error": str(e)}
 
 
+# =========================
+# RECOMMENDATIONS
+# =========================
 @app.get("/dashboard/recommendations")
 def recommendations():
     try:
@@ -120,29 +149,117 @@ def recommendations():
         return {"items": [], "error": str(e)}
 
 
-@app.get("/dashboard/assets")
-def assets():
-    return {"assets": []}
-
-
+# =========================
+# TASKS — persistent
+# =========================
 @app.post("/dashboard/tasks")
 def add_task(data: dict):
-    return {"status": "ok", "saved": data}
+    try:
+        text = (data.get("text") or "").strip()
+        priority = (data.get("priority") or "medium").strip().lower()
+        day = (data.get("day") or "today").strip().lower()
+
+        if not text:
+            raise HTTPException(status_code=400, detail="text is required")
+        if priority not in ["high", "medium", "low"]:
+            priority = "medium"
+
+        return workspace.add_task(text, priority, day)
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 
 @app.post("/dashboard/tasks/{task_id}/toggle")
-def toggle_task(task_id: int):
-    return {"status": "ok", "task_id": task_id}
+def toggle_task(task_id: str):
+    try:
+        return workspace.toggle_task(task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
+# =========================
+# MEETINGS — persistent
+# =========================
 @app.post("/dashboard/meetings")
 def add_meeting(data: dict):
-    return {"status": "ok", "saved": data}
+    try:
+        title = (data.get("title") or "").strip()
+        time_value = (data.get("time") or "").strip()
+        notes = (data.get("notes") or "").strip()
+
+        if not title or not time_value:
+            raise HTTPException(status_code=400, detail="title and time are required")
+
+        return workspace.add_meeting(title, time_value, notes)
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+# =========================
+# SCHEDULE MEETING (from floating button)
+# =========================
+@app.post("/dashboard/schedule-meeting")
+def schedule_meeting(data: dict):
+    try:
+        objective = (data.get("objective") or "").strip()
+        datetime_value = (data.get("datetime") or "").strip()
+
+        if not objective or not datetime_value:
+            raise HTTPException(status_code=400, detail="objective and datetime are required")
+
+        meeting = meetings_engine.add_meeting_datetime(
+            title=objective,
+            datetime_value=datetime_value,
+            notes="Scheduled via dashboard"
+        )
+        return {"status": "ok", "meeting_created": meeting}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+# =========================
+# ASSETS — persistent
+# =========================
+@app.get("/dashboard/assets")
+def assets():
+    try:
+        return workspace.list_assets()
+    except Exception:
+        return {"assets": []}
 
 
 @app.post("/dashboard/upload")
-def upload_placeholder():
-    return {"status": "ok"}
+async def upload_asset(file: UploadFile = File(...)):
+    try:
+        filename = (file.filename or "asset.bin").replace("/", "_").replace("\\", "_")
+        output_path = UPLOADS_DIR / filename
+
+        with output_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        item = workspace.register_asset(
+            filename=filename,
+            stored_path=str(output_path),
+            mime_type=file.content_type,
+            size_bytes=output_path.stat().st_size,
+        )
+        return {"status": "ok", "asset": item}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.get("/dashboard/uploads/{filename:path}")
+def serve_upload(filename: str):
+    path = UPLOADS_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="file not found")
+    return FileResponse(path)
 
 
 # =========================
@@ -157,6 +274,7 @@ def system_metrics():
         "exposure": "45%"
     }
 
+
 # =========================
 # AGENTS
 # =========================
@@ -166,16 +284,14 @@ def agents():
         "items": [
             {"name": "Trader Agent", "status": "active"},
             {"name": "News Agent", "status": "active"},
-            {"name": "Macro Agent", "status": "idle"}
+            {"name": "Macro Agent", "status": "idle"},
         ]
     }
 
+
 # =========================
-# NEWS
+# NEWS FEED
 # =========================
 @app.get("/dashboard/news")
 def news():
-    return {
-        "items": []
-    }
-
+    return {"items": []}

@@ -181,68 +181,74 @@
 
     <div class="main">
       <div class="col">
+
+        <!-- System Metrics (standalone card) -->
         <section class="card">
           <div class="section-top">
-            <section class="card">
-  <div class="section-top">
-    <h2 class="section-title">System Metrics</h2>
-  </div>
+            <h2 class="section-title">System Metrics</h2>
+          </div>
+          <div class="market-head">
+            <div class="metric">
+              <div class="metric-label">Signals</div>
+              <div class="metric-value" id="signalsCount">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Accuracy</div>
+              <div class="metric-value" id="accuracy">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Risk</div>
+              <div class="metric-value" id="riskLevel">--</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Exposure</div>
+              <div class="metric-value" id="exposure">--</div>
+            </div>
+          </div>
+        </section>
 
-  <div class="market-head">
-    <div class="metric">
-      <div class="metric-label">Signals</div>
-      <div class="metric-value" id="signalsCount">--</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Accuracy</div>
-      <div class="metric-value" id="accuracy">--</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Risk</div>
-      <div class="metric-value" id="riskLevel">--</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Exposure</div>
-      <div class="metric-value" id="exposure">--</div>
-    </div>
-  </div>
-</section>
-
-            <div class="subtle">Escribe o habla. JARVIS responde claro y �til.</div>
+        <!-- Chat section -->
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">JARVIS // Chat</h2>
+            <div class="subtle">Escribe o habla. JARVIS responde claro y útil.</div>
           </div>
 
           <div class="command-bar">
-            <input id="chatInput" class="input" placeholder="Escr�bele a JARVIS..." />
-            <button id="voiceBtn" class="ghost-btn">?? Voice</button>
-            <button id="stopVoiceBtn" class="ghost-btn">� Stop</button>
+            <input id="chatInput" class="input" placeholder="Escríbele a JARVIS..." />
+            <button id="voiceBtn" class="ghost-btn">🎙 Voice</button>
+            <button id="stopVoiceBtn" class="ghost-btn">■ Stop</button>
             <button id="sendBtn" class="primary-btn">Send</button>
           </div>
 
           <div class="chat-log" id="chatLog">
-            <div class="bubble jarvis">Hola. �Qu� necesitas hoy?</div>
+            <div class="bubble jarvis">Hola. ¿Qué necesitas hoy?</div>
           </div>
 
           <div style="margin-top:14px">
             <div class="section-top" style="margin-bottom:10px">
               <h2 class="section-title" style="font-size:24px">JARVIS Results</h2>
-              <div class="subtle">Visualizaci�n autom�tica de an�lisis, m�ltiples activos y noticias.</div>
+              <div class="subtle">Visualización automática de análisis, múltiples activos y noticias.</div>
             </div>
             <div id="jarvisResults" class="results-grid">
-              <div class="result-empty">Todav�a no hay resultados visuales. Prueba con �analiza tesla�, �analiza apple nvidia tesla� o �noticias de nvidia�.</div>
+              <div class="result-empty">Todavía no hay resultados visuales. Prueba con "analiza tesla", "analiza apple nvidia tesla" o "noticias de nvidia".</div>
             </div>
           </div>
         </section>
 
+        <!-- Agent Status (standalone card) -->
         <section class="card">
           <div class="section-top">
-            <section class="card">
-  <div class="section-top">
-    <h2 class="section-title">Agent Status</h2>
-  </div>
-  <div id="agentStatus" class="stack"></div>
-</section>
+            <h2 class="section-title">Agent Status</h2>
+          </div>
+          <div id="agentStatus" class="stack"></div>
+        </section>
 
-            <div class="subtle">Organizadas por prioridad y d�a. Simple y usable.</div>
+        <!-- Tasks section -->
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">Tasks</h2>
+            <div class="subtle">Organizadas por prioridad y día. Simple y usable.</div>
           </div>
 
           <div class="stack" id="tasksList"></div>
@@ -263,10 +269,11 @@
           </div>
         </section>
 
+        <!-- Meetings section -->
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Meetings</h2>
-            <div class="subtle">Agenda reuniones r�pido desde aqu�.</div>
+            <div class="subtle">Agenda reuniones rápido desde aquí.</div>
           </div>
 
           <div class="stack" id="meetingsList"></div>
@@ -278,9 +285,12 @@
             <button id="addMeetingBtn" class="primary-btn">Add</button>
           </div>
         </section>
+
       </div>
 
       <div class="col">
+
+        <!-- Markets & Trader -->
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Markets & Trader</h2>
@@ -317,14 +327,16 @@
           </div>
         </section>
 
+        <!-- Recommended Stocks -->
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Recommended Stocks</h2>
-            <div class="subtle">Ideas del d�a explicadas de forma simple.</div>
+            <div class="subtle">Ideas del día explicadas de forma simple.</div>
           </div>
           <div class="recommendations" id="recommendations"></div>
         </section>
 
+        <!-- Asset Library -->
         <section class="card">
           <div class="section-top">
             <h2 class="section-title">Asset Library</h2>
@@ -334,658 +346,32 @@
           <label id="uploadZone" class="upload-zone">
             <input id="fileInput" class="upload-input" type="file" multiple />
             <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;">Drop files here or click to upload</div>
-            <div>PDF, im�genes, videos, audio y archivos generales.</div>
+            <div>PDF, imágenes, videos, audio y archivos generales.</div>
           </label>
 
           <div class="asset-grid" id="assetGrid"></div>
-        
-<section class="card">
-  <div class="section-top">
-    <h2 class="section-title">JARVIS Pipeline</h2>
-    <div class="subtle">Estado del sistema en tiempo real</div>
-  </div>
-  <div id="pipelineBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
-    <div class="metric">SCAN</div>
-    <div class="metric">RESEARCH</div>
-    <div class="metric">ANALYZE</div>
-    <div class="metric">DECIDE</div>
-    <div class="metric">EXECUTE</div>
-  </div>
-</section>
-  </div>
+        </section>
 
-<script>
-  const qs = (id) => document.getElementById(id);
-  const state = { recognition: null, listening: false };
+        <!-- JARVIS Pipeline -->
+        <section class="card">
+          <div class="section-top">
+            <h2 class="section-title">JARVIS Pipeline</h2>
+            <div class="subtle">Estado del sistema en tiempo real</div>
+          </div>
+          <div id="pipelineBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+            <div class="metric">SCAN</div>
+            <div class="metric">RESEARCH</div>
+            <div class="metric">ANALYZE</div>
+            <div class="metric">DECIDE</div>
+            <div class="metric">EXECUTE</div>
+          </div>
+        </section>
 
-  function addBubble(text, who="jarvis"){
-    const div = document.createElement("div");
-    div.className = "bubble " + who;
-    div.textContent = text;
-    qs("chatLog").appendChild(div);
-    qs("chatLog").scrollTop = qs("chatLog").scrollHeight;
-  }
-
-  function trafficTag(level){
-    const v = (level || "").toLowerCase();
-    if(v === "green") return `<span class="tag-ok">? Go</span>`;
-    if(v === "yellow") return `<span class="tag-warn">? Wait</span>`;
-    return `<span class="tag-bad">? Avoid</span>`;
-  }
-
-  async function loadHome(){
-    const res = await fetch("/dashboard/home");
-    const data = await res.json();
-
-    qs("greeting").textContent = data.greeting || "JARVIS ready";
-    qs("todayDate").textContent = data.date || "--";
-    qs("ownerName").textContent = "Owner: " + (data.owner_name || "Juan Camilo");
-    qs("topPriority").textContent = data.top_priority || "Protect capital";
-    qs("tasksOpen").textContent = data.tasks_open || 0;
-    qs("assetsCount").textContent = data.assets_count || 0;
-
-    if(data.next_meeting){
-      qs("nextMeeting").textContent = `${data.next_meeting.time} � ${data.next_meeting.title}`;
-    } else {
-      qs("nextMeeting").textContent = "No meetings";
-    }
-
-    renderTasks(data.tasks || []);
-    renderMeetings(data.meetings || []);
-  }
-
-  function renderTasks(items){
-    const box = qs("tasksList");
-    box.innerHTML = "";
-    if(!items.length){
-      box.innerHTML = `<div class="brief">No tasks yet.</div>`;
-      return;
-    }
-
-    items.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "row-card task-item";
-      div.innerHTML = `
-        <div>
-          <div class="row-title">${item.text}</div>
-          <div class="row-sub">${item.day || "today"} � ${item.priority || "medium"}</div>
-        </div>
-        <button class="check-btn">${item.done ? "?" : ""}</button>
-      `;
-      div.querySelector(".check-btn").onclick = async () => {
-        await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
-        await loadHome();
-      };
-      box.appendChild(div);
-    });
-  }
-
-  function renderMeetings(items){
-    const box = qs("meetingsList");
-    box.innerHTML = "";
-    if(!items.length){
-      box.innerHTML = `<div class="brief">No meetings yet.</div>`;
-      return;
-    }
-
-    items.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "row-card";
-      div.innerHTML = `
-        <div class="row-title">${item.time} � ${item.title}</div>
-        <div class="row-sub">${item.notes || ""}</div>
-      `;
-      box.appendChild(div);
-    });
-  }
-
-  async function addTask(){
-    const text = qs("newTaskText").value.trim();
-    const priority = qs("newTaskPriority").value;
-    const day = qs("newTaskDay").value;
-    if(!text) return;
-
-    await fetch("/dashboard/tasks", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({text, priority, day})
-    });
-
-    qs("newTaskText").value = "";
-    await loadHome();
-  }
-
-  async function addMeeting(){
-    const title = qs("newMeetingTitle").value.trim();
-    const time = qs("newMeetingTime").value.trim();
-    const notes = qs("newMeetingNotes").value.trim();
-    if(!title || !time) return;
-
-    await fetch("/dashboard/meetings", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({title, time, notes})
-    });
-
-    qs("newMeetingTitle").value = "";
-    qs("newMeetingTime").value = "";
-    qs("newMeetingNotes").value = "";
-    await loadHome();
-  }
-
-  function renderResultsEmpty(){
-    qs("jarvisResults").innerHTML = `<div class="result-empty">Todav�a no hay resultados visuales. Escribe algo como an�lisis, noticias o m�ltiples activos.</div>`;
-  }
-
-  function renderSingleTrader(details){
-    qs("jarvisResults").innerHTML = `
-      <div class="result-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-          <div class="result-title">${details.symbol || "-"}</div>
-          ${trafficTag(details.traffic_light)}
-        </div>
-        <div class="pill-row">
-          <span class="tag-warn">Precio: ${details.price_now ?? details.price ?? "--"}</span>
-          <span class="tag-warn">Score: ${details.setup_score ?? "--"}</span>
-        </div>
-        <div style="margin-top:12px">${details.friendly_recommendation || details.summary || ""}</div>
-        <div style="margin-top:12px;color:var(--soft)">${(details.insight_lines || []).join(" | ")}</div>
       </div>
-    `;
-  }
+    </div>
+  </div>
 
-  function renderMultiple(details){
-    const items = details?.items || [];
-    if(!items.length){
-      renderResultsEmpty();
-      return;
-    }
-
-    qs("jarvisResults").innerHTML = items.map(item => `
-      <div class="result-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-          <div class="result-title">${item.symbol}</div>
-          ${trafficTag(item.traffic_light)}
-        </div>
-        <div class="pill-row">
-          <span class="tag-warn">Precio: ${item.price_now ?? item.price ?? "--"}</span>
-          <span class="tag-warn">Score: ${item.setup_score ?? "--"}</span>
-        </div>
-        <div style="margin-top:10px">${item.friendly_recommendation || item.summary || ""}</div>
-      </div>
-    `).join("");
-  }
-
-  function renderNews(details){
-    if(details?.news_by_symbol){
-      const newsBySymbol = details.news_by_symbol;
-      const symbols = Object.keys(newsBySymbol);
-      if(!symbols.length){
-        renderResultsEmpty();
-        return;
-      }
-
-      let html = "";
-      for(const sym of symbols){
-        const list = newsBySymbol[sym] || [];
-        html += `<div class="result-card"><div class="result-title" style="font-size:18px">${sym}</div>`;
-        if(!list.length){
-          html += `<div class="news-source" style="margin-top:10px">Sin noticias claras.</div>`;
-        } else {
-          html += list.slice(0,3).map(n => `
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
-              <div class="news-title">${n.title || ""}</div>
-              <div class="news-source">${n.publisher || ""}</div>
-            </div>
-          `).join("");
-        }
-        html += `</div>`;
-      }
-      qs("jarvisResults").innerHTML = html;
-      return;
-    }
-
-    if(details?.news){
-      qs("jarvisResults").innerHTML = `
-        <div class="result-card">
-          <div class="result-title" style="font-size:18px">${details.symbol || "News"}</div>
-          ${(details.news || []).slice(0,3).map(n => `
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
-              <div class="news-title">${n.title || ""}</div>
-              <div class="news-source">${n.publisher || ""}</div>
-            </div>
-          `).join("")}
-        </div>
-      `;
-      return;
-    }
-
-    renderResultsEmpty();
-  }
-
-  function renderChatAction(payload){
-    const action = payload?.action || payload?.response?.action || "";
-    const details = payload?.details || payload?.response?.details || {};
-
-    if(action === "show_trader"){
-      renderSingleTrader(details);
-      return;
-    }
-
-    if(action === "show_multiple"){
-      renderMultiple(details);
-      return;
-    }
-
-    if(action === "show_news"){
-      renderNews(details);
-      return;
-    }
-  }
-
-  async function sendChat(messageOverride=null){
-    const input = qs("chatInput");
-    const message = (messageOverride || input.value).trim();
-    if(!message) return;
-
-    addBubble(message, "user");
-    input.value = "";
-
-    const res = await fetch("/chat", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({message, domain:"general"})
-    });
-
-    const data = await res.json();
-    const reply = data.reply || data.summary || data.response?.reply || data.response?.summary || "No reply.";
-    addBubble(reply, "jarvis");
-    renderChatAction(data);
-  }
-
-  async function runAutoJarvis(){
-    const res = await fetch("/jarvis/auto", {method:"POST"});
-    const data = await res.json();
-    addBubble(data.reply || data.summary || "Auto JARVIS completed.", "jarvis");
-    await loadRecommendations();
-  }
-
-  function initVoice(){
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SpeechRecognition){
-      qs("voiceBtn").disabled = true;
-      qs("stopVoiceBtn").disabled = true;
-      return;
-    }
-
-    state.recognition = new SpeechRecognition();
-    state.recognition.lang = "es-ES";
-    state.recognition.interimResults = false;
-    state.recognition.maxAlternatives = 1;
-
-    state.recognition.onstart = () => { state.listening = true; };
-    state.recognition.onend = () => { state.listening = false; };
-    state.recognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
-      qs("chatInput").value = transcript;
-      await sendChat();
-    };
-
-    qs("voiceBtn").onclick = () => {
-      if(state.recognition) state.recognition.start();
-    };
-
-    qs("stopVoiceBtn").onclick = () => {
-      if(state.recognition && state.listening) state.recognition.stop();
-    };
-  }
-
-  async function analyzeTrader(){
-    const raw = qs("symbolInput").value.trim() || "AAPL";
-    const res = await fetch("/dashboard/trader", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({symbol: raw})
-    });
-    const data = await res.json();
-
-    qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
-    qs("setupScore").textContent = data.setup_score ?? "--";
-    qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
-    qs("priceNow").textContent = data.price_now ?? "--";
-
-    const p = data.trade_plan || {};
-    const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
-
-    qs("tradePlan").innerHTML = `
-      <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
-      <div class="brief"><strong>Entry zone:</strong> ${entry}</div>
-      <div class="brief"><strong>Stop loss:</strong> ${p.stop_loss ?? "-"}</div>
-      <div class="brief"><strong>Target 1:</strong> ${p.target_1 ?? "-"}</div>
-      <div class="brief"><strong>Target 2:</strong> ${p.target_2 ?? "-"}</div>
-      <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
-    `;
-
-    const lines = data.insight_lines || [data.summary || "No insight available."];
-    qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
-  }
-
-  async function loadRecommendations(){
-    const res = await fetch("/dashboard/recommendations");
-    const data = await res.json();
-    const box = qs("recommendations");
-    box.innerHTML = "";
-
-    const items = data.items || [];
-    if(!items.length){
-      box.innerHTML = `<div class="brief">No recommendations available.</div>`;
-      return;
-    }
-
-    items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "brief";
-      card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-          <strong>${item.symbol}</strong>
-          ${trafficTag(item.traffic_light)}
-        </div>
-        <div style="margin-top:8px">Precio: ${item.price_now ?? item.price ?? "--"}</div>
-        <div style="margin-top:8px">Score: ${item.setup_score ?? "--"}</div>
-        <div style="margin-top:8px;color:var(--white)">${item.friendly_recommendation || item.summary || ""}</div>
-      `;
-      box.appendChild(card);
-    });
-  }
-
-  async function loadAssets(){
-    const res = await fetch("/dashboard/assets");
-    const data = await res.json();
-    const items = data.assets || [];
-    qs("assetsCount").textContent = items.length;
-
-    const box = qs("assetGrid");
-    box.innerHTML = "";
-    if(!items.length){
-      box.innerHTML = `<div class="brief">No assets uploaded yet.</div>`;
-      return;
-    }
-
-    items.slice(0,8).forEach(asset => {
-      const div = document.createElement("div");
-      div.className = "asset";
-      div.innerHTML = `
-        <div class="name">${asset.filename}</div>
-        <div class="meta">${asset.kind} � ${asset.mime_type || "unknown"}</div>
-        <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
-      `;
-      box.appendChild(div);
-    });
-  }
-
-  async function uploadFiles(files){
-    for(const file of files){
-      const form = new FormData();
-      form.append("file", file);
-      await fetch("/dashboard/upload", {method:"POST", body:form});
-    }
-    await loadAssets();
-    await loadHome();
-  }
-
-  function initUpload(){
-    const zone = qs("uploadZone");
-    const input = qs("fileInput");
-
-    zone.onclick = () => input.click();
-
-    input.onchange = async (e) => {
-      if(e.target.files?.length) await uploadFiles(e.target.files);
-    };
-
-    zone.addEventListener("dragover", e => {
-      e.preventDefault();
-    });
-
-    zone.addEventListener("drop", async e => {
-      e.preventDefault();
-      const files = e.dataTransfer?.files;
-      if(files?.length) await uploadFiles(files);
-    });
-  }
-
-  function initEvents(){
-    qs("sendBtn").onclick = () => sendChat();
-    qs("chatInput").addEventListener("keydown", e => {
-      if(e.key === "Enter") sendChat();
-    });
-    qs("addTaskBtn").onclick = addTask;
-    qs("addMeetingBtn").onclick = addMeeting;
-    qs("analyzeBtn").onclick = analyzeTrader;
-    qs("autoBtn").onclick = runAutoJarvis;
-  }
-
-  async function boot(){
-    initEvents();
-    initVoice();
-    initUpload();
-    await loadHome();
-    await loadAssets();
-    await analyzeTrader();
-    await loadRecommendations();
-  }
-
-  boot();
-
-async function loadSystemMetrics(){
-  try{
-    const res = await fetch("/dashboard/system");
-    const data = await res.json();
-
-    qs("signalsCount").textContent = data.signals || 0;
-    qs("accuracy").textContent = data.accuracy || "--";
-    qs("riskLevel").textContent = data.risk || "--";
-    qs("exposure").textContent = data.exposure || "--";
-  }catch(e){}
-}
-
-async function loadAgents(){
-  try{
-    const res = await fetch("/dashboard/agents");
-    const data = await res.json();
-
-    const box = qs("agentStatus");
-    box.innerHTML = "";
-
-    (data.items || []).forEach(a=>{
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = `<strong>${a.name || "Agent"}</strong> � ${a.status || "idle"}`;
-      box.appendChild(div);
-    });
-  }catch(e){}
-}
-
-async function loadNews(){
-  try{
-    const res = await fetch("/dashboard/news");
-    const data = await res.json();
-
-    const box = qs("newsFeed");
-    box.innerHTML = "";
-
-    (data.items || []).forEach(n=>{
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = 
-        <div class="news-title"></div>
-        <div class="news-source"></div>
-      ;
-      box.appendChild(div);
-    });
-  }catch(e){}
-}
-</script>
-</body>
-</html>
-
-<script>
-async function loadDashboard() {
-    try {
-        const res = await fetch("http://127.0.0.1:8000/dashboard/summary");
-        const data = await res.json();
-
-        console.log("JARVIS DATA:", data);
-
-        // SAFE updates (only if elements exist)
-
-        const nextEl = document.querySelector("#next-meeting");
-        if (nextEl && data.meetings.length > 0) {
-            nextEl.innerText = data.meetings[0].time + " - " + data.meetings[0].title;
-        }
-
-        const meetingsEl = document.querySelector("#meetings");
-        if (meetingsEl) {
-            meetingsEl.innerHTML = "";
-            data.meetings.forEach(m => {
-                meetingsEl.innerHTML += <div> - </div>;
-            });
-        }
-
-    } catch (e) {
-        console.error("Dashboard load error:", e);
-    }
-}
-
-loadDashboard();
-
-async function loadSystemMetrics(){
-  try{
-    const res = await fetch("/dashboard/system");
-    const data = await res.json();
-
-    qs("signalsCount").textContent = data.signals || 0;
-    qs("accuracy").textContent = data.accuracy || "--";
-    qs("riskLevel").textContent = data.risk || "--";
-    qs("exposure").textContent = data.exposure || "--";
-  }catch(e){}
-}
-
-async function loadAgents(){
-  try{
-    const res = await fetch("/dashboard/agents");
-    const data = await res.json();
-
-    const box = qs("agentStatus");
-    box.innerHTML = "";
-
-    (data.items || []).forEach(a=>{
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = `<strong>${a.name || "Agent"}</strong> � ${a.status || "idle"}`;
-      box.appendChild(div);
-    });
-  }catch(e){}
-}
-
-async function loadNews(){
-  try{
-    const res = await fetch("/dashboard/news");
-    const data = await res.json();
-
-    const box = qs("newsFeed");
-    box.innerHTML = "";
-
-    (data.items || []).forEach(n=>{
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = 
-        <div class="news-title"></div>
-        <div class="news-source"></div>
-      ;
-      box.appendChild(div);
-    });
-  }catch(e){}
-}
-</script>
-
-
-
-<script>
-
-async function scheduleMeeting() {
-
-    const objective = prompt("Meeting objective:");
-    const datetime = prompt("Datetime (YYYY-MM-DD HH:MM):");
-
-    const res = await fetch('/dashboard/schedule-meeting', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            objective: objective,
-            datetime: datetime
-        })
-    });
-
-    const data = await res.json();
-
-    alert("Meeting scheduled: " + data.meeting_created.title);
-
-    location.reload();
-}
-
-
-async function loadSystemMetrics(){
-  try{
-    const res = await fetch("/dashboard/system");
-    const data = await res.json();
-
-    qs("signalsCount").textContent = data.signals || 0;
-    qs("accuracy").textContent = data.accuracy || "--";
-    qs("riskLevel").textContent = data.risk || "--";
-    qs("exposure").textContent = data.exposure || "--";
-  }catch(e){}
-}
-
-async function loadAgents(){
-  try{
-    const res = await fetch("/dashboard/agents");
-    const data = await res.json();
-
-    const box = qs("agentStatus");
-    box.innerHTML = "";
-
-    (data.items || []).forEach(a=>{
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = `<strong>${a.name || "Agent"}</strong> � ${a.status || "idle"}`;
-      box.appendChild(div);
-    });
-  }catch(e){}
-}
-
-async function loadNews(){
-  try{
-    const res = await fetch("/dashboard/news");
-    const data = await res.json();
-
-    const box = qs("newsFeed");
-    box.innerHTML = "";
-
-    (data.items || []).forEach(n=>{
-      const div = document.createElement("div");
-      div.className = "brief";
-      div.innerHTML = 
-        <div class="news-title"></div>
-        <div class="news-source"></div>
-      ;
-      box.appendChild(div);
-    });
-  }catch(e){}
-}
-</script>
-
-<button onclick="scheduleMeeting()" style="
+  <button onclick="scheduleMeeting()" style="
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -996,8 +382,551 @@ async function loadNews(){
     border: none;
     font-weight: bold;
     cursor: pointer;
-">
-? Schedule Meeting
-</button>
+  ">
+    📅 Schedule Meeting
+  </button>
 
+  <script>
+    const qs = (id) => document.getElementById(id);
+    const state = { recognition: null, listening: false };
 
+    function addBubble(text, who="jarvis"){
+      const div = document.createElement("div");
+      div.className = "bubble " + who;
+      div.textContent = text;
+      qs("chatLog").appendChild(div);
+      qs("chatLog").scrollTop = qs("chatLog").scrollHeight;
+    }
+
+    function trafficTag(level){
+      const v = (level || "").toLowerCase();
+      if(v === "green") return `<span class="tag-ok">✅ Go</span>`;
+      if(v === "yellow") return `<span class="tag-warn">⚠️ Wait</span>`;
+      return `<span class="tag-bad">🚫 Avoid</span>`;
+    }
+
+    async function loadHome(){
+      try{
+        const res = await fetch("/dashboard/home");
+        const data = await res.json();
+
+        qs("greeting").textContent = data.greeting || "JARVIS ready";
+        qs("todayDate").textContent = data.date || "--";
+        qs("ownerName").textContent = "Owner: " + (data.owner_name || "Juan Camilo");
+        qs("topPriority").textContent = data.top_priority || "Protect capital";
+        qs("tasksOpen").textContent = data.tasks_open || 0;
+        qs("assetsCount").textContent = data.assets_count || 0;
+
+        if(data.next_meeting){
+          qs("nextMeeting").textContent = `${data.next_meeting.time} – ${data.next_meeting.title}`;
+        } else {
+          qs("nextMeeting").textContent = "No meetings";
+        }
+
+        renderTasks(data.tasks || []);
+        renderMeetings(data.meetings || []);
+      }catch(e){
+        console.warn("loadHome error:", e);
+      }
+    }
+
+    function renderTasks(items){
+      const box = qs("tasksList");
+      box.innerHTML = "";
+      if(!items.length){
+        box.innerHTML = `<div class="brief">No tasks yet.</div>`;
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "row-card task-item";
+        div.innerHTML = `
+          <div>
+            <div class="row-title">${item.text}</div>
+            <div class="row-sub">${item.day || "today"} – ${item.priority || "medium"}</div>
+          </div>
+          <button class="check-btn">${item.done ? "✓" : ""}</button>
+        `;
+        div.querySelector(".check-btn").onclick = async () => {
+          try{
+            await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
+            await loadHome();
+          }catch(e){
+            console.warn("toggle task error:", e);
+          }
+        };
+        box.appendChild(div);
+      });
+    }
+
+    function renderMeetings(items){
+      const box = qs("meetingsList");
+      box.innerHTML = "";
+      if(!items.length){
+        box.innerHTML = `<div class="brief">No meetings yet.</div>`;
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "row-card";
+        div.innerHTML = `
+          <div class="row-title">${item.time} – ${item.title}</div>
+          <div class="row-sub">${item.notes || ""}</div>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+    async function addTask(){
+      const text = qs("newTaskText").value.trim();
+      const priority = qs("newTaskPriority").value;
+      const day = qs("newTaskDay").value;
+      if(!text) return;
+
+      try{
+        await fetch("/dashboard/tasks", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({text, priority, day})
+        });
+        qs("newTaskText").value = "";
+        await loadHome();
+      }catch(e){
+        console.warn("addTask error:", e);
+      }
+    }
+
+    async function addMeeting(){
+      const title = qs("newMeetingTitle").value.trim();
+      const time = qs("newMeetingTime").value.trim();
+      const notes = qs("newMeetingNotes").value.trim();
+      if(!title || !time) return;
+
+      try{
+        await fetch("/dashboard/meetings", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({title, time, notes})
+        });
+        qs("newMeetingTitle").value = "";
+        qs("newMeetingTime").value = "";
+        qs("newMeetingNotes").value = "";
+        await loadHome();
+      }catch(e){
+        console.warn("addMeeting error:", e);
+      }
+    }
+
+    function renderResultsEmpty(){
+      qs("jarvisResults").innerHTML = `<div class="result-empty">Todavía no hay resultados visuales. Escribe algo como análisis, noticias o múltiples activos.</div>`;
+    }
+
+    function renderSingleTrader(details){
+      qs("jarvisResults").innerHTML = `
+        <div class="result-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div class="result-title">${details.symbol || "-"}</div>
+            ${trafficTag(details.traffic_light)}
+          </div>
+          <div class="pill-row">
+            <span class="tag-warn">Precio: ${details.price_now ?? details.price ?? "--"}</span>
+            <span class="tag-warn">Score: ${details.setup_score ?? "--"}</span>
+          </div>
+          <div style="margin-top:12px">${details.friendly_recommendation || details.summary || ""}</div>
+          <div style="margin-top:12px;color:var(--soft)">${(details.insight_lines || []).join(" | ")}</div>
+        </div>
+      `;
+    }
+
+    function renderMultiple(details){
+      const items = details?.items || [];
+      if(!items.length){
+        renderResultsEmpty();
+        return;
+      }
+
+      qs("jarvisResults").innerHTML = items.map(item => `
+        <div class="result-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div class="result-title">${item.symbol}</div>
+            ${trafficTag(item.traffic_light)}
+          </div>
+          <div class="pill-row">
+            <span class="tag-warn">Precio: ${item.price_now ?? item.price ?? "--"}</span>
+            <span class="tag-warn">Score: ${item.setup_score ?? "--"}</span>
+          </div>
+          <div style="margin-top:10px">${item.friendly_recommendation || item.summary || ""}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderNews(details){
+      if(details?.news_by_symbol){
+        const newsBySymbol = details.news_by_symbol;
+        const symbols = Object.keys(newsBySymbol);
+        if(!symbols.length){
+          renderResultsEmpty();
+          return;
+        }
+
+        let html = "";
+        for(const sym of symbols){
+          const list = newsBySymbol[sym] || [];
+          html += `<div class="result-card"><div class="result-title" style="font-size:18px">${sym}</div>`;
+          if(!list.length){
+            html += `<div class="news-source" style="margin-top:10px">Sin noticias claras.</div>`;
+          } else {
+            html += list.slice(0,3).map(n => `
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+                <div class="news-title">${n.title || ""}</div>
+                <div class="news-source">${n.publisher || ""}</div>
+              </div>
+            `).join("");
+          }
+          html += `</div>`;
+        }
+        qs("jarvisResults").innerHTML = html;
+        return;
+      }
+
+      if(details?.news){
+        qs("jarvisResults").innerHTML = `
+          <div class="result-card">
+            <div class="result-title" style="font-size:18px">${details.symbol || "News"}</div>
+            ${(details.news || []).slice(0,3).map(n => `
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+                <div class="news-title">${n.title || ""}</div>
+                <div class="news-source">${n.publisher || ""}</div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+        return;
+      }
+
+      renderResultsEmpty();
+    }
+
+    function renderChatAction(payload){
+      const action = payload?.action || payload?.response?.action || "";
+      const details = payload?.details || payload?.response?.details || {};
+
+      if(action === "show_trader"){
+        renderSingleTrader(details);
+        return;
+      }
+
+      if(action === "show_multiple"){
+        renderMultiple(details);
+        return;
+      }
+
+      if(action === "show_news"){
+        renderNews(details);
+        return;
+      }
+    }
+
+    async function sendChat(messageOverride=null){
+      const input = qs("chatInput");
+      const message = (messageOverride || input.value).trim();
+      if(!message) return;
+
+      addBubble(message, "user");
+      input.value = "";
+
+      try{
+        const res = await fetch("/chat", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({message, domain:"general"})
+        });
+        const data = await res.json();
+        const reply = data.reply || data.summary || data.response?.reply || data.response?.summary || "No reply.";
+        addBubble(reply, "jarvis");
+        renderChatAction(data);
+      }catch(e){
+        addBubble("Error connecting to JARVIS.", "jarvis");
+        console.warn("sendChat error:", e);
+      }
+    }
+
+    async function runAutoJarvis(){
+      try{
+        const res = await fetch("/jarvis/auto", {method:"POST"});
+        const data = await res.json();
+        addBubble(data.reply || data.summary || "Auto JARVIS completed.", "jarvis");
+        await loadRecommendations();
+      }catch(e){
+        addBubble("Auto JARVIS failed to connect.", "jarvis");
+        console.warn("runAutoJarvis error:", e);
+      }
+    }
+
+    function initVoice(){
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SpeechRecognition){
+        qs("voiceBtn").disabled = true;
+        qs("stopVoiceBtn").disabled = true;
+        return;
+      }
+
+      state.recognition = new SpeechRecognition();
+      state.recognition.lang = "es-ES";
+      state.recognition.interimResults = false;
+      state.recognition.maxAlternatives = 1;
+
+      state.recognition.onstart = () => { state.listening = true; };
+      state.recognition.onend = () => { state.listening = false; };
+      state.recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        qs("chatInput").value = transcript;
+        await sendChat();
+      };
+
+      qs("voiceBtn").onclick = () => {
+        if(state.recognition) state.recognition.start();
+      };
+
+      qs("stopVoiceBtn").onclick = () => {
+        if(state.recognition && state.listening) state.recognition.stop();
+      };
+    }
+
+    async function analyzeTrader(){
+      const raw = qs("symbolInput").value.trim() || "AAPL";
+      try{
+        const res = await fetch("/dashboard/trader", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({symbol: raw})
+        });
+        const data = await res.json();
+
+        qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
+        qs("setupScore").textContent = data.setup_score ?? "--";
+        qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
+        qs("priceNow").textContent = data.price_now ?? "--";
+
+        const p = data.trade_plan || {};
+        const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
+
+        qs("tradePlan").innerHTML = `
+          <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
+          <div class="brief"><strong>Entry zone:</strong> ${entry}</div>
+          <div class="brief"><strong>Stop loss:</strong> ${p.stop_loss ?? "-"}</div>
+          <div class="brief"><strong>Target 1:</strong> ${p.target_1 ?? "-"}</div>
+          <div class="brief"><strong>Target 2:</strong> ${p.target_2 ?? "-"}</div>
+          <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
+        `;
+
+        const lines = data.insight_lines || [data.summary || "No insight available."];
+        qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
+      }catch(e){
+        console.warn("analyzeTrader error:", e);
+      }
+    }
+
+    async function loadRecommendations(){
+      try{
+        const res = await fetch("/dashboard/recommendations");
+        const data = await res.json();
+        const box = qs("recommendations");
+        box.innerHTML = "";
+
+        const items = data.items || [];
+        if(!items.length){
+          box.innerHTML = `<div class="brief">No recommendations available.</div>`;
+          return;
+        }
+
+        items.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "brief";
+          card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+              <strong>${item.symbol}</strong>
+              ${trafficTag(item.traffic_light)}
+            </div>
+            <div style="margin-top:8px">Precio: ${item.price_now ?? item.price ?? "--"}</div>
+            <div style="margin-top:8px">Score: ${item.setup_score ?? "--"}</div>
+            <div style="margin-top:8px;color:var(--white)">${item.friendly_recommendation || item.summary || ""}</div>
+          `;
+          box.appendChild(card);
+        });
+      }catch(e){
+        console.warn("loadRecommendations error:", e);
+      }
+    }
+
+    async function loadAssets(){
+      try{
+        const res = await fetch("/dashboard/assets");
+        const data = await res.json();
+        const items = data.assets || [];
+        qs("assetsCount").textContent = items.length;
+
+        const box = qs("assetGrid");
+        box.innerHTML = "";
+        if(!items.length){
+          box.innerHTML = `<div class="brief">No assets uploaded yet.</div>`;
+          return;
+        }
+
+        items.slice(0,8).forEach(asset => {
+          const div = document.createElement("div");
+          div.className = "asset";
+          div.innerHTML = `
+            <div class="name">${asset.filename}</div>
+            <div class="meta">${asset.kind} – ${asset.mime_type || "unknown"}</div>
+            <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
+          `;
+          box.appendChild(div);
+        });
+      }catch(e){
+        console.warn("loadAssets error:", e);
+      }
+    }
+
+    async function uploadFiles(files){
+      for(const file of files){
+        try{
+          const form = new FormData();
+          form.append("file", file);
+          await fetch("/dashboard/upload", {method:"POST", body:form});
+        }catch(e){
+          console.warn("uploadFiles error:", e);
+        }
+      }
+      await loadAssets();
+      await loadHome();
+    }
+
+    function initUpload(){
+      const zone = qs("uploadZone");
+      const input = qs("fileInput");
+
+      zone.onclick = () => input.click();
+
+      input.onchange = async (e) => {
+        if(e.target.files?.length) await uploadFiles(e.target.files);
+      };
+
+      zone.addEventListener("dragover", e => {
+        e.preventDefault();
+      });
+
+      zone.addEventListener("drop", async e => {
+        e.preventDefault();
+        const files = e.dataTransfer?.files;
+        if(files?.length) await uploadFiles(files);
+      });
+    }
+
+    async function loadSystemMetrics(){
+      try{
+        const res = await fetch("/dashboard/system");
+        const data = await res.json();
+
+        qs("signalsCount").textContent = data.signals || 0;
+        qs("accuracy").textContent = data.accuracy || "--";
+        qs("riskLevel").textContent = data.risk || "--";
+        qs("exposure").textContent = data.exposure || "--";
+      }catch(e){
+        console.warn("loadSystemMetrics error:", e);
+      }
+    }
+
+    async function loadAgents(){
+      try{
+        const res = await fetch("/dashboard/agents");
+        const data = await res.json();
+
+        const box = qs("agentStatus");
+        box.innerHTML = "";
+
+        (data.items || []).forEach(a => {
+          const div = document.createElement("div");
+          div.className = "brief";
+          div.innerHTML = `<strong>${a.name || "Agent"}</strong> – ${a.status || "idle"}`;
+          box.appendChild(div);
+        });
+      }catch(e){
+        console.warn("loadAgents error:", e);
+      }
+    }
+
+    async function loadNews(){
+      try{
+        const res = await fetch("/dashboard/news");
+        const data = await res.json();
+
+        const box = qs("newsFeed");
+        if(!box) return;
+        box.innerHTML = "";
+
+        (data.items || []).forEach(n => {
+          const div = document.createElement("div");
+          div.className = "brief";
+          div.innerHTML = `
+            <div class="news-title">${n.title || ""}</div>
+            <div class="news-source">${n.publisher || ""}</div>
+          `;
+          box.appendChild(div);
+        });
+      }catch(e){
+        console.warn("loadNews error:", e);
+      }
+    }
+
+    async function scheduleMeeting(){
+      const objective = prompt("Meeting objective:");
+      if(!objective) return;
+      const datetime = prompt("Datetime (YYYY-MM-DD HH:MM):");
+      if(!datetime) return;
+
+      try{
+        const res = await fetch("/dashboard/schedule-meeting", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({objective, datetime})
+        });
+        const data = await res.json();
+        alert("Meeting scheduled: " + (data.meeting_created?.title || "Done"));
+        await loadHome();
+      }catch(e){
+        alert("Failed to schedule meeting.");
+        console.warn("scheduleMeeting error:", e);
+      }
+    }
+
+    function initEvents(){
+      qs("sendBtn").onclick = () => sendChat();
+      qs("chatInput").addEventListener("keydown", e => {
+        if(e.key === "Enter") sendChat();
+      });
+      qs("addTaskBtn").onclick = addTask;
+      qs("addMeetingBtn").onclick = addMeeting;
+      qs("analyzeBtn").onclick = analyzeTrader;
+      qs("autoBtn").onclick = runAutoJarvis;
+    }
+
+    async function boot(){
+      initEvents();
+      initVoice();
+      initUpload();
+      await loadHome();
+      await loadAssets();
+      await analyzeTrader();
+      await loadRecommendations();
+      await loadSystemMetrics();
+      await loadAgents();
+      await loadNews();
+    }
+
+    boot();
+  </script>
+</body>
+</html>
