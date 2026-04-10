@@ -9,11 +9,17 @@ from pydantic import BaseModel
 from core.product_brain import ProductBrain
 from core.dashboard_workspace_engine import DashboardWorkspaceEngine
 from core.meetings_engine import MeetingsEngine
+from core.agent_orchestrator_pro import AgentOrchestratorPro
+from core.news_intelligence_engine import NewsIntelligenceEngine
+from core.golf_dashboard_engine import GolfDashboardEngine
 
 app = FastAPI(title="JARVIS OS")
 brain = ProductBrain()
 workspace = DashboardWorkspaceEngine()
 meetings_engine = MeetingsEngine()
+orchestrator = AgentOrchestratorPro()
+news_engine   = NewsIntelligenceEngine()
+golf_engine   = GolfDashboardEngine()
 
 BASE_DIR = Path(__file__).resolve().parent
 DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
@@ -276,22 +282,41 @@ def system_metrics():
 
 
 # =========================
-# AGENTS
+# AGENTS — real orchestrator state
 # =========================
 @app.get("/dashboard/agents")
 def agents():
-    return {
-        "items": [
-            {"name": "Trader Agent", "status": "active"},
-            {"name": "News Agent", "status": "active"},
-            {"name": "Macro Agent", "status": "idle"},
-        ]
-    }
+    try:
+        items = orchestrator.agent_status_snapshot()
+        return {"items": items}
+    except Exception as e:
+        return {"items": [], "error": str(e)}
 
 
 # =========================
-# NEWS FEED
+# NEWS FEED — real categorised RSS via NewsIntelligenceEngine
 # =========================
 @app.get("/dashboard/news")
 def news():
-    return {"items": []}
+    try:
+        items = news_engine.fetch_categorized(max_per_category=5)
+        return {"items": items}
+    except Exception as e:
+        return {"items": [], "error": str(e)}
+
+
+# =========================
+# GOLF — wires GolfCourseDatabase + Open-Meteo weather
+# =========================
+@app.get("/dashboard/golf")
+def golf():
+    try:
+        return golf_engine.dashboard_summary(max_courses=6)
+    except Exception as e:
+        return {
+            "courses":      [],
+            "insights":     ["Golf data temporarily unavailable."],
+            "player":       {},
+            "generated_at": datetime.now().isoformat(),
+            "error":        str(e),
+        }

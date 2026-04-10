@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -44,6 +45,9 @@ class AgentOrchestratorPro:
         self._engine_cache: Dict[str, Any] = {}
         self.boot_events: List[str] = []
 
+        # lightweight per-agent activity tracker: name → {last_action, last_seen, status}
+        self._last_activity: Dict[str, Dict[str, Any]] = {}
+
     def route(self, domain: str) -> Dict[str, Any]:
         selected = self.agent_registry.get(domain, self.agent_registry["general"])
         weighted = [
@@ -75,6 +79,73 @@ class AgentOrchestratorPro:
             "boot_events": self.boot_events,
         }
 
+    def agent_status_snapshot(self) -> List[Dict[str, Any]]:
+        """
+        Returns a live status snapshot for every known agent.
+
+        Status derivation (no hardcoding — driven by registry + runtime state):
+          - "error"   : engine failed to load (recorded in boot_events)
+          - "running" : engine is currently executing (set in execute / execute_trader)
+          - "idle"    : engine has been loaded and is ready
+          - "standby" : engine not yet instantiated this session
+        """
+        try:
+            from core.premium_agent_registry import PremiumAgentRegistry
+            registry_meta = PremiumAgentRegistry().list_agents()
+        except Exception:
+            registry_meta = {}
+
+        # Role descriptions are the best human-readable "last_action" fallback
+        role_descriptions: Dict[str, str] = {
+            name: meta.get("role", "Ready") for name, meta in registry_meta.items()
+        }
+
+        # Build the set of all known agents from both sources
+        all_agents = set(self.agent_reputation.keys()) | set(registry_meta.keys())
+
+        # Derive which agents errored from boot_events
+        errored: set = set()
+        for event in self.boot_events:
+            if event.startswith("failed loading "):
+                name = event.split("failed loading ", 1)[1].split(":")[0].strip()
+                errored.add(name)
+
+        items: List[Dict[str, Any]] = []
+
+        for name in sorted(all_agents):
+            activity = self._last_activity.get(name)
+
+            if activity:
+                status = activity["status"]
+                last_action = activity["last_action"]
+            elif name in errored:
+                status = "error"
+                last_action = "Failed to load engine"
+            elif name in self._engine_cache:
+                status = "idle"
+                last_action = role_descriptions.get(name, "Ready")
+            else:
+                status = "standby"
+                last_action = role_descriptions.get(name, "Waiting for activation")
+
+            confidence = self.agent_reputation.get(
+                name,
+                registry_meta.get(name, {}).get("reputation", 0.75)
+            )
+
+            items.append({
+                "name": name,
+                "status": status,
+                "last_action": last_action,
+                "confidence": round(confidence, 2),
+            })
+
+        # Sort: running first, then idle, then standby, then error
+        order = {"running": 0, "idle": 1, "standby": 2, "error": 3}
+        items.sort(key=lambda x: (order.get(x["status"], 9), x["name"]))
+
+        return items
+
     def _load_engine(self, agent_name: str) -> Optional[Any]:
         if agent_name in self._engine_cache:
             return self._engine_cache[agent_name]
@@ -92,9 +163,19 @@ class AgentOrchestratorPro:
             instance = klass()
             self._engine_cache[agent_name] = instance
             self.boot_events.append(f"loaded: {agent_name}")
+            self._last_activity[agent_name] = {
+                "last_action": "Engine loaded",
+                "last_seen": datetime.utcnow().isoformat(),
+                "status": "idle",
+            }
             return instance
         except Exception as e:
             self.boot_events.append(f"failed loading {agent_name}: {e}")
+            self._last_activity[agent_name] = {
+                "last_action": f"Load error: {type(e).__name__}",
+                "last_seen": datetime.utcnow().isoformat(),
+                "status": "error",
+            }
             return None
 
     def _try_methods(self, engine: Any, query: str, domain: str) -> Any:
@@ -142,7 +223,20 @@ class AgentOrchestratorPro:
                 "result": None,
             }
 
+        query_snippet = (query or "")[:60].strip()
+        self._last_activity[primary] = {
+            "last_action": f"Processing: {query_snippet}" if query_snippet else "Processing request",
+            "last_seen": datetime.utcnow().isoformat(),
+            "status": "running",
+        }
+
         result = self._try_methods(engine, query, domain)
+
+        self._last_activity[primary] = {
+            "last_action": f"Completed: {query_snippet}" if query_snippet else "Completed request",
+            "last_seen": datetime.utcnow().isoformat(),
+            "status": "idle",
+        }
 
         return {
             "query": query,
@@ -161,7 +255,19 @@ class AgentOrchestratorPro:
             if engine is None:
                 continue
 
+            self._last_activity[agent_name] = {
+                "last_action": f"Analyzing {str(symbol_or_prompt).upper()[:12]}",
+                "last_seen": datetime.utcnow().isoformat(),
+                "status": "running",
+            }
+
             result = self._try_methods(engine, symbol_or_prompt, "finance")
+
+            self._last_activity[agent_name] = {
+                "last_action": f"Analyzed {str(symbol_or_prompt).upper()[:12]}",
+                "last_seen": datetime.utcnow().isoformat(),
+                "status": "idle",
+            }
 
             if isinstance(result, dict):
                 result.setdefault("symbol", str(symbol_or_prompt).upper())
