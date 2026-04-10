@@ -8,3 +8,4 @@ pandas
 numpy
 matplotlib
 yfinance
+feedparser==6.0.11
