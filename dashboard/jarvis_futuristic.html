@@ -1,932 +1,1633 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>JARVIS // Command Center</title>
-  <style>
-    :root{
-      --bg:#07111a;
-      --card:#0b1723;
-      --card2:#112235;
-      --line:rgba(83,225,255,.14);
-      --cyan:#89f7ff;
-      --cyan2:#44f0ff;
-      --white:#eef8ff;
-      --soft:#9fb5c8;
-      --ok:#49ffc2;
-      --warn:#ffd45a;
-      --bad:#ff6b6b;
-      --shadow:0 18px 40px rgba(0,0,0,.28);
-      --radius:24px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: Inter, system-ui, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(68,240,255,.12), transparent 24%),
-        linear-gradient(180deg, #08131d 0%, #050c13 100%);
-      color:var(--white);
-      min-height:100vh;
-    }
-    .shell{max-width:1500px;margin:0 auto;padding:18px}
-    .topbar{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px}
-    .hero,.quick,.card{
-      background:linear-gradient(180deg, rgba(10,22,34,.98), rgba(7,16,25,.98));
-      border:1px solid var(--line);
-      border-radius:28px;
-      box-shadow:var(--shadow);
-    }
-    .hero{padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}
-    .hero-left{display:flex;gap:18px;align-items:center}
-    .orb{
-      width:84px;height:84px;border-radius:50%;
-      background: radial-gradient(circle, rgba(28,231,255,1) 0%, rgba(28,231,255,.46) 18%, rgba(9,22,34,.2) 58%, rgba(0,0,0,0) 72%);
-      box-shadow:0 0 28px rgba(28,231,255,.55), inset 0 0 26px rgba(28,231,255,.25);
-    }
-    h1{margin:0;font-size:56px;line-height:1}
-    .subtitle{margin-top:8px;color:var(--cyan);font-size:20px}
-    .meta{margin-top:12px;color:var(--soft);display:flex;flex-wrap:wrap;gap:12px;font-size:14px}
-    .header-actions{display:flex;align-items:center;gap:12px}
-    .primary-btn,.ghost-btn{
-      border:none;border-radius:18px;padding:14px 16px;cursor:pointer;font-weight:700;
-    }
-    .ghost-btn{background:var(--card2);color:var(--white);border:1px solid rgba(255,255,255,.06)}
-    .primary-btn{background:linear-gradient(180deg, var(--cyan2), #0fb8dd);color:#06202a}
-    .status-chip{
-      display:inline-flex;align-items:center;gap:8px;padding:12px 16px;
-      border-radius:999px;border:1px solid rgba(28,231,255,.22);color:var(--cyan);font-weight:700;
-    }
-    .status-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
-    .quick{padding:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .quick-card{padding:16px 18px;border-radius:22px;background:var(--card2);border:1px solid rgba(255,255,255,.05)}
-    .quick-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px}
-    .quick-value{font-size:28px;font-weight:800;line-height:1.2}
-    .main{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
-    .col{display:grid;gap:18px;align-content:start}
-    .card{padding:18px;border-radius:28px}
-    .section-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
-    .section-title{margin:0;font-size:32px;color:var(--cyan)}
-    .subtle{color:var(--soft);font-size:14px}
-    .command-bar{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center}
-    .input,.select{
-      width:100%;border:none;outline:none;border-radius:18px;background:var(--card2);color:var(--white);
-      padding:16px 18px;font-size:16px;border:1px solid rgba(255,255,255,.05)
-    }
-    .chat-log{margin-top:14px;display:grid;gap:12px;max-height:260px;overflow:auto;padding-right:4px}
-    .bubble{padding:14px 16px;border-radius:18px;line-height:1.5;font-size:15px;white-space:pre-wrap}
-    .bubble.user{background:#16344d;border:1px solid rgba(28,231,255,.15)}
-    .bubble.jarvis{background:var(--card2);border:1px solid rgba(76,255,198,.10)}
-    .stack{display:grid;gap:12px}
-    .row-card,.brief{
-      padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
-    }
-    .row-title{font-weight:700;font-size:15px}
-    .row-sub{font-size:13px;color:var(--soft);margin-top:4px}
-    .task-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-    .check-btn{
-      width:22px;height:22px;border-radius:8px;border:1px solid rgba(255,255,255,.12);
-      background:#102030;color:var(--ok);cursor:pointer
-    }
-    .add-inline{display:grid;grid-template-columns:1fr 130px 110px auto;gap:10px;margin-top:12px}
-    .add-inline.meeting{grid-template-columns:1fr 120px 1fr auto}
-    .market-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .metric{padding:14px;border-radius:20px;background:var(--card2);border:1px solid rgba(255,255,255,.05)}
-    .metric-label{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
-    .metric-value{font-size:28px;font-weight:800}
-    .trader-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    .asset-grid,.recommendations,.results-grid{display:grid;gap:12px}
-    .asset,.result-card{
-      padding:14px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.05)
-    }
-    .asset .name{font-weight:700;margin-bottom:6px;word-break:break-word}
-    .asset .meta{margin:0;color:var(--soft);font-size:12px}
-    .asset a{display:inline-block;margin-top:8px;color:var(--cyan);text-decoration:none}
-    .upload-zone{
-      border:1.5px dashed rgba(28,231,255,.28);background:linear-gradient(180deg, rgba(10,24,38,.78), rgba(9,18,29,.88));
-      border-radius:22px;padding:22px;text-align:center;color:var(--soft);cursor:pointer
-    }
-    .upload-input{display:none}
-    .tag-ok,.tag-warn,.tag-bad{
-      display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:700
-    }
-    .tag-ok{background:rgba(73,255,194,.12);color:var(--ok)}
-    .tag-warn{background:rgba(255,212,90,.12);color:var(--warn)}
-    .tag-bad{background:rgba(255,107,107,.12);color:var(--bad)}
-    .result-empty{
-      padding:18px;border-radius:18px;background:var(--card2);border:1px dashed rgba(255,255,255,.08);color:var(--soft)
-    }
-    .news-title{font-weight:700;margin-bottom:6px}
-    .news-source{font-size:12px;color:var(--soft)}
-    .result-title{font-size:20px;font-weight:800}
-    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    @media (max-width: 1280px){
-      .topbar,.main{grid-template-columns:1fr}
-    }
-    @media (max-width: 860px){
-      .hero{flex-direction:column;align-items:flex-start}
-      .market-head,.trader-grid{grid-template-columns:1fr}
-      .command-bar{grid-template-columns:1fr}
-      .add-inline,.add-inline.meeting{grid-template-columns:1fr}
-      .shell{padding:12px}
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>JARVIS OS // Command Center</title>
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root{
+  --bg:#050e17;
+  --s1:#08131e;
+  --s2:#0c1c2e;
+  --s3:#102438;
+  --s4:#152d45;
+  --border:rgba(68,240,255,.1);
+  --border2:rgba(255,255,255,.055);
+  --border3:rgba(255,255,255,.03);
+  --cyan:#44f0ff;
+  --cyan2:#0fb8dd;
+  --cyan-lo:rgba(68,240,255,.12);
+  --cyan-hi:rgba(68,240,255,.22);
+  --white:#e4f2ff;
+  --soft:#6e9bb5;
+  --soft2:#8db3c8;
+  --ok:#3dffc2;
+  --warn:#ffd45a;
+  --bad:#ff6b6b;
+  --purple:#b06fff;
+  --orange:#ff9545;
+  --shadow:0 28px 60px rgba(0,0,0,.5);
+  --shadow2:0 8px 24px rgba(0,0,0,.35);
+  --r:16px;
+  --rs:10px;
+  --rl:22px;
+  --rll:30px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--white);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(68,240,255,.15);border-radius:3px}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes orb-pulse{
+  0%,100%{box-shadow:0 0 30px rgba(68,240,255,.55),0 0 60px rgba(68,240,255,.2),inset 0 0 20px rgba(68,240,255,.2)}
+  50%{box-shadow:0 0 50px rgba(68,240,255,.8),0 0 90px rgba(68,240,255,.35),inset 0 0 30px rgba(68,240,255,.35)}
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes scan-line{0%{top:0}100%{top:100%}}
+
+/* ═══════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════ */
+.hero{
+  position:sticky;top:0;z-index:300;
+  background:linear-gradient(160deg,rgba(10,24,40,.98) 0%,rgba(5,14,23,.98) 100%);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px) saturate(1.3);
+  -webkit-backdrop-filter:blur(20px) saturate(1.3);
+  padding:16px 26px 0;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 0% 0%,rgba(68,240,255,.06) 0%,transparent 55%);
+  pointer-events:none;
+}
+.hero-top{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;padding-bottom:14px;position:relative;
+}
+.hero-brand{display:flex;align-items:center;gap:16px}
+.orb-wrap{position:relative;width:54px;height:54px;flex-shrink:0}
+.orb{
+  width:54px;height:54px;border-radius:50%;
+  background:radial-gradient(circle,rgba(68,240,255,.95) 0%,rgba(68,240,255,.4) 30%,transparent 68%);
+  animation:orb-pulse 3s ease-in-out infinite;
+}
+.orb-ring{
+  position:absolute;inset:-5px;border-radius:50%;
+  border:1px solid rgba(68,240,255,.25);
+  animation:orb-pulse 3s ease-in-out infinite 1.5s;
+}
+.brand-name{
+  font-size:28px;font-weight:900;letter-spacing:.06em;line-height:1;
+  background:linear-gradient(90deg,#d0ecff 0%,var(--cyan) 60%,#44ffee 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.brand-sub{font-size:11px;color:var(--soft);letter-spacing:.18em;text-transform:uppercase;margin-top:4px}
+.hero-center{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.hc-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--soft)}
+.hc-item strong{color:var(--white);font-weight:600}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:blink 2.2s ease-in-out infinite;flex-shrink:0}
+.hero-right{display:flex;gap:10px;align-items:center}
+
+/* ═══════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════ */
+.tab-nav{
+  display:flex;gap:1px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;padding-top:4px;
+}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--soft);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  padding:10px 17px;border-radius:var(--rs) var(--rs) 0 0;
+  white-space:nowrap;transition:color .2s,background .2s;
+  border-bottom:2px solid transparent;position:relative;
+}
+.tab-btn:hover{color:var(--white)}
+.tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(68,240,255,.06)}
+.tab-btn .tab-dot{
+  display:none;position:absolute;top:8px;right:8px;
+  width:5px;height:5px;border-radius:50%;background:var(--ok);
+}
+.tab-btn.has-update .tab-dot{display:block}
+
+/* ═══════════════════════════════════════════
+   SHELL
+═══════════════════════════════════════════ */
+.shell{max-width:1680px;margin:0 auto;padding:22px 24px 88px}
+.tab-panel{display:none;animation:fade-up .22s ease}
+.tab-panel.active{display:block}
+
+/* ═══════════════════════════════════════════
+   GRIDS
+═══════════════════════════════════════════ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.ga2{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.col{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mb{margin-bottom:18px}
+.mt{margin-top:14px}
+.sp{gap:12px}
+
+/* ═══════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════ */
+.card{
+  background:linear-gradient(155deg,rgba(10,25,42,.97) 0%,rgba(6,17,29,.97) 100%);
+  border:1px solid var(--border2);border-radius:var(--rl);padding:20px;
+  transition:border-color .22s;position:relative;overflow:hidden;
+}
+.card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(68,240,255,.1),transparent);
+}
+.card:hover{border-color:rgba(68,240,255,.14)}
+.card-cyan{border-color:rgba(68,240,255,.2);background:linear-gradient(155deg,rgba(11,28,46,.97) 0%,rgba(7,19,33,.97) 100%)}
+.card-cyan::after{background:linear-gradient(90deg,transparent,rgba(68,240,255,.2),transparent)}
+.card-sm{padding:15px;border-radius:var(--r)}
+.card-glow{box-shadow:0 0 40px rgba(68,240,255,.08)}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.ct{font-size:15px;font-weight:700;letter-spacing:.01em}
+.cs{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.1em}
+.section-label{
+  font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(68,240,255,.25),transparent)}
+
+/* ═══════════════════════════════════════════
+   STAT TILES
+═══════════════════════════════════════════ */
+.tile{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:15px 17px;
+  transition:border-color .2s,transform .2s;
+}
+.tile:hover{border-color:rgba(68,240,255,.16);transform:translateY(-1px)}
+.tl{font-size:10px;color:var(--soft);text-transform:uppercase;letter-spacing:.13em;margin-bottom:7px}
+.tv{font-size:22px;font-weight:800;line-height:1.1}
+.ts{font-size:12px;color:var(--soft);margin-top:5px}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn-p{
+  background:linear-gradient(135deg,var(--cyan) 0%,var(--cyan2) 100%);
+  color:#031018;font-weight:800;font-size:13.5px;
+  border:none;border-radius:var(--rs);padding:11px 22px;
+  cursor:pointer;transition:filter .2s,transform .2s,box-shadow .2s;
+  white-space:nowrap;letter-spacing:.01em;position:relative;overflow:hidden;
+}
+.btn-p::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.btn-p:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 24px rgba(68,240,255,.3)}
+.btn-p:hover::before{opacity:1}
+.btn-p:active{transform:translateY(0)}
+.btn-p:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+.btn-g{
+  background:var(--s2);color:var(--white);font-weight:600;font-size:13px;
+  border:1px solid var(--border2);border-radius:var(--rs);padding:10px 17px;
+  cursor:pointer;transition:border-color .2s,background .2s;white-space:nowrap;
+}
+.btn-g:hover{border-color:rgba(68,240,255,.2);background:var(--s3)}
+.btn-g:disabled{opacity:.4;cursor:default}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px}
+.btn-xs{padding:5px 10px;font-size:11px;border-radius:7px}
+.btn-ol{
+  background:transparent;color:var(--cyan);font-weight:600;font-size:12px;
+  border:1px solid rgba(68,240,255,.25);border-radius:8px;padding:7px 13px;
+  cursor:pointer;transition:background .2s,border-color .2s;
+}
+.btn-ol:hover{background:rgba(68,240,255,.08);border-color:rgba(68,240,255,.4)}
+.btn-ol-warn{color:var(--warn);border-color:rgba(255,212,90,.25)}
+.btn-ol-warn:hover{background:rgba(255,212,90,.07);border-color:rgba(255,212,90,.4)}
+
+/* ═══════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.b-ok{background:rgba(61,255,194,.1);color:var(--ok)}
+.b-warn{background:rgba(255,212,90,.1);color:var(--warn)}
+.b-bad{background:rgba(255,107,107,.1);color:var(--bad)}
+.b-idle{background:rgba(110,155,181,.08);color:var(--soft)}
+.b-cyan{background:rgba(68,240,255,.1);color:var(--cyan)}
+.b-purple{background:rgba(176,111,255,.1);color:var(--purple)}
+.b-orange{background:rgba(255,149,69,.1);color:var(--orange)}
+.tag-ok{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(61,255,194,.1);color:var(--ok)}
+.tag-warn{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(255,212,90,.1);color:var(--warn)}
+.tag-bad{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(255,107,107,.1);color:var(--bad)}
+
+/* ═══════════════════════════════════════════
+   INPUTS
+═══════════════════════════════════════════ */
+.input,.select{
+  background:var(--s2);color:var(--white);
+  border:1px solid var(--border2);border-radius:var(--rs);
+  padding:11px 14px;font-size:14px;outline:none;
+  transition:border-color .2s,background .2s;width:100%;font-family:inherit;
+}
+.input::placeholder{color:var(--soft)}
+.input:focus,.select:focus{border-color:rgba(68,240,255,.3);background:var(--s3)}
+.select option{background:#0a1825}
+
+/* ═══════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════ */
+.chat-log{
+  display:flex;flex-direction:column;gap:10px;
+  max-height:360px;min-height:100px;overflow-y:auto;padding-right:4px;
+}
+.chat-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding:36px 20px;border:1px dashed var(--border2);border-radius:var(--r);
+  color:var(--soft);text-align:center;
+}
+.chat-empty-icon{font-size:38px}
+.chat-empty-title{font-size:16px;font-weight:700;color:var(--white)}
+.bubble{padding:13px 16px;border-radius:var(--r);line-height:1.65;font-size:14px;white-space:pre-wrap;max-width:94%}
+.bubble.user{background:rgba(68,240,255,.08);border:1px solid rgba(68,240,255,.18);align-self:flex-end;border-radius:var(--r) var(--r) 4px var(--r)}
+.bubble.jarvis{background:var(--s2);border:1px solid var(--border2);align-self:flex-start;border-radius:var(--r) var(--r) var(--r) 4px}
+.bubble.typing{color:var(--soft);font-style:italic;background:var(--s2);border:1px solid var(--border2);align-self:flex-start;animation:blink 1.4s ease-in-out infinite}
+.chat-bar{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;margin-top:12px}
+.sug-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.sug{
+  background:var(--s2);color:var(--cyan);font-size:12px;font-weight:600;
+  border:1px solid rgba(68,240,255,.18);border-radius:999px;padding:6px 13px;
+  cursor:pointer;transition:background .18s;
+}
+.sug:hover{background:rgba(68,240,255,.1)}
+
+/* ═══════════════════════════════════════════
+   RESULT CARDS (chat output)
+═══════════════════════════════════════════ */
+.result-card{background:var(--s2);border:1px solid var(--border2);border-radius:var(--r);padding:15px}
+.result-title{font-size:20px;font-weight:800}
+.pill-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.result-empty{
+  padding:24px;text-align:center;color:var(--soft);
+  background:var(--s2);border:1px dashed var(--border2);
+  border-radius:var(--r);font-size:14px;line-height:1.6;
+}
+
+/* ═══════════════════════════════════════════
+   AUTO JARVIS CARD
+═══════════════════════════════════════════ */
+.auto-card{
+  background:linear-gradient(145deg,rgba(11,28,46,.99) 0%,rgba(7,18,31,.99) 100%);
+  border:1px solid rgba(68,240,255,.22);border-radius:var(--rll);padding:22px;
+  position:relative;overflow:hidden;
+}
+.auto-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,var(--cyan) 50%,transparent 100%);
+}
+.auto-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.auto-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--cyan);margin-bottom:5px}
+.auto-sum{font-size:15px;line-height:1.7;margin-bottom:14px}
+.auto-actions{display:flex;flex-direction:column;gap:8px}
+.action-item{
+  background:var(--s3);border:1px solid var(--border2);border-radius:var(--rs);
+  padding:10px 14px;font-size:13px;display:flex;align-items:flex-start;gap:9px;
+  transition:border-color .18s;
+}
+.action-item:hover{border-color:rgba(68,240,255,.16)}
+.action-dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);flex-shrink:0;margin-top:4px}
+.auto-foot{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--border2)}
+.auto-foot span{font-size:12px;color:var(--soft)}
+.auto-foot strong{color:var(--warn);font-weight:700}
+
+/* ═══════════════════════════════════════════
+   EXECUTIVE BRIEF
+═══════════════════════════════════════════ */
+.brief-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.brief-card{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:14px 16px;
+  transition:border-color .2s;
+}
+.brief-card:hover{border-color:rgba(68,240,255,.15)}
+.brief-card.action{border-color:rgba(68,240,255,.2);background:rgba(68,240,255,.04)}
+.brief-card.risk{border-color:rgba(255,107,107,.15);background:rgba(255,107,107,.03)}
+.brief-card.opp{border-color:rgba(61,255,194,.15);background:rgba(61,255,194,.03)}
+.brief-card.intel{border-color:rgba(176,111,255,.15);background:rgba(176,111,255,.03)}
+.brief-icon{font-size:20px;margin-bottom:6px}
+.brief-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.15em;margin-bottom:6px}
+.brief-lbl.action{color:var(--cyan)}
+.brief-lbl.risk{color:var(--bad)}
+.brief-lbl.opp{color:var(--ok)}
+.brief-lbl.intel{color:var(--purple)}
+.brief-text{font-size:13px;line-height:1.6;color:var(--white)}
+
+/* ═══════════════════════════════════════════
+   ACTIVITY FEED
+═══════════════════════════════════════════ */
+.activity-feed{display:flex;flex-direction:column;gap:0}
+.activity-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--border3);
+}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+  background:var(--s3);
+}
+.activity-name{font-size:13px;font-weight:700}
+.activity-action{font-size:12px;color:var(--soft);margin-top:2px;line-height:1.4}
+.activity-time{font-size:11px;color:var(--soft);white-space:nowrap;margin-left:auto;padding-top:2px}
+
+/* ═══════════════════════════════════════════
+   AGENTS
+═══════════════════════════════════════════ */
+.agent-card{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:16px;
+  display:flex;flex-direction:column;gap:10px;
+  transition:border-color .2s,transform .2s;
+}
+.agent-card:hover{border-color:rgba(68,240,255,.2);transform:translateY(-2px)}
+.agent-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.agent-icon-name{display:flex;align-items:center;gap:10px}
+.agent-avi{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:var(--s3);flex-shrink:0;
+}
+.agent-name{font-size:14px;font-weight:700}
+.agent-role{font-size:12px;color:var(--soft);margin-top:2px;line-height:1.4}
+.agent-last{
+  font-size:12px;color:var(--soft);font-style:italic;
+  padding:8px 10px;background:var(--s3);border-radius:var(--rs);
+  border-left:2px solid rgba(68,240,255,.2);
+}
+
+/* ═══════════════════════════════════════════
+   HEALTH / SYSTEM
+═══════════════════════════════════════════ */
+.health-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border2);font-size:13px;
+}
+.health-row:last-child{border-bottom:none}
+.health-val{font-weight:700}
+
+/* PIPELINE */
+.pipe-wrap{display:flex;gap:0;overflow-x:auto}
+.pipe-step{
+  flex:1;min-width:80px;text-align:center;padding:12px 6px;
+  background:var(--s2);border:1px solid var(--border2);border-right:none;
+  font-size:10px;font-weight:700;color:var(--soft);
+  letter-spacing:.1em;text-transform:uppercase;transition:all .3s;
+}
+.pipe-step:first-child{border-radius:var(--rs) 0 0 var(--rs)}
+.pipe-step:last-child{border-radius:0 var(--rs) var(--rs) 0;border-right:1px solid var(--border2)}
+.pipe-step.active{background:rgba(68,240,255,.1);border-color:rgba(68,240,255,.28);color:var(--cyan)}
+.pipe-step .pp{font-size:16px;font-weight:900;color:var(--white);margin-top:4px}
+.progress-bar{background:var(--s2);border-radius:999px;height:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan2));border-radius:999px;transition:width .6s ease}
+
+/* ═══════════════════════════════════════════
+   NEWS / INTEL
+═══════════════════════════════════════════ */
+.news-card{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:14px 15px;
+  transition:border-color .18s,transform .2s;
+}
+.news-card:hover{border-color:rgba(68,240,255,.16);transform:translateY(-1px)}
+.news-cat{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:var(--cyan);margin-bottom:6px}
+.news-title{font-size:14px;font-weight:700;line-height:1.4;margin-bottom:5px}
+.news-src{font-size:12px;color:var(--soft)}
+
+/* ═══════════════════════════════════════════
+   PRODUCTIVITY
+═══════════════════════════════════════════ */
+.row-card{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);padding:12px 14px}
+.task-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.task-text{font-size:14px;font-weight:600}
+.task-meta{font-size:12px;color:var(--soft);margin-top:3px}
+.check-btn{
+  width:24px;height:24px;border-radius:7px;flex-shrink:0;
+  border:1px solid var(--border2);background:var(--s3);
+  color:var(--ok);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .18s,background .18s;
+}
+.check-btn:hover{border-color:rgba(61,255,194,.35);background:rgba(61,255,194,.08)}
+.conn-card{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+  transition:border-color .18s;
+}
+.conn-card:hover{border-color:rgba(255,255,255,.1)}
+.conn-icon{font-size:26px;flex-shrink:0}
+.conn-name{font-size:14px;font-weight:700}
+.conn-status{font-size:12px;color:var(--soft);margin-top:3px}
+
+/* ═══════════════════════════════════════════
+   GOLF
+═══════════════════════════════════════════ */
+.golf-card{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:15px 17px;
+  transition:border-color .18s;
+}
+.golf-card:hover{border-color:rgba(68,240,255,.15)}
+.golf-card.best{border-color:rgba(61,255,194,.25);background:rgba(61,255,194,.03)}
+.golf-name{font-size:15px;font-weight:700;margin-bottom:6px}
+.golf-meta{font-size:13px;color:var(--soft)}
+.golf-insight{
+  background:rgba(68,240,255,.04);border:1px solid rgba(68,240,255,.13);
+  border-radius:var(--rs);padding:12px 14px;font-size:14px;line-height:1.55;
+}
+
+/* ═══════════════════════════════════════════
+   ASSETS
+═══════════════════════════════════════════ */
+.asset-card{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);padding:13px 14px;transition:border-color .18s}
+.asset-card:hover{border-color:rgba(68,240,255,.15)}
+.asset-name{font-size:14px;font-weight:700;word-break:break-word;margin-bottom:4px}
+.asset-meta{font-size:12px;color:var(--soft)}
+.asset-link{display:inline-block;margin-top:8px;color:var(--cyan);font-size:12px;text-decoration:none}
+.upload-zone{
+  border:2px dashed rgba(68,240,255,.2);background:rgba(8,20,34,.7);
+  border-radius:var(--r);padding:24px;text-align:center;color:var(--soft);
+  cursor:pointer;transition:all .2s;display:block;
+}
+.upload-zone:hover{border-color:rgba(68,240,255,.38);background:rgba(68,240,255,.04)}
+.upload-input{display:none}
+
+/* ═══════════════════════════════════════════
+   TRADER
+═══════════════════════════════════════════ */
+.trader-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.trader-plan{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.brief-cell{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);padding:12px 13px;font-size:13.5px;line-height:1.5}
+
+/* ═══════════════════════════════════════════
+   INSIGHT CARD
+═══════════════════════════════════════════ */
+.insight-card{
+  background:rgba(68,240,255,.035);border:1px solid rgba(68,240,255,.13);
+  border-radius:var(--r);padding:15px 17px;
+}
+.insight-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--cyan);margin-bottom:7px}
+.insight-text{font-size:14px;line-height:1.65}
+
+/* ═══════════════════════════════════════════
+   DIVIDERS
+═══════════════════════════════════════════ */
+hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
+
+/* MOBILE BOTTOM NAV */
+.mob-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;
+  background:rgba(5,14,23,.97);border-top:1px solid var(--border);
+  padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));
+}
+.mob-nav-inner{display:flex;justify-content:space-around}
+.mob-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;
+  color:var(--soft);font-size:10px;font-weight:600;
+  padding:5px 10px;border-radius:10px;transition:color .18s;min-width:52px;
+}
+.mob-btn .mi{font-size:20px}
+.mob-btn.active{color:var(--cyan)}
+
+/* ═══════════════════════════════════════════
+   LOADING SKELETON
+═══════════════════════════════════════════ */
+.skel{
+  background:linear-gradient(90deg,var(--s2) 0%,var(--s3) 50%,var(--s2) 100%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;
+  border-radius:6px;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:1120px){
+  .g3{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr}
+  .trader-metrics{grid-template-columns:1fr 1fr}
+}
+@media(max-width:800px){
+  .hero{padding:12px 14px 0;position:relative}
+  .shell{padding:14px 12px 78px}
+  .g2,.g3,.g4,.ga,.ga2{grid-template-columns:1fr}
+  .trader-metrics{grid-template-columns:1fr 1fr}
+  .trader-plan{grid-template-columns:1fr}
+  .brief-grid{grid-template-columns:1fr 1fr}
+  .hero-center{display:none}
+  .hero-right .btn-g{display:none}
+  .tab-nav{display:none}
+  .mob-nav{display:block}
+  .chat-bar{grid-template-columns:1fr auto auto}
+  .chat-bar .hv-stop{display:none}
+  .pipe-wrap{flex-wrap:nowrap}
+}
+@media(max-width:480px){
+  .tv{font-size:18px}
+  .orb,.orb-wrap{width:40px;height:40px}
+  .brand-name{font-size:22px}
+  .brief-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-  <div class="shell">
-    <div class="topbar">
-      <section class="hero">
-        <div class="hero-left">
-          <div class="orb"></div>
-          <div>
-            <h1>JARVIS</h1>
-            <div class="subtitle">Command Center // Strategic AI Operating System</div>
-            <div class="meta">
-              <span id="greeting">Loading...</span>
-              <span id="todayDate">--</span>
-              <span id="ownerName">Owner: Juan Camilo</span>
-            </div>
-          </div>
-        </div>
 
-        <div class="header-actions">
-          <button id="autoBtn" class="primary-btn">AUTO JARVIS</button>
-          <div class="status-chip">
-            <span class="status-dot"></span>
-            <span>SYSTEM ONLINE</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="quick">
-        <div class="quick-card">
-          <div class="quick-label">Top priority</div>
-          <div class="quick-value" id="topPriority">Loading...</div>
-        </div>
-        <div class="quick-card">
-          <div class="quick-label">Next meeting</div>
-          <div class="quick-value" id="nextMeeting">Loading...</div>
-        </div>
-        <div class="quick-card">
-          <div class="quick-label">Tasks open</div>
-          <div class="quick-value" id="tasksOpen">0</div>
-        </div>
-        <div class="quick-card">
-          <div class="quick-label">Assets in library</div>
-          <div class="quick-value" id="assetsCount">0</div>
-        </div>
-      </section>
+<!-- ══════════════ HERO ══════════════ -->
+<header class="hero">
+  <div class="hero-top">
+    <div class="hero-brand">
+      <div class="orb-wrap"><div class="orb"></div><div class="orb-ring"></div></div>
+      <div>
+        <div class="brand-name">JARVIS</div>
+        <div class="brand-sub">AI Operating System · Command Center</div>
+      </div>
     </div>
 
-    <div class="main">
-      <div class="col">
+    <div class="hero-center">
+      <div class="hc-item"><span id="greeting">Loading…</span></div>
+      <div class="hc-item"><strong id="todayDate">--</strong></div>
+      <div class="hc-item" id="clockEl"></div>
+      <div class="hc-item"><div class="status-dot"></div><span>System Online</span></div>
+    </div>
 
-        <!-- System Metrics (standalone card) -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">System Metrics</h2>
-          </div>
-          <div class="market-head">
-            <div class="metric">
-              <div class="metric-label">Signals</div>
-              <div class="metric-value" id="signalsCount">--</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Accuracy</div>
-              <div class="metric-value" id="accuracy">--</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Risk</div>
-              <div class="metric-value" id="riskLevel">--</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Exposure</div>
-              <div class="metric-value" id="exposure">--</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Chat section -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">JARVIS // Chat</h2>
-            <div class="subtle">Escribe o habla. JARVIS responde claro y útil.</div>
-          </div>
-
-          <div class="command-bar">
-            <input id="chatInput" class="input" placeholder="Escríbele a JARVIS..." />
-            <button id="voiceBtn" class="ghost-btn">🎙 Voice</button>
-            <button id="stopVoiceBtn" class="ghost-btn">■ Stop</button>
-            <button id="sendBtn" class="primary-btn">Send</button>
-          </div>
-
-          <div class="chat-log" id="chatLog">
-            <div class="bubble jarvis">Hola. ¿Qué necesitas hoy?</div>
-          </div>
-
-          <div style="margin-top:14px">
-            <div class="section-top" style="margin-bottom:10px">
-              <h2 class="section-title" style="font-size:24px">JARVIS Results</h2>
-              <div class="subtle">Visualización automática de análisis, múltiples activos y noticias.</div>
-            </div>
-            <div id="jarvisResults" class="results-grid">
-              <div class="result-empty">Todavía no hay resultados visuales. Prueba con "analiza tesla", "analiza apple nvidia tesla" o "noticias de nvidia".</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Agent Status (standalone card) -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">Agent Status</h2>
-          </div>
-          <div id="agentStatus" class="stack"></div>
-        </section>
-
-        <!-- Tasks section -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">Tasks</h2>
-            <div class="subtle">Organizadas por prioridad y día. Simple y usable.</div>
-          </div>
-
-          <div class="stack" id="tasksList"></div>
-
-          <div class="add-inline">
-            <input id="newTaskText" class="input" placeholder="Nueva tarea..." />
-            <select id="newTaskPriority" class="select">
-              <option value="high">High</option>
-              <option value="medium" selected>Medium</option>
-              <option value="low">Low</option>
-            </select>
-            <select id="newTaskDay" class="select">
-              <option value="today" selected>Today</option>
-              <option value="tomorrow">Tomorrow</option>
-              <option value="this_week">This week</option>
-            </select>
-            <button id="addTaskBtn" class="primary-btn">Add</button>
-          </div>
-        </section>
-
-        <!-- Meetings section -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">Meetings</h2>
-            <div class="subtle">Agenda reuniones rápido desde aquí.</div>
-          </div>
-
-          <div class="stack" id="meetingsList"></div>
-
-          <div class="add-inline meeting">
-            <input id="newMeetingTitle" class="input" placeholder="Meeting title..." />
-            <input id="newMeetingTime" class="input" placeholder="15:00" />
-            <input id="newMeetingNotes" class="input" placeholder="Notes..." />
-            <button id="addMeetingBtn" class="primary-btn">Add</button>
-          </div>
-        </section>
-
-      </div>
-
-      <div class="col">
-
-        <!-- Markets & Trader -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">Markets & Trader</h2>
-            <div class="subtle">Puedes escribir ticker o nombre: Tesla, Google, Amazon, Nvidia.</div>
-          </div>
-
-          <div class="market-head">
-            <div class="metric">
-              <div class="metric-label">Symbol</div>
-              <div class="metric-value" id="traderSymbol">AAPL</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Setup score</div>
-              <div class="metric-value" id="setupScore">--</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Traffic light</div>
-              <div class="metric-value" id="trafficLightText">--</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Price now</div>
-              <div class="metric-value" id="priceNow">--</div>
-            </div>
-          </div>
-
-          <div class="add-inline" style="margin-top:12px;grid-template-columns:1fr auto;">
-            <input id="symbolInput" class="input" placeholder="AAPL, Tesla, Google..." value="AAPL" />
-            <button id="analyzeBtn" class="primary-btn">Analyze</button>
-          </div>
-
-          <div class="trader-grid">
-            <div class="stack" id="tradePlan"></div>
-            <div class="stack" id="tradeNarrative"></div>
-          </div>
-        </section>
-
-        <!-- Recommended Stocks -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">Recommended Stocks</h2>
-            <div class="subtle">Ideas del día explicadas de forma simple.</div>
-          </div>
-          <div class="recommendations" id="recommendations"></div>
-        </section>
-
-        <!-- Asset Library -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">Asset Library</h2>
-            <div class="subtle">Sube documentos, fotos, videos y audio.</div>
-          </div>
-
-          <label id="uploadZone" class="upload-zone">
-            <input id="fileInput" class="upload-input" type="file" multiple />
-            <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px;">Drop files here or click to upload</div>
-            <div>PDF, imágenes, videos, audio y archivos generales.</div>
-          </label>
-
-          <div class="asset-grid" id="assetGrid"></div>
-        </section>
-
-        <!-- JARVIS Pipeline -->
-        <section class="card">
-          <div class="section-top">
-            <h2 class="section-title">JARVIS Pipeline</h2>
-            <div class="subtle">Estado del sistema en tiempo real</div>
-          </div>
-          <div id="pipelineBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
-            <div class="metric">SCAN</div>
-            <div class="metric">RESEARCH</div>
-            <div class="metric">ANALYZE</div>
-            <div class="metric">DECIDE</div>
-            <div class="metric">EXECUTE</div>
-          </div>
-        </section>
-
-      </div>
+    <div class="hero-right">
+      <button id="autoBtn" class="btn-p">⚡ Auto JARVIS</button>
+      <button class="btn-g btn-sm" onclick="switchTab('chat')">💬 Chat</button>
     </div>
   </div>
 
-  <button onclick="scheduleMeeting()" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #00f0ff;
-    color: black;
-    padding: 12px 18px;
-    border-radius: 10px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-  ">
-    📅 Schedule Meeting
-  </button>
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="markets">Markets</button>
+    <button class="tab-btn" data-tab="agents">Agents</button>
+    <button class="tab-btn" data-tab="productivity">Productivity</button>
+    <button class="tab-btn" data-tab="golf">Golf</button>
+    <button class="tab-btn" data-tab="intelligence">Intelligence</button>
+    <button class="tab-btn" data-tab="system">System</button>
+    <button class="tab-btn" data-tab="chat">Chat</button>
+  </nav>
+</header>
 
-  <script>
-    const qs = (id) => document.getElementById(id);
-    const state = { recognition: null, listening: false };
+<main class="shell">
 
-    function addBubble(text, who="jarvis"){
-      const div = document.createElement("div");
-      div.className = "bubble " + who;
-      div.textContent = text;
-      qs("chatLog").appendChild(div);
-      qs("chatLog").scrollTop = qs("chatLog").scrollHeight;
-    }
+<!-- ══════════════ OVERVIEW ══════════════ -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="g4 mb">
+    <div class="tile">
+      <div class="tl">Top Priority</div>
+      <div class="tv" id="topPriority" style="font-size:15px;line-height:1.3">Loading…</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Next Meeting</div>
+      <div class="tv" id="nextMeeting" style="font-size:15px;line-height:1.3">Loading…</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Tasks Open</div>
+      <div class="tv" id="tasksOpen">0</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Assets</div>
+      <div class="tv" id="assetsCount">0</div>
+    </div>
+  </div>
 
-    function trafficTag(level){
-      const v = (level || "").toLowerCase();
-      if(v === "green") return `<span class="tag-ok">✅ Go</span>`;
-      if(v === "yellow") return `<span class="tag-warn">⚠️ Wait</span>`;
-      return `<span class="tag-bad">🚫 Avoid</span>`;
-    }
+  <div class="g2">
+    <div class="col">
+      <!-- Auto JARVIS result -->
+      <div id="ov-auto" class="auto-card" style="display:none"></div>
 
-    async function loadHome(){
-      try{
-        const res = await fetch("/dashboard/home");
-        const data = await res.json();
-
-        qs("greeting").textContent = data.greeting || "JARVIS ready";
-        qs("todayDate").textContent = data.date || "--";
-        qs("ownerName").textContent = "Owner: " + (data.owner_name || "Juan Camilo");
-        qs("topPriority").textContent = data.top_priority || "Protect capital";
-        qs("tasksOpen").textContent = data.tasks_open || 0;
-        qs("assetsCount").textContent = data.assets_count || 0;
-
-        if(data.next_meeting){
-          qs("nextMeeting").textContent = `${data.next_meeting.time} – ${data.next_meeting.title}`;
-        } else {
-          qs("nextMeeting").textContent = "No meetings";
-        }
-
-        renderTasks(data.tasks || []);
-        renderMeetings(data.meetings || []);
-      }catch(e){
-        console.warn("loadHome error:", e);
-      }
-    }
-
-    function renderTasks(items){
-      const box = qs("tasksList");
-      box.innerHTML = "";
-      if(!items.length){
-        box.innerHTML = `<div class="brief">No tasks yet.</div>`;
-        return;
-      }
-
-      items.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "row-card task-item";
-        div.innerHTML = `
-          <div>
-            <div class="row-title">${item.text}</div>
-            <div class="row-sub">${item.day || "today"} – ${item.priority || "medium"}</div>
+      <!-- Executive Brief -->
+      <div class="card">
+        <div class="section-label">Executive Brief</div>
+        <div class="brief-grid">
+          <div class="brief-card action">
+            <div class="brief-icon">⚡</div>
+            <div class="brief-lbl action">Recommended Action</div>
+            <div class="brief-text" id="eb-action">Run Auto JARVIS for today's intelligence brief.</div>
           </div>
-          <button class="check-btn">${item.done ? "✓" : ""}</button>
-        `;
-        div.querySelector(".check-btn").onclick = async () => {
-          try{
-            await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"});
-            await loadHome();
-          }catch(e){
-            console.warn("toggle task error:", e);
-          }
-        };
-        box.appendChild(div);
-      });
-    }
-
-    function renderMeetings(items){
-      const box = qs("meetingsList");
-      box.innerHTML = "";
-      if(!items.length){
-        box.innerHTML = `<div class="brief">No meetings yet.</div>`;
-        return;
-      }
-
-      items.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "row-card";
-        div.innerHTML = `
-          <div class="row-title">${item.time} – ${item.title}</div>
-          <div class="row-sub">${item.notes || ""}</div>
-        `;
-        box.appendChild(div);
-      });
-    }
-
-    async function addTask(){
-      const text = qs("newTaskText").value.trim();
-      const priority = qs("newTaskPriority").value;
-      const day = qs("newTaskDay").value;
-      if(!text) return;
-
-      try{
-        await fetch("/dashboard/tasks", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({text, priority, day})
-        });
-        qs("newTaskText").value = "";
-        await loadHome();
-      }catch(e){
-        console.warn("addTask error:", e);
-      }
-    }
-
-    async function addMeeting(){
-      const title = qs("newMeetingTitle").value.trim();
-      const time = qs("newMeetingTime").value.trim();
-      const notes = qs("newMeetingNotes").value.trim();
-      if(!title || !time) return;
-
-      try{
-        await fetch("/dashboard/meetings", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({title, time, notes})
-        });
-        qs("newMeetingTitle").value = "";
-        qs("newMeetingTime").value = "";
-        qs("newMeetingNotes").value = "";
-        await loadHome();
-      }catch(e){
-        console.warn("addMeeting error:", e);
-      }
-    }
-
-    function renderResultsEmpty(){
-      qs("jarvisResults").innerHTML = `<div class="result-empty">Todavía no hay resultados visuales. Escribe algo como análisis, noticias o múltiples activos.</div>`;
-    }
-
-    function renderSingleTrader(details){
-      qs("jarvisResults").innerHTML = `
-        <div class="result-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-            <div class="result-title">${details.symbol || "-"}</div>
-            ${trafficTag(details.traffic_light)}
+          <div class="brief-card risk">
+            <div class="brief-icon">🛡</div>
+            <div class="brief-lbl risk">Key Risk</div>
+            <div class="brief-text" id="eb-risk">Monitor portfolio exposure. Market volatility elevated.</div>
           </div>
-          <div class="pill-row">
-            <span class="tag-warn">Precio: ${details.price_now ?? details.price ?? "--"}</span>
-            <span class="tag-warn">Score: ${details.setup_score ?? "--"}</span>
+          <div class="brief-card opp">
+            <div class="brief-icon">🎯</div>
+            <div class="brief-lbl opp">Opportunity</div>
+            <div class="brief-text" id="eb-opp">Scan active. Awaiting signal confirmation.</div>
           </div>
-          <div style="margin-top:12px">${details.friendly_recommendation || details.summary || ""}</div>
-          <div style="margin-top:12px;color:var(--soft)">${(details.insight_lines || []).join(" | ")}</div>
+          <div class="brief-card intel">
+            <div class="brief-icon">🧠</div>
+            <div class="brief-lbl intel">Strategic Insight</div>
+            <div class="brief-text" id="eb-intel">Discipline beats prediction. Protect capital first.</div>
+          </div>
         </div>
-      `;
-    }
+      </div>
 
-    function renderMultiple(details){
-      const items = details?.items || [];
-      if(!items.length){
-        renderResultsEmpty();
-        return;
-      }
+      <!-- Daily Intelligence -->
+      <div class="insight-card">
+        <div class="insight-lbl">Pipeline Intelligence</div>
+        <div class="insight-text" id="dailyInsight">Loading system intelligence…</div>
+      </div>
 
-      qs("jarvisResults").innerHTML = items.map(item => `
-        <div class="result-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-            <div class="result-title">${item.symbol}</div>
-            ${trafficTag(item.traffic_light)}
-          </div>
-          <div class="pill-row">
-            <span class="tag-warn">Precio: ${item.price_now ?? item.price ?? "--"}</span>
-            <span class="tag-warn">Score: ${item.setup_score ?? "--"}</span>
-          </div>
-          <div style="margin-top:10px">${item.friendly_recommendation || item.summary || ""}</div>
+      <!-- Last Reply -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:10px">
+          <span class="ct">Last JARVIS Reply</span>
+          <button class="btn-ol btn-sm" onclick="switchTab('chat')">Open Chat →</button>
         </div>
-      `).join("");
-    }
+        <div id="lastReply" style="font-size:14px;color:var(--soft);line-height:1.65">
+          No conversation yet. Start chatting.
+        </div>
+      </div>
+    </div>
 
-    function renderNews(details){
-      if(details?.news_by_symbol){
-        const newsBySymbol = details.news_by_symbol;
-        const symbols = Object.keys(newsBySymbol);
-        if(!symbols.length){
-          renderResultsEmpty();
-          return;
-        }
+    <div class="col">
+      <!-- System Health -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:12px">
+          <span class="ct">System Health</span>
+          <span class="badge b-ok">● Online</span>
+        </div>
+        <div class="health-row"><span>Signals detected</span><span class="health-val" id="ov-signals">--</span></div>
+        <div class="health-row"><span>Signal accuracy</span><span class="health-val" id="ov-accuracy">--</span></div>
+        <div class="health-row"><span>Risk level</span><span class="health-val" id="ov-risk">--</span></div>
+        <div class="health-row"><span>Exposure</span><span class="health-val" id="ov-exposure">--</span></div>
+      </div>
 
-        let html = "";
-        for(const sym of symbols){
-          const list = newsBySymbol[sym] || [];
-          html += `<div class="result-card"><div class="result-title" style="font-size:18px">${sym}</div>`;
-          if(!list.length){
-            html += `<div class="news-source" style="margin-top:10px">Sin noticias claras.</div>`;
-          } else {
-            html += list.slice(0,3).map(n => `
-              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
-                <div class="news-title">${n.title || ""}</div>
-                <div class="news-source">${n.publisher || ""}</div>
-              </div>
-            `).join("");
-          }
-          html += `</div>`;
-        }
-        qs("jarvisResults").innerHTML = html;
-        return;
-      }
+      <!-- Agent Activity Feed -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:12px">
+          <span class="ct">Agent Activity</span>
+          <button class="btn-ol btn-sm" onclick="switchTab('agents')">All Agents →</button>
+        </div>
+        <div id="ov-activity" class="activity-feed"></div>
+      </div>
 
-      if(details?.news){
-        qs("jarvisResults").innerHTML = `
-          <div class="result-card">
-            <div class="result-title" style="font-size:18px">${details.symbol || "News"}</div>
-            ${(details.news || []).slice(0,3).map(n => `
-              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
-                <div class="news-title">${n.title || ""}</div>
-                <div class="news-source">${n.publisher || ""}</div>
-              </div>
-            `).join("")}
+      <!-- Pipeline mini -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:10px">
+          <span class="ct">Pipeline</span>
+          <button class="btn-ol btn-sm" onclick="switchTab('system')">Details →</button>
+        </div>
+        <div id="ov-pipe-lbl" style="font-size:13px;color:var(--soft);margin-bottom:8px">Loading…</div>
+        <div class="progress-bar"><div id="ov-pipe-bar" class="progress-fill" style="width:4%"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MARKETS ══════════════ -->
+<div id="tab-markets" class="tab-panel">
+  <div class="col">
+    <div id="mkt-auto" class="auto-card" style="display:none"></div>
+
+    <!-- Trader -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Trader Analysis</span>
+        <span class="cs">ticker or company name</span>
+      </div>
+      <div class="trader-metrics mb">
+        <div class="tile"><div class="tl">Symbol</div><div class="tv" id="traderSymbol">AAPL</div></div>
+        <div class="tile"><div class="tl">Setup Score</div><div class="tv" id="setupScore">--</div></div>
+        <div class="tile"><div class="tl">Signal</div><div class="tv" id="trafficLightText">--</div></div>
+        <div class="tile"><div class="tl">Price</div><div class="tv" id="priceNow">--</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px">
+        <input id="symbolInput" class="input" placeholder="AAPL, Tesla, BTC, Nvidia…" value="AAPL"/>
+        <button id="analyzeBtn" class="btn-p">Analyze</button>
+      </div>
+      <div class="trader-plan">
+        <div class="col" id="tradePlan" style="gap:8px"></div>
+        <div class="col" id="tradeNarrative" style="gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Recommended Stocks</span>
+        <span class="cs">AI daily picks</span>
+      </div>
+      <div id="recommendations" class="ga"></div>
+    </div>
+
+    <!-- Market News -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Market News</span>
+        <button class="btn-ol btn-sm" onclick="switchTab('intelligence')">Full Feed →</button>
+      </div>
+      <div id="mkt-news" class="ga"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ AGENTS ══════════════ -->
+<div id="tab-agents" class="tab-panel">
+  <div class="ch mb" style="margin-bottom:20px">
+    <div>
+      <div style="font-size:22px;font-weight:800">AI Agent Network</div>
+      <div style="font-size:13px;color:var(--soft);margin-top:4px">All specialist agents connected to JARVIS OS</div>
+    </div>
+    <button class="btn-ol" onclick="loadAgents()">↻ Refresh</button>
+  </div>
+  <div id="agents-grid" class="ga"></div>
+</div>
+
+<!-- ══════════════ PRODUCTIVITY ══════════════ -->
+<div id="tab-productivity" class="tab-panel">
+  <div class="g2">
+    <!-- Tasks -->
+    <div class="card">
+      <div class="ch"><span class="ct">Tasks</span><span class="cs">priority sorted</span></div>
+      <div id="tasksList" class="col" style="gap:8px;margin-bottom:14px"></div>
+      <hr class="div">
+      <div class="col" style="gap:9px">
+        <input id="newTaskText" class="input" placeholder="New task…"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px">
+          <select id="newTaskPriority" class="select">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select id="newTaskDay" class="select">
+            <option value="today" selected>Today</option>
+            <option value="tomorrow">Tomorrow</option>
+            <option value="this_week">This week</option>
+          </select>
+          <button id="addTaskBtn" class="btn-p">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meetings -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Meetings</span>
+        <button class="btn-ol btn-sm" onclick="scheduleMeeting()">📅 Schedule</button>
+      </div>
+      <div id="meetingsList" class="col" style="gap:8px;margin-bottom:14px"></div>
+      <hr class="div">
+      <div class="col" style="gap:9px">
+        <input id="newMeetingTitle" class="input" placeholder="Meeting title…"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px">
+          <input id="newMeetingTime"  class="input" placeholder="15:00"/>
+          <input id="newMeetingNotes" class="input" placeholder="Notes…"/>
+          <button id="addMeetingBtn" class="btn-p">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Asset Library -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Asset Library</span>
+        <span class="cs" id="assetCountLabel">0 files</span>
+      </div>
+      <label id="uploadZone" class="upload-zone">
+        <input id="fileInput" class="upload-input" type="file" multiple/>
+        <div style="font-size:28px;margin-bottom:8px">📁</div>
+        <div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px">Drop files or click to upload</div>
+        <div style="font-size:13px">PDF · images · video · audio · documents</div>
+      </label>
+      <div id="assetGrid" class="ga2" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Integrations -->
+    <div class="card">
+      <div class="ch" style="margin-bottom:16px">
+        <span class="ct">Integrations</span>
+        <span class="cs">workspace connectors</span>
+      </div>
+      <div class="col" style="gap:10px">
+        <div class="conn-card">
+          <div class="conn-icon">📅</div>
+          <div style="flex:1">
+            <div class="conn-name">Outlook Calendar</div>
+            <div class="conn-status">Sync meetings and events automatically</div>
           </div>
-        `;
-        return;
-      }
+          <span class="badge b-idle">Coming soon</span>
+        </div>
+        <div class="conn-card">
+          <div class="conn-icon">📧</div>
+          <div style="flex:1">
+            <div class="conn-name">Email</div>
+            <div class="conn-status">AI-powered inbox triage and summaries</div>
+          </div>
+          <span class="badge b-idle">Coming soon</span>
+        </div>
+        <div class="conn-card">
+          <div class="conn-icon">💬</div>
+          <div style="flex:1">
+            <div class="conn-name">WhatsApp</div>
+            <div class="conn-status">Send JARVIS alerts and briefings</div>
+          </div>
+          <span class="badge b-idle">Coming soon</span>
+        </div>
+        <div class="conn-card">
+          <div class="conn-icon">📊</div>
+          <div style="flex:1">
+            <div class="conn-name">Google Drive</div>
+            <div class="conn-status">File sync and document analysis</div>
+          </div>
+          <span class="badge b-idle">Coming soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      renderResultsEmpty();
+<!-- ══════════════ GOLF ══════════════ -->
+<div id="tab-golf" class="tab-panel">
+  <div class="g2">
+    <div class="col">
+      <div style="font-size:22px;font-weight:800;margin-bottom:16px">⛳ Golf Intelligence</div>
+      <div id="golf-courses" class="col" style="gap:12px"></div>
+    </div>
+    <div class="col">
+      <div style="font-size:22px;font-weight:800;margin-bottom:16px">Insights &amp; Conditions</div>
+      <div id="golf-insights" class="col" style="gap:10px"></div>
+      <div id="golf-player" class="card card-sm" style="margin-top:4px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ INTELLIGENCE ══════════════ -->
+<div id="tab-intelligence" class="tab-panel">
+  <div class="ch mb" style="margin-bottom:18px">
+    <div>
+      <div style="font-size:22px;font-weight:800">Intelligence Feed</div>
+      <div style="font-size:13px;color:var(--soft);margin-top:4px">AI-curated · markets · tech · macro · golf</div>
+    </div>
+    <button class="btn-ol" onclick="loadNews()">↻ Refresh</button>
+  </div>
+  <div id="intel-feed" class="ga"></div>
+</div>
+
+<!-- ══════════════ SYSTEM ══════════════ -->
+<div id="tab-system" class="tab-panel">
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">JARVIS Pipeline</span><span class="cs">real-time state</span></div>
+      <div id="sys-pipe" class="pipe-wrap"></div>
+      <div id="sys-pipe-msg" style="font-size:13px;color:var(--soft);margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">System Metrics</span></div>
+      <div class="g2" style="gap:12px">
+        <div class="tile"><div class="tl">Signals</div><div class="tv" id="signalsCount">--</div></div>
+        <div class="tile"><div class="tl">Accuracy</div><div class="tv" id="accuracy">--</div></div>
+        <div class="tile"><div class="tl">Risk</div><div class="tv" id="riskLevel">--</div></div>
+        <div class="tile"><div class="tl">Exposure</div><div class="tv" id="exposure">--</div></div>
+      </div>
+    </div>
+    <div class="card" style="grid-column:1/-1">
+      <div class="ch">
+        <span class="ct">All Agents</span>
+        <button class="btn-ol btn-sm" onclick="loadAgents()">↻ Refresh</button>
+      </div>
+      <div id="agentStatus" class="ga"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CHAT ══════════════ -->
+<div id="tab-chat" class="tab-panel">
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">JARVIS Chat</span>
+        <div class="row">
+          <button id="voiceBtn"     class="btn-g btn-sm">🎙 Voice</button>
+          <button id="stopVoiceBtn" class="btn-g btn-sm hv-stop">■ Stop</button>
+        </div>
+      </div>
+      <div class="chat-log" id="chatLog">
+        <div class="chat-empty">
+          <div class="chat-empty-icon">🤖</div>
+          <div class="chat-empty-title">JARVIS is ready</div>
+          <div style="font-size:13px">Markets · Health · Fitness · Legal · Golf · Strategy</div>
+          <div class="sug-row" style="justify-content:center">
+            <span class="sug" onclick="quickSend('Analiza NVDA')">Analiza NVDA</span>
+            <span class="sug" onclick="quickSend('Dame las noticias')">Noticias</span>
+            <span class="sug" onclick="quickSend('Escanea el mercado')">Scan mercado</span>
+            <span class="sug" onclick="quickSend('Dame un plan de fitness')">Fitness</span>
+            <span class="sug" onclick="quickSend('¿Cómo está el pipeline?')">Pipeline</span>
+          </div>
+        </div>
+      </div>
+      <div class="chat-bar">
+        <input id="chatInput" class="input" placeholder="Escríbele a JARVIS…"/>
+        <button id="voiceBtnMob"     class="btn-g btn-sm">🎙</button>
+        <button id="stopVoiceBtnMob" class="btn-g btn-sm hv-stop">■</button>
+        <button id="sendBtn" class="btn-p">Send</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">JARVIS Results</span>
+        <span class="cs">live analysis output</span>
+      </div>
+      <div id="jarvisResults">
+        <div class="result-empty">
+          Results appear here after analysis.<br>
+          Try: "analiza Tesla" · "noticias NVDA" · "escanea el mercado"
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ══════════════ MOBILE NAV ══════════════ -->
+<nav class="mob-nav">
+  <div class="mob-nav-inner">
+    <button class="mob-btn active" data-tab="overview"><span class="mi">🏠</span><span>Home</span></button>
+    <button class="mob-btn" data-tab="markets"><span class="mi">📈</span><span>Markets</span></button>
+    <button class="mob-btn" data-tab="chat"><span class="mi">💬</span><span>Chat</span></button>
+    <button class="mob-btn" data-tab="productivity"><span class="mi">✅</span><span>Tasks</span></button>
+    <button class="mob-btn" data-tab="system"><span class="mi">⚙️</span><span>System</span></button>
+  </div>
+</nav>
+
+<script>
+"use strict";
+/* ── Utils ──────────────────────────── */
+const qs   = id => document.getElementById(id);
+const safe = v  => (v != null && v !== "" && v !== undefined) ? String(v) : "--";
+const state = { recognition: null, listening: false };
+
+const AGENT_META = {
+  market_intelligence: { icon:"📊", role:"Real-time market data & signal scanning" },
+  opportunity_radar:   { icon:"🎯", role:"Opportunity detection across asset classes" },
+  wealth_optimizer:    { icon:"💰", role:"Portfolio optimization & allocation strategy" },
+  risk_analyst:        { icon:"🛡", role:"Risk assessment & position sizing" },
+  trader_alpha:        { icon:"⚡", role:"Execution signals & trade setups" },
+  medical_supreme:     { icon:"🏥", role:"Health triage, symptom analysis & longevity" },
+  fitness_performance: { icon:"💪", role:"Training plans, nutrition & body performance" },
+  legal_compliance:    { icon:"⚖", role:"Legal analysis, contracts & Colombian law" },
+  executive_council:   { icon:"🧠", role:"Strategic coaching & multi-perspective decisions" },
+  daily_ops:           { icon:"📅", role:"Daily operations, tasks & schedule management" },
+  knowledge_engine:    { icon:"📚", role:"Research, synthesis & knowledge retrieval" },
+  news_intelligence:   { icon:"📰", role:"News aggregation & market intelligence" },
+};
+
+/* ── Tab switching ──────────────────── */
+function switchTab(name) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn,.mob-btn").forEach(b => b.classList.remove("active"));
+  const panel = qs("tab-" + name);
+  if (panel) panel.classList.add("active");
+  document.querySelectorAll(`[data-tab="${name}"]`).forEach(b => b.classList.add("active"));
+}
+document.querySelectorAll(".tab-btn,.mob-btn").forEach(b =>
+  b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+/* ── Live clock ─────────────────────── */
+(function clock() {
+  const el = qs("clockEl");
+  if (el) el.textContent = new Date().toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  setTimeout(clock, 1000);
+})();
+
+/* ── Traffic tag ────────────────────── */
+function trafficTag(level) {
+  const v = (level || "").toLowerCase();
+  if (v === "green")  return `<span class="tag-ok">✅ Go</span>`;
+  if (v === "yellow") return `<span class="tag-warn">⚠ Wait</span>`;
+  return `<span class="tag-bad">🚫 Avoid</span>`;
+}
+
+/* ── Load home ──────────────────────── */
+async function loadHome() {
+  try {
+    const d = await fetch("/dashboard/home").then(r => r.json());
+    if (qs("greeting"))    qs("greeting").textContent    = d.greeting      || "JARVIS ready";
+    if (qs("todayDate"))   qs("todayDate").textContent   = d.date          || "--";
+    if (qs("topPriority")) qs("topPriority").textContent = d.top_priority  || "Protect capital";
+    if (qs("tasksOpen"))   qs("tasksOpen").textContent   = d.tasks_open    ?? 0;
+    if (qs("assetsCount")) qs("assetsCount").textContent = d.assets_count  ?? 0;
+    const nm = qs("nextMeeting");
+    if (nm) nm.textContent = d.next_meeting
+      ? `${d.next_meeting.time} – ${d.next_meeting.title}` : "No meetings";
+    renderTasks(d.tasks    || []);
+    renderMeetings(d.meetings || []);
+    // Update executive brief if fields exist
+    if (d.recommended_action && qs("eb-action")) qs("eb-action").textContent = d.recommended_action;
+    if (d.key_risk           && qs("eb-risk"))   qs("eb-risk").textContent   = d.key_risk;
+    if (d.opportunity        && qs("eb-opp"))    qs("eb-opp").textContent    = d.opportunity;
+    if (d.strategic_insight  && qs("eb-intel"))  qs("eb-intel").textContent  = d.strategic_insight;
+  } catch(e) { console.warn("loadHome:", e); }
+}
+
+/* ── Render tasks ───────────────────── */
+function renderTasks(items) {
+  const box = qs("tasksList"); if (!box) return;
+  box.innerHTML = "";
+  if (!items.length) { box.innerHTML = `<div class="row-card" style="color:var(--soft);text-align:center">No tasks yet.</div>`; return; }
+  const clr = { high:"var(--bad)", medium:"var(--warn)", low:"var(--ok)" };
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "row-card";
+    div.innerHTML = `
+      <div class="task-row">
+        <div style="flex:1">
+          <div class="task-text" style="${item.done ? "text-decoration:line-through;opacity:.45" : ""}">${item.text}</div>
+          <div class="task-meta">
+            <span style="color:${clr[item.priority]||"var(--soft)"}">● ${item.priority||"medium"}</span>
+            &nbsp;·&nbsp;${item.day||"today"}
+          </div>
+        </div>
+        <button class="check-btn" title="Toggle">${item.done ? "✓" : ""}</button>
+      </div>`;
+    div.querySelector(".check-btn").onclick = async () => {
+      try { await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"}); await loadHome(); }
+      catch(e) { console.warn("toggle:", e); }
+    };
+    box.appendChild(div);
+  });
+}
+
+/* ── Render meetings ────────────────── */
+function renderMeetings(items) {
+  const box = qs("meetingsList"); if (!box) return;
+  box.innerHTML = "";
+  if (!items.length) { box.innerHTML = `<div class="row-card" style="color:var(--soft);text-align:center">No meetings scheduled.</div>`; return; }
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "row-card";
+    div.innerHTML = `
+      <div style="font-weight:700;font-size:14px">${item.time} – ${item.title}</div>
+      ${item.notes ? `<div style="font-size:12px;color:var(--soft);margin-top:4px">${item.notes}</div>` : ""}`;
+    box.appendChild(div);
+  });
+}
+
+/* ── Add task ───────────────────────── */
+async function addTask() {
+  const text = qs("newTaskText").value.trim();
+  const priority = qs("newTaskPriority").value;
+  const day = qs("newTaskDay").value;
+  if (!text) return;
+  try {
+    await fetch("/dashboard/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text,priority,day})});
+    qs("newTaskText").value = "";
+    await loadHome();
+  } catch(e) { console.warn("addTask:", e); }
+}
+
+/* ── Add meeting ────────────────────── */
+async function addMeeting() {
+  const title = qs("newMeetingTitle").value.trim();
+  const time  = qs("newMeetingTime").value.trim();
+  const notes = qs("newMeetingNotes").value.trim();
+  if (!title || !time) return;
+  try {
+    await fetch("/dashboard/meetings", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({title,time,notes})});
+    qs("newMeetingTitle").value = qs("newMeetingTime").value = qs("newMeetingNotes").value = "";
+    await loadHome();
+  } catch(e) { console.warn("addMeeting:", e); }
+}
+
+/* ── Schedule meeting ───────────────── */
+async function scheduleMeeting() {
+  const objective = prompt("Meeting objective:");
+  if (!objective) return;
+  const datetime = prompt("Datetime (YYYY-MM-DD HH:MM):");
+  if (!datetime) return;
+  try {
+    const d = await fetch("/dashboard/schedule-meeting", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({objective,datetime})}).then(r => r.json());
+    alert("Scheduled: " + (d.meeting_created?.title || "Done"));
+    await loadHome();
+  } catch(e) { alert("Failed."); console.warn("scheduleMeeting:", e); }
+}
+
+/* ── Chat ───────────────────────────── */
+function addBubble(text, who = "jarvis") {
+  const log = qs("chatLog");
+  const empty = log.querySelector(".chat-empty");
+  if (empty) empty.remove();
+  const div = document.createElement("div");
+  div.className = "bubble " + who;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+
+function quickSend(text) {
+  switchTab("chat");
+  setTimeout(() => { qs("chatInput").value = text; sendChat(); }, 80);
+}
+
+async function sendChat(override = null) {
+  const input = qs("chatInput");
+  const message = (override || input.value).trim();
+  if (!message) return;
+  addBubble(message, "user");
+  input.value = "";
+  const typing = addBubble("JARVIS is thinking…", "jarvis typing");
+  try {
+    const d = await fetch("/chat", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message, domain:"general"})
+    }).then(r => r.json());
+    const reply = d.reply || d.summary || d.response?.reply || d.response?.summary || "No reply.";
+    typing.remove();
+    addBubble(reply, "jarvis");
+    if (qs("lastReply")) qs("lastReply").textContent = reply.slice(0, 230) + (reply.length > 230 ? "…" : "");
+    renderChatAction(d);
+  } catch(e) {
+    typing.remove();
+    addBubble("Error connecting to JARVIS. Check backend.", "jarvis");
+    console.warn("sendChat:", e);
+  }
+}
+
+/* ── Auto JARVIS ────────────────────── */
+function buildAutoHTML(data) {
+  const conf = Math.round((data.confidence || 0) * 100);
+  const actions = data.actions || [];
+  const meta = data.meta || {};
+  const timeStr = data.generated_at
+    ? new Date(data.generated_at).toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}) : "";
+  const confColor = conf >= 70 ? "var(--ok)" : conf >= 40 ? "var(--warn)" : "var(--bad)";
+  const impactLevel = conf >= 75 ? "High" : conf >= 45 ? "Medium" : "Low";
+  const impactClass = conf >= 75 ? "b-bad" : conf >= 45 ? "b-warn" : "b-idle";
+
+  return `
+    <div class="auto-head">
+      <div>
+        <div class="auto-lbl">⚡ Auto JARVIS Intelligence</div>
+        ${timeStr ? `<div style="font-size:12px;color:var(--soft)">Generated ${timeStr}</div>` : ""}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="badge" style="background:rgba(68,240,255,.1);color:${confColor}">${conf}% confidence</span>
+        <span class="badge ${impactClass}">Impact: ${impactLevel}</span>
+      </div>
+    </div>
+    <div class="auto-sum">${data.summary || data.reply || "Scan complete."}</div>
+    ${actions.length ? `
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--soft);margin-bottom:8px">Top Actions</div>
+      <div class="auto-actions">
+        ${actions.slice(0,5).map(a => `<div class="action-item"><div class="action-dot"></div>${a}</div>`).join("")}
+      </div>` : ""}
+    <div class="auto-foot">
+      ${meta.symbols_scanned ? `<span>Scanned: <strong>${meta.symbols_scanned}</strong></span>` : ""}
+      ${meta.regime          ? `<span>Regime: <strong>${meta.regime}</strong></span>`           : ""}
+      ${meta.macro_bias      ? `<span>Macro: <strong>${meta.macro_bias}</strong></span>`        : ""}
+    </div>`;
+}
+
+async function runAutoJarvis() {
+  const btn = qs("autoBtn");
+  btn.disabled = true; btn.textContent = "Running…";
+  try {
+    const data = await fetch("/jarvis/auto", {method:"POST"}).then(r => r.json());
+    const html = buildAutoHTML(data);
+    const ov = qs("ov-auto");  if (ov)  { ov.style.display  = "block"; ov.innerHTML  = html; }
+    const mk = qs("mkt-auto"); if (mk)  { mk.style.display  = "block"; mk.innerHTML  = html; }
+    // Update executive brief from auto scan
+    if (data.actions?.length)    { const a = qs("eb-action"); if(a) a.textContent = data.actions[0]; }
+    if (data.summary) { const i = qs("eb-intel"); if(i) i.textContent = data.summary.slice(0,120); }
+    await loadRecommendations();
+  } catch(e) { console.warn("runAutoJarvis:", e); }
+  finally { btn.disabled = false; btn.textContent = "⚡ Auto JARVIS"; }
+}
+
+/* ── Chat action rendering ──────────── */
+function renderChatAction(payload) {
+  const action  = (payload?.action  || payload?.response?.action  || "").toLowerCase();
+  const details = payload?.details  || payload?.response?.details || {};
+  if (action.startsWith("analyze")) { renderSingleTrader(details); return; }
+  if (action === "scan")            { renderScanResult(details);   return; }
+  if (action === "news")            { renderNews(details);         return; }
+  if (action === "show_trader")     { renderSingleTrader(details); return; }
+  if (action === "show_multiple")   { renderMultiple(details);     return; }
+  if (action === "show_news")       { renderNews(details);         return; }
+}
+function renderSingleTrader(d) {
+  const box = qs("jarvisResults"); if (!box) return;
+  box.innerHTML = `
+    <div class="result-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div class="result-title">${d.symbol||"-"}</div>
+        ${trafficTag(d.traffic_light)}
+      </div>
+      <div class="pill-row">
+        <span class="tag-warn">Price: ${safe(d.price_now??d.price)}</span>
+        <span class="tag-warn">Score: ${safe(d.setup_score)}/100</span>
+      </div>
+      <div style="margin-top:12px;line-height:1.65;font-size:14px">${d.friendly_recommendation||d.summary||""}</div>
+      <div style="margin-top:10px;color:var(--soft);font-size:13px">${(d.insight_lines||[]).join(" · ")}</div>
+    </div>`;
+}
+function renderScanResult(d) {
+  const box = qs("jarvisResults"); if (!box) return;
+  const actions = d.actions||[]; const summary = d.summary||"";
+  if (!actions.length && !summary) { renderResultsEmpty(); return; }
+  box.innerHTML = `
+    <div class="result-card">
+      <div class="result-title" style="font-size:16px;color:var(--cyan)">Market Scan</div>
+      <div style="margin-top:8px;line-height:1.65;font-size:14px">${summary}</div>
+      ${actions.length ? `<div class="col" style="gap:8px;margin-top:12px">
+        ${actions.slice(0,5).map(a=>`<div class="action-item"><div class="action-dot"></div>${a}</div>`).join("")}
+      </div>` : ""}
+    </div>`;
+}
+function renderMultiple(d) {
+  const box = qs("jarvisResults"); if (!box) return;
+  const items = d?.items||[];
+  if (!items.length) { renderResultsEmpty(); return; }
+  box.innerHTML = items.map(item => `
+    <div class="result-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div class="result-title">${item.symbol}</div>${trafficTag(item.traffic_light)}
+      </div>
+      <div class="pill-row">
+        <span class="tag-warn">Price: ${safe(item.price_now??item.price)}</span>
+        <span class="tag-warn">Score: ${safe(item.setup_score)}</span>
+      </div>
+      <div style="margin-top:10px;font-size:14px">${item.friendly_recommendation||item.summary||""}</div>
+    </div>`).join("");
+}
+function renderNews(d) {
+  const box = qs("jarvisResults"); if (!box) return;
+  if (d?.news_by_symbol) {
+    const syms = Object.keys(d.news_by_symbol);
+    if (!syms.length) { renderResultsEmpty(); return; }
+    box.innerHTML = syms.map(sym => {
+      const list = d.news_by_symbol[sym]||[];
+      return `<div class="result-card"><div class="result-title" style="font-size:16px">${sym}</div>
+        ${list.slice(0,3).map(n=>`
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2)">
+            <div style="font-weight:700;font-size:14px">${n.title||""}</div>
+            <div style="font-size:12px;color:var(--soft)">${n.publisher||""}</div>
+          </div>`).join("")}</div>`;
+    }).join(""); return;
+  }
+  if (d?.news) {
+    box.innerHTML = `<div class="result-card"><div class="result-title" style="font-size:16px">${d.symbol||"News"}</div>
+      ${(d.news||[]).slice(0,3).map(n=>`
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2)">
+          <div style="font-weight:700;font-size:14px">${n.title||""}</div>
+          <div style="font-size:12px;color:var(--soft)">${n.publisher||""}</div>
+        </div>`).join("")}</div>`; return;
+  }
+  renderResultsEmpty();
+}
+function renderResultsEmpty() {
+  const b = qs("jarvisResults");
+  if (b) b.innerHTML = `<div class="result-empty">No results yet. Try analyzing a stock or scanning the market.</div>`;
+}
+
+/* ── Trader ─────────────────────────── */
+async function analyzeTrader() {
+  const raw = qs("symbolInput")?.value.trim() || "AAPL";
+  try {
+    const d = await fetch("/dashboard/trader", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({symbol:raw})}).then(r => r.json());
+    if (qs("traderSymbol"))     qs("traderSymbol").textContent    = d.symbol || raw.toUpperCase();
+    if (qs("setupScore"))       qs("setupScore").textContent      = safe(d.setup_score);
+    if (qs("trafficLightText")) qs("trafficLightText").innerHTML  = trafficTag(d.traffic_light);
+    if (qs("priceNow"))         qs("priceNow").textContent        = safe(d.price_now);
+    const p = d.trade_plan || {};
+    const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" – ") : (p.entry_zone ?? "-");
+    if (qs("tradePlan")) qs("tradePlan").innerHTML = [
+      `<div class="brief-cell"><strong>Action:</strong> ${p.action||"-"}</div>`,
+      `<div class="brief-cell"><strong>Entry zone:</strong> ${entry}</div>`,
+      `<div class="brief-cell"><strong>Stop loss:</strong> ${safe(p.stop_loss)}</div>`,
+      `<div class="brief-cell"><strong>Target 1:</strong> ${safe(p.target_1)}</div>`,
+      `<div class="brief-cell"><strong>Target 2:</strong> ${safe(p.target_2)}</div>`,
+      `<div class="brief-cell"><strong>Risk/Reward:</strong> ${safe(p.risk_reward_estimate)}</div>`,
+    ].join("");
+    const lines = d.insight_lines || [d.summary || "No insight available."];
+    if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief-cell">${x}</div>`).join("");
+  } catch(e) { console.warn("analyzeTrader:", e); }
+}
+
+/* ── Recommendations ────────────────── */
+async function loadRecommendations() {
+  try {
+    const d = await fetch("/dashboard/recommendations").then(r => r.json());
+    const box = qs("recommendations"); if (!box) return;
+    box.innerHTML = "";
+    const items = d.items || [];
+    if (!items.length) { box.innerHTML = `<div class="result-empty">No recommendations available.</div>`; return; }
+    items.forEach(item => {
+      const c = document.createElement("div"); c.className = "result-card";
+      c.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <strong style="font-size:18px">${item.symbol}</strong>${trafficTag(item.traffic_light)}
+        </div>
+        <div class="pill-row">
+          <span class="tag-warn">Price: ${safe(item.price_now??item.price)}</span>
+          <span class="tag-warn">Score: ${safe(item.setup_score)}</span>
+        </div>
+        <div style="margin-top:8px;font-size:13px;line-height:1.55">${item.friendly_recommendation||item.summary||""}</div>`;
+      box.appendChild(c);
+    });
+  } catch(e) { console.warn("loadRecommendations:", e); }
+}
+
+/* ── News ───────────────────────────── */
+async function loadNews() {
+  try {
+    const d = await fetch("/dashboard/news").then(r => r.json());
+    const items = d.items || [];
+    const buildNewsCard = n => {
+      const el = document.createElement("div"); el.className = "news-card";
+      el.innerHTML = `${n.category ? `<div class="news-cat">${n.category}</div>` : ""}
+        <div class="news-title">${n.title||""}</div>
+        <div class="news-src">${n.publisher||n.source||""}</div>`;
+      return el;
+    };
+    const intel = qs("intel-feed");
+    if (intel) {
+      intel.innerHTML = "";
+      items.length ? items.forEach(n => intel.appendChild(buildNewsCard(n)))
+                   : intel.innerHTML = `<div class="result-empty">No news available right now.</div>`;
     }
+    const mkt = qs("mkt-news");
+    if (mkt) { mkt.innerHTML = ""; items.slice(0,6).forEach(n => mkt.appendChild(buildNewsCard(n))); }
+  } catch(e) { console.warn("loadNews:", e); }
+}
 
-    function renderChatAction(payload){
-      const action = payload?.action || payload?.response?.action || "";
-      const details = payload?.details || payload?.response?.details || {};
+/* ── Agents ─────────────────────────── */
+async function loadAgents() {
+  try {
+    const d = await fetch("/dashboard/agents").then(r => r.json());
+    const items = d.items || [];
 
-      if(action === "show_trader"){
-        renderSingleTrader(details);
-        return;
-      }
-
-      if(action === "show_multiple"){
-        renderMultiple(details);
-        return;
-      }
-
-      if(action === "show_news"){
-        renderNews(details);
-        return;
-      }
-    }
-
-    async function sendChat(messageOverride=null){
-      const input = qs("chatInput");
-      const message = (messageOverride || input.value).trim();
-      if(!message) return;
-
-      addBubble(message, "user");
-      input.value = "";
-
-      try{
-        const res = await fetch("/chat", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({message, domain:"general"})
-        });
-        const data = await res.json();
-        const reply = data.reply || data.summary || data.response?.reply || data.response?.summary || "No reply.";
-        addBubble(reply, "jarvis");
-        renderChatAction(data);
-      }catch(e){
-        addBubble("Error connecting to JARVIS.", "jarvis");
-        console.warn("sendChat error:", e);
-      }
-    }
-
-    async function runAutoJarvis(){
-      try{
-        const res = await fetch("/jarvis/auto", {method:"POST"});
-        const data = await res.json();
-        addBubble(data.reply || data.summary || "Auto JARVIS completed.", "jarvis");
-        await loadRecommendations();
-      }catch(e){
-        addBubble("Auto JARVIS failed to connect.", "jarvis");
-        console.warn("runAutoJarvis error:", e);
-      }
-    }
-
-    function initVoice(){
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SpeechRecognition){
-        qs("voiceBtn").disabled = true;
-        qs("stopVoiceBtn").disabled = true;
-        return;
-      }
-
-      state.recognition = new SpeechRecognition();
-      state.recognition.lang = "es-ES";
-      state.recognition.interimResults = false;
-      state.recognition.maxAlternatives = 1;
-
-      state.recognition.onstart = () => { state.listening = true; };
-      state.recognition.onend = () => { state.listening = false; };
-      state.recognition.onresult = async (event) => {
-        const transcript = event.results[0][0].transcript;
-        qs("chatInput").value = transcript;
-        await sendChat();
-      };
-
-      qs("voiceBtn").onclick = () => {
-        if(state.recognition) state.recognition.start();
-      };
-
-      qs("stopVoiceBtn").onclick = () => {
-        if(state.recognition && state.listening) state.recognition.stop();
-      };
-    }
-
-    async function analyzeTrader(){
-      const raw = qs("symbolInput").value.trim() || "AAPL";
-      try{
-        const res = await fetch("/dashboard/trader", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({symbol: raw})
-        });
-        const data = await res.json();
-
-        qs("traderSymbol").textContent = data.symbol || raw.toUpperCase();
-        qs("setupScore").textContent = data.setup_score ?? "--";
-        qs("trafficLightText").innerHTML = trafficTag(data.traffic_light);
-        qs("priceNow").textContent = data.price_now ?? "--";
-
-        const p = data.trade_plan || {};
-        const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" - ") : "-";
-
-        qs("tradePlan").innerHTML = `
-          <div class="brief"><strong>Action:</strong> ${p.action || "-"}</div>
-          <div class="brief"><strong>Entry zone:</strong> ${entry}</div>
-          <div class="brief"><strong>Stop loss:</strong> ${p.stop_loss ?? "-"}</div>
-          <div class="brief"><strong>Target 1:</strong> ${p.target_1 ?? "-"}</div>
-          <div class="brief"><strong>Target 2:</strong> ${p.target_2 ?? "-"}</div>
-          <div class="brief"><strong>Risk/Reward:</strong> ${p.risk_reward_estimate ?? "-"}</div>
-        `;
-
-        const lines = data.insight_lines || [data.summary || "No insight available."];
-        qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief">${x}</div>`).join("");
-      }catch(e){
-        console.warn("analyzeTrader error:", e);
-      }
-    }
-
-    async function loadRecommendations(){
-      try{
-        const res = await fetch("/dashboard/recommendations");
-        const data = await res.json();
-        const box = qs("recommendations");
-        box.innerHTML = "";
-
-        const items = data.items || [];
-        if(!items.length){
-          box.innerHTML = `<div class="brief">No recommendations available.</div>`;
-          return;
-        }
-
-        items.forEach(item => {
-          const card = document.createElement("div");
-          card.className = "brief";
-          card.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-              <strong>${item.symbol}</strong>
-              ${trafficTag(item.traffic_light)}
+    // Full agents tab
+    const grid = qs("agents-grid");
+    if (grid) {
+      grid.innerHTML = "";
+      if (!items.length) { grid.innerHTML = `<div class="result-empty">No agents registered.</div>`; }
+      else items.forEach(a => {
+        const meta = AGENT_META[a.name] || {};
+        const sc = a.status==="active"?"b-ok":a.status==="busy"?"b-warn":"b-idle";
+        const div = document.createElement("div"); div.className = "agent-card";
+        div.innerHTML = `
+          <div class="agent-head">
+            <div class="agent-icon-name">
+              <div class="agent-avi">${meta.icon||"🤖"}</div>
+              <div>
+                <div class="agent-name">${a.name||"Agent"}</div>
+                <div class="agent-role">${meta.role||a.role||""}</div>
+              </div>
             </div>
-            <div style="margin-top:8px">Precio: ${item.price_now ?? item.price ?? "--"}</div>
-            <div style="margin-top:8px">Score: ${item.setup_score ?? "--"}</div>
-            <div style="margin-top:8px;color:var(--white)">${item.friendly_recommendation || item.summary || ""}</div>
-          `;
-          box.appendChild(card);
-        });
-      }catch(e){
-        console.warn("loadRecommendations error:", e);
-      }
-    }
-
-    async function loadAssets(){
-      try{
-        const res = await fetch("/dashboard/assets");
-        const data = await res.json();
-        const items = data.assets || [];
-        qs("assetsCount").textContent = items.length;
-
-        const box = qs("assetGrid");
-        box.innerHTML = "";
-        if(!items.length){
-          box.innerHTML = `<div class="brief">No assets uploaded yet.</div>`;
-          return;
-        }
-
-        items.slice(0,8).forEach(asset => {
-          const div = document.createElement("div");
-          div.className = "asset";
-          div.innerHTML = `
-            <div class="name">${asset.filename}</div>
-            <div class="meta">${asset.kind} – ${asset.mime_type || "unknown"}</div>
-            <a href="/dashboard/uploads/${asset.filename}" target="_blank">Open file</a>
-          `;
-          box.appendChild(div);
-        });
-      }catch(e){
-        console.warn("loadAssets error:", e);
-      }
-    }
-
-    async function uploadFiles(files){
-      for(const file of files){
-        try{
-          const form = new FormData();
-          form.append("file", file);
-          await fetch("/dashboard/upload", {method:"POST", body:form});
-        }catch(e){
-          console.warn("uploadFiles error:", e);
-        }
-      }
-      await loadAssets();
-      await loadHome();
-    }
-
-    function initUpload(){
-      const zone = qs("uploadZone");
-      const input = qs("fileInput");
-
-      zone.onclick = () => input.click();
-
-      input.onchange = async (e) => {
-        if(e.target.files?.length) await uploadFiles(e.target.files);
-      };
-
-      zone.addEventListener("dragover", e => {
-        e.preventDefault();
-      });
-
-      zone.addEventListener("drop", async e => {
-        e.preventDefault();
-        const files = e.dataTransfer?.files;
-        if(files?.length) await uploadFiles(files);
+            <span class="badge ${sc}">${a.status||"idle"}</span>
+          </div>
+          ${a.last_action ? `<div class="agent-last">Last: ${a.last_action}</div>` : ""}
+          <button class="btn-ol btn-sm" onclick="quickAsk('${a.name}')">Ask Agent</button>`;
+        grid.appendChild(div);
       });
     }
 
-    async function loadSystemMetrics(){
-      try{
-        const res = await fetch("/dashboard/system");
-        const data = await res.json();
-
-        qs("signalsCount").textContent = data.signals || 0;
-        qs("accuracy").textContent = data.accuracy || "--";
-        qs("riskLevel").textContent = data.risk || "--";
-        qs("exposure").textContent = data.exposure || "--";
-      }catch(e){
-        console.warn("loadSystemMetrics error:", e);
-      }
-    }
-
-    async function loadAgents(){
-      try{
-        const res = await fetch("/dashboard/agents");
-        const data = await res.json();
-
-        const box = qs("agentStatus");
-        box.innerHTML = "";
-
-        (data.items || []).forEach(a => {
-          const div = document.createElement("div");
-          div.className = "brief";
-          div.innerHTML = `<strong>${a.name || "Agent"}</strong> – ${a.status || "idle"}`;
-          box.appendChild(div);
-        });
-      }catch(e){
-        console.warn("loadAgents error:", e);
-      }
-    }
-
-    async function loadNews(){
-      try{
-        const res = await fetch("/dashboard/news");
-        const data = await res.json();
-
-        const box = qs("newsFeed");
-        if(!box) return;
-        box.innerHTML = "";
-
-        (data.items || []).forEach(n => {
-          const div = document.createElement("div");
-          div.className = "brief";
-          div.innerHTML = `
-            <div class="news-title">${n.title || ""}</div>
-            <div class="news-source">${n.publisher || ""}</div>
-          `;
-          box.appendChild(div);
-        });
-      }catch(e){
-        console.warn("loadNews error:", e);
-      }
-    }
-
-    async function scheduleMeeting(){
-      const objective = prompt("Meeting objective:");
-      if(!objective) return;
-      const datetime = prompt("Datetime (YYYY-MM-DD HH:MM):");
-      if(!datetime) return;
-
-      try{
-        const res = await fetch("/dashboard/schedule-meeting", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({objective, datetime})
-        });
-        const data = await res.json();
-        alert("Meeting scheduled: " + (data.meeting_created?.title || "Done"));
-        await loadHome();
-      }catch(e){
-        alert("Failed to schedule meeting.");
-        console.warn("scheduleMeeting error:", e);
-      }
-    }
-
-    function initEvents(){
-      qs("sendBtn").onclick = () => sendChat();
-      qs("chatInput").addEventListener("keydown", e => {
-        if(e.key === "Enter") sendChat();
+    // System tab
+    const sys = qs("agentStatus");
+    if (sys) {
+      sys.innerHTML = "";
+      items.forEach(a => {
+        const sc = a.status==="active"?"b-ok":a.status==="busy"?"b-warn":"b-idle";
+        const div = document.createElement("div"); div.className = "agent-card";
+        div.style.padding = "12px 14px";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span style="font-size:13px">${(AGENT_META[a.name]?.icon||"🤖")} ${a.name||"Agent"}</span>
+            <span class="badge ${sc}">${a.status||"idle"}</span>
+          </div>`;
+        sys.appendChild(div);
       });
-      qs("addTaskBtn").onclick = addTask;
-      qs("addMeetingBtn").onclick = addMeeting;
-      qs("analyzeBtn").onclick = analyzeTrader;
-      qs("autoBtn").onclick = runAutoJarvis;
     }
 
-    async function boot(){
-      initEvents();
-      initVoice();
-      initUpload();
-      await loadHome();
-      await loadAssets();
-      await analyzeTrader();
-      await loadRecommendations();
-      await loadSystemMetrics();
-      await loadAgents();
-      await loadNews();
+    // Overview activity feed
+    const ov = qs("ov-activity");
+    if (ov) {
+      ov.innerHTML = "";
+      const show = items.length ? items.slice(0,6) : [];
+      if (!show.length) { ov.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px 0">No agent activity.</div>`; }
+      else show.forEach(a => {
+        const sc = a.status==="active"?"b-ok":a.status==="busy"?"b-warn":"b-idle";
+        const meta = AGENT_META[a.name] || {};
+        const div = document.createElement("div"); div.className = "activity-item";
+        div.innerHTML = `
+          <div class="activity-icon">${meta.icon||"🤖"}</div>
+          <div style="flex:1;min-width:0">
+            <div class="activity-name">${a.name||"Agent"}</div>
+            <div class="activity-action">${a.last_action||meta.role||"Standing by"}</div>
+          </div>
+          <span class="badge ${sc}" style="flex-shrink:0">${a.status||"idle"}</span>`;
+        ov.appendChild(div);
+      });
+    }
+  } catch(e) { console.warn("loadAgents:", e); }
+}
+
+function quickAsk(name) {
+  switchTab("chat");
+  setTimeout(() => { qs("chatInput").value = `Ask ${name}: `; qs("chatInput").focus(); }, 80);
+}
+
+/* ── Pipeline ───────────────────────── */
+async function loadPipeline() {
+  try {
+    const d = await fetch("/dashboard/pipeline").then(r => r.json());
+    const stage = (d.stage||"SCAN").toUpperCase();
+    const prog  = d.progress || 0;
+    const msg   = d.message  || "";
+    const steps = ["SCAN","RESEARCH","ANALYZE","DECIDE","EXECUTE"];
+    const el = qs("sys-pipe");
+    if (el) el.innerHTML = steps.map(s => `
+      <div class="pipe-step ${s===stage?"active":""}">
+        <div>${s}</div>
+        ${s===stage ? `<div class="pp">${Math.round(prog*100)}%</div>` : ""}
+      </div>`).join("");
+    if (qs("sys-pipe-msg")) qs("sys-pipe-msg").textContent = msg;
+    if (qs("ov-pipe-lbl")) qs("ov-pipe-lbl").textContent = `${stage} · ${Math.round(prog*100)}%${msg?" · "+msg:""}`;
+    if (qs("ov-pipe-bar")) qs("ov-pipe-bar").style.width = Math.max(3, Math.round(prog*100)) + "%";
+    if (qs("dailyInsight") && msg) qs("dailyInsight").textContent = msg;
+  } catch(e) {
+    console.warn("loadPipeline:", e);
+    if (qs("dailyInsight")) qs("dailyInsight").textContent = "JARVIS is active. All agents standing by.";
+  }
+}
+
+/* ── System metrics ─────────────────── */
+async function loadSystemMetrics() {
+  try {
+    const d = await fetch("/dashboard/system").then(r => r.json());
+    if (qs("signalsCount")) qs("signalsCount").textContent = safe(d.signals);
+    if (qs("accuracy"))     qs("accuracy").textContent     = safe(d.accuracy);
+    if (qs("riskLevel"))    qs("riskLevel").textContent    = safe(d.risk);
+    if (qs("exposure"))     qs("exposure").textContent     = safe(d.exposure);
+    if (qs("ov-signals"))   qs("ov-signals").textContent   = safe(d.signals);
+    if (qs("ov-accuracy"))  qs("ov-accuracy").textContent  = safe(d.accuracy);
+    if (qs("ov-risk"))      qs("ov-risk").textContent      = safe(d.risk);
+    if (qs("ov-exposure"))  qs("ov-exposure").textContent  = safe(d.exposure);
+  } catch(e) { console.warn("loadSystemMetrics:", e); }
+}
+
+/* ── Assets ─────────────────────────── */
+async function loadAssets() {
+  try {
+    const d = await fetch("/dashboard/assets").then(r => r.json());
+    const items = d.assets || [];
+    if (qs("assetsCount"))    qs("assetsCount").textContent    = items.length;
+    if (qs("assetCountLabel"))qs("assetCountLabel").textContent = `${items.length} file${items.length!==1?"s":""}`;
+    const box = qs("assetGrid"); if (!box) return;
+    box.innerHTML = "";
+    if (!items.length) { box.innerHTML = `<div class="result-empty">No assets uploaded yet.</div>`; return; }
+    items.slice(0,9).forEach(asset => {
+      const div = document.createElement("div"); div.className = "asset-card";
+      div.innerHTML = `
+        <div class="asset-name">${asset.filename}</div>
+        <div class="asset-meta">${asset.kind} · ${asset.mime_type||"unknown"}</div>
+        <a class="asset-link" href="/dashboard/uploads/${asset.filename}" target="_blank">Open file →</a>`;
+      box.appendChild(div);
+    });
+  } catch(e) { console.warn("loadAssets:", e); }
+}
+
+async function uploadFiles(files) {
+  for (const file of files) {
+    try { const f = new FormData(); f.append("file",file); await fetch("/dashboard/upload",{method:"POST",body:f}); }
+    catch(e) { console.warn("uploadFile:", e); }
+  }
+  await Promise.allSettled([loadAssets(), loadHome()]);
+}
+
+function initUpload() {
+  const zone = qs("uploadZone"), input = qs("fileInput"); if (!zone||!input) return;
+  zone.onclick = e => { if (e.target!==input) input.click(); };
+  input.onchange = async e => { if (e.target.files?.length) await uploadFiles(e.target.files); };
+  zone.addEventListener("dragover", e => e.preventDefault());
+  zone.addEventListener("drop", async e => { e.preventDefault(); const f = e.dataTransfer?.files; if (f?.length) await uploadFiles(f); });
+}
+
+/* ── Golf ───────────────────────────── */
+async function loadGolf() {
+  try {
+    const d = await fetch("/dashboard/golf").then(r => r.json());
+    const courses  = d.courses  || [];
+    const insights = d.insights || [];
+    const player   = d.player   || {};
+
+    const cEl = qs("golf-courses");
+    if (cEl) {
+      cEl.innerHTML = "";
+      if (!courses.length) { cEl.innerHTML = `<div class="result-empty">No course data available.</div>`; }
+      else courses.slice(0,4).forEach((c,i) => {
+        const div = document.createElement("div");
+        div.className = "golf-card" + (i===0?" best":"");
+        div.innerHTML = `
+          <div class="golf-name">${i===0?"⭐ ":""}⛳ ${c.name||"Course"}${i===0?' <span class="badge b-ok" style="font-size:10px;margin-left:6px">Best Today</span>':""}</div>
+          <div class="golf-meta">${[c.location,c.condition,c.weather].filter(Boolean).join(" · ")}</div>
+          ${c.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--soft)">${c.notes}</div>` : ""}`;
+        cEl.appendChild(div);
+      });
     }
 
-    boot();
-  </script>
+    const iEl = qs("golf-insights");
+    if (iEl) {
+      iEl.innerHTML = "";
+      if (!insights.length) { iEl.innerHTML = `<div class="result-empty">No golf insights available.</div>`; }
+      else insights.slice(0,5).forEach(txt => {
+        const div = document.createElement("div"); div.className = "golf-insight";
+        div.textContent = txt; iEl.appendChild(div);
+      });
+    }
+
+    const pEl = qs("golf-player");
+    if (pEl) {
+      if (player.name || player.handicap!=null) {
+        pEl.innerHTML = `
+          <div class="ch" style="margin-bottom:10px"><span class="ct">Player Profile</span></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${player.name      ? `<div class="tile" style="flex:1"><div class="tl">Player</div><div style="font-size:15px;font-weight:700">${player.name}</div></div>` : ""}
+            ${player.handicap!=null ? `<div class="tile" style="flex:1"><div class="tl">Handicap</div><div class="tv">${player.handicap}</div></div>` : ""}
+            ${player.last_round ? `<div class="tile" style="flex:1"><div class="tl">Last Round</div><div style="font-size:13px">${player.last_round}</div></div>` : ""}
+          </div>`;
+      } else { pEl.innerHTML = `<div style="color:var(--soft);text-align:center;padding:14px;font-size:13px">Player data not available.</div>`; }
+    }
+  } catch(e) {
+    console.warn("loadGolf:", e);
+    const el = qs("golf-courses"); if (el) el.innerHTML = `<div class="result-empty">Golf data temporarily unavailable.</div>`;
+  }
+}
+
+/* ── Voice ──────────────────────────── */
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { ["voiceBtn","voiceBtnMob","stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.disabled=true; }); return; }
+  state.recognition = new SR();
+  state.recognition.lang = "es-ES";
+  state.recognition.interimResults = false;
+  state.recognition.maxAlternatives = 1;
+  state.recognition.onstart = () => { state.listening = true; };
+  state.recognition.onend   = () => { state.listening = false; };
+  state.recognition.onresult = async ev => { qs("chatInput").value = ev.results[0][0].transcript; await sendChat(); };
+  const start = () => { switchTab("chat"); if (state.recognition) state.recognition.start(); };
+  const stop  = () => { if (state.recognition && state.listening) state.recognition.stop(); };
+  ["voiceBtn","voiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=start; });
+  ["stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=stop; });
+}
+
+/* ── Events ─────────────────────────── */
+function initEvents() {
+  const on = (id, fn) => { const el=qs(id); if(el) el.addEventListener("click", fn); };
+  const kd = (id, fn) => { const el=qs(id); if(el) el.addEventListener("keydown", e => { if(e.key==="Enter") fn(e); }); };
+  on("sendBtn",       () => sendChat());
+  on("addTaskBtn",    addTask);
+  on("addMeetingBtn", addMeeting);
+  on("analyzeBtn",    analyzeTrader);
+  on("autoBtn",       runAutoJarvis);
+  kd("chatInput",    () => sendChat());
+  kd("newTaskText",  addTask);
+  kd("symbolInput",  analyzeTrader);
+}
+
+/* ── Boot ───────────────────────────── */
+async function boot() {
+  initEvents(); initVoice(); initUpload();
+  await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
+  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf()]);
+}
+boot();
+</script>
 </body>
 </html>

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '{print $9, \"\\(\" $5 \" bytes\\)\"}')",
+      "Bash(grep -v \"^$\")",
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
+      "Read(//c/c/Users/juanc/JARVIS/**)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('core/jarvis_memory.py'\\).read\\(\\)\\); print\\('jarvis_memory.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('core/agent_orchestrator_pro.py'\\).read\\(\\)\\); print\\('agent_orchestrator_pro.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('main.py OK'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('core/agent_orchestrator_pro.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('core/agent_orchestrator_pro.py'\\).read\\(\\)\\); print\\('orchestrator OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('main OK'\\)\")"
+    ]
+  }
+}

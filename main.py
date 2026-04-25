@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import os
 import shutil
+import threading
 import time
 
 try:
@@ -93,6 +94,71 @@ def _push_history(role: str, content: str) -> None:
     _chat_history.append({"role": role, "content": content[:800]})
     while len(_chat_history) > _HISTORY_LIMIT * 2:
         _chat_history.pop(0)
+
+
+# ================================================================
+# JARVIS MEMORY — persistent semantic memory, non-blocking
+# ================================================================
+_RECALL_TRIGGERS: frozenset[str] = frozenset({
+    # English
+    "what did i tell you", "remember when", "last time", "previously",
+    "what did we discuss", "you said", "you told me", "recall",
+    "what do you know about me", "my history",
+    # Spanish
+    "qué te dije", "recuerdas cuando", "la última vez", "anteriormente",
+    "de qué hablamos", "me dijiste", "dijiste que", "recuerda",
+    "qué sabes de mí", "mi historial",
+})
+
+
+def _mem():
+    from core.jarvis_memory import get_jarvis_memory
+    return get_jarvis_memory()
+
+
+def _push_memory(user_msg: str, reply: str, agent: str = "", domain: str = "") -> None:
+    threading.Thread(
+        target=lambda: _mem().store(user_msg, reply, agent=agent, domain=domain),
+        daemon=True,
+    ).start()
+
+
+def _handle_recall_query(message: str) -> dict:
+    memories = _mem().last_n(8)
+    if not memories:
+        no_mem = "No tengo interacciones previas guardadas todavía."
+        _push_history("user", message)
+        _push_history("assistant", no_mem)
+        return {
+            "type": "memory_recall", "reply": no_mem, "summary": no_mem,
+            "details": {}, "action": "recall", "confidence": 0.95,
+            "source": "jarvis_memory",
+        }
+    lines = []
+    for m in reversed(memories[-5:]):
+        ts = m["ts"][:10]
+        u  = m["user"][:80]
+        o  = m["output"][:120]
+        lines.append(f"[{ts}] Tú: {u}\nJARVIS: {o}")
+    reply = "Esto es lo que recuerdo de nuestras últimas conversaciones:\n\n" + "\n\n".join(lines)
+    _push_history("user", message)
+    _push_history("assistant", reply)
+    return {
+        "type": "memory_recall", "reply": reply,
+        "summary": f"Memory recall: {len(memories)} interactions found.",
+        "details": {"memories": memories}, "action": "recall",
+        "confidence": 0.95, "source": "jarvis_memory",
+    }
+
+
+def _action_to_domain(action: str) -> str:
+    _MAP = {
+        "analyze": "finance", "scan": "finance", "news": "general",
+        "pipeline": "system",  "agents": "system",  "golf": "golf",
+        "workspace": "workspace", "medical": "medical",
+        "legal": "legal", "fitness": "fitness", "coach": "general",
+    }
+    return _MAP.get(action, "general")
 
 
 # ================================================================
@@ -407,7 +473,9 @@ Style guide:
 - Sound like a sharp, confident advisor — not a robot, not a disclaimer machine
 - Respond in the exact same language the user wrote in
 - Medical/legal outputs: include the disclaimer in one short sentence at the end
-- If data is sparse, say what you know and stop — never fabricate\
+- If data is sparse, say what you know and stop — never fabricate
+- If [Memory] is provided, use it to personalize tone — reference past context
+  naturally, never quote it verbatim\
 """
 
 _FALLBACK_PROMPT = """\
@@ -499,7 +567,13 @@ def _degrade_reply(action: str, symbol: str | None, tool: dict) -> str:
 # Pass 1: LLM decides tool → Pass 2: LLM synthesises with data
 # ================================================================
 def _agent_chat(message: str) -> dict | None:
+    # Memory recall shortcut — bypass LLM routing for explicit recall queries
+    msg_low = message.lower()
+    if any(t in msg_low for t in _RECALL_TRIGGERS):
+        return _handle_recall_query(message)
+
     context = _get_context()
+    mem_ctx = _mem().as_context_string(message)
 
     # ── PASS 1: routing decision ──────────────────────────────
     decision_system = _DECISION_PROMPT
@@ -572,6 +646,8 @@ def _agent_chat(message: str) -> dict | None:
     synthesis_system = _SYNTHESIS_PROMPT
     if context:
         synthesis_system += f"\n\n[Live System Context]\n{context}"
+    if mem_ctx:
+        synthesis_system += f"\n\n[Memory]\n{mem_ctx}"
     if tool_result:
         snippet = json.dumps(tool_result, default=str)[:1400]
         synthesis_system += f"\n\n[Tool: {action}]\n{snippet}"
@@ -593,6 +669,7 @@ def _agent_chat(message: str) -> dict | None:
 
     _push_history("user", message)
     _push_history("assistant", final_reply)
+    _push_memory(message, final_reply, agent=action, domain=_action_to_domain(action))
 
     action_tag = f"{action}:{symbol}" if (action == "analyze" and symbol) else action
     confidence = 0.92 if tool_result else 0.78
@@ -616,10 +693,13 @@ def _llm_chat(message: str) -> dict | None:
     intent      = _detect_intent(message)
     tool_result = _dispatch_tool(intent, message)
     context     = _get_context()
+    mem_ctx     = _mem().as_context_string(message)
 
     system_content = _FALLBACK_PROMPT
     if context:
         system_content += f"\n\n[Live System Context]\n{context}"
+    if mem_ctx:
+        system_content += f"\n\n[Memory]\n{mem_ctx}"
     if tool_result:
         snippet = json.dumps(tool_result, default=str)[:1400]
         system_content += f"\n\n[Tool Result — {intent}]\n{snippet}"
@@ -638,6 +718,7 @@ def _llm_chat(message: str) -> dict | None:
 
     _push_history("user", message)
     _push_history("assistant", reply)
+    _push_memory(message, reply, agent=intent, domain=intent)
 
     sym = _extract_symbol(message)
     action_map = {
@@ -1007,3 +1088,25 @@ def golf():
             "generated_at": datetime.now().isoformat(),
             "error":        str(e),
         }
+
+
+# =========================
+# AGENT PERFORMANCE STATS
+# =========================
+@app.get("/jarvis/agents/performance")
+def agent_performance():
+    try:
+        return {"items": orchestrator.agent_performance_stats()}
+    except Exception as e:
+        return {"items": [], "error": str(e)}
+
+
+# =========================
+# MEMORY STATS
+# =========================
+@app.get("/jarvis/memory/stats")
+def memory_stats():
+    try:
+        return _mem().stats()
+    except Exception as e:
+        return {"total_entries": 0, "vector_ready": False, "error": str(e)}

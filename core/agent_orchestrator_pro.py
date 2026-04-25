@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import time
 from datetime import datetime
@@ -94,6 +94,9 @@ class AgentOrchestratorPro:
         # pipeline tracker: last stage written by execute() / execute_trader()
         # { stage, active_agent, message, ts, progress }
         self._pipeline: Dict[str, Any] = {}
+
+        # performance tracker: agent → {calls, total_ms, errors, last_ms}
+        self._perf: Dict[str, Dict[str, Any]] = {}
 
     def route(self, domain: str) -> Dict[str, Any]:
         selected = self.agent_registry.get(domain, self.agent_registry["general"])
@@ -379,7 +382,21 @@ class AgentOrchestratorPro:
         # Record pipeline stage based on which agent is running
         self._record_pipeline_stage(primary, query_snippet)
 
-        result = self._try_methods(engine, query, domain)
+        t0         = time.monotonic()
+        result     = self._try_methods(engine, query, domain)
+        elapsed_ms = (time.monotonic() - t0) * 1000
+
+        # Micro-reputation: success boosts slightly, error decays
+        has_error = isinstance(result, dict) and "error" in result
+        if has_error:
+            self.agent_reputation[primary] = max(
+                0.50, self.agent_reputation.get(primary, 0.75) - 0.005
+            )
+        else:
+            self.agent_reputation[primary] = min(
+                0.99, self.agent_reputation.get(primary, 0.75) + 0.001
+            )
+        self._update_perf(primary, elapsed_ms, has_error)
 
         self._last_activity[primary] = {
             "last_action": f"Completed: {query_snippet}" if query_snippet else "Completed request",
@@ -479,4 +496,33 @@ class AgentOrchestratorPro:
             "summary": "Trader engines unavailable.",
             "source": "fallback",
         }
+
+    # ------------------------------------------------------------------ #
+    # Performance tracking                                                 #
+    # ------------------------------------------------------------------ #
+    def _update_perf(self, agent: str, elapsed_ms: float, has_error: bool) -> None:
+        p = self._perf.setdefault(
+            agent, {"calls": 0, "total_ms": 0.0, "errors": 0, "last_ms": 0.0}
+        )
+        p["calls"]    += 1
+        p["total_ms"] += elapsed_ms
+        p["last_ms"]   = round(elapsed_ms, 1)
+        if has_error:
+            p["errors"] += 1
+
+    def agent_performance_stats(self) -> List[Dict[str, Any]]:
+        """Per-agent performance metrics: calls, avg_ms, error_rate, reputation."""
+        stats: List[Dict[str, Any]] = []
+        for agent, p in self._perf.items():
+            calls = p["calls"]
+            stats.append({
+                "agent":      agent,
+                "calls":      calls,
+                "avg_ms":     round(p["total_ms"] / calls, 1) if calls else 0.0,
+                "last_ms":    p["last_ms"],
+                "error_rate": round(p["errors"] / calls, 3) if calls else 0.0,
+                "reputation": round(self.agent_reputation.get(agent, 0.75), 3),
+            })
+        stats.sort(key=lambda x: -x["calls"])
+        return stats
 
