@@ -1,7 +1,48 @@
 ﻿from __future__ import annotations
 
+import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+
+# ---------------------------------------------------------------------------
+# Pipeline stage definitions — maps each JARVIS stage to the agents whose
+# activity signals that stage is in progress.  Ordered: first match wins.
+# ---------------------------------------------------------------------------
+_STAGE_AGENTS: List[Dict[str, Any]] = [
+    {
+        "stage":    "SCAN",
+        "agents":   {"market_intelligence", "opportunity_radar"},
+        "progress": 0.15,
+        "label":    "Scanning market data",
+    },
+    {
+        "stage":    "RESEARCH",
+        "agents":   {"knowledge_engine", "executive_council"},
+        "progress": 0.35,
+        "label":    "Researching context and narratives",
+    },
+    {
+        "stage":    "ANALYZE",
+        "agents":   {"trader_alpha", "risk_analyst", "wealth_optimizer"},
+        "progress": 0.60,
+        "label":    "Analyzing signals and scoring setup",
+    },
+    {
+        "stage":    "DECIDE",
+        "agents":   {"executive_council", "daily_ops"},
+        "progress": 0.82,
+        "label":    "Evaluating decision and confidence",
+    },
+    {
+        "stage":    "EXECUTE",
+        "agents":   {"trader_alpha"},          # trader_alpha after DECIDE = execution
+        "progress": 0.97,
+        "label":    "Executing trade plan",
+    },
+]
+
+# How long (seconds) an activity record keeps a stage "active" before decaying to idle
+_ACTIVITY_TTL_S: float = 120.0
 
 
 class AgentOrchestratorPro:
@@ -48,6 +89,10 @@ class AgentOrchestratorPro:
         # lightweight per-agent activity tracker: name → {last_action, last_seen, status}
         self._last_activity: Dict[str, Dict[str, Any]] = {}
 
+        # pipeline tracker: last stage written by execute() / execute_trader()
+        # { stage, active_agent, message, ts, progress }
+        self._pipeline: Dict[str, Any] = {}
+
     def route(self, domain: str) -> Dict[str, Any]:
         selected = self.agent_registry.get(domain, self.agent_registry["general"])
         weighted = [
@@ -77,6 +122,106 @@ class AgentOrchestratorPro:
             "available": True,
             "loaded_engines": list(self._engine_cache.keys()),
             "boot_events": self.boot_events,
+        }
+
+    # ------------------------------------------------------------------ #
+    # Pipeline state                                                       #
+    # ------------------------------------------------------------------ #
+    def _record_pipeline_stage(self, agent_name: str, message: str) -> None:
+        """Write a pipeline state record based on the agent that just activated."""
+        now_ts = time.monotonic()
+        for stage_def in _STAGE_AGENTS:
+            if agent_name in stage_def["agents"]:
+                self._pipeline = {
+                    "stage":        stage_def["stage"],
+                    "progress":     stage_def["progress"],
+                    "active_agent": agent_name,
+                    "message":      message or stage_def["label"],
+                    "ts":           now_ts,
+                }
+                return
+        # Agent not in any stage mapping — record generically under ANALYZE
+        self._pipeline = {
+            "stage":        "ANALYZE",
+            "progress":     0.55,
+            "active_agent": agent_name,
+            "message":      message or "Processing request",
+            "ts":           now_ts,
+        }
+
+    def pipeline_state(self) -> Dict[str, Any]:
+        """
+        Returns the current pipeline stage, derived from real agent activity.
+
+        Three signal sources, in priority order:
+
+        1. A currently-running agent (_last_activity status == "running")
+           → immediate, real-time stage
+        2. The most recent _pipeline record if within TTL
+           → recent activity still relevant
+        3. System readiness heuristic from _engine_cache
+           → no recent activity; infer from what's loaded
+        """
+        now_ts = time.monotonic()
+
+        # --- Source 1: actively running agent ---
+        for name, act in self._last_activity.items():
+            if act.get("status") == "running":
+                for stage_def in _STAGE_AGENTS:
+                    if name in stage_def["agents"]:
+                        return {
+                            "stage":        stage_def["stage"],
+                            "progress":     stage_def["progress"],
+                            "active_agent": name,
+                            "message":      act.get("last_action", stage_def["label"]),
+                        }
+                # running but not in stage map
+                return {
+                    "stage":        "ANALYZE",
+                    "progress":     0.55,
+                    "active_agent": name,
+                    "message":      act.get("last_action", "Processing"),
+                }
+
+        # --- Source 2: recent pipeline record within TTL ---
+        if self._pipeline and (now_ts - self._pipeline.get("ts", 0)) < _ACTIVITY_TTL_S:
+            p = self._pipeline
+            # Decay progress slightly to show the stage completed and is cooling down
+            elapsed   = now_ts - p["ts"]
+            decay     = min(elapsed / _ACTIVITY_TTL_S, 1.0)
+            progress  = round(p["progress"] + (1.0 - p["progress"]) * decay * 0.25, 3)
+            return {
+                "stage":        p["stage"],
+                "progress":     progress,
+                "active_agent": p["active_agent"],
+                "message":      p["message"],
+            }
+
+        # --- Source 3: infer from loaded engines ---
+        loaded = set(self._engine_cache.keys())
+        if not loaded:
+            return {
+                "stage":        "SCAN",
+                "progress":     0.05,
+                "active_agent": "market_intelligence",
+                "message":      "System initialising — waiting for first request",
+            }
+
+        # Walk stages in reverse to find the deepest stage whose agents are loaded
+        for stage_def in reversed(_STAGE_AGENTS):
+            if stage_def["agents"] & loaded:
+                return {
+                    "stage":        stage_def["stage"],
+                    "progress":     round(stage_def["progress"] * 0.9, 3),
+                    "active_agent": next(iter(stage_def["agents"] & loaded)),
+                    "message":      f"{stage_def['label']} — ready, awaiting next request",
+                }
+
+        return {
+            "stage":        "SCAN",
+            "progress":     0.05,
+            "active_agent": "market_intelligence",
+            "message":      "System ready — no recent activity",
         }
 
     def agent_status_snapshot(self) -> List[Dict[str, Any]]:
@@ -229,6 +374,8 @@ class AgentOrchestratorPro:
             "last_seen": datetime.utcnow().isoformat(),
             "status": "running",
         }
+        # Record pipeline stage based on which agent is running
+        self._record_pipeline_stage(primary, query_snippet)
 
         result = self._try_methods(engine, query, domain)
 
@@ -237,6 +384,8 @@ class AgentOrchestratorPro:
             "last_seen": datetime.utcnow().isoformat(),
             "status": "idle",
         }
+        # Advance to DECIDE after primary agent completes
+        self._record_pipeline_stage("executive_council", f"Evaluating: {query_snippet}")
 
         return {
             "query": query,
@@ -255,19 +404,22 @@ class AgentOrchestratorPro:
             if engine is None:
                 continue
 
+            sym_label = str(symbol_or_prompt).upper()[:12]
             self._last_activity[agent_name] = {
-                "last_action": f"Analyzing {str(symbol_or_prompt).upper()[:12]}",
+                "last_action": f"Analyzing {sym_label}",
                 "last_seen": datetime.utcnow().isoformat(),
                 "status": "running",
             }
+            self._record_pipeline_stage(agent_name, f"Analyzing {sym_label} momentum")
 
             result = self._try_methods(engine, symbol_or_prompt, "finance")
 
             self._last_activity[agent_name] = {
-                "last_action": f"Analyzed {str(symbol_or_prompt).upper()[:12]}",
+                "last_action": f"Analyzed {sym_label}",
                 "last_seen": datetime.utcnow().isoformat(),
                 "status": "idle",
             }
+            self._record_pipeline_stage("executive_council", f"Deciding on {sym_label}")
 
             if isinstance(result, dict):
                 result.setdefault("symbol", str(symbol_or_prompt).upper())
