@@ -44,9 +44,11 @@ UPLOADS_DIR    = BASE_DIR / "dashboard" / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ============================================================
-# LLM — OpenAI wrapper with optional json_mode
-# ============================================================
+# ================================================================
+# LLM — OpenAI wrapper
+# json_mode=True  → response_format json_object, low temp, 200 tok
+# json_mode=False → natural prose, normal temp, 600 tok
+# ================================================================
 _llm_client = None
 
 
@@ -80,22 +82,22 @@ def generate_response(messages: list, json_mode: bool = False) -> str | None:
         return None
 
 
-# ============================================================
+# ================================================================
 # CHAT MEMORY — last 5 exchanges (10 messages)
-# ============================================================
+# ================================================================
 _HISTORY_LIMIT = 5
 _chat_history: list[dict] = []
 
 
 def _push_history(role: str, content: str) -> None:
-    _chat_history.append({"role": role, "content": content})
+    _chat_history.append({"role": role, "content": content[:800]})
     while len(_chat_history) > _HISTORY_LIMIT * 2:
         _chat_history.pop(0)
 
 
-# ============================================================
-# CONTEXT — pipeline + news, cached 2 min, never blocks chat
-# ============================================================
+# ================================================================
+# CONTEXT — pipeline + news, 2-min TTL, never blocks the endpoint
+# ================================================================
 _ctx_cache: dict = {"data": "", "ts": 0.0}
 _CTX_TTL = 120.0
 
@@ -130,24 +132,177 @@ def _get_context() -> str:
     return ctx
 
 
-# ============================================================
-# KEYWORD FALLBACK — intent + dispatch (demoted to fallback)
-# ============================================================
+# ================================================================
+# DECISION VALIDATION
+# ================================================================
+_VALID_ACTIONS = frozenset({
+    "none",
+    # market / finance
+    "analyze", "scan", "news",
+    # system
+    "pipeline", "agents",
+    # lifestyle
+    "golf", "workspace",
+    # specialist agents
+    "medical", "legal", "fitness", "coach",
+})
+
+
+def _parse_decision(raw: str) -> dict | None:
+    """
+    Hardened JSON parser for LLM decision output.
+    Handles: markdown fences, leading prose, bad symbols, unknown actions.
+    """
+    if not raw:
+        return None
+
+    text = raw.strip()
+
+    # Strip ```json ... ``` or ``` ... ``` fences
+    if text.startswith("```"):
+        lines = text.splitlines()
+        inner = [l for l in lines[1:] if l.strip() != "```"]
+        text  = "\n".join(inner).strip()
+
+    data: dict | None = None
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        # Fall back: extract first {...} block
+        start = text.find("{")
+        end   = text.rfind("}") + 1
+        if 0 <= start < end:
+            try:
+                data = json.loads(text[start:end])
+            except Exception:
+                return None
+        else:
+            return None
+
+    if not isinstance(data, dict):
+        return None
+
+    action = (data.get("action") or "none").lower().strip()
+    if action not in _VALID_ACTIONS:
+        action = "none"
+
+    # Validate symbol: alphanumeric-ish, max 10 chars, not the string "null"/"none"
+    raw_sym = data.get("symbol")
+    symbol: str | None = None
+    if raw_sym and str(raw_sym).strip().lower() not in ("null", "none", ""):
+        sym   = str(raw_sym).upper().strip().strip("\"'")
+        clean = sym.replace("=", "").replace("^", "").replace("-", "").replace(".", "")
+        if clean.isalnum() and 1 <= len(sym) <= 10:
+            symbol = sym
+
+    return {
+        "action": action,
+        "symbol": symbol,
+        "reason": str(data.get("reason") or "")[:200].strip(),
+        "reply":  str(data.get("reply")  or "")[:800].strip(),
+    }
+
+
+# ================================================================
+# KEYWORD FALLBACK — intent detection + dispatch (Tier 2 only)
+# ================================================================
 _KNOWN_SYMBOLS = {
     "NVDA", "AAPL", "MSFT", "AMZN", "META", "TSLA", "PLTR", "COIN",
     "SMCI", "XOM", "CVX", "BTC", "ETH", "SPY", "QQQ", "GOOGL", "AMD",
     "NFLX", "GOOG", "UBER", "SBUX", "DIS", "BA", "GLD", "SLV",
 }
 
+_SYMBOL_ALIASES: dict[str, str] = {
+    "tesla": "TSLA", "apple": "AAPL", "microsoft": "MSFT",
+    "amazon": "AMZN", "google": "GOOGL", "alphabet": "GOOGL",
+    "nvidia": "NVDA", "meta": "META", "netflix": "NFLX",
+    "bitcoin": "BTC", "btc": "BTC", "ethereum": "ETH", "eth": "ETH",
+    "palantir": "PLTR", "coinbase": "COIN", "uber": "UBER",
+    "disney": "DIS", "boeing": "BA", "exxon": "XOM",
+    "amd": "AMD", "starbucks": "SBUX", "gold": "GLD",
+}
+
 
 def _detect_intent(message: str) -> str:
+    """
+    Keyword-based intent detection — Tier 2 fallback only.
+    Ordered most-specific → least-specific to prevent false matches.
+    """
     low = message.lower()
-    if any(w in low for w in ["analiz", "analyze", "trade", "setup", "entry", "chart", "signal"]):
+
+    # Golf first — "golf hoy" contains "hoy" which is also a workspace trigger
+    if any(w in low for w in ["golf", "cancha", "hoyo", "swing", "campo de golf"]):
+        return "golf"
+
+    # Specialist agents
+    if any(w in low for w in [
+        "médico", "medico", "doctor", "salud", "síntoma", "sintoma",
+        "fiebre", "dolor", "enferm", "symptom", "health", "longevidad",
+        "fever", "pain", "sick", "ill", "malestar", "no me siento",
+    ]):
+        return "medical"
+
+    if any(w in low for w in [
+        "legal", "abogado", "contrato", "ley ", "demanda", "derecho",
+        "contrato", "lawyer", "compliance", "jurídico", "juridico",
+        "impuesto", "tribut", "dian",
+    ]):
+        return "legal"
+
+    if any(w in low for w in [
+        "fitness", "ejercicio", "entrenamiento", "gym", "deporte",
+        "nutrición", "nutricion", "proteína", "proteina",
+        "perder peso", "bajar de peso", "training", "muscle",
+        "físico", "fisico", "músculo", "musculo", "entrenar",
+        "cuerpo", "shape", "bajar grasa", "grasa",
+    ]):
+        return "fitness"
+
+    if any(w in low for w in [
+        "coach", "actúa como", "actua como", "mentor", "estrategia personal",
+        "ayúdame a decidir", "ayudame a decidir", "consejo de vida",
+    ]):
+        return "coach"
+
+    # Finance / market
+    if any(w in low for w in [
+        "analiz", "analyze", "trade", "setup", "entry", "chart",
+        "signal", "precio de", "price of",
+        "buy", "sell", "comprar", "vender",
+    ]):
         return "analyze"
-    if any(w in low for w in ["recommend", "recomend", "best", "top pick", "scan", "oportunidad", "mejores"]):
+
+    if any(w in low for w in [
+        "oportunidad", "oportunidades", "recommend", "recomend",
+        "mejores", "top pick", "scan", "qué comprar", "que comprar",
+    ]):
         return "recommend"
-    if any(w in low for w in ["news", "noticias", "headline", "latest", "que paso", "what happened"]):
+
+    if any(w in low for w in [
+        "news", "noticias", "headline", "latest", "que paso", "qué paso",
+        "what happened", "mercado", "bolsa", "pasando", "pasó",
+    ]):
         return "news"
+
+    # System
+    if any(w in low for w in [
+        "pipeline", "qué hace el sistema", "que hace el sistema",
+        "estado del sistema", "proceso", "corriendo",
+    ]):
+        return "pipeline"
+
+    if any(w in low for w in [
+        "agentes", "agents", "qué agentes", "que agentes",
+        "activos", "agent status", "workers",
+    ]):
+        return "agents"
+
+    if any(w in low for w in [
+        "agenda", "tengo", "mis tareas", "tarea", "task",
+        "meeting", "reunión", "reuniones", "workspace", "schedule",
+    ]):
+        return "workspace"
+
     return "general"
 
 
@@ -156,90 +311,197 @@ def _extract_symbol(message: str) -> str | None:
         clean = word.strip(".,!?;:()")
         if clean in _KNOWN_SYMBOLS:
             return clean
+    for word in message.lower().split():
+        clean = word.strip(".,!?;:()")
+        if clean in _SYMBOL_ALIASES:
+            return _SYMBOL_ALIASES[clean]
     return None
 
 
 def _dispatch_tool(intent: str, message: str) -> dict | None:
-    if intent == "analyze":
-        sym = _extract_symbol(message)
-        if sym:
-            try:
+    """Execute the tool for a keyword intent. Returns None on any failure."""
+    try:
+        if intent == "analyze":
+            sym = _extract_symbol(message)
+            if sym:
                 return brain.trader(sym)
-            except Exception:
-                return None
-    elif intent == "recommend":
-        try:
+        elif intent in ("recommend", "scan"):
             return brain_pro.auto_scan()
-        except Exception:
-            return None
-    elif intent == "news":
-        try:
+        elif intent == "news":
             return {"items": news_engine.fetch_categorized(max_per_category=4)}
-        except Exception:
-            return None
+        elif intent == "pipeline":
+            return orchestrator.pipeline_state()
+        elif intent == "agents":
+            return {"items": orchestrator.agent_status_snapshot()}
+        elif intent == "golf":
+            return golf_engine.dashboard_summary(max_courses=4)
+        elif intent == "workspace":
+            return workspace.home("Juan Camilo")
+        elif intent == "medical":
+            return orchestrator.execute(message, "medical")
+        elif intent == "legal":
+            return orchestrator.execute(message, "legal")
+        elif intent == "fitness":
+            return orchestrator.execute(message, "fitness")
+        elif intent == "coach":
+            return orchestrator.execute(message, "coach")
+    except Exception:
+        pass
     return None
 
 
-# ============================================================
+# ================================================================
 # PROMPTS
-# ============================================================
+# ================================================================
 
-# Pass 1 — LLM decides which tool (if any) to call.
-# Must mention JSON so response_format=json_object is valid.
 _DECISION_PROMPT = """\
-You are the JARVIS decision engine for Juan Camilo Montenegro.
-Your job: read the user message and decide whether a tool call is needed.
+You are the JARVIS routing engine for Juan Camilo Montenegro.
+Your only job: read the user message and decide which tool (if any) to call.
 
 Available tools:
-  analyze_asset(symbol)  — deep signal analysis for a specific stock or crypto
-  market_scan()          — full market intelligence: top setups, macro regime, confidence
-  get_news()             — latest categorised financial and market headlines
+  analyze   → analyze_asset(symbol)   — technical signal analysis for a specific stock or crypto (NVDA, BTC, AAPL…)
+  scan      → market_scan()           — full market intelligence: top setups, macro regime, best opportunities
+  news      → get_news()              — latest financial and market headlines
+  pipeline  → get_pipeline()          — current JARVIS system state: stage, progress, what is running
+  agents    → get_agents()            — status snapshot of all AI agents in JARVIS
+  golf      → golf_dashboard()        — golf course conditions, weather, player stats and insights
+  workspace → workspace_home()        — today's tasks, meetings, agenda, and priorities
+  medical   → medical_agent()         — health questions, symptoms, triage, medical and longevity advice
+  legal     → legal_agent()           — legal questions, contracts, compliance, Colombian law and taxes
+  fitness   → fitness_agent()         — fitness plans, training, nutrition, body performance
+  coach     → council_agent()         — strategic coaching, life decisions, multi-perspective council advice
 
-Rules:
-- Use "analyze"  when the user asks about a specific ticker (NVDA, BTC, AAPL …)
-- Use "scan"     when the user asks for top picks, market overview, recommendations, or opportunities
-- Use "news"     when the user asks about recent events, headlines, or what is happening in markets
-- Use "none"     for everything else — greetings, opinions, strategy questions, definitions
-- Respond in the same language the user writes in
+Routing rules:
+- "analyze"   → user asks about a specific asset: ticker (NVDA, BTC, TSLA) OR company name (Tesla→TSLA, Apple→AAPL, Bitcoin→BTC, Nvidia→NVDA, Amazon→AMZN). Always resolve company name to ticker in the "symbol" field.
+- "scan"      → "oportunidades", "mejores acciones", "qué comprar", "recomiéndame", "market overview", "setups"
+- "news"      → "noticias", "qué está pasando", "mercado", "headlines", "what's happening", "bolsa hoy"
+- "pipeline"  → "qué hace el sistema", "estado del sistema", "qué está corriendo", "pipeline"
+- "agents"    → "agentes", "qué agentes", "activos", "agent status", "workers"
+- "golf"      → "golf", "cancha", "hoyo", "swing", "campo", "golf hoy"
+- "workspace" → "qué tengo hoy", "agenda", "mis tareas", "reuniones", "meetings", "schedule"
+- "medical"   → health symptoms, "médico", "doctor", "dolor", "salud", "fiebre", medical advice, longevity
+- "legal"     → "legal", "abogado", "contrato", "ley", "demanda", compliance, taxes, "impuesto"
+- "fitness"   → "ejercicio", "entrenamiento", "gym", "nutrición", fitness, training, "perder peso"
+- "coach"     → "actúa como coach", strategic advice, "ayúdame a decidir", life decisions, personal strategy
+- "none"      → greetings, general questions, opinions, philosophy, definitions, anything else
 
-You MUST respond with valid JSON and nothing else:
+Critical: Respond ONLY with valid JSON — no markdown, no explanation, no extra text.
+
 {
-  "action": "none | analyze | scan | news",
+  "action": "none | analyze | scan | news | pipeline | agents | golf | workspace | medical | legal | fitness | coach",
   "symbol": "UPPERCASE_TICKER or null",
-  "reason": "one sentence explanation",
-  "reply":  "user-facing answer (only populate when action is none, else leave empty)"
+  "reason": "one sentence",
+  "reply":  "natural answer in user language — fill ONLY when action is none, else empty string"
 }\
 """
 
-# Pass 2 — LLM synthesises a final reply using the tool result.
 _SYNTHESIS_PROMPT = """\
-You are JARVIS, an AI operating system and market intelligence assistant for Juan Camilo Montenegro.
-You have just executed a real-time tool and the result is injected below.
-Use it to give a sharp, specific, actionable answer.
-Rules:
-- Be concise: 2–4 sentences maximum unless more detail was explicitly requested
-- Use exact numbers from the data (scores, prices, percentages)
-- Never invent data beyond what is provided
-- Respond in the same language the user writes in
-- Sound confident and clear, not robotic\
+You are JARVIS — the AI operating system for Juan Camilo Montenegro.
+A real-time tool just ran. The result is injected below as [Tool result].
+Your job: turn that data into a sharp, human, actionable answer.
+
+Style guide:
+- Maximum 3 sentences unless the user explicitly asked for more detail
+- Use specific numbers, scores, and percentages from the data
+- Short sentences. Natural rhythm. Easy to read aloud.
+- Sound like a sharp, confident advisor — not a robot, not a disclaimer machine
+- Respond in the exact same language the user wrote in
+- Medical/legal outputs: include the disclaimer in one short sentence at the end
+- If data is sparse, say what you know and stop — never fabricate\
 """
 
-# Single-pass fallback prompt (used when decision pass is bypassed)
 _FALLBACK_PROMPT = """\
-You are JARVIS, an AI market intelligence assistant for Juan Camilo Montenegro.
-You have access to real-time pipeline state and live news.
-Be concise (2–4 sentences), direct, actionable.
-Use exact numbers from your context. Respond in the user's language.\
+You are JARVIS, an AI operating system for Juan Camilo Montenegro.
+You have access to real-time system context injected below.
+Be concise (2–3 sentences), direct, and actionable.
+Respond in the user's language. Use exact numbers from context. Never fabricate.\
 """
 
 
-# ============================================================
-# AGENT CHAT — two-pass: LLM decides → tool → LLM synthesises
-# ============================================================
+# ================================================================
+# DEGRADED REPLY — when synthesis LLM fails but tool already ran
+# ================================================================
+def _degrade_reply(action: str, symbol: str | None, tool: dict) -> str:
+    # Orchestrator-wrapped results (medical/legal/fitness/coach)
+    if action in ("medical", "legal", "fitness", "coach"):
+        inner = tool.get("result") or {}
+
+        if action == "medical":
+            triage = inner.get("triage", "")
+            recs   = inner.get("recommendation", [])
+            if triage and recs:
+                return f"Triage: {triage}. {recs[0]}"
+            return recs[0] if recs else "Consulta médica iniciada. Visita un médico licenciado."
+
+        if action == "legal":
+            domain  = inner.get("domain", "legal")
+            sources = inner.get("official_sources", [])
+            src     = sources[0].get("name", "") if sources else ""
+            return (f"Dominio legal: {domain}. Fuente oficial: {src}."
+                    if src else f"Consulta legal clasificada como {domain}. Verificar con fuente oficial.")
+
+        if action == "fitness":
+            recs = inner.get("recommendations", [])
+            plan = inner.get("weekly_plan", [])
+            if recs:
+                return recs[0]
+            return ("Plan semanal: " + ", ".join(plan[:3])) if plan else "Plan de fitness generado."
+
+        if action == "coach":
+            consensus = inner.get("consensus", "")
+            steps     = inner.get("recommended_next_steps", [])
+            if consensus:
+                return consensus + (" Primer paso: " + steps[0] if steps else "")
+            return "Council consultado. Revisa los próximos pasos recomendados."
+
+    # Direct tool results
+    if action == "scan":
+        summary = tool.get("summary", "")
+        acts    = tool.get("actions", [])
+        return (summary + " — " + acts[0]) if acts else summary
+
+    if action == "analyze":
+        score = tool.get("setup_score") or tool.get("score", "")
+        sym   = symbol or tool.get("symbol", "")
+        return f"Setup score for {sym}: {score}/100." if score else ""
+
+    if action == "pipeline":
+        stage = tool.get("stage", "UNKNOWN")
+        prog  = int(tool.get("progress", 0) * 100)
+        msg   = tool.get("message", "")
+        return f"Pipeline: {stage} at {prog}%. {msg}".strip()
+
+    if action == "agents":
+        items  = tool.get("items", [])
+        active = [i.get("name", "") for i in items if i.get("status") == "active"]
+        return (f"{len(active)} agent(s) active: {', '.join(active[:4])}."
+                if active else f"{len(items)} agents registered in JARVIS.")
+
+    if action == "workspace":
+        tasks    = tool.get("tasks", [])
+        meetings = tool.get("meetings", [])
+        return f"Tienes {len(tasks)} tarea(s) y {len(meetings)} reunión(es) hoy."
+
+    if action == "golf":
+        insights = tool.get("insights", [])
+        return insights[0] if insights else "Datos de golf disponibles."
+
+    if action == "news":
+        items  = tool.get("items", [])
+        titles = [i.get("title", "") for i in items[:2] if i.get("title")]
+        return ("Últimas noticias: " + " | ".join(titles)) if titles else ""
+
+    return ""
+
+
+# ================================================================
+# AGENT CHAT — Tier 1: two-pass autonomous agent
+# Pass 1: LLM decides tool → Pass 2: LLM synthesises with data
+# ================================================================
 def _agent_chat(message: str) -> dict | None:
     context = _get_context()
 
-    # ── PASS 1: decision ─────────────────────────────────────
+    # ── PASS 1: routing decision ──────────────────────────────
     decision_system = _DECISION_PROMPT
     if context:
         decision_system += f"\n\n[Live System Context]\n{context}"
@@ -250,20 +512,16 @@ def _agent_chat(message: str) -> dict | None:
         {"role": "user", "content": message},
     ]
 
-    raw = generate_response(decision_messages, json_mode=True)
-    if not raw:
+    raw      = generate_response(decision_messages, json_mode=True)
+    decision = _parse_decision(raw or "")
+    if not decision:
         return None
 
-    try:
-        decision = json.loads(raw)
-    except (json.JSONDecodeError, ValueError):
-        return None
+    action       = decision["action"]
+    symbol       = decision["symbol"]
+    direct_reply = decision["reply"]
 
-    action = (decision.get("action") or "none").lower().strip()
-    symbol = (decision.get("symbol") or "").upper().strip() or None
-    direct_reply = (decision.get("reply") or "").strip()
-
-    # No tool needed — return the LLM's direct answer
+    # No tool needed → return direct LLM answer immediately
     if action == "none":
         if not direct_reply:
             return None
@@ -282,31 +540,41 @@ def _agent_chat(message: str) -> dict | None:
     # ── TOOL EXECUTION ────────────────────────────────────────
     tool_result: dict | None = None
 
-    if action == "analyze":
-        sym = symbol or _extract_symbol(message)
-        if sym:
-            try:
+    try:
+        if action == "analyze":
+            sym = symbol or _extract_symbol(message)
+            if sym:
                 tool_result = brain.trader(sym)
-            except Exception:
-                pass
-    elif action == "scan":
-        try:
+        elif action == "scan":
             tool_result = brain_pro.auto_scan()
-        except Exception:
-            pass
-    elif action == "news":
-        try:
+        elif action == "news":
             tool_result = {"items": news_engine.fetch_categorized(max_per_category=4)}
-        except Exception:
-            pass
+        elif action == "pipeline":
+            tool_result = orchestrator.pipeline_state()
+        elif action == "agents":
+            tool_result = {"items": orchestrator.agent_status_snapshot()}
+        elif action == "golf":
+            tool_result = golf_engine.dashboard_summary(max_courses=4)
+        elif action == "workspace":
+            tool_result = workspace.home("Juan Camilo")
+        elif action == "medical":
+            tool_result = orchestrator.execute(message, "medical")
+        elif action == "legal":
+            tool_result = orchestrator.execute(message, "legal")
+        elif action == "fitness":
+            tool_result = orchestrator.execute(message, "fitness")
+        elif action == "coach":
+            tool_result = orchestrator.execute(message, "coach")
+    except Exception:
+        pass
 
-    # ── PASS 2: synthesis ────────────────────────────────────
+    # ── PASS 2: synthesis ─────────────────────────────────────
     synthesis_system = _SYNTHESIS_PROMPT
     if context:
         synthesis_system += f"\n\n[Live System Context]\n{context}"
     if tool_result:
         snippet = json.dumps(tool_result, default=str)[:1400]
-        synthesis_system += f"\n\n[Tool: {action} result]\n{snippet}"
+        synthesis_system += f"\n\n[Tool: {action}]\n{snippet}"
 
     synthesis_messages = [
         {"role": "system", "content": synthesis_system},
@@ -316,14 +584,12 @@ def _agent_chat(message: str) -> dict | None:
 
     final_reply = generate_response(synthesis_messages, json_mode=False)
 
-    # If synthesis fails but tool ran, surface what we know
+    # Synthesis failed but tool ran → produce minimal degraded reply
+    if not final_reply and tool_result:
+        final_reply = _degrade_reply(action, symbol, tool_result)
+
     if not final_reply:
-        if tool_result and action == "scan":
-            summary = tool_result.get("summary", "")
-            actions = tool_result.get("actions", [])
-            final_reply = summary + (" — " + actions[0] if actions else "")
-        elif not final_reply:
-            return None
+        return None
 
     _push_history("user", message)
     _push_history("assistant", final_reply)
@@ -342,9 +608,10 @@ def _agent_chat(message: str) -> dict | None:
     }
 
 
-# ============================================================
-# KEYWORD CHAT — single-pass fallback (keyword → tool → LLM)
-# ============================================================
+# ================================================================
+# KEYWORD CHAT — Tier 2: keyword intent → tool → single LLM pass
+# Only reached when _agent_chat returns None.
+# ================================================================
 def _llm_chat(message: str) -> dict | None:
     intent      = _detect_intent(message)
     tool_result = _dispatch_tool(intent, message)
@@ -363,39 +630,54 @@ def _llm_chat(message: str) -> dict | None:
 
     reply = generate_response(messages)
     if not reply:
-        return None
+        if tool_result:
+            sym   = _extract_symbol(message)
+            reply = _degrade_reply(intent, sym, tool_result)
+        if not reply:
+            return None
 
     _push_history("user", message)
     _push_history("assistant", reply)
 
-    sym    = _extract_symbol(message)
-    action = (f"analyze:{sym}" if sym and intent == "analyze"
-              else "auto_scan" if intent == "recommend"
-              else "news_fetch" if intent == "news"
-              else "")
+    sym = _extract_symbol(message)
+    action_map = {
+        "analyze":   f"analyze:{sym}" if sym else "analyze",
+        "recommend": "scan",
+        "scan":      "scan",
+        "news":      "news",
+        "pipeline":  "pipeline",
+        "agents":    "agents",
+        "golf":      "golf",
+        "workspace": "workspace",
+        "medical":   "medical",
+        "legal":     "legal",
+        "fitness":   "fitness",
+        "coach":     "coach",
+    }
+    action_tag = action_map.get(intent, "")
 
     return {
         "type":       "llm_chat",
         "reply":      reply,
         "summary":    reply[:120] + ("..." if len(reply) > 120 else ""),
         "details":    tool_result or {},
-        "action":     action,
-        "confidence": 0.88 if tool_result else 0.70,
+        "action":     action_tag,
+        "confidence": 0.88 if tool_result else 0.68,
         "source":     "llm_fallback",
     }
 
 
-# ============================================================
+# ================================================================
 # PYDANTIC MODELS
-# ============================================================
+# ================================================================
 class ChatRequest(BaseModel):
     message: str
     domain: str | None = "general"
 
 
-# ============================================================
-# ROUTES
-# ============================================================
+# ================================================================
+# ROUTES — unchanged
+# ================================================================
 @app.get("/")
 def root():
     return {"status": "JARVIS RUNNING"}
@@ -414,7 +696,7 @@ def dashboard():
 
 
 # =========================
-# HOME — persistent tasks + meetings
+# HOME
 # =========================
 @app.get("/dashboard/home")
 def dashboard_home():
@@ -435,19 +717,19 @@ def dashboard_home():
 
 
 # =========================
-# CHAT — agent (two-pass) → keyword fallback → ProductBrain
+# CHAT — 3-tier fallback chain
+# Tier 1: _agent_chat  (LLM decides tool autonomously, two-pass)
+# Tier 2: _llm_chat    (keyword intent → tool → single LLM pass)
+# Tier 3: brain.chat() (deterministic ProductBrain, no LLM)
 # =========================
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
-        # Tier 1: LLM decides tool autonomously (two-pass agent)
         result = _agent_chat(req.message)
 
-        # Tier 2: keyword intent → tool → LLM (single-pass)
         if result is None:
             result = _llm_chat(req.message)
 
-        # Tier 3: rule-based ProductBrain (no LLM)
         if result is None:
             result = brain.chat(req.message)
 
@@ -485,7 +767,7 @@ def chat(req: ChatRequest):
 
 
 # =========================
-# AUTO JARVIS — full intelligence scan via ProductBrainPro
+# AUTO JARVIS
 # =========================
 @app.post("/jarvis/auto")
 def jarvis_auto():
@@ -545,7 +827,7 @@ def recommendations():
 
 
 # =========================
-# TASKS — persistent
+# TASKS
 # =========================
 @app.post("/dashboard/tasks")
 def add_task(data: dict):
@@ -575,7 +857,7 @@ def toggle_task(task_id: str):
 
 
 # =========================
-# MEETINGS — persistent
+# MEETINGS
 # =========================
 @app.post("/dashboard/meetings")
 def add_meeting(data: dict):
@@ -595,7 +877,7 @@ def add_meeting(data: dict):
 
 
 # =========================
-# SCHEDULE MEETING (from floating button)
+# SCHEDULE MEETING
 # =========================
 @app.post("/dashboard/schedule-meeting")
 def schedule_meeting(data: dict):
@@ -619,7 +901,7 @@ def schedule_meeting(data: dict):
 
 
 # =========================
-# ASSETS — persistent
+# ASSETS
 # =========================
 @app.get("/dashboard/assets")
 def assets():
@@ -671,7 +953,7 @@ def system_metrics():
 
 
 # =========================
-# PIPELINE — derived from real agent activity via AgentOrchestratorPro
+# PIPELINE
 # =========================
 @app.get("/dashboard/pipeline")
 def pipeline():
@@ -687,7 +969,7 @@ def pipeline():
 
 
 # =========================
-# AGENTS — real orchestrator state
+# AGENTS
 # =========================
 @app.get("/dashboard/agents")
 def agents():
@@ -699,7 +981,7 @@ def agents():
 
 
 # =========================
-# NEWS FEED — real categorised RSS via NewsIntelligenceEngine
+# NEWS FEED
 # =========================
 @app.get("/dashboard/news")
 def news():
@@ -711,7 +993,7 @@ def news():
 
 
 # =========================
-# GOLF — wires GolfCourseDatabase + Open-Meteo weather
+# GOLF
 # =========================
 @app.get("/dashboard/golf")
 def golf():

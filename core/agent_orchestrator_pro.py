@@ -49,10 +49,12 @@ class AgentOrchestratorPro:
     def __init__(self) -> None:
         self.agent_registry = {
             "finance": ["market_intelligence", "opportunity_radar", "wealth_optimizer", "risk_analyst", "trader_alpha"],
-            "medical": ["medical_supreme", "fitness_performance"],
-            "legal": ["legal_compliance"],
+            "medical": ["medical_supreme"],                                   # BUG-3 fix: separated from fitness
+            "fitness": ["fitness_performance"],                               # BUG-3 fix: dedicated fitness domain
+            "legal":   ["legal_compliance"],
+            "coach":   ["executive_council"],                                 # council as personal coach/strategist
             "general": ["executive_council", "daily_ops", "knowledge_engine"],
-            "macro": ["market_intelligence", "risk_analyst", "executive_council", "trader_alpha"],
+            "macro":   ["market_intelligence", "risk_analyst", "executive_council", "trader_alpha"],
         }
 
         self.agent_reputation = {
