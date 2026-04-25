@@ -162,6 +162,71 @@ def _action_to_domain(action: str) -> str:
 
 
 # ================================================================
+# USER PROFILE — built from memory patterns, injected into prompts
+# ================================================================
+def _build_user_profile(message: str) -> str:
+    """
+    Analyses last 20 memory entries to derive user preferences,
+    recurring domains, and behavioural patterns for personalisation.
+    Returns compact string suitable for LLM injection (<200 chars).
+    """
+    try:
+        memories = _mem().last_n(20)
+        if not memories:
+            return ""
+
+        domain_counts: dict[str, int] = {}
+        for m in memories:
+            d = m.get("domain", "general")
+            if d:
+                domain_counts[d] = domain_counts.get(d, 0) + 1
+
+        # Top 2 domains
+        top_domains = sorted(domain_counts, key=lambda k: -domain_counts[k])[:2]
+
+        # Recency signal
+        recent_domains = [m.get("domain", "") for m in memories[-5:] if m.get("domain")]
+        latest = recent_domains[0] if recent_domains else ""
+
+        parts = []
+        if top_domains:
+            parts.append(f"Top interests: {', '.join(top_domains)}")
+        if latest and latest not in top_domains:
+            parts.append(f"Latest focus: {latest}")
+
+        return "User profile — " + ". ".join(parts) + "." if parts else ""
+    except Exception:
+        return ""
+
+
+def _detect_feedback_signal(message: str) -> str:
+    """
+    Returns 'repeat' if user appears to re-ask (agent failed),
+    'expand' if user is building on a previous answer,
+    'new' otherwise.
+    Drives self-improvement signal tracking.
+    """
+    low = message.lower()
+
+    repeat_signals = [
+        "no entendí", "no entendiste", "didn't understand", "explain again",
+        "explica de nuevo", "that's not", "eso no", "no respondiste",
+        "didn't answer", "wrong", "incorrecto", "no es eso", "not what i asked",
+    ]
+    expand_signals = [
+        "and also", "y también", "what about", "qué hay de", "more detail",
+        "más detalle", "expand on", "amplía", "tell me more", "cuéntame más",
+        "además", "furthermore", "building on that",
+    ]
+
+    if any(s in low for s in repeat_signals):
+        return "repeat"
+    if any(s in low for s in expand_signals):
+        return "expand"
+    return "new"
+
+
+# ================================================================
 # CONTEXT — pipeline + news, 2-min TTL, never blocks the endpoint
 # ================================================================
 _ctx_cache: dict = {"data": "", "ts": 0.0}
@@ -330,11 +395,12 @@ def _detect_intent(message: str) -> str:
     ]):
         return "coach"
 
-    # Finance / market
+    # Finance / market — specific asset queries
     if any(w in low for w in [
         "analiz", "analyze", "trade", "setup", "entry", "chart",
-        "signal", "precio de", "price of",
-        "buy", "sell", "comprar", "vender",
+        "signal", "precio de", "price of", "cuánto cuesta", "cuanto cuesta",
+        "cuánto vale", "cuanto vale", "valor de", "cotiza",
+        "buy", "sell", "comprar", "vender", "debería comprar", "deberia comprar",
     ]):
         return "analyze"
 
@@ -462,20 +528,26 @@ Critical: Respond ONLY with valid JSON — no markdown, no explanation, no extra
 """
 
 _SYNTHESIS_PROMPT = """\
-You are JARVIS — the AI operating system for Juan Camilo Montenegro.
-A real-time tool just ran. The result is injected below as [Tool result].
-Your job: turn that data into a sharp, human, actionable answer.
+You are JARVIS — the AI operating system for Juan Camilo Montenegro, a Colombian investor, entrepreneur, and high-performer.
+A real-time specialist agent just ran. Its output is injected below.
+Your job: synthesise that data into a sharp, expert-level, actionable answer.
 
-Style guide:
-- Maximum 3 sentences unless the user explicitly asked for more detail
-- Use specific numbers, scores, and percentages from the data
-- Short sentences. Natural rhythm. Easy to read aloud.
-- Sound like a sharp, confident advisor — not a robot, not a disclaimer machine
-- Respond in the exact same language the user wrote in
-- Medical/legal outputs: include the disclaimer in one short sentence at the end
-- If data is sparse, say what you know and stop — never fabricate
-- If [Memory] is provided, use it to personalize tone — reference past context
-  naturally, never quote it verbatim\
+Style rules:
+- Maximum 4 sentences unless the user asked for more detail
+- Lead with the most important finding — number, score, or key signal first
+- Short, punchy sentences. Natural rhythm. Sounds like a sharp advisor, not a report
+- Respond in the exact same language the user wrote in (Spanish if they wrote Spanish)
+- Medical/legal: one-line disclaimer at the end
+- Never fabricate — if data is sparse, say exactly what you know and stop
+- If [Memory] is provided: personalise naturally — reference past context without quoting verbatim
+- If [User Profile] is provided: adapt tone and depth to their domain expertise
+- If [Secondary Context] is provided: make ONE cross-domain connection where genuinely useful
+
+Cross-domain intelligence:
+- Medical + Fitness: connect symptom to recovery or performance implication
+- Legal + Strategy: legal risk has strategic consequences — name them
+- Finance + Risk: any trade setup should note the macro risk environment
+- Never force a cross-domain connection — only when it adds real value\
 """
 
 _FALLBACK_PROMPT = """\
@@ -613,6 +685,7 @@ def _agent_chat(message: str) -> dict | None:
 
     # ── TOOL EXECUTION ────────────────────────────────────────
     tool_result: dict | None = None
+    _COLLABORATED = {"medical", "fitness", "legal", "coach"}
 
     try:
         if action == "analyze":
@@ -631,26 +704,37 @@ def _agent_chat(message: str) -> dict | None:
             tool_result = golf_engine.dashboard_summary(max_courses=4)
         elif action == "workspace":
             tool_result = workspace.home("Juan Camilo")
-        elif action == "medical":
-            tool_result = orchestrator.execute(message, "medical")
-        elif action == "legal":
-            tool_result = orchestrator.execute(message, "legal")
-        elif action == "fitness":
-            tool_result = orchestrator.execute(message, "fitness")
-        elif action == "coach":
-            tool_result = orchestrator.execute(message, "coach")
+        elif action in _COLLABORATED:
+            # Use collaborated execute for cross-domain depth
+            tool_result = orchestrator.execute_collaborated(
+                message, _action_to_domain(action)
+            )
     except Exception:
         pass
 
     # ── PASS 2: synthesis ─────────────────────────────────────
+    feedback = _detect_feedback_signal(message)
+    profile  = _build_user_profile(message)
+
     synthesis_system = _SYNTHESIS_PROMPT
     if context:
         synthesis_system += f"\n\n[Live System Context]\n{context}"
+    if profile:
+        synthesis_system += f"\n\n[User Profile]\n{profile}"
     if mem_ctx:
         synthesis_system += f"\n\n[Memory]\n{mem_ctx}"
+    if feedback == "repeat":
+        synthesis_system += "\n\n[Feedback signal: user is re-asking — previous answer missed the mark. Be more specific, direct, and concrete this time.]"
+    elif feedback == "expand":
+        synthesis_system += "\n\n[Feedback signal: user wants more depth — expand key points with specifics.]"
     if tool_result:
+        # Extract secondary context if present (from collaborate execution)
+        sec = tool_result.pop("secondary_context", None) if isinstance(tool_result, dict) else None
         snippet = json.dumps(tool_result, default=str)[:1400]
         synthesis_system += f"\n\n[Tool: {action}]\n{snippet}"
+        if sec:
+            sec_snippet = json.dumps(sec.get("result", {}), default=str)[:600]
+            synthesis_system += f"\n\n[Secondary Context — {sec.get('domain', '')}]\n{sec_snippet}"
 
     synthesis_messages = [
         {"role": "system", "content": synthesis_system},
@@ -1025,12 +1109,59 @@ def serve_upload(filename: str):
 # =========================
 @app.get("/dashboard/system")
 def system_metrics():
-    return {
-        "signals":  3,
-        "accuracy": "72%",
-        "risk":     "medium",
-        "exposure": "45%",
-    }
+    try:
+        perf_stats = orchestrator.agent_performance_stats()
+        mem_stats  = _mem().stats()
+
+        # Intelligence level from avg reputation across active agents
+        rep_values = list(orchestrator.agent_reputation.values())
+        avg_rep    = round(sum(rep_values) / len(rep_values), 3) if rep_values else 0.80
+
+        # Derive overall system health
+        total_calls = sum(p.get("calls", 0) for p in perf_stats)
+        total_errors = sum(
+            round(p.get("error_rate", 0) * p.get("calls", 0))
+            for p in perf_stats
+        )
+        error_rate_pct = round(total_errors / total_calls * 100, 1) if total_calls else 0
+
+        intelligence_level = (
+            "elite"    if avg_rep >= 0.90 else
+            "advanced" if avg_rep >= 0.85 else
+            "solid"    if avg_rep >= 0.80 else
+            "learning"
+        )
+
+        # Last 3 decisions from memory
+        recent_mem = _mem().last_n(3)
+        last_decisions = [
+            {"domain": m.get("domain", ""), "summary": m.get("user", "")[:60], "ts": m.get("ts", "")[:10]}
+            for m in reversed(recent_mem)
+        ]
+
+        return {
+            "signals":           total_calls,
+            "accuracy":          f"{round((1 - error_rate_pct/100) * 100, 1)}%",
+            "risk":              "medium",
+            "exposure":          "45%",
+            "intelligence_level": intelligence_level,
+            "avg_agent_reputation": avg_rep,
+            "memory_entries":    mem_stats.get("total_entries", 0),
+            "memory_vector_ready": mem_stats.get("vector_ready", False),
+            "memory_domains":    mem_stats.get("domains", []),
+            "agent_calls_total": total_calls,
+            "agent_error_rate":  f"{error_rate_pct}%",
+            "last_decisions":    last_decisions,
+            "top_agents":        perf_stats[:3],
+        }
+    except Exception as e:
+        return {
+            "signals":  0,
+            "accuracy": "N/A",
+            "risk":     "medium",
+            "exposure": "45%",
+            "error":    str(e),
+        }
 
 
 # =========================

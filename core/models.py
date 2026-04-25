@@ -156,6 +156,14 @@ class OrchestratorRequest(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
+class AgentExecutionResult(BaseModel):
+    agent_name: str
+    display_name: str = ""
+    category: str = "general"
+    response: str = ""
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
 class GuardrailRequest(BaseModel):
     text: str = Field(..., min_length=1)
 

@@ -45,6 +45,20 @@ _STAGE_AGENTS: List[Dict[str, Any]] = [
 _ACTIVITY_TTL_S: float = 120.0
 
 
+# ---------------------------------------------------------------------------
+# Cross-domain collaboration map
+# When primary domain is executed, these secondary domains add context depth
+# ---------------------------------------------------------------------------
+_COLLABORATION_MAP: Dict[str, List[str]] = {
+    "medical":  ["fitness"],      # health + performance often intertwined
+    "fitness":  ["medical"],      # training + health monitoring together
+    "finance":  ["macro"],        # any finance query benefits from macro context
+    "legal":    ["coach"],        # legal decisions need strategic framing
+    "coach":    ["legal"],        # strategic decisions often have legal implications
+    "macro":    ["finance"],
+}
+
+
 class AgentOrchestratorPro:
     def __init__(self) -> None:
         self.agent_registry = {
@@ -509,6 +523,42 @@ class AgentOrchestratorPro:
         p["last_ms"]   = round(elapsed_ms, 1)
         if has_error:
             p["errors"] += 1
+
+    def execute_collaborated(self, query: str, domain: str = "general") -> Dict[str, Any]:
+        """
+        Execute primary agent then optionally a secondary agent for cross-domain depth.
+        Returns primary result enriched with secondary_context when available.
+        """
+        primary_result = self.execute(query, domain)
+
+        secondary_domains = _COLLABORATION_MAP.get(domain, [])
+        secondary_context: Optional[Dict[str, Any]] = None
+
+        for sec_domain in secondary_domains:
+            sec_agents = self.agent_registry.get(sec_domain, [])
+            if not sec_agents:
+                continue
+            sec_agent = max(sec_agents, key=lambda a: self.agent_reputation.get(a, 0.75))
+            sec_engine = self._load_engine(sec_agent)
+            if sec_engine is None:
+                continue
+            try:
+                sec_result = self._try_methods(sec_engine, query, sec_domain)
+                if isinstance(sec_result, dict) and "error" not in sec_result:
+                    secondary_context = {
+                        "domain":  sec_domain,
+                        "agent":   sec_agent,
+                        "result":  sec_result,
+                    }
+                    break
+            except Exception:
+                continue
+
+        if secondary_context:
+            primary_result["secondary_context"] = secondary_context
+            primary_result["collaboration"] = True
+
+        return primary_result
 
     def agent_performance_stats(self) -> List[Dict[str, Any]]:
         """Per-agent performance metrics: calls, avg_ms, error_rate, reputation."""

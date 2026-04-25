@@ -1,0 +1,47 @@
+[
+  {
+    "ts": "2026-04-25T18:52:45.559563",
+    "user": "cual es el precio de nvidia",
+    "output": "NVDA score 82/100 - BUY",
+    "agent": "trader_alpha",
+    "domain": "finance",
+    "tags": [],
+    "metadata": {}
+  },
+  {
+    "ts": "2026-04-25T18:52:45.559563",
+    "user": "tengo dolor en el hombro",
+    "output": "Musculoskeletal - conservative management",
+    "agent": "medical_supreme",
+    "domain": "medical",
+    "tags": [],
+    "metadata": {}
+  },
+  {
+    "ts": "2026-04-25T18:52:45.559563",
+    "user": "quiero perder 10 kilos",
+    "output": "Fitness plan weight loss focus",
+    "agent": "fitness",
+    "domain": "fitness",
+    "tags": [],
+    "metadata": {}
+  },
+  {
+    "ts": "2026-04-25T18:52:53.504838",
+    "user": "como mejorar mi rendimiento fisico",
+    "output": "fitness plan",
+    "agent": "",
+    "domain": "fitness",
+    "tags": [],
+    "metadata": {}
+  },
+  {
+    "ts": "2026-04-25T18:53:36.421174",
+    "user": "como mejorar mi rendimiento fisico",
+    "output": "fitness plan primero",
+    "agent": "",
+    "domain": "fitness",
+    "tags": [],
+    "metadata": {}
+  }
+]

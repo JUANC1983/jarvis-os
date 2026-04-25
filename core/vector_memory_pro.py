@@ -1,89 +1,117 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
+try:
+    import faiss
+    import numpy as np
+    from sentence_transformers import SentenceTransformer
+    _VECTOR_AVAILABLE = True
+except Exception:
+    _VECTOR_AVAILABLE = False
+
+
+_UNAVAILABLE_MSG = "Vector memory requires faiss-cpu + sentence-transformers. Running keyword-only fallback."
 
 
 class VectorMemoryPro:
+    """
+    Semantic vector memory with FAISS + sentence-transformers.
+    Gracefully degrades to stub when libraries are unavailable.
+    """
+
     def __init__(self, base_path: str = "data/vector_memory_pro") -> None:
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
-
         self.index_path = self.base_path / "memory.index"
-        self.meta_path = self.base_path / "memory.json"
+        self.meta_path  = self.base_path / "memory.json"
+        self._ready = False
 
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        self.dimension = 384
+        if _VECTOR_AVAILABLE:
+            try:
+                self._model = SentenceTransformer("all-MiniLM-L6-v2")
+                self._dim   = 384
 
-        if self.index_path.exists():
-            self.index = faiss.read_index(str(self.index_path))
+                if self.index_path.exists():
+                    self._index = faiss.read_index(str(self.index_path))
+                else:
+                    self._index = faiss.IndexFlatL2(self._dim)
+
+                self._memory: List[Dict[str, Any]] = (
+                    json.loads(self.meta_path.read_text(encoding="utf-8"))
+                    if self.meta_path.exists() else []
+                )
+                self._ready = True
+            except Exception:
+                self._memory = []
         else:
-            self.index = faiss.IndexFlatL2(self.dimension)
+            self._memory = []
 
-        if self.meta_path.exists():
-            self.memory: List[Dict[str, Any]] = json.loads(self.meta_path.read_text(encoding="utf-8"))
-        else:
-            self.memory = []
-
-    def _persist(self) -> None:
-        faiss.write_index(self.index, str(self.index_path))
-        self.meta_path.write_text(json.dumps(self.memory, ensure_ascii=False, indent=2), encoding="utf-8")
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def store(self, text: str, category: str = "general", metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not text.strip():
             return {"status": "error", "message": "text is required"}
 
-        vector = self.model.encode([text])[0].astype("float32")
-        self.index.add(np.array([vector], dtype="float32"))
+        if not self._ready:
+            entry = {"id": len(self._memory), "text": text, "category": category, "metadata": metadata or {}}
+            self._memory.append(entry)
+            try:
+                self.meta_path.write_text(
+                    json.dumps(self._memory, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+            except Exception:
+                pass
+            return {"status": "ok_fallback", "stored_id": entry["id"], "category": category, "note": _UNAVAILABLE_MSG}
 
-        entry = {
-            "id": len(self.memory),
-            "text": text,
-            "category": category,
-            "metadata": metadata or {},
-        }
-        self.memory.append(entry)
+        vector = self._model.encode([text])[0].astype("float32")
+        self._index.add(np.array([vector], dtype="float32"))
+        entry = {"id": len(self._memory), "text": text, "category": category, "metadata": metadata or {}}
+        self._memory.append(entry)
         self._persist()
-
-        return {
-            "status": "ok",
-            "stored_id": entry["id"],
-            "category": category,
-            "text": text,
-        }
+        return {"status": "ok", "stored_id": entry["id"], "category": category, "text": text}
 
     def search(self, query: str, k: int = 5) -> Dict[str, Any]:
-        if len(self.memory) == 0:
+        if not self._memory:
+            return {"status": "ok", "query": query, "results": [], "summary": "No memories stored yet."}
+
+        if not self._ready:
+            keyword = query.lower()
+            results = [m for m in self._memory if keyword in m.get("text", "").lower()][:k]
             return {
-                "status": "ok",
+                "status": "ok_fallback",
                 "query": query,
-                "results": [],
-                "summary": "No semantic memories stored yet.",
+                "results": results,
+                "summary": f"Keyword fallback: {len(results)} result(s). {_UNAVAILABLE_MSG}",
             }
 
-        k = max(1, min(k, len(self.memory)))
-        vector = self.model.encode([query])[0].astype("float32")
-        distances, indices = self.index.search(np.array([vector], dtype="float32"), k)
+        k = max(1, min(k, len(self._memory)))
+        vector = self._model.encode([query])[0].astype("float32")
+        distances, indices = self._index.search(np.array([vector], dtype="float32"), k)
 
         results = []
         for rank, idx in enumerate(indices[0].tolist()):
-            if 0 <= idx < len(self.memory):
-                item = self.memory[idx].copy()
+            if 0 <= idx < len(self._memory):
+                item = self._memory[idx].copy()
                 item["distance"] = float(distances[0][rank])
                 results.append(item)
 
-        return {
-            "status": "ok",
-            "query": query,
-            "results": results,
-            "summary": f"Retrieved {len(results)} semantic memory items.",
-        }
+        return {"status": "ok", "query": query, "results": results, "summary": f"Retrieved {len(results)} items."}
 
     def categories(self) -> Dict[str, Any]:
-        cats = sorted(list({m.get("category", "general") for m in self.memory}))
-        return {"count": len(self.memory), "categories": cats}
+        cats = sorted({m.get("category", "general") for m in self._memory})
+        return {"count": len(self._memory), "categories": cats, "vector_ready": self._ready}
+
+    # ------------------------------------------------------------------
+    # Private
+    # ------------------------------------------------------------------
+
+    def _persist(self) -> None:
+        faiss.write_index(self._index, str(self.index_path))
+        self.meta_path.write_text(
+            json.dumps(self._memory, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
