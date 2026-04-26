@@ -117,4 +117,13 @@ class DashboardWorkspaceEngine:
         self._write(data)
         return item
 
+    def delete_asset_by_filename(self, filename: str) -> bool:
+        data = self._read()
+        before = len(data.get("assets", []))
+        data["assets"] = [a for a in data.get("assets", []) if a.get("filename") != filename]
+        if len(data["assets"]) == before:
+            return False
+        self._write(data)
+        return True
+
 

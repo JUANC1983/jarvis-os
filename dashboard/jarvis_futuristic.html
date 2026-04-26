@@ -506,6 +506,136 @@ body{
 ═══════════════════════════════════════════ */
 hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
+/* ═══════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  animation:fade-up .18s ease;
+}
+.modal-box{
+  background:linear-gradient(155deg,rgba(10,25,42,.99) 0%,rgba(6,17,29,.99) 100%);
+  border:1px solid rgba(68,240,255,.22);border-radius:var(--rll);
+  max-width:640px;width:100%;max-height:88vh;overflow-y:auto;
+  position:relative;box-shadow:0 40px 80px rgba(0,0,0,.7);
+}
+.modal-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+}
+.modal-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:12px;padding:22px 22px 0;
+}
+.modal-title{font-size:18px;font-weight:800;line-height:1.35;flex:1}
+.modal-close{
+  background:rgba(255,255,255,.06);border:1px solid var(--border2);
+  border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--soft);
+  font-size:14px;transition:background .18s,color .18s;flex-shrink:0;
+}
+.modal-close:hover{background:rgba(255,107,107,.15);color:var(--bad)}
+.modal-body{padding:16px 22px 22px}
+.modal-meta{font-size:12px;color:var(--soft);margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap}
+.modal-summary{font-size:14px;line-height:1.7;color:var(--soft2);margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* ═══════════════════════════════════════════
+   VOICE BAR
+═══════════════════════════════════════════ */
+.voice-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;padding:10px 14px;
+  background:rgba(68,240,255,.035);border:1px solid rgba(68,240,255,.1);
+  border-radius:var(--rs);margin-top:10px;
+}
+.vb-state{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--soft)}
+.vb-dot{width:8px;height:8px;border-radius:50%;background:var(--soft);flex-shrink:0;transition:background .3s}
+.vb-dot.idle{background:var(--soft)}
+.vb-dot.listening{background:var(--warn);animation:blink .8s ease-in-out infinite}
+.vb-dot.speaking{background:var(--ok);animation:blink 1.2s ease-in-out infinite}
+.vb-dot.processing{background:var(--cyan);animation:blink .6s ease-in-out infinite}
+.vb-dot.error{background:var(--bad)}
+.vb-controls{display:flex;gap:6px;flex-wrap:wrap}
+.vb-btn{
+  background:var(--s3);border:1px solid var(--border2);border-radius:8px;
+  padding:6px 11px;font-size:11px;font-weight:600;color:var(--soft2);
+  cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.vb-btn:hover{border-color:rgba(68,240,255,.22);color:var(--white);background:var(--s4)}
+.vb-btn.active{border-color:rgba(68,240,255,.35);color:var(--cyan);background:rgba(68,240,255,.08)}
+.vb-btn:disabled{opacity:.38;cursor:default}
+
+/* ═══════════════════════════════════════════
+   COURSES LIBRARY
+═══════════════════════════════════════════ */
+.course-lib-scroll{max-height:380px;overflow-y:auto;padding-right:2px}
+.course-country-group{margin-bottom:14px}
+.course-country-label{
+  font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--cyan);padding:6px 0 4px;
+  border-bottom:1px solid rgba(68,240,255,.12);margin-bottom:8px;
+}
+.course-lib-item{
+  padding:9px 11px;border-radius:var(--rs);cursor:pointer;
+  border:1px solid transparent;transition:all .18s;display:flex;align-items:center;gap:10px;
+}
+.course-lib-item:hover{background:rgba(68,240,255,.06);border-color:rgba(68,240,255,.15)}
+.course-lib-item.selected{background:rgba(68,240,255,.1);border-color:rgba(68,240,255,.28)}
+.cli-name{font-size:13px;font-weight:600;flex:1}
+.cli-loc{font-size:11px;color:var(--soft)}
+.cli-alt{font-size:10px;color:var(--cyan);margin-left:auto;white-space:nowrap}
+
+/* ═══════════════════════════════════════════
+   GOLF BAG
+═══════════════════════════════════════════ */
+.bag-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.bag-table th{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--soft);padding:6px 8px;text-align:left;
+  border-bottom:1px solid var(--border2);
+}
+.bag-table td{padding:7px 8px;border-bottom:1px solid var(--border3);vertical-align:middle}
+.bag-table tr:last-child td{border-bottom:none}
+.bag-table tr:hover td{background:rgba(68,240,255,.025)}
+.bag-edit-btn{
+  background:none;border:1px solid rgba(68,240,255,.18);border-radius:6px;
+  padding:3px 8px;font-size:10px;color:var(--cyan);cursor:pointer;
+  transition:background .18s;margin-right:4px;
+}
+.bag-edit-btn:hover{background:rgba(68,240,255,.1)}
+.bag-del-btn{
+  background:none;border:1px solid rgba(255,107,107,.2);border-radius:6px;
+  padding:3px 8px;font-size:10px;color:var(--bad);cursor:pointer;
+  transition:background .18s;
+}
+.bag-del-btn:hover{background:rgba(255,107,107,.1)}
+
+/* ═══════════════════════════════════════════
+   CLICKABLE CARDS
+═══════════════════════════════════════════ */
+.clickable{cursor:pointer;transition:border-color .18s,transform .2s,box-shadow .18s}
+.clickable:hover{border-color:rgba(68,240,255,.28)!important;transform:translateY(-2px);box-shadow:0 8px 28px rgba(68,240,255,.08)}
+
+/* ═══════════════════════════════════════════
+   COURSE DETAIL PANEL
+═══════════════════════════════════════════ */
+.course-detail-panel{
+  background:rgba(68,240,255,.035);border:1px solid rgba(68,240,255,.18);
+  border-radius:var(--r);padding:16px;margin-top:12px;animation:fade-up .2s ease;
+}
+.cdp-name{font-size:17px;font-weight:800;margin-bottom:8px}
+.cdp-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cdp-badge{font-size:11px;color:var(--soft);background:var(--s3);padding:4px 9px;border-radius:999px}
+.cdp-map-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;border:1px solid rgba(68,240,255,.25);border-radius:8px;
+  padding:7px 13px;font-size:12px;color:var(--cyan);cursor:pointer;
+  text-decoration:none;transition:background .18s;
+}
+.cdp-map-btn:hover{background:rgba(68,240,255,.08)}
+
 /* MOBILE BOTTOM NAV */
 .mob-nav{
   display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;
@@ -560,6 +690,93 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .brand-name{font-size:22px}
   .brief-grid{grid-template-columns:1fr}
 }
+
+/* ═══════════════════════════════════════════
+   PROJECT PLANNER
+═══════════════════════════════════════════ */
+.proj-layout{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.proj-layout{grid-template-columns:1fr}}
+.proj-list-empty{text-align:center;padding:32px 12px;color:var(--soft);font-size:13px}
+.proj-list-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:8px;cursor:pointer;transition:background .15s;
+  border:1px solid transparent;margin-bottom:4px;
+}
+.proj-list-item:hover{background:rgba(68,240,255,.06)}
+.proj-list-item.active{background:rgba(68,240,255,.1);border-color:rgba(68,240,255,.22)}
+.proj-color-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.proj-item-body{flex:1;min-width:0}
+.proj-item-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-item-meta{font-size:11px;color:var(--soft);margin-top:1px}
+.proj-del-btn{
+  opacity:0;background:none;border:none;color:var(--bad);
+  cursor:pointer;font-size:14px;padding:2px 5px;border-radius:4px;
+  transition:opacity .15s;flex-shrink:0;
+}
+.proj-list-item:hover .proj-del-btn{opacity:1}
+
+/* Kanban board */
+.kanban-board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;min-height:360px}
+@media(max-width:900px){.kanban-board{grid-template-columns:1fr}}
+.kanban-col{
+  background:rgba(255,255,255,.025);border:1px solid var(--border);
+  border-radius:var(--r);display:flex;flex-direction:column;
+  min-height:280px;transition:background .15s,border-color .15s;
+}
+.kanban-col.drag-over{background:rgba(68,240,255,.07);border-color:rgba(68,240,255,.35)}
+.kanban-col-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 10px;border-bottom:1px solid var(--border);
+}
+.kanban-col-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--soft)}
+.kanban-col-count{
+  background:var(--s3);color:var(--soft);
+  font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;
+}
+.kanban-tasks{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.kanban-card{
+  background:var(--s2);border:1px solid var(--border);
+  border-left:3px solid var(--soft);border-radius:8px;
+  padding:10px 12px;cursor:grab;
+  transition:box-shadow .15s,transform .15s,opacity .15s;
+  user-select:none;
+}
+.kanban-card:active{cursor:grabbing}
+.kanban-card.dragging{opacity:.4;transform:scale(.96)}
+.kanban-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.35);transform:translateY(-1px)}
+.kanban-card.urgency-critical{border-left-color:#ff4d4d}
+.kanban-card.urgency-high{border-left-color:#ff9500}
+.kanban-card.urgency-medium{border-left-color:#ffd60a}
+.kanban-card.urgency-low{border-left-color:#34c759}
+.kc-title{font-size:13px;font-weight:600;margin-bottom:7px;line-height:1.35}
+.kc-desc{font-size:11px;color:var(--soft);margin-bottom:7px;line-height:1.4}
+.kc-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.kc-badge{
+  font-size:10px;font-weight:700;padding:2px 7px;
+  border-radius:999px;letter-spacing:.04em;text-transform:uppercase;
+}
+.kc-badge.urgency-critical{background:rgba(255,77,77,.15);color:#ff4d4d}
+.kc-badge.urgency-high{background:rgba(255,149,0,.15);color:#ff9500}
+.kc-badge.urgency-medium{background:rgba(255,214,10,.12);color:#ffd60a}
+.kc-badge.urgency-low{background:rgba(52,199,89,.15);color:#34c759}
+.kc-due{font-size:10px;color:var(--soft)}
+.kc-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.kanban-card:hover .kc-actions{opacity:1}
+.kc-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:11px;padding:2px 6px;border-radius:4px;
+  color:var(--soft);transition:color .15s,background .15s;
+}
+.kc-btn:hover{background:rgba(255,255,255,.08);color:var(--white)}
+.kc-btn.del:hover{color:var(--bad)}
+.kanban-empty{
+  padding:20px;text-align:center;color:var(--soft);
+  font-size:12px;border:1px dashed rgba(255,255,255,.08);
+  border-radius:6px;margin:4px;
+}
+.proj-board-empty{
+  text-align:center;padding:80px 20px;color:var(--soft);
+}
 </style>
 </head>
 <body>
@@ -593,6 +810,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn" data-tab="markets">Markets</button>
     <button class="tab-btn" data-tab="agents">Agents</button>
     <button class="tab-btn" data-tab="productivity">Productivity</button>
+    <button class="tab-btn" data-tab="projects">Projects</button>
     <button class="tab-btn" data-tab="golf">Golf</button>
     <button class="tab-btn" data-tab="intelligence">Intelligence</button>
     <button class="tab-btn" data-tab="system">System</button>
@@ -819,14 +1037,14 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div class="card">
       <div class="ch">
         <span class="ct">Meetings</span>
-        <button class="btn-ol btn-sm" onclick="scheduleMeeting()">📅 Schedule</button>
+        <button class="btn-ol btn-sm" onclick="openMeetingScheduler()">📅 Schedule</button>
       </div>
       <div id="meetingsList" class="col" style="gap:8px;margin-bottom:14px"></div>
       <hr class="div">
       <div class="col" style="gap:9px">
         <input id="newMeetingTitle" class="input" placeholder="Meeting title…"/>
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px">
-          <input id="newMeetingTime"  class="input" placeholder="15:00"/>
+          <input id="newMeetingTime"  class="input" type="time" value="09:00"/>
           <input id="newMeetingNotes" class="input" placeholder="Notes…"/>
           <button id="addMeetingBtn" class="btn-p">Add</button>
         </div>
@@ -948,14 +1166,35 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <div id="caddyResult" style="margin-top:14px"></div>
       </div>
 
-      <!-- Course Search -->
+      <!-- Course Library -->
       <div class="card">
-        <div class="ch"><span class="ct">Course Search</span><span class="cs">49 courses in database</span></div>
-        <div style="display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:12px">
-          <input id="golfSearchInput" class="input" placeholder="Bogotá, Medellín, Augusta…"/>
-          <button class="btn-p" onclick="golfSearch()">Search</button>
+        <div class="ch">
+          <span class="ct">Courses Library</span>
+          <span class="cs" id="courseLibCount">Loading…</span>
         </div>
-        <div id="golfSearchResults" class="col" style="gap:8px"></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:10px">
+          <input id="golfSearchInput" class="input" placeholder="Filter: Bogotá, Colombia, Augusta…" oninput="filterCourseLib(this.value)"/>
+          <button class="btn-g btn-sm" onclick="filterCourseLib('')">All</button>
+        </div>
+        <div id="courseLibEl" class="course-lib-scroll"></div>
+        <!-- Selected course detail -->
+        <div id="selectedCourseDetail" style="display:none"></div>
+        <!-- Legacy search results (hidden by default) -->
+        <div id="golfSearchResults" style="display:none"></div>
+      </div>
+
+      <!-- Player Bag (Trackman Profile) -->
+      <div class="card">
+        <div class="ch">
+          <span class="ct">🏌 Player Bag</span>
+          <div style="display:flex;gap:7px">
+            <button class="btn-ol btn-sm" onclick="openAddClub()">+ Club</button>
+            <button class="btn-g btn-sm" onclick="loadGolfBag()">↻</button>
+          </div>
+        </div>
+        <div id="bagTableWrap">
+          <div style="color:var(--soft);font-size:13px;padding:8px 0">Loading bag…</div>
+        </div>
       </div>
 
     </div>
@@ -1100,6 +1339,20 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <button id="stopVoiceBtnMob" class="btn-g btn-sm hv-stop">■</button>
         <button id="sendBtn" class="btn-p">Send</button>
       </div>
+      <!-- Voice Control Bar -->
+      <div class="voice-bar" id="voiceBarEl">
+        <div class="vb-state">
+          <div class="vb-dot idle" id="vbDot"></div>
+          <span id="vbLabel" style="font-size:12px;color:var(--soft)">Voice ready</span>
+        </div>
+        <div class="vb-controls">
+          <button class="vb-btn" id="speakLastBtn" title="Speak last JARVIS reply">🔊 Speak</button>
+          <button class="vb-btn" id="stopSpeakBtn" title="Stop audio">⏹ Stop</button>
+          <button class="vb-btn" id="autoSpeakToggle" title="Auto-speak responses">🔁 Auto</button>
+          <button class="vb-btn" id="micInputBtn" title="Voice input">🎙 Mic</button>
+          <span id="voiceStatusBadge" class="badge b-idle" style="font-size:10px;margin-left:4px">TTS --</span>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div class="ch">
@@ -1116,7 +1369,355 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   </div>
 </div>
 
+<!-- ══════════════ PROJECTS TAB ══════════════ -->
+<div id="tab-projects" class="tab-panel">
+  <div class="proj-layout">
+
+    <!-- Left: project list -->
+    <div>
+      <div class="card">
+        <div class="ch">
+          <span class="ct">Projects</span>
+          <button class="btn-p btn-sm" onclick="openNewProjectModal()">+ New</button>
+        </div>
+        <div id="projectListEl">
+          <div class="proj-list-empty">No projects yet.<br>Create your first one.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: kanban board -->
+    <div>
+      <!-- empty state -->
+      <div class="card" id="projEmptyState">
+        <div class="proj-board-empty">
+          <div style="font-size:48px;margin-bottom:14px">📋</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">No project selected</div>
+          <div style="font-size:13px">Create a project or click one in the list</div>
+        </div>
+      </div>
+      <!-- board -->
+      <div class="card" id="projBoardCard" style="display:none">
+        <div class="ch" style="flex-wrap:wrap;gap:8px">
+          <div style="flex:1;min-width:0">
+            <span class="ct" id="boardProjName">Project</span>
+            <span class="cs" id="boardProjDesc" style="display:block;margin-top:2px"></span>
+          </div>
+          <div class="row" style="flex-wrap:wrap;gap:6px">
+            <button class="btn-g btn-sm" onclick="openNewTaskModal()">+ Task</button>
+            <button class="btn-g btn-sm" onclick="openAITasksModal()" title="Generate tasks with AI">✨ AI Tasks</button>
+            <button class="btn-g btn-sm" style="color:var(--bad);border-color:rgba(255,107,107,.25)" onclick="deleteCurrentProject()">Delete</button>
+          </div>
+        </div>
+        <div class="kanban-board">
+          <div class="kanban-col" id="col-todo"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="onTaskDrop(event,'todo')">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">To Do</span>
+              <span class="kanban-col-count" id="cnt-todo">0</span>
+            </div>
+            <div class="kanban-tasks" id="tasks-todo">
+              <div class="kanban-empty">No tasks</div>
+            </div>
+          </div>
+          <div class="kanban-col" id="col-doing"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="onTaskDrop(event,'doing')">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Doing</span>
+              <span class="kanban-col-count" id="cnt-doing">0</span>
+            </div>
+            <div class="kanban-tasks" id="tasks-doing">
+              <div class="kanban-empty">No tasks</div>
+            </div>
+          </div>
+          <div class="kanban-col" id="col-done"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="onTaskDrop(event,'done')">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">Done</span>
+              <span class="kanban-col-count" id="cnt-done">0</span>
+            </div>
+            <div class="kanban-tasks" id="tasks-done">
+              <div class="kanban-empty">No tasks</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </main>
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- News Detail Modal -->
+<div id="newsModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('newsModal')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="nm-title">News</div>
+      <button class="modal-close" onclick="closeModal('newsModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta">
+        <span id="nm-source" style="color:var(--cyan)"></span>
+        <span id="nm-cat"></span>
+        <span id="nm-time"></span>
+      </div>
+      <div class="modal-summary" id="nm-summary"></div>
+      <div id="nm-tickers" style="margin-bottom:12px"></div>
+      <div class="modal-actions">
+        <a id="nm-link" href="#" target="_blank" class="btn-ol btn-sm" style="text-decoration:none">Open Source ↗</a>
+        <button class="btn-g btn-sm" onclick="analyzeNews()">🧠 Analyze Impact</button>
+      </div>
+      <div id="nm-analysis" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Detail Modal -->
+<div id="stockModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('stockModal')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="sm-symbol" style="font-size:24px;color:var(--cyan)">--</div>
+      <button class="modal-close" onclick="closeModal('stockModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="sm-loading" style="color:var(--soft);font-size:13px;padding:20px 0">Loading analysis…</div>
+      <div id="sm-content" style="display:none">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px" id="sm-badges"></div>
+        <div class="g2" style="gap:12px;margin-bottom:14px" id="sm-metrics"></div>
+        <div style="font-size:14px;line-height:1.7;color:var(--soft2);margin-bottom:12px" id="sm-insight"></div>
+        <div class="col" style="gap:8px" id="sm-plan"></div>
+        <div class="modal-actions" style="margin-top:14px">
+          <button class="btn-p btn-sm" onclick="reAnalyzeStock()">↻ Analyze Again</button>
+          <a id="sm-chart-link" href="#" target="_blank" class="btn-ol btn-sm" style="text-decoration:none">Open Chart ↗</a>
+        </div>
+      </div>
+      <div id="sm-error" style="display:none;color:var(--bad);font-size:13px;padding:12px 0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Scheduler Modal -->
+<div id="schedModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('schedModal')">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📅 Schedule Meeting</div>
+      <button class="modal-close" onclick="closeModal('schedModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="col" style="gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Meeting Title / Objective *</div>
+          <input id="sm-title" class="input" placeholder="Strategy review, Client call…"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Date *</div>
+            <input id="sm-date" class="input" type="date"/>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Time *</div>
+            <input id="sm-time" class="input" type="time" value="09:00"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Duration</div>
+            <select id="sm-dur" class="select">
+              <option value="30">30 min</option>
+              <option value="60" selected>1 hour</option>
+              <option value="90">1.5 hours</option>
+              <option value="120">2 hours</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Participants</div>
+            <input id="sm-participants" class="input" placeholder="Names or emails"/>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Notes / Agenda</div>
+          <input id="sm-notes" class="input" placeholder="Agenda items, context…"/>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button class="btn-g btn-sm" onclick="closeModal('schedModal')">Cancel</button>
+          <button class="btn-p btn-sm" onclick="saveMeetingModal()">Save Meeting</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Club Edit Modal -->
+<div id="clubModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('clubModal')">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="cm-title">Edit Club</div>
+      <button class="modal-close" onclick="closeModal('clubModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="col" style="gap:9px">
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Club</div>
+          <input id="cm-club" class="input" placeholder="Driver, 7i, PW…"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Brand</div>
+            <input id="cm-brand" class="input" placeholder="TaylorMade, Titleist…"/>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Model</div>
+            <input id="cm-model" class="input" placeholder="Stealth, T100…"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Carry (yds)</div>
+            <input id="cm-carry" class="input" type="number" placeholder="150"/>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Total (yds)</div>
+            <input id="cm-total" class="input" type="number" placeholder="165"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Ball Speed (mph)</div>
+            <input id="cm-bspeed" class="input" type="number" placeholder="optional"/>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Typical Miss</div>
+            <select id="cm-miss" class="select">
+              <option value="neutral">Neutral</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+              <option value="short">Short</option>
+              <option value="long">Long</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button class="btn-g btn-sm" onclick="closeModal('clubModal')">Cancel</button>
+          <button class="btn-p btn-sm" onclick="saveClubModal()">Save Club</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div id="newProjectModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('newProjectModal')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">New Project</div>
+      <button class="modal-close" onclick="closeModal('newProjectModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Project Name *</div>
+        <input id="np-name" class="input" placeholder="e.g. JARVIS v2 Launch"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Description</div>
+        <input id="np-desc" class="input" placeholder="What is this project about?"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Color</div>
+        <select id="np-color" class="input">
+          <option value="cyan">Cyan</option>
+          <option value="purple">Purple</option>
+          <option value="orange">Orange</option>
+          <option value="green">Green</option>
+          <option value="red">Red</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-g btn-sm" onclick="closeModal('newProjectModal')">Cancel</button>
+        <button class="btn-p btn-sm" onclick="saveNewProject()">Create Project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New / Edit Task Modal -->
+<div id="taskModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('taskModal')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="taskModalTitle">New Task</div>
+      <button class="modal-close" onclick="closeModal('taskModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tm-task-id"/>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Title *</div>
+        <input id="tm-title" class="input" placeholder="Task title"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Description</div>
+        <input id="tm-desc" class="input" placeholder="Details (optional)"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Priority</div>
+          <select id="tm-urgency" class="input">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Status</div>
+          <select id="tm-status" class="input">
+            <option value="todo">To Do</option>
+            <option value="doing">Doing</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Due Date</div>
+        <input id="tm-due" type="date" class="input"/>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-g btn-sm" onclick="closeModal('taskModal')">Cancel</button>
+        <button class="btn-p btn-sm" onclick="saveTask()">Save Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Tasks Modal -->
+<div id="aiTasksModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('aiTasksModal')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Generate Tasks with AI</div>
+      <button class="modal-close" onclick="closeModal('aiTasksModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--soft);margin-bottom:12px">
+        Describe your project goals and JARVIS will auto-generate 5 actionable tasks.
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Project Context / Goal</div>
+        <input id="ai-proj-desc" class="input" placeholder="e.g. Build a mobile trading app with real-time alerts"/>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-g btn-sm" onclick="closeModal('aiTasksModal')">Cancel</button>
+        <button class="btn-p btn-sm" id="aiGenBtn" onclick="runAITasks()">Generate Tasks</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════ MOBILE NAV ══════════════ -->
 <nav class="mob-nav">
@@ -1125,6 +1726,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="mob-btn" data-tab="markets"><span class="mi">📈</span><span>Markets</span></button>
     <button class="mob-btn" data-tab="chat"><span class="mi">💬</span><span>Chat</span></button>
     <button class="mob-btn" data-tab="productivity"><span class="mi">✅</span><span>Tasks</span></button>
+    <button class="mob-btn" data-tab="projects"><span class="mi">📋</span><span>Projects</span></button>
     <button class="mob-btn" data-tab="golf"><span class="mi">⛳</span><span>Golf</span></button>
     <button class="mob-btn" data-tab="intelligence"><span class="mi">📰</span><span>Intel</span></button>
     <button class="mob-btn" data-tab="system"><span class="mi">⚙️</span><span>System</span></button>
@@ -1247,8 +1849,20 @@ function renderMeetings(items) {
     const div = document.createElement("div");
     div.className = "row-card";
     div.innerHTML = `
-      <div style="font-weight:700;font-size:14px">${item.time} – ${item.title}</div>
-      ${item.notes ? `<div style="font-size:12px;color:var(--soft);margin-top:4px">${item.notes}</div>` : ""}`;
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px">${safe(item.time)} – ${safe(item.title)}</div>
+          ${item.notes ? `<div style="font-size:12px;color:var(--soft);margin-top:3px">${item.notes}</div>` : ""}
+        </div>
+        <button class="check-btn" title="Delete meeting" style="color:var(--bad);font-size:13px;flex-shrink:0">✕</button>
+      </div>`;
+    div.querySelector(".check-btn").onclick = async () => {
+      if (!confirm("Delete this meeting?")) return;
+      try {
+        await fetch("/api/meetings/" + item.id, {method:"DELETE"});
+        await loadHome();
+      } catch(e) { console.warn("deleteMeeting:", e); }
+    };
     box.appendChild(div);
   });
 }
@@ -1280,18 +1894,41 @@ async function addMeeting() {
   } catch(e) { console.warn("addMeeting:", e); }
 }
 
-/* ── Schedule meeting ───────────────── */
-async function scheduleMeeting() {
-  const objective = prompt("Meeting objective:");
-  if (!objective) return;
-  const datetime = prompt("Datetime (YYYY-MM-DD HH:MM):");
-  if (!datetime) return;
-  try {
-    const d = await fetch("/dashboard/schedule-meeting", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({objective,datetime})}).then(r => r.json());
-    alert("Scheduled: " + (d.meeting_created?.title || "Done"));
-    await loadHome();
-  } catch(e) { alert("Failed."); console.warn("scheduleMeeting:", e); }
+/* ── Schedule meeting (modal) ───────── */
+function openMeetingScheduler() {
+  // Pre-fill today's date
+  const today = new Date().toISOString().split("T")[0];
+  if (qs("sm-date")) qs("sm-date").value = today;
+  qs("schedModal").style.display = "flex";
 }
+
+async function saveMeetingModal() {
+  const title = (qs("sm-title")?.value || "").trim();
+  const date  = (qs("sm-date")?.value  || "").trim();
+  const time  = (qs("sm-time")?.value  || "09:00").trim();
+  const dur   = qs("sm-dur")?.value || "60";
+  const notes = (qs("sm-notes")?.value || "").trim();
+  const parts = (qs("sm-participants")?.value || "").trim();
+  if (!title || !date) { alert("Title and date are required."); return; }
+  const datetime = `${date}T${time}`;
+  const noteFull = [notes, parts ? "Participants: " + parts : "", "Duration: " + dur + " min"].filter(Boolean).join(" | ");
+  try {
+    const d = await fetch("/dashboard/schedule-meeting", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({objective: title, datetime, notes: noteFull}),
+    }).then(r => r.json());
+    if (d.status === "ok") {
+      closeModal("schedModal");
+      ["sm-title","sm-notes","sm-participants"].forEach(id => { if(qs(id)) qs(id).value = ""; });
+      await loadHome();
+    } else {
+      alert("Error: " + (d.detail || d.error || "unknown"));
+    }
+  } catch(e) { alert("Failed to schedule meeting."); console.warn("saveMeeting:", e); }
+}
+
+// Keep legacy scheduleMeeting as alias
+function scheduleMeeting() { openMeetingScheduler(); }
 
 /* ── Chat ───────────────────────────── */
 function addBubble(text, who = "jarvis") {
@@ -1309,30 +1946,6 @@ function addBubble(text, who = "jarvis") {
 function quickSend(text) {
   switchTab("chat");
   setTimeout(() => { qs("chatInput").value = text; sendChat(); }, 80);
-}
-
-async function sendChat(override = null) {
-  const input = qs("chatInput");
-  const message = (override || input.value).trim();
-  if (!message) return;
-  addBubble(message, "user");
-  input.value = "";
-  const typing = addBubble("JARVIS is thinking…", "jarvis typing");
-  try {
-    const d = await fetch("/chat", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message, domain:"general"})
-    }).then(r => r.json());
-    const reply = d.reply || d.summary || d.response?.reply || d.response?.summary || "No reply.";
-    typing.remove();
-    addBubble(reply, "jarvis");
-    if (qs("lastReply")) qs("lastReply").textContent = reply.slice(0, 230) + (reply.length > 230 ? "…" : "");
-    renderChatAction(d);
-  } catch(e) {
-    typing.remove();
-    addBubble("Error connecting to JARVIS. Check backend.", "jarvis");
-    console.warn("sendChat:", e);
-  }
 }
 
 /* ── Auto JARVIS ────────────────────── */
@@ -1505,7 +2118,9 @@ async function loadRecommendations() {
     const items = d.items || [];
     if (!items.length) { box.innerHTML = `<div class="result-empty">No recommendations available.</div>`; return; }
     items.forEach(item => {
-      const c = document.createElement("div"); c.className = "result-card";
+      const c = document.createElement("div");
+      c.className = "result-card clickable";
+      c.title = "Click to open detailed analysis";
       c.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
           <strong style="font-size:18px">${item.symbol}</strong>${trafficTag(item.traffic_light)}
@@ -1514,10 +2129,76 @@ async function loadRecommendations() {
           <span class="tag-warn">Price: ${safe(item.price_now??item.price)}</span>
           <span class="tag-warn">Score: ${safe(item.setup_score)}</span>
         </div>
-        <div style="margin-top:8px;font-size:13px;line-height:1.55">${item.friendly_recommendation||item.summary||""}</div>`;
+        <div style="margin-top:8px;font-size:13px;line-height:1.55">${item.friendly_recommendation||item.summary||""}</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--cyan)">Click for full analysis →</div>`;
+      c.onclick = () => openStockModal(item.symbol, item);
       box.appendChild(c);
     });
   } catch(e) { console.warn("loadRecommendations:", e); }
+}
+
+let _currentStockSymbol = "";
+
+async function openStockModal(symbol, prefillData) {
+  _currentStockSymbol = symbol;
+  qs("sm-symbol").textContent = symbol;
+  qs("sm-loading").style.display = "block";
+  qs("sm-content").style.display = "none";
+  qs("sm-error").style.display   = "none";
+  qs("stockModal").style.display = "flex";
+
+  if (prefillData) _renderStockModal(symbol, prefillData);
+
+  try {
+    const d = await fetch("/api/stocks/" + encodeURIComponent(symbol)).then(r => r.json());
+    if (d.status === "error") throw new Error(d.error || "Fetch failed");
+    _renderStockModal(symbol, d);
+  } catch(e) {
+    if (!prefillData) {
+      qs("sm-loading").style.display = "none";
+      qs("sm-error").style.display   = "block";
+      qs("sm-error").textContent     = "Could not load analysis: " + e.message;
+    }
+  }
+}
+
+function _renderStockModal(symbol, d) {
+  qs("sm-loading").style.display = "none";
+  qs("sm-content").style.display = "block";
+  const p = d.trade_plan || {};
+  const score = d.setup_score || d.score || "--";
+  const price = d.price_now ?? d.price;
+  const risk  = d.risk_level || "medium";
+  const riskCls = risk==="high"?"b-bad":risk==="low"?"b-ok":"b-warn";
+
+  qs("sm-badges").innerHTML = `
+    ${trafficTag(d.traffic_light)}
+    <span class="badge ${riskCls}">Risk: ${risk}</span>
+    <span class="badge b-cyan">Score: ${score}/100</span>`;
+
+  const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" – ") : (p.entry_zone ?? "--");
+  qs("sm-metrics").innerHTML = `
+    <div class="tile"><div class="tl">Price</div><div class="tv">${safe(price)}</div></div>
+    <div class="tile"><div class="tl">Entry Zone</div><div class="tv" style="font-size:16px">${entry}</div></div>
+    <div class="tile"><div class="tl">Stop Loss</div><div class="tv" style="color:var(--bad)">${safe(p.stop_loss)}</div></div>
+    <div class="tile"><div class="tl">Target 1</div><div class="tv" style="color:var(--ok)">${safe(p.target_1)}</div></div>`;
+
+  const lines = d.insight_lines || [d.friendly_recommendation || d.summary || ""];
+  qs("sm-insight").innerHTML = lines.join("<br>");
+  qs("sm-plan").innerHTML = [
+    p.action       ? `<div class="brief-cell"><strong>Action:</strong> ${p.action}</div>` : "",
+    p.target_2     ? `<div class="brief-cell"><strong>Target 2:</strong> ${safe(p.target_2)}</div>` : "",
+    p.risk_reward_estimate ? `<div class="brief-cell"><strong>R/R:</strong> ${safe(p.risk_reward_estimate)}</div>` : "",
+    d.conviction   ? `<div class="brief-cell"><strong>Conviction:</strong> ${d.conviction}</div>` : "",
+  ].filter(Boolean).join("");
+
+  const linkEl = qs("sm-chart-link");
+  if (linkEl) linkEl.href = `https://finance.yahoo.com/quote/${symbol}`;
+}
+
+async function reAnalyzeStock() {
+  if (!_currentStockSymbol) return;
+  await openStockModal(_currentStockSymbol, null);
 }
 
 /* ── Market snapshot + regime ───────── */
@@ -1553,26 +2234,85 @@ async function loadMarketSnapshot() {
 }
 
 /* ── News ───────────────────────────── */
+let _newsItems = [];
+
 async function loadNews() {
   try {
-    const d = await fetch("/dashboard/news").then(r => r.json());
-    const items = d.items || [];
-    const buildNewsCard = n => {
-      const el = document.createElement("div"); el.className = "news-card";
-      el.innerHTML = `${n.category ? `<div class="news-cat">${n.category}</div>` : ""}
-        <div class="news-title">${n.title||""}</div>
-        <div class="news-src">${n.publisher||n.source||""}</div>`;
-      return el;
-    };
-    const intel = qs("intel-feed");
-    if (intel) {
-      intel.innerHTML = "";
-      items.length ? items.forEach(n => intel.appendChild(buildNewsCard(n)))
-                   : intel.innerHTML = `<div class="result-empty">No news available right now.</div>`;
+    const d = await fetch("/api/news/feed?limit=48").then(r => r.json());
+    _newsItems = d.items || [];
+    if (!_newsItems.length) {
+      // fallback to legacy endpoint
+      const d2 = await fetch("/dashboard/news").then(r => r.json());
+      _newsItems = d2.items || [];
     }
-    const mkt = qs("mkt-news");
-    if (mkt) { mkt.innerHTML = ""; items.slice(0,6).forEach(n => mkt.appendChild(buildNewsCard(n))); }
+    _renderNewsItems(_newsItems);
   } catch(e) { console.warn("loadNews:", e); }
+}
+
+function _renderNewsItems(items) {
+  const buildNewsCard = n => {
+    const el = document.createElement("div");
+    el.className = "news-card clickable";
+    el.style.cursor = "pointer";
+    el.innerHTML = `
+      ${n.category ? `<div class="news-cat">${n.category}</div>` : ""}
+      <div class="news-title">${n.title||""}</div>
+      <div class="news-src" style="display:flex;justify-content:space-between;align-items:center">
+        <span>${n.source_label||n.publisher||n.source||""}</span>
+        ${n.tickers?.length ? `<span style="color:var(--cyan);font-size:10px">${n.tickers.slice(0,2).join(" · ")}</span>` : ""}
+      </div>`;
+    el.onclick = () => openNewsModal(n);
+    return el;
+  };
+  const intel = qs("intel-feed");
+  if (intel) {
+    intel.innerHTML = "";
+    items.length ? items.forEach(n => intel.appendChild(buildNewsCard(n)))
+                 : intel.innerHTML = `<div class="result-empty">No news available right now.</div>`;
+  }
+  const mkt = qs("mkt-news");
+  if (mkt) { mkt.innerHTML = ""; items.slice(0,6).forEach(n => mkt.appendChild(buildNewsCard(n))); }
+}
+
+let _currentNewsItem = null;
+
+function openNewsModal(n) {
+  _currentNewsItem = n;
+  qs("nm-title").textContent   = n.title || "News";
+  qs("nm-source").textContent  = n.source_label || n.publisher || n.source || "";
+  qs("nm-cat").textContent     = n.category || "";
+  qs("nm-time").textContent    = n.published_at ? new Date(n.published_at).toLocaleString("es-CO",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+  qs("nm-summary").textContent = n.summary || "No summary available.";
+  const tickEl = qs("nm-tickers");
+  if (tickEl) tickEl.innerHTML = (n.tickers||[]).map(t=>`<span class="badge b-cyan" style="font-size:10px">${t}</span>`).join(" ");
+  const linkEl = qs("nm-link");
+  if (linkEl) { linkEl.href = n.link || n.url || "#"; linkEl.style.display = n.link ? "" : "none"; }
+  qs("nm-analysis").innerHTML = "";
+  qs("newsModal").style.display = "flex";
+}
+
+async function analyzeNews() {
+  if (!_currentNewsItem) return;
+  const btn = document.querySelector("#newsModal button[onclick='analyzeNews()']");
+  if (btn) { btn.disabled = true; btn.textContent = "Analyzing…"; }
+  try {
+    const d = await fetch("/api/news/analyze", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        title:   _currentNewsItem.title,
+        summary: _currentNewsItem.summary,
+        tickers: _currentNewsItem.tickers || [],
+      }),
+    }).then(r => r.json());
+    const el = qs("nm-analysis");
+    if (el) el.innerHTML = `
+      <div style="margin-top:12px;padding:12px 14px;background:rgba(68,240,255,.04);border:1px solid rgba(68,240,255,.13);border-radius:var(--rs)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--cyan);margin-bottom:6px">JARVIS Analysis</div>
+        <div style="font-size:13px;line-height:1.65">${d.insight || d.action || "Analysis complete."}</div>
+        ${d.action && d.action !== d.insight ? `<div style="margin-top:8px;font-size:12px;color:var(--soft2)">${d.action}</div>` : ""}
+      </div>`;
+  } catch(e) { console.warn("analyzeNews:", e); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = "🧠 Analyze Impact"; } }
 }
 
 /* ── Agents ─────────────────────────── */
@@ -1764,8 +2504,19 @@ async function loadAssets() {
       const div = document.createElement("div"); div.className = "asset-card";
       div.innerHTML = `
         <div class="asset-name">${asset.filename}</div>
-        <div class="asset-meta">${asset.kind} · ${asset.mime_type||"unknown"}</div>
-        <a class="asset-link" href="/dashboard/uploads/${asset.filename}" target="_blank">Open file →</a>`;
+        <div class="asset-meta">${asset.kind||"file"} · ${asset.mime_type||"unknown"}</div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <a class="asset-link" style="margin-top:0" href="/dashboard/uploads/${asset.filename}" target="_blank">Open →</a>
+          <button style="background:none;border:1px solid rgba(255,107,107,.2);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--bad);cursor:pointer;transition:background .18s" onmouseover="this.style.background='rgba(255,107,107,.1)'" onmouseout="this.style.background='none'">✕ Delete</button>
+        </div>`;
+      div.querySelector("button").onclick = async () => {
+        if (!confirm("Delete " + asset.filename + "?")) return;
+        try {
+          const r = await fetch("/api/uploads/" + encodeURIComponent(asset.filename), {method:"DELETE"}).then(x=>x.json());
+          if (r.status === "ok") await loadAssets();
+          else alert("Delete failed: " + (r.error||"unknown"));
+        } catch(e) { console.warn("deleteAsset:", e); }
+      };
       box.appendChild(div);
     });
   } catch(e) { console.warn("loadAssets:", e); }
@@ -1934,21 +2685,645 @@ async function golfLogRound() {
   } catch(e) { alert("Failed to log round."); console.warn("golfLogRound:", e); }
 }
 
+/* ═══════════════════════════════════════
+   MODAL UTILITIES
+═══════════════════════════════════════ */
+function closeModal(id) {
+  const el = qs(id); if (el) el.style.display = "none";
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    ["newsModal","stockModal","schedModal","clubModal"].forEach(closeModal);
+  }
+});
+
+/* ═══════════════════════════════════════
+   VOICE SYSTEM
+═══════════════════════════════════════ */
+const voiceState = {
+  autoSpeak:    false,
+  currentAudio: null,
+  lastReply:    "",
+  ttsAvailable: null,   // null = unknown, true/false after status check
+};
+
+function vbSetState(state, label) {
+  const dot   = qs("vbDot");
+  const lbl   = qs("vbLabel");
+  if (dot) { dot.className = "vb-dot " + state; }
+  if (lbl) lbl.textContent = label;
+}
+
+async function initVoiceStatus() {
+  try {
+    const d = await fetch("/api/voice/status").then(r => r.json());
+    voiceState.ttsAvailable = d.elevenlabs_configured === true;
+    const badge = qs("voiceStatusBadge");
+    if (badge) {
+      badge.textContent = voiceState.ttsAvailable ? "TTS ✓" : "TTS Off";
+      badge.className   = "badge " + (voiceState.ttsAvailable ? "b-ok" : "b-idle");
+    }
+  } catch(e) {
+    voiceState.ttsAvailable = false;
+    const badge = qs("voiceStatusBadge");
+    if (badge) { badge.textContent = "TTS Off"; badge.className = "badge b-idle"; }
+  }
+}
+
+async function speakText(text) {
+  if (!text || !text.trim()) return;
+  stopSpeaking();
+  if (!voiceState.ttsAvailable) {
+    browserSpeak(text);
+    return;
+  }
+  vbSetState("processing", "Generating speech…");
+  try {
+    const resp = await fetch("/api/voice/speak", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text: text.slice(0, 1200), priority: "normal"}),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      if (err.fallback) { browserSpeak(text); return; }
+      vbSetState("error", "TTS error"); return;
+    }
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    voiceState.currentAudio = audio;
+    vbSetState("speaking", "Speaking…");
+    audio.onended = () => { vbSetState("idle", "Voice ready"); URL.revokeObjectURL(url); };
+    audio.onerror = () => { vbSetState("error", "Playback error"); URL.revokeObjectURL(url); };
+    await audio.play();
+  } catch(e) {
+    console.warn("speakText:", e);
+    vbSetState("error", "TTS unavailable");
+    browserSpeak(text);
+  }
+}
+
+function browserSpeak(text) {
+  if (!window.speechSynthesis) return;
+  const utt = new SpeechSynthesisUtterance(text.slice(0, 600));
+  utt.lang = "es-ES";
+  utt.rate = 1.0;
+  vbSetState("speaking", "Speaking (browser)…");
+  utt.onend = () => vbSetState("idle", "Voice ready");
+  speechSynthesis.speak(utt);
+}
+
+function stopSpeaking() {
+  if (voiceState.currentAudio) {
+    voiceState.currentAudio.pause();
+    voiceState.currentAudio.src = "";
+    voiceState.currentAudio = null;
+  }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  vbSetState("idle", "Voice ready");
+}
+
+function toggleAutoSpeak() {
+  voiceState.autoSpeak = !voiceState.autoSpeak;
+  const btn = qs("autoSpeakToggle");
+  if (btn) btn.classList.toggle("active", voiceState.autoSpeak);
+  vbSetState("idle", voiceState.autoSpeak ? "Auto-speak ON" : "Voice ready");
+}
+
 /* ── Voice ──────────────────────────── */
 function initVoice() {
+  // Voice bar button wiring
+  const sl = qs("speakLastBtn");
+  const ss = qs("stopSpeakBtn");
+  const at = qs("autoSpeakToggle");
+  const mb = qs("micInputBtn");
+  if (sl) sl.onclick = () => { if (voiceState.lastReply) speakText(voiceState.lastReply); };
+  if (ss) ss.onclick = stopSpeaking;
+  if (at) at.onclick = toggleAutoSpeak;
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { ["voiceBtn","voiceBtnMob","stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.disabled=true; }); return; }
+  if (!SR) {
+    ["voiceBtn","voiceBtnMob","stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.disabled=true; });
+    if (mb) { mb.disabled = true; mb.title = "Speech recognition not supported"; }
+    return;
+  }
   state.recognition = new SR();
   state.recognition.lang = "es-ES";
   state.recognition.interimResults = false;
   state.recognition.maxAlternatives = 1;
-  state.recognition.onstart = () => { state.listening = true; };
-  state.recognition.onend   = () => { state.listening = false; };
-  state.recognition.onresult = async ev => { qs("chatInput").value = ev.results[0][0].transcript; await sendChat(); };
-  const start = () => { switchTab("chat"); if (state.recognition) state.recognition.start(); };
-  const stop  = () => { if (state.recognition && state.listening) state.recognition.stop(); };
-  ["voiceBtn","voiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=start; });
-  ["stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=stop; });
+  state.recognition.onstart = () => { state.listening = true; vbSetState("listening","Listening…"); };
+  state.recognition.onend   = () => { state.listening = false; vbSetState("idle","Voice ready"); };
+  state.recognition.onresult = async ev => {
+    qs("chatInput").value = ev.results[0][0].transcript;
+    await sendChat();
+  };
+  const startMic = () => { switchTab("chat"); if (state.recognition) state.recognition.start(); };
+  const stopMic  = () => { if (state.recognition && state.listening) state.recognition.stop(); };
+  ["voiceBtn","voiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=startMic; });
+  ["stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=stopMic; });
+  if (mb) mb.onclick = startMic;
+}
+
+async function sendChat(override = null) {
+  const input   = qs("chatInput");
+  const message = (override || input.value).trim();
+  if (!message) return;
+  addBubble(message, "user");
+  input.value = "";
+  const typing = addBubble("JARVIS is thinking…", "jarvis typing");
+  try {
+    const d = await fetch("/chat", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message, domain:"general"})
+    }).then(r => r.json());
+    const reply = d.reply || d.summary || d.response?.reply || d.response?.summary || "No reply.";
+    typing.remove();
+    addBubble(reply, "jarvis");
+    if (qs("lastReply")) qs("lastReply").textContent = reply.slice(0, 230) + (reply.length > 230 ? "…" : "");
+    voiceState.lastReply = reply;
+    renderChatAction(d);
+    if (voiceState.autoSpeak) speakText(reply);
+  } catch(e) {
+    typing.remove();
+    addBubble("Error connecting to JARVIS. Check backend.", "jarvis");
+    console.warn("sendChat:", e);
+  }
+}
+
+/* ═══════════════════════════════════════
+   GOLF COURSES LIBRARY
+═══════════════════════════════════════ */
+let _allCourses   = [];
+let _groupedCourses = {};
+
+async function loadCoursesLibrary() {
+  try {
+    const d = await fetch("/api/golf/courses/all").then(r => r.json());
+    _allCourses    = d.all     || [];
+    _groupedCourses = d.grouped || {};
+    const countEl = qs("courseLibCount");
+    if (countEl) countEl.textContent = _allCourses.length + " courses";
+    renderCourseLib(_groupedCourses);
+  } catch(e) {
+    console.warn("loadCoursesLibrary:", e);
+    const el = qs("courseLibEl");
+    if (el) el.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px">Could not load courses. Using search instead.</div>`;
+  }
+}
+
+function renderCourseLib(grouped) {
+  const el = qs("courseLibEl"); if (!el) return;
+  const countries = Object.keys(grouped).sort();
+  if (!countries.length) { el.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px">No courses found.</div>`; return; }
+  el.innerHTML = "";
+  countries.forEach(country => {
+    const group = document.createElement("div");
+    group.className = "course-country-group";
+    group.innerHTML = `<div class="course-country-label">${country} (${grouped[country].length})</div>`;
+    grouped[country].forEach(c => {
+      const item = document.createElement("div");
+      item.className = "course-lib-item";
+      const loc = [c.city, c.region].filter(Boolean).join(", ");
+      const alt = c.altitude_meters ? `${Math.round(c.altitude_meters)}m` : "";
+      item.innerHTML = `
+        <div style="flex:1;min-width:0">
+          <div class="cli-name">${c.name}</div>
+          ${loc ? `<div class="cli-loc">${loc}</div>` : ""}
+        </div>
+        ${alt ? `<div class="cli-alt">${alt}</div>` : ""}`;
+      item.onclick = () => selectCourse(c, item);
+      group.appendChild(item);
+    });
+    el.appendChild(group);
+  });
+}
+
+function filterCourseLib(q) {
+  if (!q || !q.trim()) { renderCourseLib(_groupedCourses); return; }
+  const low = q.toLowerCase();
+  const filtered = {};
+  Object.entries(_groupedCourses).forEach(([country, courses]) => {
+    const hits = courses.filter(c =>
+      (c.name || "").toLowerCase().includes(low) ||
+      (c.city || "").toLowerCase().includes(low) ||
+      (c.region || "").toLowerCase().includes(low) ||
+      country.toLowerCase().includes(low)
+    );
+    if (hits.length) filtered[country] = hits;
+  });
+  renderCourseLib(filtered);
+}
+
+function selectCourse(c, itemEl) {
+  document.querySelectorAll(".course-lib-item").forEach(i => i.classList.remove("selected"));
+  if (itemEl) itemEl.classList.add("selected");
+  showCourseDetail(c);
+}
+
+function showCourseDetail(c) {
+  const el = qs("selectedCourseDetail"); if (!el) return;
+  const loc = [c.city, c.region || c.department, c.country].filter(Boolean).join(", ");
+  const alt = c.altitude_meters ? Math.round(c.altitude_meters) + "m altitude" : "";
+  const mapUrl = (c.latitude && c.longitude)
+    ? `https://www.google.com/maps/search/?api=1&query=${c.latitude},${c.longitude}`
+    : null;
+  el.style.display = "block";
+  el.innerHTML = `
+    <div class="course-detail-panel">
+      <div class="cdp-name">⛳ ${c.name}</div>
+      <div class="cdp-meta">
+        ${loc ? `<span class="cdp-badge">📍 ${loc}</span>` : ""}
+        ${alt ? `<span class="cdp-badge">🏔 ${alt}</span>` : ""}
+        ${c.holes ? `<span class="cdp-badge">${c.holes} holes</span>` : ""}
+        ${c.par_total ? `<span class="cdp-badge">Par ${c.par_total}</span>` : ""}
+        ${c.course_type ? `<span class="cdp-badge">${c.course_type}</span>` : ""}
+      </div>
+      ${c.notes ? `<div style="font-size:13px;color:var(--soft2);line-height:1.6;margin-bottom:10px">${c.notes}</div>` : ""}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${mapUrl
+          ? `<a href="${mapUrl}" target="_blank" class="cdp-map-btn">🗺 Open in Google Maps</a>`
+          : `<span style="font-size:12px;color:var(--soft)">No GPS coordinates available</span>`
+        }
+        <button class="cdp-map-btn" onclick="quickSend('Tell me about ${c.name.replace(/'/g,"'")} golf course')">🧠 Ask JARVIS</button>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════
+   GOLF BAG
+═══════════════════════════════════════ */
+let _bag = [];
+let _editingClub = null;
+
+async function loadGolfBag() {
+  try {
+    const d = await fetch("/api/golf/bag").then(r => r.json());
+    _bag = d.bag || [];
+    renderBagTable(_bag);
+  } catch(e) {
+    console.warn("loadGolfBag:", e);
+    const el = qs("bagTableWrap");
+    if (el) el.innerHTML = `<div style="color:var(--bad);font-size:13px;padding:8px">Could not load bag data.</div>`;
+  }
+}
+
+function renderBagTable(bag) {
+  const wrap = qs("bagTableWrap"); if (!wrap) return;
+  if (!bag.length) {
+    wrap.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px 0">No clubs in bag. Click "+ Club" to add.</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <div style="overflow-x:auto">
+    <table class="bag-table">
+      <thead><tr>
+        <th>Club</th><th>Brand/Model</th><th>Carry</th><th>Total</th><th>Miss</th><th style="width:70px"></th>
+      </tr></thead>
+      <tbody>
+        ${bag.map(c => `
+          <tr>
+            <td><strong>${c.club||"--"}</strong></td>
+            <td style="color:var(--soft)">${[c.brand, c.model].filter(Boolean).join(" ") || "—"}</td>
+            <td>${c.carry_yards ? c.carry_yards + " y" : "—"}</td>
+            <td>${c.total_yards ? c.total_yards + " y" : "—"}</td>
+            <td><span class="badge b-idle" style="font-size:10px">${c.miss||"neutral"}</span></td>
+            <td>
+              <button class="bag-edit-btn" onclick="openEditClub('${(c.club||"").replace(/'/g,"\\'")}')">✎</button>
+              <button class="bag-del-btn" onclick="deleteClub('${(c.club||"").replace(/'/g,"\\'")}')">✕</button>
+            </td>
+          </tr>`).join("")}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function openAddClub() {
+  _editingClub = null;
+  qs("cm-title").textContent = "Add Club";
+  ["cm-club","cm-brand","cm-model","cm-carry","cm-total","cm-bspeed"].forEach(id => { if(qs(id)) qs(id).value = ""; });
+  if (qs("cm-miss")) qs("cm-miss").value = "neutral";
+  qs("clubModal").style.display = "flex";
+}
+
+function openEditClub(clubName) {
+  const c = _bag.find(x => x.club === clubName); if (!c) return;
+  _editingClub = clubName;
+  qs("cm-title").textContent  = "Edit " + clubName;
+  if (qs("cm-club"))   qs("cm-club").value   = c.club   || "";
+  if (qs("cm-brand"))  qs("cm-brand").value  = c.brand  || "";
+  if (qs("cm-model"))  qs("cm-model").value  = c.model  || "";
+  if (qs("cm-carry"))  qs("cm-carry").value  = c.carry_yards || "";
+  if (qs("cm-total"))  qs("cm-total").value  = c.total_yards || "";
+  if (qs("cm-bspeed")) qs("cm-bspeed").value = c.ball_speed  || "";
+  if (qs("cm-miss"))   qs("cm-miss").value   = c.miss   || "neutral";
+  qs("clubModal").style.display = "flex";
+}
+
+async function saveClubModal() {
+  const club  = (qs("cm-club")?.value  || "").trim();
+  if (!club) { alert("Club name is required."); return; }
+  const data = {
+    brand:       qs("cm-brand")?.value.trim()  || undefined,
+    model:       qs("cm-model")?.value.trim()  || undefined,
+    carry_yards: parseFloat(qs("cm-carry")?.value) || undefined,
+    total_yards: parseFloat(qs("cm-total")?.value) || undefined,
+    ball_speed:  parseFloat(qs("cm-bspeed")?.value) || undefined,
+    miss:        qs("cm-miss")?.value || "neutral",
+  };
+  Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
+  try {
+    const r = await fetch("/api/golf/bag/" + encodeURIComponent(club), {
+      method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data),
+    }).then(x=>x.json());
+    if (r.status === "ok") { closeModal("clubModal"); await loadGolfBag(); }
+    else alert("Error: " + (r.error || "unknown"));
+  } catch(e) { alert("Save failed."); console.warn("saveClub:", e); }
+}
+
+async function deleteClub(clubName) {
+  if (!confirm("Remove " + clubName + " from bag?")) return;
+  try {
+    const r = await fetch("/api/golf/bag/" + encodeURIComponent(clubName), {method:"DELETE"}).then(x=>x.json());
+    if (r.status === "ok") await loadGolfBag();
+    else alert("Error: " + (r.error || "not found"));
+  } catch(e) { console.warn("deleteClub:", e); }
+}
+
+/* ═══════════════════════════════════════
+   PROJECT PLANNER
+═══════════════════════════════════════ */
+const _proj = {
+  currentId:   null,
+  currentName: "",
+  projects:    [],
+  tasks:       [],
+  dragTaskId:  null,
+};
+
+const PROJ_COLORS = {
+  cyan:"#44f0ff", purple:"#a855f7", orange:"#ff9500",
+  green:"#34c759", red:"#ff4d4d",
+};
+
+async function loadProjects() {
+  try {
+    const d = await fetch("/api/projects").then(r => r.json());
+    _proj.projects = d.projects || [];
+    renderProjectList(_proj.projects);
+  } catch(e) { console.warn("loadProjects:", e); }
+}
+
+function renderProjectList(projects) {
+  const el = qs("projectListEl"); if (!el) return;
+  if (!projects.length) {
+    el.innerHTML = `<div class="proj-list-empty">No projects yet.<br>Create your first one.</div>`;
+    return;
+  }
+  el.innerHTML = "";
+  projects.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "proj-list-item" + (_proj.currentId === p.id ? " active" : "");
+    div.dataset.pid = p.id;
+    const dot = PROJ_COLORS[p.color] || PROJ_COLORS.cyan;
+    div.innerHTML = `
+      <div class="proj-color-dot" style="background:${dot}"></div>
+      <div class="proj-item-body">
+        <div class="proj-item-name">${safe(p.name)}</div>
+        <div class="proj-item-meta">${p.task_count||0} tasks · ${p.done_count||0} done</div>
+      </div>
+      <button class="proj-del-btn" title="Delete project">✕</button>`;
+    div.querySelector(".proj-del-btn").onclick = async (ev) => {
+      ev.stopPropagation();
+      if (!confirm("Delete project '" + p.name + "' and all its tasks?")) return;
+      await fetch("/api/projects/" + p.id, {method:"DELETE"});
+      if (_proj.currentId === p.id) { _proj.currentId = null; showBoard(false); }
+      await loadProjects();
+    };
+    div.addEventListener("click", () => selectProject(p));
+    el.appendChild(div);
+  });
+}
+
+async function selectProject(p) {
+  _proj.currentId   = p.id;
+  _proj.currentName = p.name;
+  if (qs("boardProjName")) qs("boardProjName").textContent = p.name;
+  if (qs("boardProjDesc")) qs("boardProjDesc").textContent = p.description || "";
+  showBoard(true);
+  renderProjectList(_proj.projects);
+  await loadBoardTasks(p.id);
+}
+
+function showBoard(visible) {
+  const board = qs("projBoardCard");
+  const empty = qs("projEmptyState");
+  if (board) board.style.display = visible ? "block" : "none";
+  if (empty) empty.style.display = visible ? "none" : "block";
+}
+
+async function loadBoardTasks(projectId) {
+  try {
+    const d = await fetch("/api/projects/" + projectId + "/tasks").then(r => r.json());
+    _proj.tasks = d.tasks || [];
+    renderKanban(_proj.tasks);
+  } catch(e) { console.warn("loadBoardTasks:", e); }
+}
+
+function renderKanban(tasks) {
+  const cols = {todo:[], doing:[], done:[]};
+  tasks.forEach(t => { (cols[t.status] || cols.todo).push(t); });
+  ["todo","doing","done"].forEach(status => {
+    const el = qs("tasks-" + status); if (!el) return;
+    const cnt = qs("cnt-" + status);
+    if (cnt) cnt.textContent = cols[status].length;
+    if (!cols[status].length) {
+      el.innerHTML = `<div class="kanban-empty">No tasks</div>`;
+      return;
+    }
+    el.innerHTML = "";
+    cols[status].forEach(t => el.appendChild(buildTaskCard(t)));
+  });
+}
+
+function buildTaskCard(t) {
+  const card = document.createElement("div");
+  card.className = "kanban-card urgency-" + (t.urgency || "medium");
+  card.draggable  = true;
+  card.dataset.tid = t.id;
+  card.innerHTML = `
+    <div class="kc-title">${safe(t.title)}</div>
+    ${t.description ? `<div class="kc-desc">${safe(t.description)}</div>` : ""}
+    <div class="kc-footer">
+      <span class="kc-badge urgency-${t.urgency||"medium"}">${t.urgency||"medium"}</span>
+      ${t.due_date ? `<span class="kc-due">Due ${t.due_date}</span>` : ""}
+      <div class="kc-actions">
+        <button class="kc-btn" title="Edit">✏</button>
+        <button class="kc-btn del" title="Delete">✕</button>
+      </div>
+    </div>`;
+  card.addEventListener("dragstart", ev => {
+    _proj.dragTaskId = t.id;
+    setTimeout(() => card.classList.add("dragging"), 0);
+    ev.dataTransfer.effectAllowed = "move";
+  });
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    document.querySelectorAll(".kanban-col").forEach(c => c.classList.remove("drag-over"));
+  });
+  card.querySelector(".kc-btn:not(.del)").onclick = (ev) => {
+    ev.stopPropagation(); openEditTaskModal(t);
+  };
+  card.querySelector(".kc-btn.del").onclick = async (ev) => {
+    ev.stopPropagation();
+    if (!confirm("Delete task '" + t.title + "'?")) return;
+    await deleteTask(t.id);
+  };
+  return card;
+}
+
+async function onTaskDrop(ev, newStatus) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove("drag-over");
+  const tid = _proj.dragTaskId; if (!tid || !_proj.currentId) return;
+  const task = _proj.tasks.find(t => t.id === tid); if (!task) return;
+  if (task.status === newStatus) return;
+  try {
+    await fetch("/api/projects/" + _proj.currentId + "/task/" + tid, {
+      method:"PUT", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({status: newStatus}),
+    });
+    await loadBoardTasks(_proj.currentId);
+    await loadProjects();
+  } catch(e) { console.warn("onTaskDrop:", e); }
+}
+
+function openNewProjectModal() {
+  const n = qs("np-name"), d = qs("np-desc"), c = qs("np-color");
+  if (n) n.value = "";
+  if (d) d.value = "";
+  if (c) c.value = "cyan";
+  qs("newProjectModal").style.display = "flex";
+  setTimeout(() => qs("np-name")?.focus(), 60);
+}
+
+async function saveNewProject() {
+  const name = qs("np-name")?.value.trim();
+  if (!name) { qs("np-name")?.focus(); return; }
+  const desc  = qs("np-desc")?.value.trim()  || "";
+  const color = qs("np-color")?.value        || "cyan";
+  try {
+    const d = await fetch("/api/projects", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({name, description: desc, color}),
+    }).then(r => r.json());
+    closeModal("newProjectModal");
+    await loadProjects();
+    if (d.project) selectProject(d.project);
+  } catch(e) { alert("Error creating project: " + e); }
+}
+
+async function deleteCurrentProject() {
+  if (!_proj.currentId) return;
+  if (!confirm("Delete project '" + _proj.currentName + "' and ALL its tasks?")) return;
+  await fetch("/api/projects/" + _proj.currentId, {method:"DELETE"});
+  _proj.currentId = null;
+  showBoard(false);
+  await loadProjects();
+}
+
+function openNewTaskModal() {
+  if (!_proj.currentId) { alert("Select a project first."); return; }
+  qs("taskModalTitle").textContent = "New Task";
+  qs("tm-task-id").value  = "";
+  qs("tm-title").value    = "";
+  qs("tm-desc").value     = "";
+  qs("tm-urgency").value  = "medium";
+  qs("tm-status").value   = "todo";
+  qs("tm-due").value      = "";
+  qs("taskModal").style.display = "flex";
+  setTimeout(() => qs("tm-title")?.focus(), 60);
+}
+
+function openEditTaskModal(t) {
+  qs("taskModalTitle").textContent = "Edit Task";
+  qs("tm-task-id").value  = t.id;
+  qs("tm-title").value    = t.title        || "";
+  qs("tm-desc").value     = t.description  || "";
+  qs("tm-urgency").value  = t.urgency      || "medium";
+  qs("tm-status").value   = t.status       || "todo";
+  qs("tm-due").value      = t.due_date     || "";
+  qs("taskModal").style.display = "flex";
+  setTimeout(() => qs("tm-title")?.focus(), 60);
+}
+
+async function saveTask() {
+  const title = qs("tm-title")?.value.trim();
+  if (!title) { qs("tm-title")?.focus(); return; }
+  const body = {
+    title,
+    description: qs("tm-desc")?.value.trim()   || "",
+    urgency:     qs("tm-urgency")?.value        || "medium",
+    status:      qs("tm-status")?.value         || "todo",
+    due_date:    qs("tm-due")?.value            || "",
+  };
+  const tid = qs("tm-task-id")?.value;
+  try {
+    if (tid) {
+      await fetch("/api/projects/" + _proj.currentId + "/task/" + tid, {
+        method:"PUT", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(body),
+      });
+    } else {
+      await fetch("/api/projects/" + _proj.currentId + "/task", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(body),
+      });
+    }
+    closeModal("taskModal");
+    await loadBoardTasks(_proj.currentId);
+    await loadProjects();
+  } catch(e) { alert("Error saving task: " + e); }
+}
+
+async function deleteTask(taskId) {
+  if (!_proj.currentId) return;
+  try {
+    await fetch("/api/projects/" + _proj.currentId + "/task/" + taskId, {method:"DELETE"});
+    await loadBoardTasks(_proj.currentId);
+    await loadProjects();
+  } catch(e) { console.warn("deleteTask:", e); }
+}
+
+function openAITasksModal() {
+  if (!_proj.currentId) { alert("Select a project first."); return; }
+  const desc = qs("ai-proj-desc"); if (desc) desc.value = "";
+  const btn  = qs("aiGenBtn"); if (btn) { btn.disabled = false; btn.textContent = "Generate Tasks"; }
+  qs("aiTasksModal").style.display = "flex";
+  setTimeout(() => qs("ai-proj-desc")?.focus(), 60);
+}
+
+async function runAITasks() {
+  const desc = qs("ai-proj-desc")?.value.trim() || "";
+  const btn  = qs("aiGenBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Generating…"; }
+  try {
+    const d = await fetch("/api/projects/" + _proj.currentId + "/ai-tasks", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({description: desc}),
+    }).then(r => r.json());
+    closeModal("aiTasksModal");
+    if (d.status === "ok") {
+      await loadBoardTasks(_proj.currentId);
+      await loadProjects();
+    } else {
+      alert("AI error: " + (d.error || "Unknown error"));
+    }
+  } catch(e) {
+    alert("Error generating tasks: " + e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Generate Tasks"; }
+  }
 }
 
 /* ── Events ─────────────────────────── */
@@ -1963,14 +3338,16 @@ function initEvents() {
   kd("chatInput",       () => sendChat());
   kd("newTaskText",     addTask);
   kd("symbolInput",     analyzeTrader);
-  kd("golfSearchInput", golfSearch);
+  kd("golfSearchInput", () => filterCourseLib(qs("golfSearchInput")?.value || ""));
+  kd("np-name",  saveNewProject);
+  kd("tm-title", saveTask);
 }
 
 /* ── Boot ───────────────────────────── */
 async function boot() {
-  initEvents(); initVoice(); initUpload();
+  initEvents(); initVoice(); initUpload(); initVoiceStatus();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
-  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot()]);
+  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects()]);
   setInterval(loadMarketSnapshot, 30000);
   setInterval(loadRecommendations, 30000);
 }

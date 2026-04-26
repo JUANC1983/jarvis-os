@@ -135,6 +135,7 @@ class GolfDashboardEngine:
     WEATHER_TIMEOUT_S:   int = 4      # per-call HTTP timeout
     POOL_WALL_CLOCK_S:   int = 6      # total parallel budget
     STATS_FILE = Path("data/golf/player_stats.json")
+    BAG_FILE   = Path("data/golf/player_bag.json")
 
     def __init__(self) -> None:
         self.db = GolfCourseDatabase()
@@ -605,6 +606,73 @@ class GolfDashboardEngine:
         return stats
 
     # ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------ #
+    # Player Bag (Trackman-style club profile)                            #
+    # ------------------------------------------------------------------ #
+    _DEFAULT_CLUBS = [
+        {"club": "Driver",  "carry_yards": 250, "total_yards": 270, "miss": "neutral"},
+        {"club": "3W",      "carry_yards": 230, "total_yards": 245, "miss": "neutral"},
+        {"club": "5W",      "carry_yards": 215, "total_yards": 228, "miss": "neutral"},
+        {"club": "4H",      "carry_yards": 200, "total_yards": 212, "miss": "neutral"},
+        {"club": "5i",      "carry_yards": 185, "total_yards": 196, "miss": "neutral"},
+        {"club": "6i",      "carry_yards": 175, "total_yards": 185, "miss": "neutral"},
+        {"club": "7i",      "carry_yards": 163, "total_yards": 172, "miss": "neutral"},
+        {"club": "8i",      "carry_yards": 150, "total_yards": 158, "miss": "neutral"},
+        {"club": "9i",      "carry_yards": 138, "total_yards": 145, "miss": "neutral"},
+        {"club": "PW",      "carry_yards": 125, "total_yards": 131, "miss": "neutral"},
+        {"club": "GW",      "carry_yards": 110, "total_yards": 115, "miss": "neutral"},
+        {"club": "SW",      "carry_yards": 90,  "total_yards": 94,  "miss": "neutral"},
+        {"club": "LW",      "carry_yards": 70,  "total_yards": 73,  "miss": "neutral"},
+        {"club": "Putter",  "carry_yards": 0,   "total_yards": 0,   "miss": "neutral"},
+    ]
+
+    def get_bag(self) -> List[Dict[str, Any]]:
+        self.BAG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if self.BAG_FILE.exists():
+            try:
+                data = json.loads(self.BAG_FILE.read_text(encoding="utf-8"))
+                if isinstance(data, list):
+                    return data
+            except Exception:
+                pass
+        bag = [dict(c) for c in self._DEFAULT_CLUBS]
+        self.BAG_FILE.write_text(json.dumps(bag, indent=2, ensure_ascii=False), encoding="utf-8")
+        return bag
+
+    def save_bag(self, clubs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        self.BAG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        self.BAG_FILE.write_text(json.dumps(clubs, indent=2, ensure_ascii=False), encoding="utf-8")
+        return clubs
+
+    def upsert_club(self, club_name: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        bag = self.get_bag()
+        for i, c in enumerate(bag):
+            if c.get("club", "").lower() == club_name.lower():
+                bag[i] = {**c, **data, "club": c["club"]}
+                self.save_bag(bag)
+                return bag[i]
+        entry = {"club": club_name, **data}
+        bag.append(entry)
+        self.save_bag(bag)
+        return entry
+
+    def delete_club(self, club_name: str) -> bool:
+        bag = self.get_bag()
+        new_bag = [c for c in bag if c.get("club", "").lower() != club_name.lower()]
+        if len(new_bag) == len(bag):
+            return False
+        self.save_bag(new_bag)
+        return True
+
+    def get_all_courses_grouped(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Return all courses grouped by country."""
+        courses = self.db.get_all_courses()
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
+        for c in courses:
+            country = c.get("country") or "Other"
+            grouped.setdefault(country, []).append(c)
+        return grouped
+
     # Helpers                                                              #
     # ------------------------------------------------------------------ #
     @staticmethod

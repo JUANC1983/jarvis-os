@@ -1,0 +1,86 @@
+[
+  {
+    "club": "Driver",
+    "carry_yards": 250,
+    "total_yards": 270,
+    "miss": "neutral"
+  },
+  {
+    "club": "3W",
+    "carry_yards": 230,
+    "total_yards": 245,
+    "miss": "neutral"
+  },
+  {
+    "club": "5W",
+    "carry_yards": 215,
+    "total_yards": 228,
+    "miss": "neutral"
+  },
+  {
+    "club": "4H",
+    "carry_yards": 200,
+    "total_yards": 212,
+    "miss": "neutral"
+  },
+  {
+    "club": "5i",
+    "carry_yards": 185,
+    "total_yards": 196,
+    "miss": "neutral"
+  },
+  {
+    "club": "6i",
+    "carry_yards": 175,
+    "total_yards": 185,
+    "miss": "neutral"
+  },
+  {
+    "club": "7i",
+    "carry_yards": 163,
+    "total_yards": 172,
+    "miss": "neutral"
+  },
+  {
+    "club": "8i",
+    "carry_yards": 150,
+    "total_yards": 158,
+    "miss": "neutral"
+  },
+  {
+    "club": "9i",
+    "carry_yards": 138,
+    "total_yards": 145,
+    "miss": "neutral"
+  },
+  {
+    "club": "PW",
+    "carry_yards": 125,
+    "total_yards": 131,
+    "miss": "neutral"
+  },
+  {
+    "club": "GW",
+    "carry_yards": 110,
+    "total_yards": 115,
+    "miss": "neutral"
+  },
+  {
+    "club": "SW",
+    "carry_yards": 90,
+    "total_yards": 94,
+    "miss": "neutral"
+  },
+  {
+    "club": "LW",
+    "carry_yards": 70,
+    "total_yards": 73,
+    "miss": "neutral"
+  },
+  {
+    "club": "Putter",
+    "carry_yards": 0,
+    "total_yards": 0,
+    "miss": "neutral"
+  }
+]

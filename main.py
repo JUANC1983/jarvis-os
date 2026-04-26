@@ -19,7 +19,7 @@ except ImportError:
     _OPENAI_AVAILABLE = False
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from core.product_brain import ProductBrain
@@ -29,6 +29,9 @@ from core.meetings_engine import MeetingsEngine
 from core.agent_orchestrator_pro import AgentOrchestratorPro
 from core.news_intelligence_engine import NewsIntelligenceEngine
 from core.golf_dashboard_engine import GolfDashboardEngine
+from core.voice_service import get_voice_service
+from core.live_news_engine import LiveNewsEngine
+from core.project_planner_engine import ProjectPlannerEngine
 
 try:
     from core.market_intelligence_engine import MarketIntelligenceEngine as _MarketIntelEngine
@@ -46,6 +49,8 @@ meetings_engine = MeetingsEngine()
 orchestrator    = AgentOrchestratorPro()
 news_engine     = NewsIntelligenceEngine()
 golf_engine     = GolfDashboardEngine()
+live_news       = LiveNewsEngine()
+planner         = ProjectPlannerEngine()
 
 BASE_DIR       = Path(__file__).resolve().parent
 DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
@@ -1389,3 +1394,365 @@ def memory_stats():
         return _mem().stats()
     except Exception as e:
         return {"total_entries": 0, "vector_ready": False, "error": str(e)}
+
+
+# ================================================================
+# VOICE API
+# ================================================================
+class VoiceSpeakRequest(BaseModel):
+    text: str
+    priority: str = "normal"
+    interrupt: bool = False
+
+
+@app.get("/api/voice/status")
+def voice_status():
+    return get_voice_service().status()
+
+
+@app.post("/api/voice/speak")
+def voice_speak(req: VoiceSpeakRequest):
+    svc = get_voice_service()
+    if not svc.configured:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "reason": "ELEVENLABS_API_KEY not configured", "fallback": True},
+        )
+    audio = svc.speak(req.text)
+    if audio is None:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "reason": "TTS generation failed — check API key and quota", "fallback": True},
+        )
+    return Response(content=audio, media_type="audio/mpeg")
+
+
+# ================================================================
+# QUERY API  (normalised chat endpoint for external integrations)
+# ================================================================
+class QueryRequest(BaseModel):
+    message: str
+    domain: str = "auto"
+    user_id: str = "owner"
+
+
+@app.post("/api/query")
+def api_query(req: QueryRequest):
+    try:
+        result = _agent_chat(req.message)
+        if result is None:
+            result = _llm_chat(req.message)
+        if result is None:
+            result = brain.chat(req.message)
+        reply = result.get("reply", "") or result.get("summary", "")
+        return {
+            "status":     "ok",
+            "reply":      reply,
+            "agent":      result.get("action", ""),
+            "confidence": result.get("confidence", 0.0),
+            "risk_level": result.get("details", {}).get("risk_level", "medium"),
+            "action":     result.get("action", ""),
+            "data":       result.get("details", {}),
+        }
+    except Exception as e:
+        return {"status": "error", "reply": str(e), "agent": "", "confidence": 0.0,
+                "risk_level": "medium", "action": "", "data": {}}
+
+
+# ================================================================
+# NEWS API
+# ================================================================
+@app.get("/api/news/feed")
+def news_feed(limit: int = 40):
+    try:
+        items = live_news.fetch(limit_per_source=max(1, limit // len(live_news.SOURCES)))
+        return {"status": "ok", "items": items, "count": len(items)}
+    except Exception as e:
+        return {"status": "error", "items": [], "error": str(e)}
+
+
+@app.get("/api/news/item")
+def news_item(id: str = ""):
+    try:
+        all_items = live_news.fetch(limit_per_source=8)
+        item = next((i for i in all_items if i.get("id") == id), None)
+        if not item:
+            raise HTTPException(status_code=404, detail="News item not found")
+        return {"status": "ok", "item": item}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/news/analyze")
+def news_analyze(data: dict):
+    try:
+        title   = str(data.get("title", "")).strip()
+        summary = str(data.get("summary", "")).strip()
+        tickers = data.get("tickers", [])
+        query   = f"News analysis: {title}. {summary}"
+        if tickers:
+            query += f" Tickers mentioned: {', '.join(tickers[:3])}."
+        result = orchestrator.execute_council(query, "general")
+        council = result.get("council", {})
+        return {
+            "status":     "ok",
+            "insight":    council.get("council_insight", ""),
+            "action":     council.get("council_action", ""),
+            "confidence": council.get("weighted_confidence", 0.5),
+            "agents":     council.get("agents_consulted", []),
+        }
+    except Exception as e:
+        return {"status": "error", "insight": str(e)}
+
+
+# ================================================================
+# GOLF BAG API
+# ================================================================
+@app.get("/api/golf/bag")
+def get_golf_bag():
+    try:
+        return {"status": "ok", "bag": golf_engine.get_bag()}
+    except Exception as e:
+        return {"status": "error", "bag": [], "error": str(e)}
+
+
+@app.post("/api/golf/bag")
+def save_golf_bag(data: dict):
+    try:
+        clubs = data.get("clubs", [])
+        if not isinstance(clubs, list):
+            raise HTTPException(status_code=400, detail="clubs must be a list")
+        saved = golf_engine.save_bag(clubs)
+        return {"status": "ok", "bag": saved}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.put("/api/golf/bag/{club_name}")
+def update_club(club_name: str, data: dict):
+    try:
+        result = golf_engine.upsert_club(club_name, data)
+        return {"status": "ok", "club": result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/golf/bag/{club_name}")
+def delete_club(club_name: str):
+    try:
+        removed = golf_engine.delete_club(club_name)
+        if not removed:
+            raise HTTPException(status_code=404, detail=f"Club '{club_name}' not found in bag")
+        return {"status": "ok", "removed": club_name}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/golf/courses/all")
+def golf_courses_all():
+    try:
+        grouped = golf_engine.get_all_courses_grouped()
+        all_flat = golf_engine.db.get_all_courses()
+        return {"status": "ok", "grouped": grouped, "all": all_flat, "count": len(all_flat)}
+    except Exception as e:
+        return {"status": "error", "grouped": {}, "all": [], "error": str(e)}
+
+
+@app.get("/api/golf/courses/{course_id}")
+def golf_course_detail(course_id: int):
+    try:
+        conn = golf_engine.db._connect()
+        cur  = conn.cursor()
+        cur.execute("SELECT * FROM courses WHERE id = ?", (course_id,))
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            raise HTTPException(status_code=404, detail="Course not found")
+        cols = [d[0] for d in cur.description]
+        course = dict(zip(cols, row))
+        return {"status": "ok", "course": course}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ================================================================
+# MEETINGS DELETE
+# ================================================================
+@app.delete("/api/meetings/{meeting_id}")
+def delete_meeting(meeting_id: str):
+    try:
+        removed = meetings_engine.delete_meeting(meeting_id)
+        if not removed:
+            raise HTTPException(status_code=404, detail=f"Meeting '{meeting_id}' not found")
+        return {"status": "ok", "removed": meeting_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ================================================================
+# UPLOADS DELETE
+# ================================================================
+@app.delete("/api/uploads/{filename:path}")
+def delete_upload(filename: str):
+    try:
+        safe_name = Path(filename).name   # strip any path traversal
+        file_path = UPLOADS_DIR / safe_name
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        file_path.unlink()
+        workspace.delete_asset_by_filename(safe_name)
+        return {"status": "ok", "deleted": safe_name}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ================================================================
+# STOCKS API
+# ================================================================
+@app.get("/api/stocks/{ticker}")
+def stock_detail(ticker: str):
+    try:
+        sym = ticker.upper().strip()
+        result = brain.trader(sym)
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "symbol": ticker, "error": str(e)}
+
+
+# ================================================================
+# PROJECT PLANNER
+# ================================================================
+class _ProjectCreate(BaseModel):
+    name: str
+    description: str = ""
+    color: str = "cyan"
+
+class _TaskCreate(BaseModel):
+    title: str
+    description: str = ""
+    status: str = "todo"
+    urgency: str = "medium"
+    due_date: str = ""
+
+class _TaskUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    urgency: str | None = None
+    due_date: str | None = None
+
+class _AITasksRequest(BaseModel):
+    description: str
+
+@app.get("/api/projects")
+def list_projects():
+    try:
+        return {"status": "ok", "projects": planner.list_projects()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/projects")
+def create_project(body: _ProjectCreate):
+    try:
+        p = planner.create_project(body.name, body.description, body.color)
+        return {"status": "ok", "project": p}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: str):
+    try:
+        ok = planner.delete_project(project_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return {"status": "ok", "deleted": project_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/projects/{project_id}/tasks")
+def get_project_tasks(project_id: str):
+    try:
+        tasks = planner.get_tasks(project_id)
+        return {"status": "ok", "tasks": tasks}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/projects/{project_id}/task")
+def create_task(project_id: str, body: _TaskCreate):
+    try:
+        t = planner.create_task(
+            project_id=project_id,
+            title=body.title,
+            description=body.description,
+            status=body.status,
+            urgency=body.urgency,
+            due_date=body.due_date,
+        )
+        return {"status": "ok", "task": t}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.put("/api/projects/{project_id}/task/{task_id}")
+def update_task(project_id: str, task_id: str, body: _TaskUpdate):
+    try:
+        updates = {k: v for k, v in body.model_dump().items() if v is not None}
+        t = planner.update_task(task_id, updates)
+        return {"status": "ok", "task": t}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.delete("/api/projects/{project_id}/task/{task_id}")
+def delete_task(project_id: str, task_id: str):
+    try:
+        ok = planner.delete_task(task_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Task not found")
+        return {"status": "ok", "deleted": task_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/projects/{project_id}/ai-tasks")
+def ai_generate_tasks(project_id: str, body: _AITasksRequest):
+    try:
+        proj = planner.get_project(project_id)
+        if not proj:
+            raise HTTPException(status_code=404, detail="Project not found")
+        prompt = (
+            f"You are a project manager. Generate 5 actionable tasks for this project.\n"
+            f"Project: {proj['name']}\n"
+            f"Description: {body.description or proj.get('description','')}\n\n"
+            f"Return ONLY a JSON array with objects: "
+            f"{{\"title\": str, \"description\": str, \"urgency\": \"critical|high|medium|low\", \"due_date\": \"\"}}. "
+            f"No markdown, no explanation."
+        )
+        raw = generate_response([{"role": "user", "content": prompt}], json_mode=True)
+        if not raw:
+            raise ValueError("LLM unavailable")
+        parsed = json.loads(raw) if isinstance(raw, str) else raw
+        task_defs = parsed if isinstance(parsed, list) else parsed.get("tasks", [])
+        created = planner.create_tasks_bulk(project_id, task_defs)
+        return {"status": "ok", "created": len(created), "tasks": created}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}

@@ -140,6 +140,15 @@ class MeetingsEngine:
 
         return upcoming
 
+    def delete_meeting(self, meeting_id: str) -> bool:
+        meetings = self._load()
+        original = len(meetings)
+        meetings = [m for m in meetings if m.get("id") != meeting_id]
+        if len(meetings) == original:
+            return False
+        self._save(meetings)
+        return True
+
     def cleanup_past_meetings(self) -> int:
         now = datetime.now()
         meetings = self._load()
