@@ -18,8 +18,9 @@ try:
 except ImportError:
     _OPENAI_AVAILABLE = False
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from core.product_brain import ProductBrain
@@ -32,6 +33,8 @@ from core.golf_dashboard_engine import GolfDashboardEngine
 from core.voice_service import get_voice_service
 from core.live_news_engine import LiveNewsEngine
 from core.project_planner_engine import ProjectPlannerEngine
+from core.user_engine import UserEngine
+from core.auth_engine import AuthEngine
 
 try:
     from core.market_intelligence_engine import MarketIntelligenceEngine as _MarketIntelEngine
@@ -51,6 +54,31 @@ news_engine     = NewsIntelligenceEngine()
 golf_engine     = GolfDashboardEngine()
 live_news       = LiveNewsEngine()
 planner         = ProjectPlannerEngine()
+user_engine     = UserEngine()
+auth_engine     = AuthEngine(user_engine)
+
+# ── Auth dependencies ────────────────────────────────────────────────
+_bearer = HTTPBearer(auto_error=False)
+
+def get_current_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict:
+    if not creds:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = auth_engine.decode_token(creds.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return user
+
+def get_optional_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict:
+    """Returns decoded user or falls back to owner for legacy routes."""
+    if creds:
+        user = auth_engine.decode_token(creds.credentials)
+        if user:
+            return user
+    return {"user_id": "owner", "role": "owner"}
 
 BASE_DIR       = Path(__file__).resolve().parent
 DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
@@ -1754,5 +1782,59 @@ def ai_generate_tasks(project_id: str, body: _AITasksRequest):
         return {"status": "ok", "created": len(created), "tasks": created}
     except HTTPException:
         raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ================================================================
+# AUTH — Phase 5A
+# ================================================================
+class _RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str = "user"
+
+class _LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class _UpdateMeRequest(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    preferences: dict | None = None
+
+@app.post("/api/auth/register")
+def auth_register(body: _RegisterRequest):
+    try:
+        result = auth_engine.register(body.name, body.email, body.password, body.role)
+        return {"status": "ok", **result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/auth/login")
+def auth_login(body: _LoginRequest):
+    result = auth_engine.login(body.email, body.password)
+    if not result:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return {"status": "ok", **result}
+
+@app.get("/api/auth/me")
+def auth_me(current_user: dict = Depends(get_current_user)):
+    user = auth_engine.get_me(current_user["user_id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "ok", "user": user}
+
+@app.put("/api/auth/me")
+def auth_update_me(body: _UpdateMeRequest, current_user: dict = Depends(get_current_user)):
+    try:
+        updates = {k: v for k, v in body.model_dump().items() if v is not None}
+        user = auth_engine.update_me(current_user["user_id"], updates)
+        return {"status": "ok", "user": user}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         return {"status": "error", "error": str(e)}
