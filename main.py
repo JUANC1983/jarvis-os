@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import List
 import json
 import os
 import shutil
@@ -35,6 +36,10 @@ from core.live_news_engine import LiveNewsEngine
 from core.project_planner_engine import ProjectPlannerEngine
 from core.user_engine import UserEngine
 from core.auth_engine import AuthEngine
+from core.calendar_engine import CalendarEngine
+from core.memory_engine import MemoryEngine
+from core.notification_engine import NotificationEngine
+from core.ai_orchestrator import AIOrchestrator, classify_intent
 
 try:
     from core.market_intelligence_engine import MarketIntelligenceEngine as _MarketIntelEngine
@@ -56,6 +61,7 @@ live_news       = LiveNewsEngine()
 planner         = ProjectPlannerEngine()
 user_engine     = UserEngine()
 auth_engine     = AuthEngine(user_engine)
+ai_orchestrator = AIOrchestrator()
 
 # ── Auth dependencies ────────────────────────────────────────────────
 _bearer = HTTPBearer(auto_error=False)
@@ -79,6 +85,68 @@ def get_optional_user(
         if user:
             return user
     return {"user_id": "owner", "role": "owner"}
+
+# ── Per-user engine factories (cached) ──────────────────────────────
+_ws_cache: dict = {}
+_me_cache: dict = {}
+_ge_cache: dict = {}
+
+def _ws(user_id: str) -> DashboardWorkspaceEngine:
+    if user_id not in _ws_cache:
+        if user_id == "owner":
+            _ws_cache[user_id] = workspace
+        else:
+            path = BASE_DIR / "data" / f"workspace_{user_id}.json"
+            ws = DashboardWorkspaceEngine(base_path=str(path))
+            ws.meetings_engine = _me(user_id)   # inject scoped meetings
+            _ws_cache[user_id] = ws
+    return _ws_cache[user_id]
+
+def _me(user_id: str) -> MeetingsEngine:
+    if user_id not in _me_cache:
+        if user_id == "owner":
+            _me_cache[user_id] = meetings_engine
+        else:
+            path = BASE_DIR / "data" / f"meetings_{user_id}.json"
+            _me_cache[user_id] = MeetingsEngine(file_path=str(path))
+    return _me_cache[user_id]
+
+def _ge(user_id: str) -> GolfDashboardEngine:
+    if user_id not in _ge_cache:
+        if user_id == "owner":
+            _ge_cache[user_id] = golf_engine
+        else:
+            bag_path = BASE_DIR / "data" / "golf" / f"bag_{user_id}.json"
+            _ge_cache[user_id] = GolfDashboardEngine(bag_file=str(bag_path))
+    return _ge_cache[user_id]
+
+def _user_name(user_id: str) -> str:
+    u = user_engine.get_user(user_id)
+    return u["name"] if u else "User"
+
+_cal_cache: dict = {}
+
+def _cal(user_id: str) -> CalendarEngine:
+    if user_id not in _cal_cache:
+        path = BASE_DIR / "data" / f"calendar_{user_id}.json"
+        _cal_cache[user_id] = CalendarEngine(str(path))
+    return _cal_cache[user_id]
+
+_mem_cache: dict = {}
+
+def _memory(user_id: str) -> MemoryEngine:
+    if user_id not in _mem_cache:
+        path = BASE_DIR / "data" / "memory" / f"{user_id}.json"
+        _mem_cache[user_id] = MemoryEngine(str(path))
+    return _mem_cache[user_id]
+
+_notif_cache: dict = {}
+
+def _notif(user_id: str) -> NotificationEngine:
+    if user_id not in _notif_cache:
+        path = BASE_DIR / "data" / f"notifications_{user_id}.json"
+        _notif_cache[user_id] = NotificationEngine(str(path))
+    return _notif_cache[user_id]
 
 BASE_DIR       = Path(__file__).resolve().parent
 DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
@@ -905,14 +973,15 @@ def dashboard():
 # HOME
 # =========================
 @app.get("/dashboard/home")
-def dashboard_home():
+def dashboard_home(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        return workspace.home("Juan Camilo")
+        return _ws(uid).home(_user_name(uid))
     except Exception:
         return {
             "greeting":     "JARVIS ready",
             "date":         datetime.now().strftime("%A %d %B %Y"),
-            "owner_name":   "Juan Camilo",
+            "owner_name":   _user_name(uid),
             "top_priority": "Protect capital",
             "tasks_open":   0,
             "assets_count": 0,
@@ -1036,19 +1105,18 @@ def recommendations():
 # TASKS
 # =========================
 @app.post("/dashboard/tasks")
-def add_task(data: dict):
+def add_task(data: dict, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
         text     = (data.get("text") or "").strip()
         priority = (data.get("priority") or "medium").strip().lower()
         day      = (data.get("day") or "today").strip().lower()
         category = (data.get("category") or "general").strip().lower()
-
         if not text:
             raise HTTPException(status_code=400, detail="text is required")
         if priority not in ["high", "medium", "low"]:
             priority = "medium"
-
-        return workspace.add_task(text, priority, day, category)
+        return _ws(uid).add_task(text, priority, day, category)
     except HTTPException:
         raise
     except Exception as e:
@@ -1056,25 +1124,28 @@ def add_task(data: dict):
 
 
 @app.post("/dashboard/tasks/{task_id}/toggle")
-def toggle_task(task_id: str):
+def toggle_task(task_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        return workspace.toggle_task(task_id)
+        return _ws(uid).toggle_task(task_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
 
 @app.delete("/dashboard/tasks/{task_id}")
-def delete_task(task_id: str):
+def delete_daily_task(task_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        return workspace.delete_task(task_id)
+        return _ws(uid).delete_task(task_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
 
 @app.patch("/dashboard/tasks/{task_id}")
-def edit_task(task_id: str, data: dict):
+def edit_task(task_id: str, data: dict, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        return workspace.edit_task(task_id, data)
+        return _ws(uid).edit_task(task_id, data)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
@@ -1083,16 +1154,15 @@ def edit_task(task_id: str, data: dict):
 # MEETINGS
 # =========================
 @app.post("/dashboard/meetings")
-def add_meeting(data: dict):
+def add_meeting(data: dict, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
         title      = (data.get("title") or "").strip()
         time_value = (data.get("time") or "").strip()
         notes      = (data.get("notes") or "").strip()
-
         if not title or not time_value:
             raise HTTPException(status_code=400, detail="title and time are required")
-
-        return workspace.add_meeting(title, time_value, notes)
+        return _me(uid).add_meeting(title, time_value, notes)
     except HTTPException:
         raise
     except Exception as e:
@@ -1103,15 +1173,14 @@ def add_meeting(data: dict):
 # SCHEDULE MEETING
 # =========================
 @app.post("/dashboard/schedule-meeting")
-def schedule_meeting(data: dict):
+def schedule_meeting(data: dict, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
         objective      = (data.get("objective") or "").strip()
         datetime_value = (data.get("datetime") or "").strip()
-
         if not objective or not datetime_value:
             raise HTTPException(status_code=400, detail="objective and datetime are required")
-
-        meeting = meetings_engine.add_meeting_datetime(
+        meeting = _me(uid).add_meeting_datetime(
             title=objective,
             datetime_value=datetime_value,
             notes="Scheduled via dashboard",
@@ -1539,20 +1608,22 @@ def news_analyze(data: dict):
 # GOLF BAG API
 # ================================================================
 @app.get("/api/golf/bag")
-def get_golf_bag():
+def get_golf_bag(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        return {"status": "ok", "bag": golf_engine.get_bag()}
+        return {"status": "ok", "bag": _ge(uid).get_bag()}
     except Exception as e:
         return {"status": "error", "bag": [], "error": str(e)}
 
 
 @app.post("/api/golf/bag")
-def save_golf_bag(data: dict):
+def save_golf_bag(data: dict, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
         clubs = data.get("clubs", [])
         if not isinstance(clubs, list):
             raise HTTPException(status_code=400, detail="clubs must be a list")
-        saved = golf_engine.save_bag(clubs)
+        saved = _ge(uid).save_bag(clubs)
         return {"status": "ok", "bag": saved}
     except HTTPException:
         raise
@@ -1561,18 +1632,20 @@ def save_golf_bag(data: dict):
 
 
 @app.put("/api/golf/bag/{club_name}")
-def update_club(club_name: str, data: dict):
+def update_club(club_name: str, data: dict, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        result = golf_engine.upsert_club(club_name, data)
+        result = _ge(uid).upsert_club(club_name, data)
         return {"status": "ok", "club": result}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 
 @app.delete("/api/golf/bag/{club_name}")
-def delete_club(club_name: str):
+def delete_golf_club(club_name: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        removed = golf_engine.delete_club(club_name)
+        removed = _ge(uid).delete_club(club_name)
         if not removed:
             raise HTTPException(status_code=404, detail=f"Club '{club_name}' not found in bag")
         return {"status": "ok", "removed": club_name}
@@ -1615,9 +1688,10 @@ def golf_course_detail(course_id: int):
 # MEETINGS DELETE
 # ================================================================
 @app.delete("/api/meetings/{meeting_id}")
-def delete_meeting(meeting_id: str):
+def delete_meeting(meeting_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        removed = meetings_engine.delete_meeting(meeting_id)
+        removed = _me(uid).delete_meeting(meeting_id)
         if not removed:
             raise HTTPException(status_code=404, detail=f"Meeting '{meeting_id}' not found")
         return {"status": "ok", "removed": meeting_id}
@@ -1685,24 +1759,27 @@ class _AITasksRequest(BaseModel):
     description: str
 
 @app.get("/api/projects")
-def list_projects():
+def list_projects(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        return {"status": "ok", "projects": planner.list_projects()}
+        return {"status": "ok", "projects": planner.list_projects(user_id=uid)}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 @app.post("/api/projects")
-def create_project(body: _ProjectCreate):
+def create_project(body: _ProjectCreate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        p = planner.create_project(body.name, body.description, body.color)
+        p = planner.create_project(body.name, body.description, body.color, user_id=uid)
         return {"status": "ok", "project": p}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 @app.delete("/api/projects/{project_id}")
-def delete_project(project_id: str):
+def delete_project(project_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        ok = planner.delete_project(project_id)
+        ok = planner.delete_project(project_id, user_id=uid)
         if not ok:
             raise HTTPException(status_code=404, detail="Project not found")
         return {"status": "ok", "deleted": project_id}
@@ -1712,15 +1789,17 @@ def delete_project(project_id: str):
         return {"status": "error", "error": str(e)}
 
 @app.get("/api/projects/{project_id}/tasks")
-def get_project_tasks(project_id: str):
+def get_project_tasks(project_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        tasks = planner.get_tasks(project_id)
+        tasks = planner.get_tasks(project_id, user_id=uid)
         return {"status": "ok", "tasks": tasks}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 @app.post("/api/projects/{project_id}/task")
-def create_task(project_id: str, body: _TaskCreate):
+def create_project_task(project_id: str, body: _TaskCreate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
         t = planner.create_task(
             project_id=project_id,
@@ -1729,6 +1808,7 @@ def create_task(project_id: str, body: _TaskCreate):
             status=body.status,
             urgency=body.urgency,
             due_date=body.due_date,
+            user_id=uid,
         )
         return {"status": "ok", "task": t}
     except ValueError as e:
@@ -1737,19 +1817,28 @@ def create_task(project_id: str, body: _TaskCreate):
         return {"status": "error", "error": str(e)}
 
 @app.put("/api/projects/{project_id}/task/{task_id}")
-def update_task(project_id: str, task_id: str, body: _TaskUpdate):
+def update_project_task(project_id: str, task_id: str, body: _TaskUpdate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
+        # Verify project ownership before allowing task update
+        if not planner.get_project(project_id, user_id=uid):
+            raise HTTPException(status_code=404, detail="Project not found")
         updates = {k: v for k, v in body.model_dump().items() if v is not None}
         t = planner.update_task(task_id, updates)
         return {"status": "ok", "task": t}
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 @app.delete("/api/projects/{project_id}/task/{task_id}")
-def delete_task(project_id: str, task_id: str):
+def delete_project_task(project_id: str, task_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
+        if not planner.get_project(project_id, user_id=uid):
+            raise HTTPException(status_code=404, detail="Project not found")
         ok = planner.delete_task(task_id)
         if not ok:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -1760,9 +1849,10 @@ def delete_task(project_id: str, task_id: str):
         return {"status": "error", "error": str(e)}
 
 @app.post("/api/projects/{project_id}/ai-tasks")
-def ai_generate_tasks(project_id: str, body: _AITasksRequest):
+def ai_generate_tasks(project_id: str, body: _AITasksRequest, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
     try:
-        proj = planner.get_project(project_id)
+        proj = planner.get_project(project_id, user_id=uid)
         if not proj:
             raise HTTPException(status_code=404, detail="Project not found")
         prompt = (
@@ -1778,7 +1868,7 @@ def ai_generate_tasks(project_id: str, body: _AITasksRequest):
             raise ValueError("LLM unavailable")
         parsed = json.loads(raw) if isinstance(raw, str) else raw
         task_defs = parsed if isinstance(parsed, list) else parsed.get("tasks", [])
-        created = planner.create_tasks_bulk(project_id, task_defs)
+        created = planner.create_tasks_bulk(project_id, task_defs, user_id=uid)
         return {"status": "ok", "created": len(created), "tasks": created}
     except HTTPException:
         raise
@@ -1836,5 +1926,398 @@ def auth_update_me(body: _UpdateMeRequest, current_user: dict = Depends(get_curr
         return {"status": "ok", "user": user}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ================================================================
+# CALENDAR — Phase 5C
+# ================================================================
+class _EventCreate(BaseModel):
+    title:             str
+    start:             str                    # ISO or "YYYY-MM-DD HH:MM"
+    end:               str = ""
+    duration_minutes:  int = 60
+    description:       str = ""
+    timezone:          str = "America/Bogota"
+    participants:      list[str] = []
+    linked_project_id: str | None = None
+    linked_task_id:    str | None = None
+    reminder_minutes:  int = 30
+
+class _EventUpdate(BaseModel):
+    title:             str | None = None
+    start:             str | None = None
+    end:               str | None = None
+    description:       str | None = None
+    timezone:          str | None = None
+    participants:      list[str] | None = None
+    linked_project_id: str | None = None
+    linked_task_id:    str | None = None
+    reminder_minutes:  int | None = None
+
+@app.get("/api/calendar/events")
+def cal_list(
+    range: str = "",
+    from_date: str = "",
+    to_date: str = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        events = _cal(uid).list_events(
+            range_name=range,
+            from_date=from_date,
+            to_date=to_date,
+        )
+        return {"status": "ok", "events": events, "count": len(events)}
+    except Exception as e:
+        return {"status": "error", "events": [], "error": str(e)}
+
+@app.post("/api/calendar/events")
+def cal_create(body: _EventCreate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ev = _cal(uid).create_event(
+            title=body.title,
+            start=body.start,
+            end=body.end,
+            duration_minutes=body.duration_minutes,
+            description=body.description,
+            timezone_str=body.timezone,
+            participants=body.participants,
+            linked_project_id=body.linked_project_id,
+            linked_task_id=body.linked_task_id,
+            reminder_minutes=body.reminder_minutes,
+        )
+        return {"status": "ok", "event": ev}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.put("/api/calendar/events/{event_id}")
+def cal_update(
+    event_id: str,
+    body: _EventUpdate,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        updates = {k: v for k, v in body.model_dump().items() if v is not None}
+        ev = _cal(uid).update_event(event_id, updates)
+        return {"status": "ok", "event": ev}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.delete("/api/calendar/events/{event_id}")
+def cal_delete(event_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ok = _cal(uid).delete_event(event_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return {"status": "ok", "deleted": event_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ================================================================
+# MEMORY  — Phase 5D
+# ================================================================
+
+class _MemSave(BaseModel):
+    content:    str
+    type:       str = "interaction"   # interaction|decision|event|insight|preference
+    importance: int = 5               # 1–10
+    tags:       List[str] = []
+    metadata:   dict = {}
+
+class _InsightCreate(BaseModel):
+    content:    str
+    importance: int = 7
+
+@app.post("/api/memory/save")
+def memory_save(body: _MemSave, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        entry = _memory(uid).save(
+            content=body.content,
+            entry_type=body.type,
+            importance=body.importance,
+            tags=body.tags,
+            metadata=body.metadata,
+        )
+        return {"status": "ok", "entry": entry}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/memory/context")
+def memory_context(
+    limit: int = 20,
+    min_importance: int = 4,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        ctx = _memory(uid).get_context(limit=limit, min_importance=min_importance)
+        return {"status": "ok", **ctx}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/memory/history")
+def memory_history(
+    limit:          int = 50,
+    offset:         int = 0,
+    type:           str = "",
+    min_importance: int = 1,
+    since:          str = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        result = _memory(uid).get_history(
+            limit=limit,
+            offset=offset,
+            entry_type=type,
+            min_importance=min_importance,
+            since=since,
+        )
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/memory/insight")
+def memory_insight(body: _InsightCreate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ins = _memory(uid).add_insight(body.content, body.importance)
+        return {"status": "ok", "insight": ins}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/memory/stats")
+def memory_stats(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        return {"status": "ok", **_memory(uid).stats()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ================================================================
+# NOTIFICATIONS  — Phase 5E
+# ================================================================
+
+class _NotifCreate(BaseModel):
+    title:      str
+    message:    str = ""
+    type:       str = "general"     # task_reminder|meeting_alert|ai_insight|system_alert|general
+    priority:   str = "medium"      # low|medium|high|critical
+    source_id:  str = ""
+    action_url: str = ""
+    deduplicate: bool = True
+
+@app.get("/api/notifications")
+def notif_list(
+    unread_only: bool = False,
+    limit:       int  = 50,
+    offset:      int  = 0,
+    type:        str  = "",
+    priority:    str  = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        result = _notif(uid).list_notifications(
+            unread_only=unread_only,
+            limit=limit,
+            offset=offset,
+            notif_type=type,
+            priority=priority,
+        )
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/notifications")
+def notif_create(body: _NotifCreate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        n = _notif(uid).create(
+            title=body.title,
+            message=body.message,
+            notif_type=body.type,
+            priority=body.priority,
+            source_id=body.source_id,
+            action_url=body.action_url,
+            deduplicate=body.deduplicate,
+        )
+        return {"status": "ok", "notification": n}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.put("/api/notifications/{notif_id}/read")
+def notif_mark_read(notif_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        n = _notif(uid).mark_read(notif_id)
+        return {"status": "ok", "notification": n}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.put("/api/notifications/read-all")
+def notif_read_all(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        count = _notif(uid).mark_all_read()
+        return {"status": "ok", "marked_read": count}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.delete("/api/notifications/{notif_id}")
+def notif_delete(notif_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ok = _notif(uid).delete(notif_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        return {"status": "ok", "deleted": notif_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/notifications/unread-count")
+def notif_unread_count(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        return {"status": "ok", "unread": _notif(uid).unread_count()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ================================================================
+# AI ORCHESTRATOR  — Phase 5F
+# ================================================================
+
+class _OrchestratorRequest(BaseModel):
+    message:     str
+    include_data: bool = True   # whether to fetch live context data
+
+def _build_orchestrator_context(uid: str, include_data: bool = True) -> dict:
+    """
+    Assembles context dict from live JARVIS data + Phase 5D memory.
+    Designed to be fast: each fetch is try/except guarded.
+    """
+    ctx: dict = {}
+
+    # Phase 5D memory context
+    try:
+        ctx["memory_context"] = _memory(uid).get_context(limit=15, min_importance=4).get("context", [])
+    except Exception:
+        ctx["memory_context"] = []
+
+    if not include_data:
+        return ctx
+
+    # Notifications
+    try:
+        ctx["unread_notifications"] = _notif(uid).unread_count()
+    except Exception:
+        ctx["unread_notifications"] = 0
+
+    # Memory stats
+    try:
+        ctx["memory_stats"] = _memory(uid).stats()
+    except Exception:
+        ctx["memory_stats"] = {}
+
+    # Daily tasks & meetings (productivity agent)
+    try:
+        ws = _ws(uid)
+        ws_data = ws.home(_user_name(uid))
+        ctx["tasks"]    = ws_data.get("tasks", [])
+        ctx["meetings"] = ws_data.get("meetings", [])
+    except Exception:
+        ctx["tasks"] = []
+        ctx["meetings"] = []
+
+    # Today's calendar events
+    try:
+        ctx["calendar_events"] = _cal(uid).get_today_events()
+    except Exception:
+        ctx["calendar_events"] = []
+
+    # Projects
+    try:
+        ctx["projects"] = planner.list_projects(user_id=uid)
+    except Exception:
+        ctx["projects"] = []
+
+    # Golf bag (lightweight summary)
+    try:
+        clubs = _ge(uid).get_bag()
+        ctx["golf_bag"] = {"clubs": clubs if isinstance(clubs, list) else []}
+    except Exception:
+        ctx["golf_bag"] = {}
+
+    return ctx
+
+@app.post("/api/orchestrator/chat")
+def orchestrator_chat(
+    body: _OrchestratorRequest,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        context = _build_orchestrator_context(uid, include_data=body.include_data)
+        result  = ai_orchestrator.route(body.message, context)
+        # Auto-save interaction to Phase 5D memory at low importance
+        try:
+            _memory(uid).auto_save_interaction(
+                body.message,
+                result.get("response", ""),
+                importance=3,
+            )
+        except Exception:
+            pass
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/orchestrator/classify")
+def orchestrator_classify(
+    message: str,
+    current_user: dict = Depends(get_optional_user),
+):
+    try:
+        return {"status": "ok", **ai_orchestrator.classify(message)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/orchestrator/health")
+def orchestrator_health(current_user: dict = Depends(get_optional_user)):
+    try:
+        return {"status": "ok", **ai_orchestrator.health()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/orchestrator/audit")
+def orchestrator_audit(
+    limit: int = 20,
+    current_user: dict = Depends(get_optional_user),
+):
+    try:
+        return {"status": "ok", "log": ai_orchestrator.audit_log(limit=limit)}
     except Exception as e:
         return {"status": "error", "error": str(e)}

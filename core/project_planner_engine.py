@@ -22,6 +22,7 @@ class ProjectPlannerEngine:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.exists():
             self._write({"projects": [], "tasks": []})
+        self._migrate()
 
     # ── persistence ─────────────────────────────────────────────────
 
@@ -33,11 +34,25 @@ class ProjectPlannerEngine:
             json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
+    def _migrate(self) -> None:
+        """Backfill user_id='owner' on records that pre-date multi-user support."""
+        data = self._read()
+        changed = False
+        for p in data.get("projects", []):
+            if "user_id" not in p:
+                p["user_id"] = "owner"
+                changed = True
+        if changed:
+            self._write(data)
+
     # ── projects ────────────────────────────────────────────────────
 
-    def list_projects(self) -> List[Dict]:
+    def list_projects(self, user_id: str = "owner") -> List[Dict]:
         data = self._read()
-        projects = data.get("projects", [])
+        projects = [
+            p for p in data.get("projects", [])
+            if p.get("user_id", "owner") == user_id
+        ]
         tasks = data.get("tasks", [])
         for p in projects:
             pid = p["id"]
@@ -47,10 +62,13 @@ class ProjectPlannerEngine:
             p["doing_count"] = sum(1 for t in tasks if t.get("project_id") == pid and t.get("status") == "doing")
         return projects
 
-    def create_project(self, name: str, description: str = "", color: str = "cyan") -> Dict:
+    def create_project(
+        self, name: str, description: str = "", color: str = "cyan", user_id: str = "owner"
+    ) -> Dict:
         data = self._read()
         item: Dict[str, Any] = {
             "id":          f"p_{uuid4().hex[:10]}",
+            "user_id":     user_id,
             "name":        name.strip(),
             "description": description.strip(),
             "color":       color,
@@ -61,14 +79,29 @@ class ProjectPlannerEngine:
         self._write(data)
         return {**item, "task_count": 0, "done_count": 0, "todo_count": 0, "doing_count": 0}
 
-    def get_project(self, project_id: str) -> Optional[Dict]:
-        projects = self.list_projects()
-        return next((p for p in projects if p["id"] == project_id), None)
+    def get_project(self, project_id: str, user_id: str = "owner") -> Optional[Dict]:
+        """Returns the project only if it belongs to user_id."""
+        data = self._read()
+        tasks = data.get("tasks", [])
+        for p in data.get("projects", []):
+            if p["id"] == project_id and p.get("user_id", "owner") == user_id:
+                pid = p["id"]
+                return {
+                    **p,
+                    "task_count":  sum(1 for t in tasks if t.get("project_id") == pid),
+                    "done_count":  sum(1 for t in tasks if t.get("project_id") == pid and t.get("status") == "done"),
+                    "todo_count":  sum(1 for t in tasks if t.get("project_id") == pid and t.get("status") == "todo"),
+                    "doing_count": sum(1 for t in tasks if t.get("project_id") == pid and t.get("status") == "doing"),
+                }
+        return None
 
-    def delete_project(self, project_id: str) -> bool:
+    def delete_project(self, project_id: str, user_id: str = "owner") -> bool:
         data = self._read()
         before = len(data["projects"])
-        data["projects"] = [p for p in data["projects"] if p["id"] != project_id]
+        data["projects"] = [
+            p for p in data["projects"]
+            if not (p["id"] == project_id and p.get("user_id", "owner") == user_id)
+        ]
         if len(data["projects"]) == before:
             return False
         data["tasks"] = [t for t in data["tasks"] if t.get("project_id") != project_id]
@@ -77,8 +110,16 @@ class ProjectPlannerEngine:
 
     # ── tasks ────────────────────────────────────────────────────────
 
-    def get_tasks(self, project_id: str) -> List[Dict]:
+    def get_tasks(self, project_id: str, user_id: str = "owner") -> List[Dict]:
         data = self._read()
+        # Verify project ownership
+        proj = next(
+            (p for p in data.get("projects", [])
+             if p["id"] == project_id and p.get("user_id", "owner") == user_id),
+            None,
+        )
+        if proj is None:
+            return []
         tasks = [t for t in data.get("tasks", []) if t.get("project_id") == project_id]
         tasks.sort(key=lambda t: (t.get("status", ""), t.get("created_at", "")))
         return tasks
@@ -91,9 +132,15 @@ class ProjectPlannerEngine:
         status: str = "todo",
         urgency: str = "medium",
         due_date: str = "",
+        user_id: str = "owner",
     ) -> Dict:
         data = self._read()
-        if not any(p["id"] == project_id for p in data.get("projects", [])):
+        proj = next(
+            (p for p in data.get("projects", [])
+             if p["id"] == project_id and p.get("user_id", "owner") == user_id),
+            None,
+        )
+        if proj is None:
             raise ValueError(f"project '{project_id}' not found")
         urgency = urgency if urgency in _URGENCY_COLOR else "medium"
         item: Dict[str, Any] = {
@@ -142,7 +189,7 @@ class ProjectPlannerEngine:
         self._write(data)
         return True
 
-    def create_tasks_bulk(self, project_id: str, task_defs: List[Dict]) -> List[Dict]:
+    def create_tasks_bulk(self, project_id: str, task_defs: List[Dict], user_id: str = "owner") -> List[Dict]:
         created = []
         for td in task_defs:
             t = self.create_task(
@@ -152,6 +199,7 @@ class ProjectPlannerEngine:
                 status=td.get("status", "todo"),
                 urgency=td.get("urgency", "medium"),
                 due_date=td.get("due_date", ""),
+                user_id=user_id,
             )
             created.append(t)
         return created

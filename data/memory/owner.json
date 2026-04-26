@@ -1,0 +1,163 @@
+{
+  "user_id": "owner",
+  "preferences": {},
+  "history": [
+    {
+      "id": "mem_a3ffd8d352",
+      "type": "interaction",
+      "content": "User asked about JARVIS architecture",
+      "importance": 6,
+      "tags": [
+        "chat",
+        "architecture"
+      ],
+      "metadata": {},
+      "fingerprint": "4a2d5a21a4499081",
+      "timestamp": "2026-04-26T14:31:27.324647",
+      "last_seen": "2026-04-26T14:31:27.324647"
+    },
+    {
+      "id": "mem_3d97496589",
+      "type": "decision",
+      "content": "User prefers compact responses without trailing summaries",
+      "importance": 9,
+      "tags": [
+        "preference",
+        "behavior"
+      ],
+      "metadata": {},
+      "fingerprint": "e2473388822e2dd8",
+      "timestamp": "2026-04-26T14:31:27.347902",
+      "last_seen": "2026-04-26T14:31:27.347902"
+    },
+    {
+      "id": "mem_f6a94af995",
+      "type": "interaction",
+      "content": "User: What tasks do I have today? | AI: Task board: 0 todo, 0 in-progress, 0 done. 2 meeting(s) today — next: Board Review Recall: User prefers compact response",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "What tasks do I have today?"
+      },
+      "fingerprint": "1abdf03bc4d62a2c",
+      "timestamp": "2026-04-26T14:39:19.465410",
+      "last_seen": "2026-04-26T14:39:19.465410"
+    },
+    {
+      "id": "mem_eb68b3cff6",
+      "type": "interaction",
+      "content": "User: How is my golf bag set up? | AI: Bag has 14 club(s).",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "How is my golf bag set up?"
+      },
+      "fingerprint": "6b0b774f92f39afd",
+      "timestamp": "2026-04-26T14:39:19.516027",
+      "last_seen": "2026-04-26T14:39:19.516027"
+    },
+    {
+      "id": "mem_9a155dd241",
+      "type": "interaction",
+      "content": "User: Show me my active projects | AI: No active projects. Create one in the Projects tab. Decision context: User prefers compact responses without trailing su",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "Show me my active projects"
+      },
+      "fingerprint": "5ba361238cdce5cf",
+      "timestamp": "2026-04-26T14:39:19.534920",
+      "last_seen": "2026-04-26T14:39:19.534920"
+    },
+    {
+      "id": "mem_67fcc3c34a",
+      "type": "interaction",
+      "content": "User: What is the JARVIS system status? | AI: JARVIS is online. 2026-04-26 09:39. Memory: 5 entries, avg importance 4.8.",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "What is the JARVIS system status?"
+      },
+      "fingerprint": "3c7cd585500dc0c8",
+      "timestamp": "2026-04-26T14:39:19.556098",
+      "last_seen": "2026-04-26T14:39:19.556098"
+    },
+    {
+      "id": "mem_c088caf2ef",
+      "type": "interaction",
+      "content": "User: Hello JARVIS | AI: JARVIS is online. 2026-04-26 09:39.",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "Hello JARVIS"
+      },
+      "fingerprint": "e52fa73fd92e5c1d",
+      "timestamp": "2026-04-26T14:39:19.566710",
+      "last_seen": "2026-04-26T14:39:19.566710"
+    },
+    {
+      "id": "mem_29d3e53a30",
+      "type": "decision",
+      "content": "User is focused on Phase 5F AI orchestrator testing",
+      "importance": 9,
+      "tags": [
+        "test",
+        "orchestrator"
+      ],
+      "metadata": {},
+      "fingerprint": "76e0c5fbdea34ab6",
+      "timestamp": "2026-04-26T14:39:19.582658",
+      "last_seen": "2026-04-26T14:39:19.582658"
+    },
+    {
+      "id": "mem_0bb688d50e",
+      "type": "interaction",
+      "content": "User: What are my decisions? | AI: I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can he",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "What are my decisions?"
+      },
+      "fingerprint": "bd1f07ba2e9e7538",
+      "timestamp": "2026-04-26T14:39:19.615113",
+      "last_seen": "2026-04-26T14:39:19.615113"
+    },
+    {
+      "id": "mem_a337ef62a1",
+      "type": "interaction",
+      "content": "User: system health check | AI: JARVIS is online. 2026-04-26 09:40. Memory: 9 entries, avg importance 4.67.",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "system health check"
+      },
+      "fingerprint": "1c7bcdf867fe5c61",
+      "timestamp": "2026-04-26T14:40:28.482708",
+      "last_seen": "2026-04-26T14:40:28.482708"
+    }
+  ],
+  "insights": [
+    {
+      "id": "ins_f89676fa55",
+      "content": "User is a high-performer who works across trading, golf, and software",
+      "importance": 8,
+      "fingerprint": "03b87935d0ce6b0a",
+      "timestamp": "2026-04-26T14:31:27.390008"
+    }
+  ],
+  "last_updated": "2026-04-26T14:40:28.482708"
+}

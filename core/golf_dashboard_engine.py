@@ -137,10 +137,15 @@ class GolfDashboardEngine:
     STATS_FILE = Path("data/golf/player_stats.json")
     BAG_FILE   = Path("data/golf/player_bag.json")
 
-    def __init__(self) -> None:
+    def __init__(self, bag_file: "str | Path | None" = None) -> None:
         self.db = GolfCourseDatabase()
         self._weather_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
         self._cache_lock = threading.Lock()
+
+        # Allow per-user bag file override
+        if bag_file is not None:
+            self.BAG_FILE = Path(bag_file)
+            self.BAG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
         # Instantiate heavy engines only once, guarded
         self._agent: Optional[Any] = _GolfAIAgent() if _AGENT_AVAILABLE else None

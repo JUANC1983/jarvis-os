@@ -777,6 +777,145 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .proj-board-empty{
   text-align:center;padding:80px 20px;color:var(--soft);
 }
+
+/* ═══════════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════════ */
+.cal-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-bottom:18px;
+}
+.cal-filter-group{display:flex;gap:6px;flex-wrap:wrap}
+.cal-filter-btn{
+  background:none;border:1px solid var(--border);border-radius:8px;
+  padding:6px 14px;font-size:12px;font-weight:600;
+  color:var(--soft);cursor:pointer;transition:all .15s;
+}
+.cal-filter-btn:hover{border-color:rgba(68,240,255,.3);color:var(--white)}
+.cal-filter-btn.active{
+  background:rgba(68,240,255,.1);border-color:rgba(68,240,255,.35);
+  color:var(--cyan);
+}
+.cal-events-wrap{display:flex;flex-direction:column;gap:16px}
+.cal-date-group-header{
+  font-size:11px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--soft);
+  padding:6px 0 4px;border-bottom:1px solid var(--border);
+  margin-bottom:8px;
+}
+.cal-date-group-header.today{color:var(--cyan)}
+.cal-event-card{
+  background:var(--s2);border:1px solid var(--border);
+  border-left:3px solid rgba(68,240,255,.4);
+  border-radius:8px;padding:12px 14px;
+  transition:box-shadow .15s,transform .15s;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.cal-event-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.3);transform:translateY(-1px)}
+.cal-event-card.today{border-left-color:var(--cyan)}
+.cal-event-card.past{opacity:.55}
+.cal-event-card.happening{border-left-color:#34c759}
+.cev-time-col{
+  flex-shrink:0;text-align:right;min-width:50px;
+  font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums;
+  padding-top:2px;
+}
+.cev-time-start{font-weight:700;color:var(--white);font-size:13px}
+.cev-time-end{font-size:10px;color:var(--soft)}
+.cev-body{flex:1;min-width:0}
+.cev-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.cev-meta{font-size:11px;color:var(--soft);margin-bottom:4px}
+.cev-desc{font-size:12px;color:var(--soft);font-style:italic}
+.cev-actions{
+  display:flex;gap:4px;flex-shrink:0;opacity:0;
+  transition:opacity .15s;align-self:flex-start;
+}
+.cal-event-card:hover .cev-actions{opacity:1}
+.cev-btn{
+  background:none;border:1px solid var(--border);border-radius:6px;
+  padding:3px 8px;font-size:11px;color:var(--soft);cursor:pointer;
+  transition:color .15s,border-color .15s;
+}
+.cev-btn:hover{color:var(--white);border-color:rgba(68,240,255,.3)}
+.cev-btn.del:hover{color:var(--bad);border-color:rgba(255,107,107,.3)}
+.cal-empty{
+  text-align:center;padding:60px 20px;color:var(--soft);
+}
+.cal-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;padding:2px 8px;
+  border-radius:999px;background:rgba(68,240,255,.1);
+  color:var(--cyan);text-transform:uppercase;letter-spacing:.05em;
+}
+
+/* ── Notifications ───────────────────────── */
+.notif-btn{
+  position:relative;background:none;border:1px solid var(--border2);
+  color:var(--soft);cursor:pointer;border-radius:var(--rs);
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:17px;transition:border-color .2s,color .2s;flex-shrink:0;
+}
+.notif-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.notif-badge{
+  position:absolute;top:-4px;right:-4px;
+  background:var(--bad);color:#fff;
+  font-size:9px;font-weight:800;line-height:1;
+  padding:2px 4px;border-radius:999px;min-width:16px;text-align:center;
+  display:none;
+}
+.notif-badge.has-unread{display:block}
+.notif-dropdown{
+  position:absolute;top:calc(100% + 10px);right:0;
+  width:340px;max-height:480px;
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:var(--shadow);z-index:999;overflow:hidden;
+  display:none;flex-direction:column;
+}
+.notif-dropdown.open{display:flex}
+.notif-dd-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-bottom:1px solid var(--border3);
+  font-size:12px;font-weight:700;color:var(--white);flex-shrink:0;
+}
+.notif-dd-header button{
+  background:none;border:none;color:var(--soft);font-size:11px;
+  cursor:pointer;padding:2px 6px;border-radius:4px;
+  transition:color .15s;
+}
+.notif-dd-header button:hover{color:var(--cyan)}
+.notif-list{overflow-y:auto;flex:1}
+.notif-item{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 14px;border-bottom:1px solid var(--border3);
+  transition:background .15s;cursor:pointer;
+}
+.notif-item:hover{background:var(--s3)}
+.notif-item.unread{background:rgba(68,240,255,.03)}
+.notif-item.unread .notif-item-title{color:var(--white)}
+.notif-icon{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  background:var(--s3);
+}
+.notif-icon.critical{background:rgba(255,107,107,.15);color:var(--bad)}
+.notif-icon.high{background:rgba(255,149,69,.15);color:var(--orange)}
+.notif-icon.medium{background:rgba(68,240,255,.1);color:var(--cyan)}
+.notif-icon.low{background:rgba(61,255,194,.08);color:var(--ok)}
+.notif-item-body{flex:1;min-width:0}
+.notif-item-title{
+  font-size:12px;font-weight:600;color:var(--soft2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.notif-item-msg{font-size:11px;color:var(--soft);margin-top:2px;line-height:1.4}
+.notif-item-time{font-size:10px;color:var(--soft);margin-top:3px;opacity:.7}
+.notif-item-del{
+  background:none;border:none;color:var(--soft);cursor:pointer;
+  font-size:12px;padding:2px;opacity:.5;transition:opacity .15s,color .15s;
+  flex-shrink:0;align-self:center;
+}
+.notif-item-del:hover{opacity:1;color:var(--bad)}
+.notif-empty{padding:28px 14px;text-align:center;color:var(--soft);font-size:13px}
+.notif-wrap{position:relative}
 </style>
 </head>
 <body>
@@ -802,6 +941,21 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div class="hero-right">
       <button id="autoBtn" class="btn-p">⚡ Auto JARVIS</button>
       <button class="btn-g btn-sm" onclick="switchTab('chat')">💬 Chat</button>
+      <div class="notif-wrap">
+        <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown()" title="Notifications">
+          🔔
+          <span class="notif-badge" id="notifBadge"></span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dd-header">
+            <span>Notifications <span id="notifUnreadLabel" style="color:var(--soft);font-weight:400"></span></span>
+            <button onclick="markAllNotifsRead()">Mark all read</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">Loading…</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -810,6 +964,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn" data-tab="markets">Markets</button>
     <button class="tab-btn" data-tab="agents">Agents</button>
     <button class="tab-btn" data-tab="productivity">Productivity</button>
+    <button class="tab-btn" data-tab="calendar">Calendar</button>
     <button class="tab-btn" data-tab="projects">Projects</button>
     <button class="tab-btn" data-tab="golf">Golf</button>
     <button class="tab-btn" data-tab="intelligence">Intelligence</button>
@@ -1369,6 +1524,32 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   </div>
 </div>
 
+<!-- ══════════════ CALENDAR TAB ══════════════ -->
+<div id="tab-calendar" class="tab-panel">
+  <div class="card">
+    <div class="ch">
+      <span class="ct">Calendar</span>
+      <button class="btn-p btn-sm" onclick="openEventModal()">+ New Event</button>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="cal-toolbar">
+      <div class="cal-filter-group">
+        <button class="cal-filter-btn active" data-calrange="day"   onclick="setCalRange('day',this)">Today</button>
+        <button class="cal-filter-btn"         data-calrange="week"  onclick="setCalRange('week',this)">This Week</button>
+        <button class="cal-filter-btn"         data-calrange="month" onclick="setCalRange('month',this)">This Month</button>
+        <button class="cal-filter-btn"         data-calrange=""      onclick="setCalRange('',this)">All</button>
+      </div>
+      <span id="calRangeLabel" style="font-size:12px;color:var(--soft)"></span>
+    </div>
+
+    <!-- Event list -->
+    <div id="calEventsWrap" class="cal-events-wrap">
+      <div class="cal-empty">Loading calendar…</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ PROJECTS TAB ══════════════ -->
 <div id="tab-projects" class="tab-panel">
   <div class="proj-layout">
@@ -1614,6 +1795,76 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   </div>
 </div>
 
+<!-- Event Create / Edit Modal -->
+<div id="eventModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('eventModal')">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="evModalTitle">New Event</div>
+      <button class="modal-close" onclick="closeModal('eventModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ev-id"/>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Title *</div>
+        <input id="ev-title" class="input" placeholder="Meeting, call, deadline…"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Date *</div>
+          <input id="ev-date" type="date" class="input"/>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Start Time *</div>
+          <input id="ev-time" type="time" class="input"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Duration</div>
+          <select id="ev-duration" class="input">
+            <option value="30">30 minutes</option>
+            <option value="60" selected>1 hour</option>
+            <option value="90">1.5 hours</option>
+            <option value="120">2 hours</option>
+            <option value="180">3 hours</option>
+            <option value="240">4 hours</option>
+            <option value="480">All day (8h)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Reminder</div>
+          <select id="ev-reminder" class="input">
+            <option value="5">5 minutes before</option>
+            <option value="15">15 minutes before</option>
+            <option value="30" selected>30 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="120">2 hours before</option>
+            <option value="1440">1 day before</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Participants</div>
+        <input id="ev-participants" class="input" placeholder="Juan, Maria, carlos@email.com"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Notes / Objective</div>
+        <input id="ev-desc" class="input" placeholder="Agenda, context, goals…"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Link to Project (optional)</div>
+        <select id="ev-project" class="input">
+          <option value="">— None —</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-g btn-sm" onclick="closeModal('eventModal')">Cancel</button>
+        <button class="btn-p btn-sm" onclick="saveEvent()">Save Event</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- New Project Modal -->
 <div id="newProjectModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('newProjectModal')">
   <div class="modal-box">
@@ -1726,6 +1977,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="mob-btn" data-tab="markets"><span class="mi">📈</span><span>Markets</span></button>
     <button class="mob-btn" data-tab="chat"><span class="mi">💬</span><span>Chat</span></button>
     <button class="mob-btn" data-tab="productivity"><span class="mi">✅</span><span>Tasks</span></button>
+    <button class="mob-btn" data-tab="calendar"><span class="mi">📅</span><span>Calendar</span></button>
     <button class="mob-btn" data-tab="projects"><span class="mi">📋</span><span>Projects</span></button>
     <button class="mob-btn" data-tab="golf"><span class="mi">⛳</span><span>Golf</span></button>
     <button class="mob-btn" data-tab="intelligence"><span class="mi">📰</span><span>Intel</span></button>
@@ -3326,6 +3578,334 @@ async function runAITasks() {
   }
 }
 
+/* ── Notifications ──────────────────── */
+const _notif = { open: false, pollTimer: null };
+
+const _NOTIF_ICONS = {
+  task_reminder: "✅",
+  meeting_alert: "📅",
+  ai_insight:    "🧠",
+  system_alert:  "⚙️",
+  general:       "🔔",
+};
+
+async function loadNotifications() {
+  try {
+    const r = await fetch("/api/notifications?limit=30");
+    const d = await r.json();
+    const items = d.notifications || [];
+    const unread = d.unread || 0;
+
+    // Update badge
+    const badge = qs("notifBadge");
+    const label = qs("notifUnreadLabel");
+    if (badge) {
+      badge.textContent = unread > 99 ? "99+" : String(unread);
+      badge.classList.toggle("has-unread", unread > 0);
+    }
+    if (label) label.textContent = unread > 0 ? `· ${unread} new` : "";
+
+    // Render list
+    const list = qs("notifList");
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = '<div class="notif-empty">No notifications</div>';
+      return;
+    }
+
+    const fmtTime = ts => {
+      if (!ts) return "";
+      const d = new Date(ts);
+      const now = new Date();
+      const diffMs = now - d;
+      if (diffMs < 60000)   return "just now";
+      if (diffMs < 3600000) return `${Math.floor(diffMs/60000)}m ago`;
+      if (diffMs < 86400000) return `${Math.floor(diffMs/3600000)}h ago`;
+      return d.toLocaleDateString("en-US", { month:"short", day:"numeric" });
+    };
+
+    list.innerHTML = items.map(n => {
+      const icon = _NOTIF_ICONS[n.type] || "🔔";
+      const unreadCls = n.read ? "" : " unread";
+      return `
+<div class="notif-item${unreadCls}" onclick="handleNotifClick('${n.id}','${n.action_url||''}')">
+  <div class="notif-icon ${n.priority||'medium'}">${icon}</div>
+  <div class="notif-item-body">
+    <div class="notif-item-title">${n.title}</div>
+    ${n.message ? `<div class="notif-item-msg">${n.message}</div>` : ""}
+    <div class="notif-item-time">${fmtTime(n.created_at)}</div>
+  </div>
+  <button class="notif-item-del" onclick="event.stopPropagation();deleteNotif('${n.id}')" title="Dismiss">✕</button>
+</div>`;
+    }).join("");
+  } catch(e) {
+    console.warn("loadNotifications:", e);
+  }
+}
+
+function toggleNotifDropdown() {
+  const dd = qs("notifDropdown");
+  if (!dd) return;
+  _notif.open = !_notif.open;
+  dd.classList.toggle("open", _notif.open);
+  if (_notif.open) loadNotifications();
+}
+
+function closeNotifDropdown() {
+  const dd = qs("notifDropdown");
+  if (dd) dd.classList.remove("open");
+  _notif.open = false;
+}
+
+async function handleNotifClick(id, actionUrl) {
+  try {
+    await fetch(`/api/notifications/${id}/read`, { method: "PUT" });
+  } catch(e) {}
+  if (actionUrl) switchTab(actionUrl);
+  loadNotifications();
+}
+
+async function deleteNotif(id) {
+  try {
+    await fetch(`/api/notifications/${id}`, { method: "DELETE" });
+    loadNotifications();
+  } catch(e) {}
+}
+
+async function markAllNotifsRead() {
+  try {
+    await fetch("/api/notifications/read-all", { method: "PUT" });
+    loadNotifications();
+  } catch(e) {}
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", e => {
+  if (_notif.open && !e.target.closest(".notif-wrap")) closeNotifDropdown();
+});
+
+/* ── Calendar ───────────────────────── */
+const _cal = { range: "day", events: [] };
+
+async function loadCalendarEvents(range = "day") {
+  _cal.range = range;
+  const wrap = qs("calEventsWrap");
+  if (wrap) wrap.innerHTML = '<div class="cal-empty">Loading…</div>';
+  try {
+    const url = range ? `/api/calendar/events?range=${range}` : "/api/calendar/events";
+    const r = await fetch(url);
+    const data = await r.json();
+    _cal.events = data.events || [];
+    renderEventList(_cal.events);
+  } catch(e) {
+    if (wrap) wrap.innerHTML = '<div class="cal-empty">Failed to load events.</div>';
+    console.warn("loadCalendarEvents:", e);
+  }
+}
+
+function renderEventList(events) {
+  const wrap = qs("calEventsWrap");
+  if (!wrap) return;
+  if (!events.length) {
+    wrap.innerHTML = '<div class="cal-empty">No events in this range.<br><span style="font-size:12px;color:var(--soft)">Click "+ New Event" to create one.</span></div>';
+    return;
+  }
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const nowMs = Date.now();
+
+  // Group by date
+  const groups = {};
+  events.forEach(ev => {
+    const dateKey = (ev.start || "").slice(0, 10) || "unknown";
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(ev);
+  });
+
+  const fmt = d => {
+    const [y, m, day] = d.split("-");
+    const dt = new Date(+y, +m - 1, +day);
+    return dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  };
+
+  let html = "";
+  Object.keys(groups).sort().forEach(dateKey => {
+    const isToday = dateKey === todayStr;
+    html += `<div class="cal-date-group-header${isToday ? " today" : ""}">${dateKey === "unknown" ? "No date" : fmt(dateKey)}${isToday ? ' <span class="cal-badge">TODAY</span>' : ""}</div>`;
+
+    groups[dateKey].forEach(ev => {
+      const startMs = ev.start ? new Date(ev.start.replace(" ", "T")).getTime() : 0;
+      const endMs   = ev.end   ? new Date(ev.end.replace(" ", "T")).getTime()   : 0;
+      let cardCls = "cal-event-card";
+      if (dateKey === todayStr) {
+        if (endMs && nowMs > endMs)        cardCls += " past";
+        else if (startMs && nowMs >= startMs) cardCls += " happening";
+        else                                  cardCls += " today";
+      }
+
+      const fmtTime = s => {
+        if (!s) return "";
+        const d = new Date(s.replace(" ", "T"));
+        return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+      };
+
+      const participants = (ev.participants || []).join(", ");
+      const projName = ev.linked_project_id
+        ? (_proj.projects.find(p => p.id === ev.linked_project_id)?.name || ev.linked_project_id)
+        : "";
+
+      html += `
+<div class="${cardCls}" data-evid="${ev.id}">
+  <div class="cev-time-col">
+    <div class="cev-time-start">${fmtTime(ev.start) || "—"}</div>
+    <div class="cev-time-end">${fmtTime(ev.end) || ""}</div>
+  </div>
+  <div class="cev-body">
+    <div class="cev-title">${ev.title || "Untitled"}</div>
+    <div class="cev-meta">${[participants, projName ? "📋 " + projName : ""].filter(Boolean).join(" · ") || "&nbsp;"}</div>
+    ${ev.description ? `<div class="cev-desc">${ev.description}</div>` : ""}
+  </div>
+  <div class="cev-actions">
+    <button class="cev-btn" onclick="openEditEventModal(${JSON.stringify(ev).replace(/"/g,'&quot;')})">Edit</button>
+    <button class="cev-btn del" onclick="deleteCalEvent('${ev.id}')">Del</button>
+  </div>
+</div>`;
+    });
+  });
+
+  wrap.innerHTML = html;
+}
+
+function setCalRange(range, btn) {
+  document.querySelectorAll(".cal-filter-btn").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  const label = qs("calRangeLabel");
+  if (label) {
+    const names = { day: "Showing today", week: "Showing this week", month: "Showing this month", "": "Showing all events" };
+    label.textContent = names[range] ?? "";
+  }
+  loadCalendarEvents(range);
+}
+
+function openEventModal() {
+  qs("ev-id").value = "";
+  qs("ev-title").value = "";
+  qs("ev-time").value = "09:00";
+  qs("ev-duration").value = "60";
+  qs("ev-reminder").value = "30";
+  qs("ev-participants").value = "";
+  qs("ev-desc").value = "";
+
+  // Pre-fill today's date
+  const today = new Date().toISOString().slice(0, 10);
+  qs("ev-date").value = today;
+
+  // Populate project dropdown
+  const sel = qs("ev-project");
+  sel.innerHTML = '<option value="">— None —</option>';
+  (_proj.projects || []).forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  sel.value = "";
+
+  qs("evModalTitle").textContent = "New Event";
+  openModal("eventModal");
+  setTimeout(() => qs("ev-title")?.focus(), 80);
+}
+
+function openEditEventModal(ev) {
+  qs("ev-id").value = ev.id || "";
+  qs("ev-title").value = ev.title || "";
+  qs("ev-desc").value = ev.description || "";
+  qs("ev-participants").value = (ev.participants || []).join(", ");
+  qs("ev-reminder").value = String(ev.reminder_minutes ?? 30);
+
+  // Parse start datetime
+  if (ev.start) {
+    const s = ev.start.replace(" ", "T");
+    const d = new Date(s);
+    qs("ev-date").value = ev.start.slice(0, 10);
+    qs("ev-time").value = d.toTimeString().slice(0, 5);
+  } else {
+    qs("ev-date").value = "";
+    qs("ev-time").value = "";
+  }
+
+  // Estimate duration from start/end
+  if (ev.start && ev.end) {
+    const startMs = new Date(ev.start.replace(" ", "T")).getTime();
+    const endMs   = new Date(ev.end.replace(" ", "T")).getTime();
+    const mins = Math.round((endMs - startMs) / 60000);
+    const sel = qs("ev-duration");
+    const opt = [...sel.options].find(o => +o.value === mins);
+    sel.value = opt ? String(mins) : "60";
+  }
+
+  // Populate and set project dropdown
+  const sel = qs("ev-project");
+  sel.innerHTML = '<option value="">— None —</option>';
+  (_proj.projects || []).forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  sel.value = ev.linked_project_id || "";
+
+  qs("evModalTitle").textContent = "Edit Event";
+  openModal("eventModal");
+  setTimeout(() => qs("ev-title")?.focus(), 80);
+}
+
+async function saveEvent() {
+  const id    = qs("ev-id").value.trim();
+  const title = qs("ev-title").value.trim();
+  const date  = qs("ev-date").value;
+  const time  = qs("ev-time").value || "09:00";
+  if (!title) { qs("ev-title").focus(); return; }
+  if (!date)  { qs("ev-date").focus();  return; }
+
+  const start = `${date}T${time}`;
+  const body = {
+    title,
+    start,
+    duration_minutes: +qs("ev-duration").value,
+    description:      qs("ev-desc").value.trim(),
+    participants:     qs("ev-participants").value.split(",").map(s => s.trim()).filter(Boolean),
+    reminder_minutes: +qs("ev-reminder").value,
+    linked_project_id: qs("ev-project").value || null,
+  };
+
+  try {
+    if (id) {
+      await fetch(`/api/calendar/events/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+    } else {
+      await fetch("/api/calendar/events", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+    }
+    closeModal("eventModal");
+    loadCalendarEvents(_cal.range);
+  } catch(e) {
+    alert("Failed to save event: " + e);
+  }
+}
+
+async function deleteCalEvent(id) {
+  if (!confirm("Delete this event?")) return;
+  try {
+    await fetch(`/api/calendar/events/${id}`, { method: "DELETE" });
+    loadCalendarEvents(_cal.range);
+  } catch(e) {
+    alert("Failed to delete event: " + e);
+  }
+}
+
 /* ── Events ─────────────────────────── */
 function initEvents() {
   const on = (id, fn) => { const el=qs(id); if(el) el.addEventListener("click", fn); };
@@ -3341,15 +3921,18 @@ function initEvents() {
   kd("golfSearchInput", () => filterCourseLib(qs("golfSearchInput")?.value || ""));
   kd("np-name",  saveNewProject);
   kd("tm-title", saveTask);
+  kd("ev-title", saveEvent);
 }
 
 /* ── Boot ───────────────────────────── */
 async function boot() {
   initEvents(); initVoice(); initUpload(); initVoiceStatus();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
-  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects()]);
-  setInterval(loadMarketSnapshot, 30000);
+  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day')]);
+  loadNotifications();
+  setInterval(loadMarketSnapshot,  30000);
   setInterval(loadRecommendations, 30000);
+  setInterval(loadNotifications,   60000);
 }
 boot();
 </script>

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "ntf_a0ab5a64f7",
+    "title": "System",
+    "message": "Memory usage above 90%",
+    "type": "system_alert",
+    "priority": "critical",
+    "source_id": "",
+    "action_url": "",
+    "dedup_key": "system_alert::system::",
+    "read": true,
+    "created_at": "2026-04-26T14:35:15.182495",
+    "read_at": "2026-04-26T14:35:15.234028"
+  },
+  {
+    "id": "ntf_f59334f9d4",
+    "title": "Task due: Finish Phase 5E",
+    "message": "Due: 2026-04-26",
+    "type": "task_reminder",
+    "priority": "high",
+    "source_id": "tk_test01",
+    "action_url": "",
+    "dedup_key": "task_reminder::task due: finish phase 5e::tk_test01",
+    "read": true,
+    "created_at": "2026-04-26T14:35:15.134708",
+    "read_at": "2026-04-26T14:35:15.225261"
+  }
+]
