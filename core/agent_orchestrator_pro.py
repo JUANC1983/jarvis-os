@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
 # Pipeline stage definitions — maps each JARVIS stage to the agents whose
@@ -400,15 +400,19 @@ class AgentOrchestratorPro:
         result     = self._try_methods(engine, query, domain)
         elapsed_ms = (time.monotonic() - t0) * 1000
 
-        # Micro-reputation: success boosts slightly, error decays
-        has_error = isinstance(result, dict) and "error" in result
+        # Schema-aware reputation update: blend toward actual reported confidence
+        has_error   = isinstance(result, dict) and (
+            "error" in result or result.get("status") == "degraded"
+        )
+        actual_conf = self._extract_confidence(result, primary)
         if has_error:
             self.agent_reputation[primary] = max(
                 0.50, self.agent_reputation.get(primary, 0.75) - 0.005
             )
         else:
-            self.agent_reputation[primary] = min(
-                0.99, self.agent_reputation.get(primary, 0.75) + 0.001
+            current = self.agent_reputation.get(primary, 0.75)
+            self.agent_reputation[primary] = round(
+                min(0.99, current * 0.97 + actual_conf * 0.03), 4
             )
         self._update_perf(primary, elapsed_ms, has_error)
 
@@ -430,7 +434,7 @@ class AgentOrchestratorPro:
         }
 
     def execute_trader(self, symbol_or_prompt: str) -> Dict[str, Any]:
-        preferred_agents = ["premium_trader", "trader_alpha"]
+        preferred_agents = ["trader_alpha"]
 
         for agent_name in preferred_agents:
             engine = self._load_engine(agent_name)
@@ -524,12 +528,198 @@ class AgentOrchestratorPro:
         if has_error:
             p["errors"] += 1
 
+    # ------------------------------------------------------------------ #
+    # Phase 3B — Schema-aware synthesis                                   #
+    # ------------------------------------------------------------------ #
+
+    def _is_standard_schema(self, result: Any) -> bool:
+        if not isinstance(result, dict):
+            return False
+        return {"status", "confidence", "insight", "risk_level", "action", "reason", "data"}.issubset(result.keys())
+
+    def _extract_confidence(self, result: Any, agent_name: str) -> float:
+        if self._is_standard_schema(result) and result.get("status") != "degraded":
+            return float(result.get("confidence", 0.75))
+        return self.agent_reputation.get(agent_name, 0.75)
+
+    def _detect_conflicts(self, paired: List[Tuple[str, Dict[str, Any]]]) -> Dict[str, Any]:
+        """Detect risk_level disagreements across standard-schema agent results."""
+        risk_map: Dict[str, str] = {}
+        for name, r in paired:
+            if self._is_standard_schema(r):
+                risk_map[name] = r.get("risk_level", "medium")
+
+        unique_levels: Set[str] = set(risk_map.values())
+        if len(unique_levels) > 1:
+            desc = " | ".join(f"{n}={v}" for n, v in risk_map.items())
+            return {
+                "conflict": True,
+                "description": f"Risk level disagreement: {desc}",
+                "risk_map": risk_map,
+            }
+        return {"conflict": False, "risk_map": risk_map}
+
+    def _synthesize_council(
+        self, paired: List[Tuple[str, Dict[str, Any]]]
+    ) -> Dict[str, Any]:
+        """
+        Weighted synthesis of multiple standard-schema agent responses.
+
+        Weight = agent_reputation × agent_confidence (from schema).
+        Highest-weight agent provides the council action.
+        Signals and reasoning paths are aggregated for full traceability.
+        """
+        valid = [
+            (name, r) for name, r in paired
+            if self._is_standard_schema(r) and r.get("status") != "degraded"
+        ]
+
+        if not valid:
+            return {
+                "council_action":       "Insufficient agent responses for council synthesis — await more data.",
+                "council_insight":      "No valid agent outputs available.",
+                "weighted_confidence":  0.3,
+                "consensus_risk_level": "medium",
+                "primary_agent":        "fallback",
+                "agents_consulted":     [],
+                "aggregated_signals":   [],
+                "reasoning_path":       [],
+                "conflict":             False,
+            }
+
+        # Per-agent weight = reputation × reported confidence
+        def _weight(name: str, r: Dict[str, Any]) -> float:
+            return self.agent_reputation.get(name, 0.75) * float(r.get("confidence", 0.5))
+
+        weights = {name: _weight(name, r) for name, r in valid}
+        total_weight = sum(weights.values())
+
+        # Weighted confidence scalar
+        weighted_confidence = round(
+            sum(float(r.get("confidence", 0.5)) * weights[name] for name, r in valid) / total_weight
+            if total_weight > 0 else 0.5,
+            3,
+        )
+
+        # Primary agent = highest weight
+        best_name, best_result = max(valid, key=lambda x: weights[x[0]])
+
+        # Risk-level consensus (weight-voted)
+        risk_votes: Dict[str, float] = {}
+        for name, r in valid:
+            rl = r.get("risk_level", "medium")
+            risk_votes[rl] = risk_votes.get(rl, 0.0) + weights[name]
+        consensus_risk = max(risk_votes, key=risk_votes.__getitem__)
+
+        # Aggregate signals + reasoning paths (capped for readability)
+        all_signals: List[str] = []
+        all_paths: List[str] = []
+        for name, r in valid:
+            data = r.get("data") or {}
+            all_signals.extend(f"[{name}] {s}" for s in data.get("signals_used", []))
+            all_paths.extend(f"[{name}] {p}" for p in data.get("reasoning_path", []))
+
+        conflict_info = self._detect_conflicts(valid)
+
+        return {
+            "council_action":       best_result["action"],
+            "council_insight":      best_result["insight"],
+            "weighted_confidence":  weighted_confidence,
+            "consensus_risk_level": consensus_risk,
+            "primary_agent":        best_name,
+            "agents_consulted":     [name for name, _ in valid],
+            "agent_weights":        {name: round(w, 3) for name, w in weights.items()},
+            "aggregated_signals":   all_signals[:15],
+            "reasoning_path":       all_paths[:10],
+            "conflict":             conflict_info["conflict"],
+            "conflict_detail":      conflict_info.get("description", ""),
+        }
+
+    def execute_council(self, query: str, domain: str = "general") -> Dict[str, Any]:
+        """
+        Phase 3B council execution.
+
+        Runs all domain agents with standardized `analyze()`, then:
+          1. Collects standard-schema results
+          2. Detects cross-agent risk_level conflicts
+          3. Synthesizes a confidence-weighted council decision
+        Returns the enriched orchestrator response.
+        """
+        routed = self.route(domain)
+        agent_names = [a["agent"] for a in routed["selected_agents"]]
+
+        query_snippet = (query or "")[:60].strip()
+        paired: List[Tuple[str, Dict[str, Any]]] = []
+
+        for agent_name in agent_names:
+            engine = self._load_engine(agent_name)
+            if engine is None:
+                continue
+
+            self._last_activity[agent_name] = {
+                "last_action": f"Council: {query_snippet}",
+                "last_seen":   datetime.utcnow().isoformat(),
+                "status":      "running",
+            }
+            self._record_pipeline_stage(agent_name, query_snippet)
+
+            t0         = time.monotonic()
+            result     = self._try_methods(engine, query, domain)
+            elapsed_ms = (time.monotonic() - t0) * 1000
+
+            # Schema-aware reputation update
+            actual_conf = self._extract_confidence(result, agent_name)
+            has_error   = isinstance(result, dict) and (
+                "error" in result or result.get("status") == "degraded"
+            )
+            if has_error:
+                self.agent_reputation[agent_name] = max(
+                    0.50, self.agent_reputation.get(agent_name, 0.75) - 0.005
+                )
+            else:
+                # Blend static reputation toward actual confidence
+                current = self.agent_reputation.get(agent_name, 0.75)
+                self.agent_reputation[agent_name] = round(
+                    current * 0.97 + actual_conf * 0.03, 4
+                )
+            self._update_perf(agent_name, elapsed_ms, has_error)
+
+            self._last_activity[agent_name] = {
+                "last_action": f"Council done: {query_snippet}",
+                "last_seen":   datetime.utcnow().isoformat(),
+                "status":      "idle",
+            }
+
+            if isinstance(result, dict):
+                paired.append((agent_name, result))
+
+        council = self._synthesize_council(paired)
+        self._record_pipeline_stage("executive_council", f"Council synthesis: {query_snippet}")
+
+        return {
+            "query":           query,
+            "domain":          domain,
+            "primary_agent":   council["primary_agent"],
+            "selected_agents": routed["selected_agents"],
+            "council":         council,
+            "individual_results": {name: r for name, r in paired},
+            "summary": (
+                f"Council of {len(council['agents_consulted'])} agents. "
+                f"Weighted confidence: {council['weighted_confidence']:.0%}. "
+                f"Consensus risk: {council['consensus_risk_level']}. "
+                + ("CONFLICT DETECTED. " if council["conflict"] else "")
+                + f"Action: {council['council_action'][:120]}"
+            ),
+        }
+
     def execute_collaborated(self, query: str, domain: str = "general") -> Dict[str, Any]:
         """
         Execute primary agent then optionally a secondary agent for cross-domain depth.
-        Returns primary result enriched with secondary_context when available.
+        Phase 3B: includes conflict detection and mini-synthesis when both agents
+        return standard-schema results.
         """
         primary_result = self.execute(query, domain)
+        primary_agent  = primary_result.get("primary_agent", "unknown")
 
         secondary_domains = _COLLABORATION_MAP.get(domain, [])
         secondary_context: Optional[Dict[str, Any]] = None
@@ -557,6 +747,25 @@ class AgentOrchestratorPro:
         if secondary_context:
             primary_result["secondary_context"] = secondary_context
             primary_result["collaboration"] = True
+
+            # Phase 3B: conflict detection between primary and secondary
+            prim_r = primary_result.get("result", {})
+            sec_r  = secondary_context["result"]
+            if self._is_standard_schema(prim_r) and self._is_standard_schema(sec_r):
+                paired = [
+                    (primary_agent,               prim_r),
+                    (secondary_context["agent"],  sec_r),
+                ]
+                conflict = self._detect_conflicts(paired)
+                if conflict["conflict"]:
+                    primary_result["conflict_warning"] = conflict["description"]
+                synthesis = self._synthesize_council(paired)
+                primary_result["collaboration_synthesis"] = {
+                    "weighted_confidence":  synthesis["weighted_confidence"],
+                    "consensus_risk_level": synthesis["consensus_risk_level"],
+                    "council_action":       synthesis["council_action"],
+                    "conflict":             conflict["conflict"],
+                }
 
         return primary_result
 

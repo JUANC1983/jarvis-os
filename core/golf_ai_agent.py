@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from core.golf_course_database import GolfCourseDatabase
+from core.agent_schema import build_response, degraded
 
 try:
     from core.golf_biomechanics_engine import GolfBiomechanicsEngine
@@ -28,6 +29,79 @@ class GolfAIAgent:
         self.db = GolfCourseDatabase()
         self.bio = GolfBiomechanicsEngine() if _BIO_AVAILABLE else None
         self.vision = GolfSwingVisionPro() if _VISION_AVAILABLE else None
+
+    # ------------------------------------------------------------------
+    # Universal interface — orchestrator path
+    # ------------------------------------------------------------------
+
+    def analyze(self, query: str) -> Dict[str, Any]:
+        """
+        Universal schema for orchestrator. Parses distance from query or uses 150yd default.
+        Returns specific club recommendation + conditions-based action.
+        """
+        if not (query or "").strip():
+            return degraded("Empty golf query", confidence=0.2)
+        try:
+            text = (query or "").lower()
+            import re
+            dist_match = re.search(r'(\d+)\s*(?:yard|yd|yds|metros|m\b)', text)
+            distance   = float(dist_match.group(1)) if dist_match else 150.0
+
+            wind_match = re.search(r'(\d+)\s*(?:mph|kmh|km/h|wind|viento)', text)
+            wind_mph   = float(wind_match.group(1)) if wind_match else 0.0
+
+            if any(w in text for w in ["headwind", "contra", "en contra"]):
+                wind_dir = "headwind"
+            elif any(w in text for w in ["tailwind", "favor", "a favor"]):
+                wind_dir = "tailwind"
+            else:
+                wind_dir = "neutral"
+
+            lie = "rough" if "rough" in text else ("bunker" if "bunker" in text else "fairway")
+
+            rec = self.recommend_club(
+                distance=distance,
+                wind_mph=wind_mph,
+                wind_direction=wind_dir,
+                lie=lie,
+            )
+            club     = rec.get("recommended_club", "7-Iron")
+            adj_dist = rec.get("adjusted_distance", distance)
+            why      = (rec.get("why") or [""])[0]
+
+            signals = [
+                f"Distance: {distance}yds",
+                f"Adjusted: {adj_dist}yds",
+                f"Wind: {wind_dir} {wind_mph}mph",
+                f"Lie: {lie}",
+            ]
+
+            return build_response(
+                confidence=0.82,
+                insight=(
+                    f"For {distance}yds ({wind_dir} wind {wind_mph}mph, {lie}): "
+                    f"play {club}. Adjusted carry: {adj_dist}yds."
+                ),
+                risk_level="low",
+                action=(
+                    f"Select {club}. Aim at conservative target zone — centre of green preferred. "
+                    f"{rec.get('caddie_note', 'Commit to the shot, pre-shot routine first.')}"
+                ),
+                reason=why or f"Distance {adj_dist}yds after wind/lie adjustment maps to {club}.",
+                signals_used=signals,
+                data_sources=["club_distance_table_internal", "wind_lie_adjustment_model"],
+                reasoning_path=[
+                    f"1. Parse distance from query: {distance}yds",
+                    f"2. Parse wind: {wind_mph}mph {wind_dir}",
+                    f"3. Lie condition: {lie}",
+                    f"4. Adjusted distance: {adj_dist}yds",
+                    f"5. Club selection from distance table: {club}",
+                ],
+                data_freshness=1.0,
+                data_completeness=0.9 if wind_mph > 0 else 0.75,
+            )
+        except Exception as exc:
+            return degraded(f"Golf analysis failed: {exc}", confidence=0.25)
 
     # ------------------------------------------------------------------
     # Club Recommendation

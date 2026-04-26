@@ -4,6 +4,8 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class FitnessPerformanceEngine:
     """
@@ -67,44 +69,62 @@ class FitnessPerformanceEngine:
     # ------------------------------------------------------------------
 
     def analyze(self, query: str) -> Dict[str, Any]:
+        if not (query or "").strip():
+            return degraded("No fitness query provided", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Fitness analysis failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
         text   = (query or "").lower()
         focus  = self._detect_focus(text)
         weight = self._extract_weight(text)
         model  = self._MODELS[focus]
         plan   = self._build_microcycle(focus)
         nutr   = self._build_nutrition(weight, focus)
-        rec    = self._recovery_protocol(focus)
+        short  = self._short_term(focus, weight)
 
-        return {
-            "query":          query,
-            "focus":          focus,
-            "training_model": model,
-            "weekly_plan":    plan,
-            "nutrition":      nutr,
-            "recovery":       rec,
-            "recommendations": {
-                "short_term": self._short_term(focus, weight),
-                "mid_term":   self._mid_term(focus),
-                "long_term":  self._long_term(focus),
-            },
-            "risk_assessment": {
-                "level": "low",
-                "overtraining_signals": [
-                    "HRV drop >10% sustained 3+ consecutive days",
-                    "Persistent fatigue not resolved by full rest day",
-                    "Performance declining despite consistent effort",
-                ],
-                "injury_prevention": [
-                    "10-min structured warm-up before every session — non-negotiable",
-                    "Deload week every 4–6 weeks: reduce volume 40%, maintain intensity",
-                    "Never train through sharp joint pain — dull muscle soreness is fine",
-                ],
-            },
-            "confidence":       0.86,
-            "decision_clarity": "high",
-            "source":           "fitness_performance",
-            "generated_at":     datetime.utcnow().isoformat(),
-        }
+        top_action = short[0] if short else f"Start {focus} training — {model['frequency']}, {model['rep_range']}"
+        protein    = nutr.get("protein_g", round(weight * model["protein_multiplier"], 0))
+
+        return build_response(
+            confidence=0.86,
+            insight=(
+                f"Training focus: {focus}. "
+                f"Model: {model['description']}. "
+                f"Frequency: {model['frequency']}, split: {model['split']}. "
+                f"Protein target: {protein}g/day for {weight}kg bodyweight."
+            ),
+            risk_level="low",
+            action=(
+                f"{top_action} "
+                f"Protocol: {model['rep_range']}, {model['frequency']}. "
+                f"Progressive overload: {model['overload']}. "
+                f"Protein: {protein}g/day minimum."
+            ),
+            reason=(
+                f"Focus detected: {focus} based on query keywords. "
+                f"Training model selected: {model['description']}. "
+                f"Two signals: frequency={model['frequency']} and overload={model['overload']}."
+            ),
+            signals_used=[
+                f"Training focus: {focus}",
+                f"Rep range: {model['rep_range']}",
+                f"Weekly frequency: {model['frequency']}",
+                f"Protein multiplier: {model['protein_multiplier']}×BW",
+            ],
+            data_sources=["periodization_model_library", "evidence_based_nutrition_formulas"],
+            reasoning_path=[
+                f"1. Detect training focus from query: {focus}",
+                f"2. Select periodization model: {model['description']}",
+                f"3. Build 7-day microcycle ({len(plan)} sessions)",
+                f"4. Calculate protein: {weight}kg × {model['protein_multiplier']} = {protein}g/day",
+                f"5. Top action: {top_action[:80]}",
+            ],
+            data_freshness=1.0,
+            data_completeness=0.9 if weight != 75.0 else 0.75,
+        )
 
     # Backward compatibility
     def microcycle(self) -> Dict[str, Any]:

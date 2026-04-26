@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class MedicalSupremeEngine:
     """
@@ -21,32 +23,59 @@ class MedicalSupremeEngine:
     # ------------------------------------------------------------------
 
     def analyze(self, query: str) -> Dict[str, Any]:
+        if not (query or "").strip():
+            return degraded("No symptoms or health query provided", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Medical analysis failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
         text   = (query or "").lower()
         triage = self._full_triage(text)
 
-        return {
-            "query":              query,
-            "urgency":            triage["urgency"],
-            "clinical_domain":    triage["domain"],
-            "triage":             triage["summary"],
-            "clinical_reasoning": triage["reasoning"],
-            "recommendation":     triage["recommendation"],
-            "recommendations": {
-                "short_term": triage["short_term"],
-                "mid_term":   triage["mid_term"],
-                "long_term":  triage["long_term"],
-            },
-            "risk_assessment": {
-                "level":        triage["risk_level"],
-                "red_flags":    triage["red_flags"],
-                "safe_signals": triage["safe_signals"],
-            },
-            "confidence":       triage["confidence"],
-            "decision_clarity": triage["clarity"],
-            "disclaimer":       self.DISCLAIMER,
-            "source":           "medical_supreme",
-            "generated_at":     datetime.utcnow().isoformat(),
-        }
+        urgency    = triage["urgency"]
+        risk_raw   = triage["risk_level"]
+        # Normalize to schema-valid values
+        risk_level = "high" if risk_raw in ("critical", "high", "urgent") else ("low" if risk_raw == "low" else "medium")
+        confidence = float(triage.get("confidence", 0.75))
+
+        rec_list   = triage.get("recommendation", [])
+        top_action = rec_list[0] if isinstance(rec_list, list) and rec_list else str(rec_list or "Consult a physician")
+
+        short_term = triage.get("short_term", [])
+        red_flags  = triage.get("red_flags", [])
+
+        signals = [f"Urgency: {urgency}", f"Domain: {triage['domain']}"]
+        if red_flags:
+            signals.append(f"Red flag: {red_flags[0]}")
+
+        return build_response(
+            confidence=confidence,
+            insight=(
+                f"Clinical domain: {triage['domain']}. "
+                f"Urgency: {urgency}. "
+                f"{triage['summary']}. "
+                f"{self.DISCLAIMER}"
+            ),
+            risk_level=risk_level,
+            action=top_action,
+            reason=(
+                f"Triage reasoning: {triage['reasoning'][:150]}. "
+                f"Top risk signal: {red_flags[0] if red_flags else 'none identified'}."
+            ),
+            signals_used=signals + short_term[:2],
+            data_sources=["clinical_triage_engine_internal", "symptom_pattern_library"],
+            reasoning_path=[
+                f"1. Parse query for symptom keywords",
+                f"2. Match to clinical domain: {triage['domain']}",
+                f"3. Urgency classification: {urgency}",
+                f"4. Risk stratification: {risk_level}",
+                f"5. Primary action: {top_action[:80]}",
+            ],
+            data_freshness=1.0,
+            data_completeness=0.80 if triage["domain"] != "general_medicine" else 0.45,
+        )
 
     def symptom_triage(self, symptoms: str) -> Dict[str, Any]:
         return self.analyze(symptoms)

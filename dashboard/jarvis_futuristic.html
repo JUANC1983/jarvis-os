@@ -514,10 +514,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 }
 .mob-nav-inner{display:flex;justify-content:space-around}
 .mob-btn{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
   background:none;border:none;cursor:pointer;
-  color:var(--soft);font-size:10px;font-weight:600;
-  padding:5px 10px;border-radius:10px;transition:color .18s;min-width:52px;
+  color:var(--soft);font-size:9px;font-weight:600;
+  padding:4px 6px;border-radius:10px;transition:color .18s;min-width:42px;
 }
 .mob-btn .mi{font-size:20px}
 .mob-btn.active{color:var(--cyan)}
@@ -713,6 +713,19 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 <!-- ══════════════ MARKETS ══════════════ -->
 <div id="tab-markets" class="tab-panel">
   <div class="col">
+    <!-- Market indices snapshot bar -->
+    <div class="card" style="padding:12px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap" id="mkt-indices">
+          <span style="color:var(--soft);font-size:13px">Loading indices…</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span id="mkt-regime-badge" class="badge b-idle" style="font-size:11px">REGIME --</span>
+          <span style="font-size:11px;color:var(--soft)" id="mkt-snapshot-time"></span>
+        </div>
+      </div>
+    </div>
+
     <div id="mkt-auto" class="auto-card" style="display:none"></div>
 
     <!-- Trader -->
@@ -779,7 +792,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <hr class="div">
       <div class="col" style="gap:9px">
         <input id="newTaskText" class="input" placeholder="New task…"/>
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:9px">
           <select id="newTaskPriority" class="select">
             <option value="high">High</option>
             <option value="medium" selected>Medium</option>
@@ -789,6 +802,13 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
             <option value="today" selected>Today</option>
             <option value="tomorrow">Tomorrow</option>
             <option value="this_week">This week</option>
+          </select>
+          <select id="newTaskCategory" class="select">
+            <option value="general" selected>General</option>
+            <option value="work">Work</option>
+            <option value="finance">Finance</option>
+            <option value="golf">Golf</option>
+            <option value="health">Health</option>
           </select>
           <button id="addTaskBtn" class="btn-p">Add</button>
         </div>
@@ -875,14 +895,95 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 <!-- ══════════════ GOLF ══════════════ -->
 <div id="tab-golf" class="tab-panel">
   <div class="g2">
+
+    <!-- LEFT: Smart Caddie + Course Search -->
     <div class="col">
-      <div style="font-size:22px;font-weight:800;margin-bottom:16px">⛳ Golf Intelligence</div>
-      <div id="golf-courses" class="col" style="gap:12px"></div>
+
+      <!-- Smart Caddie -->
+      <div class="card">
+        <div class="ch"><span class="ct">⛳ Smart Caddie</span><span class="cs">club recommendation</span></div>
+        <div class="col" style="gap:9px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+            <div>
+              <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Distance (yds)</div>
+              <input id="caddyDistance" class="input" type="number" placeholder="150" value="150"/>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Wind (mph)</div>
+              <input id="caddyWind" class="input" type="number" placeholder="0" value="0"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+            <div>
+              <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Wind Direction</div>
+              <select id="caddyWindDir" class="select">
+                <option value="neutral" selected>Neutral</option>
+                <option value="headwind">Headwind</option>
+                <option value="tailwind">Tailwind</option>
+                <option value="crosswind">Crosswind</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Lie</div>
+              <select id="caddyLie" class="select">
+                <option value="fairway" selected>Fairway</option>
+                <option value="rough">Rough</option>
+                <option value="bunker">Bunker</option>
+                <option value="tee">Tee</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+            <div>
+              <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Elevation Δ (yds)</div>
+              <input id="caddyElev" class="input" type="number" placeholder="0" value="0"/>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--soft);margin-bottom:4px">Temp (°C)</div>
+              <input id="caddyTemp" class="input" type="number" placeholder="22" value="22"/>
+            </div>
+          </div>
+          <button class="btn-p" onclick="golfCaddie()">Get Club Recommendation</button>
+        </div>
+        <div id="caddyResult" style="margin-top:14px"></div>
+      </div>
+
+      <!-- Course Search -->
+      <div class="card">
+        <div class="ch"><span class="ct">Course Search</span><span class="cs">49 courses in database</span></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:12px">
+          <input id="golfSearchInput" class="input" placeholder="Bogotá, Medellín, Augusta…"/>
+          <button class="btn-p" onclick="golfSearch()">Search</button>
+        </div>
+        <div id="golfSearchResults" class="col" style="gap:8px"></div>
+      </div>
+
     </div>
+
+    <!-- RIGHT: Course Conditions + Insights + Player Profile -->
     <div class="col">
-      <div style="font-size:22px;font-weight:800;margin-bottom:16px">Insights &amp; Conditions</div>
-      <div id="golf-insights" class="col" style="gap:10px"></div>
-      <div id="golf-player" class="card card-sm" style="margin-top:4px"></div>
+
+      <!-- Player Profile -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:10px">
+          <span class="ct">Player Profile</span>
+          <button class="btn-ol btn-sm" onclick="golfLogRound()">+ Log Round</button>
+        </div>
+        <div id="golf-player"></div>
+      </div>
+
+      <!-- Course Conditions -->
+      <div class="card">
+        <div class="ch"><span class="ct">Course Conditions</span><span class="cs">live weather</span></div>
+        <div id="golf-courses" class="col" style="gap:12px"></div>
+      </div>
+
+      <!-- Insights -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:10px"><span class="ct">Insights</span></div>
+        <div id="golf-insights" class="col" style="gap:10px"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1024,6 +1125,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="mob-btn" data-tab="markets"><span class="mi">📈</span><span>Markets</span></button>
     <button class="mob-btn" data-tab="chat"><span class="mi">💬</span><span>Chat</span></button>
     <button class="mob-btn" data-tab="productivity"><span class="mi">✅</span><span>Tasks</span></button>
+    <button class="mob-btn" data-tab="golf"><span class="mi">⛳</span><span>Golf</span></button>
+    <button class="mob-btn" data-tab="intelligence"><span class="mi">📰</span><span>Intel</span></button>
     <button class="mob-btn" data-tab="system"><span class="mi">⚙️</span><span>System</span></button>
   </div>
 </nav>
@@ -1104,9 +1207,11 @@ function renderTasks(items) {
   box.innerHTML = "";
   if (!items.length) { box.innerHTML = `<div class="row-card" style="color:var(--soft);text-align:center">No tasks yet.</div>`; return; }
   const clr = { high:"var(--bad)", medium:"var(--warn)", low:"var(--ok)" };
+  const catClr = { work:"var(--cyan)", finance:"var(--ok)", golf:"#a8e6a3", health:"var(--warn)", general:"var(--soft)" };
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "row-card";
+    const cat = item.category || "general";
     div.innerHTML = `
       <div class="task-row">
         <div style="flex:1">
@@ -1114,13 +1219,20 @@ function renderTasks(items) {
           <div class="task-meta">
             <span style="color:${clr[item.priority]||"var(--soft)"}">● ${item.priority||"medium"}</span>
             &nbsp;·&nbsp;${item.day||"today"}
+            ${cat !== "general" ? `&nbsp;·&nbsp;<span style="color:${catClr[cat]||"var(--soft)"}">${cat}</span>` : ""}
           </div>
         </div>
         <button class="check-btn" title="Toggle">${item.done ? "✓" : ""}</button>
+        <button class="check-btn" title="Delete" style="color:var(--bad);font-size:14px;margin-left:4px">✕</button>
       </div>`;
-    div.querySelector(".check-btn").onclick = async () => {
+    const btns = div.querySelectorAll(".check-btn");
+    btns[0].onclick = async () => {
       try { await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"}); await loadHome(); }
       catch(e) { console.warn("toggle:", e); }
+    };
+    btns[1].onclick = async () => {
+      try { await fetch("/dashboard/tasks/" + item.id, {method:"DELETE"}); await loadHome(); }
+      catch(e) { console.warn("delete task:", e); }
     };
     box.appendChild(div);
   });
@@ -1146,9 +1258,10 @@ async function addTask() {
   const text = qs("newTaskText").value.trim();
   const priority = qs("newTaskPriority").value;
   const day = qs("newTaskDay").value;
+  const category = qs("newTaskCategory")?.value || "general";
   if (!text) return;
   try {
-    await fetch("/dashboard/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text,priority,day})});
+    await fetch("/dashboard/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text,priority,day,category})});
     qs("newTaskText").value = "";
     await loadHome();
   } catch(e) { console.warn("addTask:", e); }
@@ -1367,7 +1480,7 @@ async function analyzeTrader() {
     if (qs("traderSymbol"))     qs("traderSymbol").textContent    = d.symbol || raw.toUpperCase();
     if (qs("setupScore"))       qs("setupScore").textContent      = safe(d.setup_score);
     if (qs("trafficLightText")) qs("trafficLightText").innerHTML  = trafficTag(d.traffic_light);
-    if (qs("priceNow"))         qs("priceNow").textContent        = safe(d.price_now);
+    if (qs("priceNow"))         qs("priceNow").textContent        = safe(d.price_now ?? d.price);
     const p = d.trade_plan || {};
     const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" – ") : (p.entry_zone ?? "-");
     if (qs("tradePlan")) qs("tradePlan").innerHTML = [
@@ -1407,6 +1520,38 @@ async function loadRecommendations() {
   } catch(e) { console.warn("loadRecommendations:", e); }
 }
 
+/* ── Market snapshot + regime ───────── */
+async function loadMarketSnapshot() {
+  try {
+    const d = await fetch("/api/markets/snapshot").then(r => r.json());
+    const items = d.items || [];
+    const regimeBadge = qs("mkt-regime-badge");
+    const indicesEl = qs("mkt-indices");
+    const timeEl = qs("mkt-snapshot-time");
+
+    if (timeEl && d.timestamp) {
+      const t = new Date(d.timestamp);
+      timeEl.textContent = t.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}) + " UTC";
+    }
+
+    if (regimeBadge) {
+      const regime = d.regime || "unknown";
+      const regimeClass = regime==="FEAR"?"b-bad":regime==="RISK_OFF"?"b-bad":regime==="CAUTION"?"b-warn":regime==="NORMAL"?"b-ok":"b-idle";
+      regimeBadge.textContent = "REGIME: " + regime;
+      regimeBadge.className = "badge " + regimeClass;
+    }
+
+    if (indicesEl && items.length) {
+      indicesEl.innerHTML = items.map(item => {
+        const chg = item.change_pct ?? 0;
+        const color = chg >= 0 ? "var(--ok)" : "var(--bad)";
+        const sign = chg >= 0 ? "+" : "";
+        return `<span style="font-size:13px"><strong style="color:var(--white)">${item.label}</strong> <span style="color:var(--soft)">${item.price}</span> <span style="color:${color}">${sign}${chg.toFixed(2)}%</span></span>`;
+      }).join("");
+    }
+  } catch(e) { console.warn("loadMarketSnapshot:", e); }
+}
+
 /* ── News ───────────────────────────── */
 async function loadNews() {
   try {
@@ -1443,7 +1588,7 @@ async function loadAgents() {
       if (!items.length) { grid.innerHTML = `<div class="result-empty">No agents registered.</div>`; }
       else items.forEach(a => {
         const meta = AGENT_META[a.name] || {};
-        const sc = a.status==="active"?"b-ok":a.status==="busy"?"b-warn":"b-idle";
+        const sc = a.status==="running"?"b-ok":a.status==="idle"?"b-cyan":a.status==="error"?"b-bad":"b-idle";
         const div = document.createElement("div"); div.className = "agent-card";
         div.innerHTML = `
           <div class="agent-head">
@@ -1454,7 +1599,7 @@ async function loadAgents() {
                 <div class="agent-role">${meta.role||a.role||""}</div>
               </div>
             </div>
-            <span class="badge ${sc}">${a.status||"idle"}</span>
+            <span class="badge ${sc}">${a.status||"standby"}</span>
           </div>
           ${a.last_action ? `<div class="agent-last">Last: ${a.last_action}</div>` : ""}
           <button class="btn-ol btn-sm" onclick="quickAsk('${a.name}')">Ask Agent</button>`;
@@ -1467,13 +1612,13 @@ async function loadAgents() {
     if (sys) {
       sys.innerHTML = "";
       items.forEach(a => {
-        const sc = a.status==="active"?"b-ok":a.status==="busy"?"b-warn":"b-idle";
+        const sc = a.status==="running"?"b-ok":a.status==="idle"?"b-cyan":a.status==="error"?"b-bad":"b-idle";
         const div = document.createElement("div"); div.className = "agent-card";
         div.style.padding = "12px 14px";
         div.innerHTML = `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
             <span style="font-size:13px">${(AGENT_META[a.name]?.icon||"🤖")} ${a.name||"Agent"}</span>
-            <span class="badge ${sc}">${a.status||"idle"}</span>
+            <span class="badge ${sc}">${a.status||"standby"}</span>
           </div>`;
         sys.appendChild(div);
       });
@@ -1486,7 +1631,7 @@ async function loadAgents() {
       const show = items.length ? items.slice(0,6) : [];
       if (!show.length) { ov.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px 0">No agent activity.</div>`; }
       else show.forEach(a => {
-        const sc = a.status==="active"?"b-ok":a.status==="busy"?"b-warn":"b-idle";
+        const sc = a.status==="running"?"b-ok":a.status==="idle"?"b-cyan":a.status==="error"?"b-bad":"b-idle";
         const meta = AGENT_META[a.name] || {};
         const div = document.createElement("div"); div.className = "activity-item";
         div.innerHTML = `
@@ -1495,7 +1640,7 @@ async function loadAgents() {
             <div class="activity-name">${a.name||"Agent"}</div>
             <div class="activity-action">${a.last_action||meta.role||"Standing by"}</div>
           </div>
-          <span class="badge ${sc}" style="flex-shrink:0">${a.status||"idle"}</span>`;
+          <span class="badge ${sc}" style="flex-shrink:0">${a.status||"standby"}</span>`;
         ov.appendChild(div);
       });
     }
@@ -1645,22 +1790,30 @@ function initUpload() {
 /* ── Golf ───────────────────────────── */
 async function loadGolf() {
   try {
-    const d = await fetch("/dashboard/golf").then(r => r.json());
+    const [d, pd] = await Promise.all([
+      fetch("/dashboard/golf").then(r => r.json()),
+      fetch("/api/golf/profile").then(r => r.json()).catch(() => ({ profile: {} })),
+    ]);
     const courses  = d.courses  || [];
     const insights = d.insights || [];
-    const player   = d.player   || {};
+    const profile  = pd.profile || {};
 
     const cEl = qs("golf-courses");
     if (cEl) {
       cEl.innerHTML = "";
       if (!courses.length) { cEl.innerHTML = `<div class="result-empty">No course data available.</div>`; }
       else courses.slice(0,4).forEach((c,i) => {
+        const statusColor = c.status==="optimal" ? "var(--ok)" : c.status==="bad" ? "var(--bad)" : "var(--warn)";
         const div = document.createElement("div");
         div.className = "golf-card" + (i===0?" best":"");
         div.innerHTML = `
-          <div class="golf-name">${i===0?"⭐ ":""}⛳ ${c.name||"Course"}${i===0?' <span class="badge b-ok" style="font-size:10px;margin-left:6px">Best Today</span>':""}</div>
-          <div class="golf-meta">${[c.location,c.condition,c.weather].filter(Boolean).join(" · ")}</div>
-          ${c.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--soft)">${c.notes}</div>` : ""}`;
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="golf-name">${i===0?"⭐ ":""}${c.name||"Course"}</div>
+            <span class="badge" style="font-size:10px;background:transparent;border:1px solid ${statusColor};color:${statusColor};text-transform:uppercase">${c.status||"playable"}</span>
+          </div>
+          <div class="golf-meta">${[c.location, c.weather].filter(Boolean).join(" · ")}</div>
+          ${c.next_slot ? `<div style="font-size:12px;color:var(--soft);margin-top:4px">Next slot: ${c.next_slot}</div>` : ""}
+          ${c.play_strategy ? `<div style="margin-top:8px;font-size:12px;line-height:1.5;color:var(--soft2)">${c.play_strategy}</div>` : ""}`;
         cEl.appendChild(div);
       });
     }
@@ -1675,22 +1828,110 @@ async function loadGolf() {
       });
     }
 
-    const pEl = qs("golf-player");
-    if (pEl) {
-      if (player.name || player.handicap!=null) {
-        pEl.innerHTML = `
-          <div class="ch" style="margin-bottom:10px"><span class="ct">Player Profile</span></div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
-            ${player.name      ? `<div class="tile" style="flex:1"><div class="tl">Player</div><div style="font-size:15px;font-weight:700">${player.name}</div></div>` : ""}
-            ${player.handicap!=null ? `<div class="tile" style="flex:1"><div class="tl">Handicap</div><div class="tv">${player.handicap}</div></div>` : ""}
-            ${player.last_round ? `<div class="tile" style="flex:1"><div class="tl">Last Round</div><div style="font-size:13px">${player.last_round}</div></div>` : ""}
-          </div>`;
-      } else { pEl.innerHTML = `<div style="color:var(--soft);text-align:center;padding:14px;font-size:13px">Player data not available.</div>`; }
-    }
+    renderGolfProfile(profile);
   } catch(e) {
     console.warn("loadGolf:", e);
     const el = qs("golf-courses"); if (el) el.innerHTML = `<div class="result-empty">Golf data temporarily unavailable.</div>`;
   }
+}
+
+function renderGolfProfile(p) {
+  const pEl = qs("golf-player"); if (!pEl) return;
+  const rounds = p.rounds_logged || 0;
+  if (!rounds && p.handicap_index == null) {
+    pEl.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px 0">No rounds logged yet. Tap "+ Log Round" to start tracking.</div>`;
+    return;
+  }
+  pEl.innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      ${p.handicap_index != null ? `<div class="tile" style="flex:1;min-width:70px"><div class="tl">HCP</div><div class="tv">${p.handicap_index}</div></div>` : ""}
+      <div class="tile" style="flex:1;min-width:70px"><div class="tl">Rounds</div><div class="tv">${rounds}</div></div>
+      ${p.avg_score != null ? `<div class="tile" style="flex:1;min-width:70px"><div class="tl">Avg</div><div class="tv">${p.avg_score}</div></div>` : ""}
+      ${p.best_score != null ? `<div class="tile" style="flex:1;min-width:70px"><div class="tl">Best</div><div class="tv">${p.best_score}</div></div>` : ""}
+    </div>
+    ${p.recommendation ? `<div style="margin-top:10px;font-size:13px;line-height:1.55;color:var(--soft2)">${p.recommendation}</div>` : ""}
+    ${p.last_round ? `<div style="margin-top:8px;font-size:12px;color:var(--soft)">Last: ${p.last_round.course||""} — ${p.last_round.score||""} · ${(p.last_round.date||"").slice(0,10)}</div>` : ""}`;
+}
+
+/* ── Golf Caddie ────────────────────── */
+async function golfCaddie() {
+  const distance  = parseFloat(qs("caddyDistance")?.value || 150);
+  const wind_mph  = parseFloat(qs("caddyWind")?.value || 0);
+  const wind_direction = qs("caddyWindDir")?.value || "neutral";
+  const elevation_delta_yards = parseFloat(qs("caddyElev")?.value || 0);
+  const lie = qs("caddyLie")?.value || "fairway";
+  const temperature_c = parseFloat(qs("caddyTemp")?.value || 22);
+  const resEl = qs("caddyResult"); if (!resEl) return;
+  resEl.innerHTML = `<div style="color:var(--soft);font-size:13px">Calculating…</div>`;
+  try {
+    const d = await fetch("/api/golf/caddy", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({distance, wind_mph, wind_direction, elevation_delta_yards, lie, temperature_c}),
+    }).then(r => r.json());
+    if (d.status !== "ok" && !d.recommended_club) {
+      resEl.innerHTML = `<div style="color:var(--bad);font-size:13px">Error: ${d.error||"unknown"}</div>`;
+      return;
+    }
+    const club = d.recommended_club || "—";
+    const adj  = d.adjusted_distance || distance;
+    const why  = (d.why || []).join(" ");
+    resEl.innerHTML = `
+      <div style="text-align:center;padding:16px 0">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--soft);margin-bottom:6px">Recommended Club</div>
+        <div style="font-size:28px;font-weight:800;color:var(--cyan)">${club}</div>
+        <div style="font-size:13px;color:var(--soft);margin-top:4px">Adjusted: ${adj} yds</div>
+      </div>
+      ${why ? `<div class="golf-insight" style="font-size:13px">${why}</div>` : ""}
+      ${d.caddie_note ? `<div style="margin-top:8px;font-size:12px;color:var(--soft2)">${d.caddie_note}</div>` : ""}`;
+  } catch(e) {
+    resEl.innerHTML = `<div style="color:var(--bad);font-size:13px">Connection error.</div>`;
+    console.warn("golfCaddie:", e);
+  }
+}
+
+/* ── Golf Course Search ─────────────── */
+async function golfSearch() {
+  const q = (qs("golfSearchInput")?.value || "").trim();
+  const resEl = qs("golfSearchResults"); if (!resEl) return;
+  resEl.innerHTML = `<div style="color:var(--soft);font-size:13px">Searching…</div>`;
+  try {
+    const d = await fetch(`/api/golf/courses?q=${encodeURIComponent(q)}&limit=8`).then(r => r.json());
+    const items = d.items || [];
+    if (!items.length) { resEl.innerHTML = `<div class="result-empty">No courses found for "${q}".</div>`; return; }
+    resEl.innerHTML = "";
+    items.forEach(c => {
+      const div = document.createElement("div"); div.className = "row-card";
+      const loc = [c.city, c.department||c.region, c.country].filter(Boolean).join(", ");
+      const alt = c.altitude_meters ? ` · ${c.altitude_meters}m` : "";
+      div.innerHTML = `
+        <div style="font-weight:700;font-size:14px">${c.name}</div>
+        <div style="font-size:12px;color:var(--soft);margin-top:3px">${loc}${alt}${c.holes?" · "+c.holes+" holes":""}</div>`;
+      resEl.appendChild(div);
+    });
+  } catch(e) {
+    resEl.innerHTML = `<div style="color:var(--bad);font-size:13px">Search failed.</div>`;
+    console.warn("golfSearch:", e);
+  }
+}
+
+/* ── Golf Log Round ─────────────────── */
+async function golfLogRound() {
+  const score = parseInt(prompt("Score (total strokes):") || "0");
+  if (!score || score < 18 || score > 200) { alert("Invalid score. Enter strokes between 18 and 200."); return; }
+  const course_name = (prompt("Course name:") || "").trim() || "Unknown course";
+  const notes = (prompt("Notes (optional):") || "").trim();
+  try {
+    const d = await fetch("/api/golf/profile/round", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({score, course_name, notes}),
+    }).then(r => r.json());
+    if (d.status === "ok") {
+      renderGolfProfile(d.profile || {});
+      alert(`Round logged! Score: ${score} at ${course_name}.`);
+    } else {
+      alert("Error: " + (d.error || "unknown"));
+    }
+  } catch(e) { alert("Failed to log round."); console.warn("golfLogRound:", e); }
 }
 
 /* ── Voice ──────────────────────────── */
@@ -1714,21 +1955,24 @@ function initVoice() {
 function initEvents() {
   const on = (id, fn) => { const el=qs(id); if(el) el.addEventListener("click", fn); };
   const kd = (id, fn) => { const el=qs(id); if(el) el.addEventListener("keydown", e => { if(e.key==="Enter") fn(e); }); };
-  on("sendBtn",       () => sendChat());
-  on("addTaskBtn",    addTask);
-  on("addMeetingBtn", addMeeting);
-  on("analyzeBtn",    analyzeTrader);
-  on("autoBtn",       runAutoJarvis);
-  kd("chatInput",    () => sendChat());
-  kd("newTaskText",  addTask);
-  kd("symbolInput",  analyzeTrader);
+  on("sendBtn",         () => sendChat());
+  on("addTaskBtn",      addTask);
+  on("addMeetingBtn",   addMeeting);
+  on("analyzeBtn",      analyzeTrader);
+  on("autoBtn",         runAutoJarvis);
+  kd("chatInput",       () => sendChat());
+  kd("newTaskText",     addTask);
+  kd("symbolInput",     analyzeTrader);
+  kd("golfSearchInput", golfSearch);
 }
 
 /* ── Boot ───────────────────────────── */
 async function boot() {
   initEvents(); initVoice(); initUpload();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
-  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf()]);
+  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot()]);
+  setInterval(loadMarketSnapshot, 30000);
+  setInterval(loadRecommendations, 30000);
 }
 boot();
 </script>

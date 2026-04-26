@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class GlobalRiskMonitor:
     """
@@ -111,6 +113,14 @@ class GlobalRiskMonitor:
         return self.analyze(f"{topic} {context}")
 
     def analyze(self, query: str) -> Dict[str, Any]:
+        if not (query or "").strip():
+            return degraded("Empty query — cannot assess risk", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Risk analysis failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
         text    = (query or "").lower()
         matched = {
             name: data
@@ -119,70 +129,63 @@ class GlobalRiskMonitor:
         }
 
         if matched:
-            base_score = max(d["base_score"] for d in matched.values())
-            compound   = min(base_score + (len(matched) - 1) * 6, 100)
-            all_factors    = [f for d in matched.values() for f in d["factors"]]
+            base_score      = max(d["base_score"] for d in matched.values())
+            compound        = min(base_score + (len(matched) - 1) * 6, 100)
+            all_factors     = [f for d in matched.values() for f in d["factors"]]
             all_protections = [p for d in matched.values() for p in d["protections"]]
+            dominant        = max(matched.keys(), key=lambda k: matched[k]["base_score"])
+            completeness    = min(0.9 + len(matched) * 0.05, 1.0)
         else:
-            compound = 40
-            all_factors    = ["No critical risk cluster detected in query context"]
+            compound        = 40
+            all_factors     = [
+                "No critical risk cluster detected in query context",
+                "Baseline monitoring: no geopolitical, macro, health, operational, or concentration keywords matched",
+            ]
             all_protections = [
-                "Maintain baseline risk discipline",
+                "Maintain baseline risk discipline: diversify, hold 10% cash, define stop-loss on every position",
                 "Regular portfolio and life audit — risk grows silently",
             ]
+            dominant        = "general"
+            completeness    = 0.55
 
         if compound >= 85:
-            level = "critical"
-        elif compound >= 70:
             level = "high"
         elif compound >= 50:
             level = "medium"
         else:
             level = "low"
 
-        return {
-            "query":        query,
-            "risk_domains": list(matched.keys()),
-            "risk_score":   compound,
-            "risk_level":   level,
-            "risk_factors": all_factors[:6],
-            "protections":  all_protections[:5],
+        confidence   = round(min(compound / 100 * 0.95 + 0.05, 0.93), 3)
+        top_action   = all_protections[0] if all_protections else "Maintain current risk discipline"
 
-            "recommendations": {
-                "short_term": self._short_recs(level, list(matched.keys())),
-                "mid_term": [
-                    "Build systematic risk monitoring — automate alerts for key thresholds",
-                    "Pre-mortem: assume the worst outcome — what does the path there look like?",
-                    "Diversify across genuinely uncorrelated risk buckets",
-                ],
-                "long_term": [
-                    "Antifragility over resilience: systems that gain from disorder",
-                    "Barbell strategy: very safe + high-optionality, avoid the middle",
-                    "Annual comprehensive risk audit: financial, legal, health, operational",
-                ],
-            },
-            "risk_assessment": {
-                "level":       level,
-                "score":       compound,
-                "compound_risk": len(matched) > 1,
-                "compound_note": (
-                    "Multiple risk domains detected — correlation between them amplifies total risk"
-                    if len(matched) > 1 else None
-                ),
-                "dominant_domain": (
-                    max(matched.keys(), key=lambda k: matched[k]["base_score"])
-                    if matched else "general"
-                ),
-            },
-            "confidence":       0.83,
-            "decision_clarity": "high",
-            "summary": (
-                f"Risk score {compound}/100 ({level}). "
-                f"{len(all_factors)} factors across {len(matched)} domain(s)."
+        return build_response(
+            confidence=confidence,
+            insight=(
+                f"Risk score {compound}/100 across {len(matched)} domain(s): "
+                f"{', '.join(matched.keys()) or 'general'}. "
+                f"Dominant risk: {dominant}. "
+                f"{len(all_factors)} active risk factor(s) identified."
             ),
-            "source":       "global_risk_monitor",
-            "generated_at": datetime.utcnow().isoformat(),
-        }
+            risk_level=level,
+            action=top_action,
+            reason=(
+                f"Score derived from {len(matched)} matched risk matrix domain(s). "
+                f"Compound effect of multiple domains adds 6pts each. "
+                f"Threshold: ≥85→high, ≥50→medium, <50→low."
+            ),
+            signals_used=all_factors[:4],
+            data_sources=["risk_matrix_internal", "query_pattern_matching"],
+            reasoning_path=[
+                "1. Parse query against 5-domain risk matrix (geopolitical, macro, health, operational, concentration)",
+                f"2. Matched domains: {list(matched.keys()) or ['none']}",
+                f"3. Base score from dominant domain: {base_score if matched else 40}",
+                f"4. Compound adjustment: +{(len(matched)-1)*6 if len(matched)>1 else 0}pts for multi-domain overlap",
+                f"5. Final score: {compound}/100 → risk_level={level}",
+                f"6. Primary protective action: {top_action[:80]}",
+            ],
+            data_freshness=1.0,
+            data_completeness=completeness,
+        )
 
     def _short_recs(self, level: str, domains: List[str]) -> List[str]:
         if level == "critical":

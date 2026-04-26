@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class DailyOpsEngine:
     """
@@ -38,6 +40,12 @@ class DailyOpsEngine:
         return self.analyze(query)
 
     def analyze(self, query: str = "") -> Dict[str, Any]:
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Daily ops analysis failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str = "") -> Dict[str, Any]:
         hour    = datetime.now().hour
         session = "morning" if hour < 12 else ("afternoon" if hour < 17 else "evening")
         checklist = {
@@ -46,40 +54,44 @@ class DailyOpsEngine:
             "evening":   self._EVENING,
         }[session]
 
-        return {
-            "query":   query or f"Daily ops briefing — {session}",
-            "session": session,
-            "date":    date.today().isoformat(),
-            "focus_principle":   self._PRINCIPLES[session],
-            "checklist":         checklist,
-            "execution_insight": self._execution_insight(session),
-            "recommendations": {
-                "short_term": [
-                    f"Complete your {session} checklist in the next 15 minutes",
-                    "Identify your single most important task and protect 90 uninterrupted minutes for it",
-                    "If your energy is low right now: walk outside 10 min before starting",
-                ],
-                "mid_term": [
-                    "Review your weekly targets every Monday — 3 big rocks maximum",
-                    "Batch reactive work (messages, email) into 2 scheduled windows per day",
-                    "Weekly review Friday PM: what worked, what didn't, what shifts next week",
-                ],
-                "long_term": [
-                    "Systems over willpower — automate routine decisions so cognitive load goes to high-leverage work",
-                    "4 focused hours outperform 8 distracted hours every time",
-                    "Build a daily shutdown ritual — signals to brain that work is done",
-                ],
-            },
-            "risk_assessment": {
-                "level": "low",
-                "note": "Decision fatigue is real — operational rhythm protects against it",
-                "warning": "Skipping evening review means tomorrow starts with yesterday's open loops",
-            },
-            "confidence":       0.85,
-            "decision_clarity": "high",
-            "source":           "daily_ops",
-            "generated_at":     datetime.utcnow().isoformat(),
-        }
+        principle   = self._PRINCIPLES[session]
+        exec_insight = self._execution_insight(session)
+        top_action  = f"Complete your {session} checklist now. {checklist[0]}"
+
+        return build_response(
+            confidence=0.85,
+            insight=(
+                f"{session.title()} session ({date.today().isoformat()}). "
+                f"Principle: {principle} "
+                f"Operational focus: {exec_insight[:100]}"
+            ),
+            risk_level="low",
+            action=(
+                f"{top_action} "
+                f"Then protect 90 uninterrupted minutes for your #1 priority task."
+            ),
+            reason=(
+                f"Session={session} derived from hour={hour}. "
+                f"Checklist has {len(checklist)} items. "
+                f"Two signals: time-of-day rhythm + cognitive load management."
+            ),
+            signals_used=[
+                f"Session: {session} (hour={hour})",
+                f"Date: {date.today().isoformat()}",
+                f"Checklist items: {len(checklist)}",
+                f"Principle: {principle[:60]}",
+            ],
+            data_sources=["realtime_clock", "daily_ops_protocol_internal"],
+            reasoning_path=[
+                f"1. Determine session from current hour: {hour}h → {session}",
+                f"2. Load {session} checklist ({len(checklist)} items)",
+                f"3. Apply session principle: {principle[:60]}",
+                f"4. Top action: {checklist[0][:80]}",
+                "5. Protect 90-min deep work block for #1 priority",
+            ],
+            data_freshness=1.0,
+            data_completeness=1.0,
+        )
 
     def run_daily_briefing(self, focus: str = "global macro") -> Dict[str, Any]:
         return {

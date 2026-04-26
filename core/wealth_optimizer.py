@@ -4,6 +4,8 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from core.agent_schema import build_response, degraded
+
 
 class WealthOptimizer:
     """
@@ -55,56 +57,67 @@ class WealthOptimizer:
         return self.analyze(f"optimize {capital} capital {risk_tolerance} {horizon_years} years")
 
     def analyze(self, query: str) -> Dict[str, Any]:
-        text        = (query or "").lower()
-        capital     = self._extract_capital(text)
+        if not (query or "").strip():
+            return degraded("Empty wealth query — provide capital, risk profile, or allocation question", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Wealth optimization failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
+        text         = (query or "").lower()
+        capital      = self._extract_capital(text)
         risk_profile = self._detect_risk_profile(text)
-        model       = self._MODELS[risk_profile]
+        model        = self._MODELS[risk_profile]
+        allocation   = self._build_allocation(model, capital)
 
-        allocation = self._build_allocation(model, capital)
+        short_recs = [
+            "Build 6-month emergency cash runway before deploying into risk assets",
+            "Never concentrate >25% in any single position or asset class",
+            "COP hedge: maintain 30–50% in USD/EUR — structural depreciation protection",
+        ]
+        capital_str = f"${capital:,.0f}" if capital else "unspecified capital"
 
-        return {
-            "query":             query,
-            "capital":           capital,
-            "risk_profile":      risk_profile,
-            "model_description": model["description"],
-            "target_return":     model["target_return"],
-            "max_drawdown_tolerance": model["max_drawdown_tolerance"],
-            "allocation":        allocation,
-            "core_principle":    "Protect downside first. Preserve optionality. Compound intelligently over time.",
-            "colombia_context": {
-                "cop_hedge": "Maintain 30–50% of portfolio in USD/EUR — structural COP depreciation hedge",
-                "real_assets": "Colombian land and real estate historically beats COP inflation — undervalued entry window exists",
-                "tax_note": "Consult contador for optimal entity structure — SAS vs. natural person tax treatment matters",
-            },
-            "recommendations": {
-                "short_term": [
-                    "Build 6-month emergency cash runway before deploying into risk assets",
-                    "Never concentrate >25% in any single position or asset class",
-                    "Review full allocation after any 15%+ drawdown — rebalance with discipline not emotion",
-                ],
-                "mid_term": [
-                    "Rebalance quarterly — discipline consistently beats conviction-based drift",
-                    "Add real assets (land, infrastructure) as inflation hedge if <20% allocation",
-                    "Tax-optimize: hold growth assets in tax-efficient structures when possible",
-                ],
-                "long_term": [
-                    "Stay invested through market cycles — trying to time markets costs 2–3% annually",
-                    "Build geographic diversification: Colombia + US + international exposure",
-                    "Legacy planning: assets that compound while you sleep — dividends, real estate cash flow",
-                ],
-            },
-            "risk_assessment": {
-                "level": "medium",
-                "concentration_risk": "Diversification fails in crises — ensure not over-correlated",
-                "liquidity_risk": "Minimum 10% liquid at all times — illiquid assets are a trap in emergencies",
-                "currency_risk": "COP exposure requires structural USD hedge — not optional in Colombia",
-                "inflation_risk": "Real assets and equities outperform bonds in inflationary regime — adjust accordingly",
-            },
-            "confidence":       0.82,
-            "decision_clarity": "high",
-            "source":           "wealth_optimizer",
-            "generated_at":     datetime.utcnow().isoformat(),
-        }
+        action = (
+            f"Implement {risk_profile} allocation: "
+            f"equities {model['equities']}%, real_assets {model['real_assets']}%, "
+            f"bonds {model['bonds']}%, alternatives {model['alternatives']}%, cash {model['cash']}%. "
+            f"Target return: {model['target_return']}. Max drawdown tolerance: {model['max_drawdown_tolerance']}."
+        )
+
+        completeness = 0.9 if capital else 0.7
+
+        return build_response(
+            confidence=0.82,
+            insight=(
+                f"Wealth profile: {risk_profile}. {model['description']}. "
+                f"Capital: {capital_str}. Target return: {model['target_return']}. "
+                f"Max drawdown tolerance: {model['max_drawdown_tolerance']}."
+            ),
+            risk_level="medium",
+            action=action,
+            reason=(
+                f"Risk profile {risk_profile!r} detected from query keywords. "
+                f"Allocation optimized for {model['target_return']} target with {model['max_drawdown_tolerance']} drawdown tolerance. "
+                f"Colombia COP structural depreciation factored into recommendation."
+            ),
+            signals_used=[
+                f"Risk profile: {risk_profile}",
+                f"Target return: {model['target_return']}",
+                f"Max drawdown tolerance: {model['max_drawdown_tolerance']}",
+                f"Equity allocation: {model['equities']}%",
+            ],
+            data_sources=["wealth_allocation_model_library", "colombia_macro_context"],
+            reasoning_path=[
+                f"1. Detect risk profile from query keywords → {risk_profile}",
+                f"2. Load {risk_profile} allocation model: equities={model['equities']}%, bonds={model['bonds']}%",
+                f"3. Extract capital amount: {capital_str}",
+                f"4. Apply Colombia macro context: COP hedge, real asset inflation protection",
+                f"5. Action: {action[:100]}",
+            ],
+            data_freshness=1.0,
+            data_completeness=completeness,
+        )
 
     # ------------------------------------------------------------------
     # Private helpers

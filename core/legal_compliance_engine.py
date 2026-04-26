@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class LegalComplianceEngine:
     """
@@ -50,37 +52,58 @@ class LegalComplianceEngine:
     # ------------------------------------------------------------------
 
     def analyze(self, query: str) -> Dict[str, Any]:
-        text        = (query or "").lower()
-        domain      = self._classify_domain(text)
-        jurisdiction = self._classify_jurisdiction(text)
-        risk        = self._assess_risk(domain, text)
-        sources     = self._get_sources(domain, jurisdiction)
+        if not (query or "").strip():
+            return degraded("Empty legal query", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Legal analysis failed: {exc}", confidence=0.25)
 
-        return {
-            "query":        query,
-            "domain":       domain,
-            "jurisdiction": jurisdiction,
-            "risk_level":   risk["level"],
-            "risk_factors": risk["factors"],
-            "legal_reasoning": self._build_reasoning(domain),
-            "key_analysis":    self._key_analysis(domain, text),
-            "official_sources": sources,
-            "required_documentation": self._required_docs(domain),
-            "key_thresholds":  self._key_thresholds(domain),
-            "recommendations": {
-                "short_term": self._short_term(domain, text),
-                "mid_term":   self._mid_term(domain),
-                "long_term":  self._long_term(),
-            },
-            "required_output_structure": [
-                "Issue", "Applicable source", "Risk", "Practical recommendation", "Official verification needed",
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
+        text         = (query or "").lower()
+        domain       = self._classify_domain(text)
+        jurisdiction = self._classify_jurisdiction(text)
+        risk         = self._assess_risk(domain, text)
+        sources      = self._get_sources(domain, jurisdiction)
+        short_term   = self._short_term(domain, text)
+        key_analysis = self._key_analysis(domain, text)
+
+        risk_level   = risk["level"] if risk["level"] in ("low", "medium", "high") else "medium"
+        # Map "critical" → "high" for schema compliance
+        if risk_level == "critical":
+            risk_level = "high"
+
+        top_action = short_term[0] if short_term else "Consult a licensed attorney before taking any action"
+        source_names = [s.get("name", "official source") for s in sources[:3]]
+
+        return build_response(
+            confidence=0.74,
+            insight=(
+                f"Legal domain: {domain} ({jurisdiction}). "
+                f"Risk level: {risk_level}. "
+                f"{key_analysis[0] if key_analysis else 'Verify against current official sources.'}. "
+                f"Disclaimer: {self.DISCLAIMER}"
+            ),
+            risk_level=risk_level,
+            action=top_action,
+            reason=(
+                f"Domain classification: {domain}. "
+                f"Jurisdiction: {jurisdiction}. "
+                f"Primary risk factor: {risk['factors'][0] if risk['factors'] else 'Standard legal risk'}. "
+                f"Official sources: {', '.join(source_names)}."
+            ),
+            signals_used=risk["factors"][:3] if risk["factors"] else ["Standard legal risk assessment"],
+            data_sources=[s.get("url", s.get("name", "unknown")) for s in sources[:3]],
+            reasoning_path=[
+                f"1. Classify domain from query keywords → {domain}",
+                f"2. Identify jurisdiction → {jurisdiction}",
+                f"3. Assess risk level for {domain} domain → {risk_level}",
+                f"4. Extract key thresholds: {str(self._key_thresholds(domain))[:80]}",
+                f"5. Primary action: {top_action[:80]}",
             ],
-            "confidence":       0.75,
-            "decision_clarity": "medium",
-            "disclaimer":       self.DISCLAIMER,
-            "source":           "legal_compliance",
-            "generated_at":     datetime.utcnow().isoformat(),
-        }
+            data_freshness=0.9,
+            data_completeness=0.75,
+        )
 
     def classify_query(self, query: str) -> Dict[str, Any]:
         text = query.lower()
@@ -171,7 +194,10 @@ class LegalComplianceEngine:
         }
         return {
             "level":   level,
-            "factors": factors_map.get(domain, ["Standard legal risk — validate with official sources"]),
+            "factors": factors_map.get(domain, [
+                "Standard legal risk — validate all facts against current official sources",
+                "Documentation principle: written evidence is your only enforceable asset in any legal matter",
+            ]),
         }
 
     def _get_sources(self, domain: str, jurisdiction: str) -> List[Dict[str, str]]:

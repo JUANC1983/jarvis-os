@@ -502,6 +502,60 @@ class GolfDashboardEngine:
         }
 
     # ------------------------------------------------------------------ #
+    # Public: Caddie + Search                                             #
+    # ------------------------------------------------------------------ #
+    def caddie(
+        self,
+        distance: float,
+        wind_mph: float = 0.0,
+        wind_direction: str = "neutral",
+        elevation_delta_yards: float = 0.0,
+        lie: str = "fairway",
+        temperature_c: float = 22.0,
+    ) -> Dict[str, Any]:
+        """Club recommendation. Uses GolfAIAgent when available; pure-math fallback otherwise."""
+        if self._agent is not None:
+            try:
+                return self._agent.recommend_club(
+                    distance=distance,
+                    wind_mph=wind_mph,
+                    wind_direction=wind_direction,
+                    elevation_delta_yards=elevation_delta_yards,
+                    lie=lie,
+                    temperature_c=temperature_c,
+                )
+            except Exception:
+                pass
+        # Pure-math fallback — always works
+        adjusted = float(distance)
+        wd = (wind_direction or "neutral").lower()
+        if wd in ["headwind", "contra", "en contra"]:
+            adjusted += float(wind_mph) * 0.9
+        elif wd in ["tailwind", "a favor", "favor"]:
+            adjusted -= float(wind_mph) * 0.6
+        elif wd in ["crosswind", "cross", "lateral"]:
+            adjusted += float(wind_mph) * 0.15
+        adjusted += float(elevation_delta_yards)
+        if lie.lower() in ["rough", "thick_rough"]:
+            adjusted += 5
+        elif lie.lower() in ["bunker", "fairway_bunker"]:
+            adjusted += 10
+        club = _club_from_distance(adjusted)
+        return {
+            "requested_distance": round(float(distance), 1),
+            "adjusted_distance": round(float(adjusted), 1),
+            "recommended_club": club,
+            "why": [f"Adjusted distance: {round(float(adjusted), 1)} yds.", f"Lie: {lie}.", f"Wind: {wind_direction} {wind_mph} mph."],
+            "caddie_note": f"With {club}, prioritize solid contact and conservative target.",
+        }
+
+    def search_courses(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        return self.db.search_by_name(query, limit=limit)
+
+    def get_profile(self) -> Dict[str, Any]:
+        return self._load_player_stats()
+
+    # ------------------------------------------------------------------ #
     # Player stats persistence                                            #
     # ------------------------------------------------------------------ #
     def _load_player_stats(self) -> Dict[str, Any]:

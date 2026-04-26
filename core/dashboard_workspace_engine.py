@@ -55,18 +55,40 @@ class DashboardWorkspaceEngine:
     def list_assets(self) -> Dict[str, Any]:
         return {"assets": self._read().get("assets", [])}
 
-    def add_task(self, text: str, priority: str = "medium", day: str = "today") -> Dict[str, Any]:
+    def add_task(self, text: str, priority: str = "medium", day: str = "today", category: str = "general") -> Dict[str, Any]:
         data = self._read()
         item = {
             "id": f"t_{uuid4().hex[:8]}",
             "text": text,
             "priority": priority,
             "day": day,
+            "category": category,
             "done": False
         }
         data["tasks"].append(item)
         self._write(data)
         return item
+
+    def delete_task(self, task_id: str) -> Dict[str, Any]:
+        data = self._read()
+        before = len(data.get("tasks", []))
+        data["tasks"] = [t for t in data.get("tasks", []) if t["id"] != task_id]
+        if len(data["tasks"]) == before:
+            raise ValueError("task not found")
+        self._write(data)
+        return {"deleted": task_id}
+
+    def edit_task(self, task_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        data = self._read()
+        allowed = {"text", "priority", "day", "category", "done"}
+        for item in data.get("tasks", []):
+            if item["id"] == task_id:
+                for k, v in updates.items():
+                    if k in allowed:
+                        item[k] = v
+                self._write(data)
+                return item
+        raise ValueError("task not found")
 
     def toggle_task(self, task_id: str) -> Dict[str, Any]:
         data = self._read()

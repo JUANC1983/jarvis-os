@@ -1,23 +1,149 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import yfinance as yf
 
+from core.agent_schema import build_response, degraded
+
 
 class TraderAlphaEngine:
     """
     Multi-factor technical analysis engine.
     Trend, momentum (RSI, MACD), volatility (ATR), and volume confirmation.
-    Structured trade plan with entry zone, stop-loss, and R/R targets.
+
+    analyze(query) → universal schema (orchestrator path)
+    run(symbol)    → rich trade plan (dashboard / ProductBrain path)
     """
 
-    def run(self, symbol: str) -> Dict[str, Any]:
-        return self.analyze(symbol)
+    # ------------------------------------------------------------------
+    # Universal interface — orchestrator path
+    # ------------------------------------------------------------------
 
-    def analyze(self, symbol: str) -> Dict[str, Any]:
+    def analyze(self, query: str) -> Dict[str, Any]:
+        """
+        Extract symbol from query, execute full analysis, return universal schema.
+        Decision: BUY / WATCH / AVOID / NEUTRAL with concrete entry/stop.
+        """
+        symbol = self._extract_symbol(query)
+        if not symbol:
+            return degraded("No valid ticker symbol found in query", confidence=0.2)
+        try:
+            raw = self._analyze_impl(symbol)
+        except Exception as exc:
+            return degraded(f"Analysis failed: {exc}", confidence=0.2)
+
+        if "error" in raw:
+            return degraded(raw["error"], confidence=0.25)
+
+        score  = raw.get("setup_score", 50)
+        action_raw = raw.get("action", "NEUTRAL")
+        light  = raw.get("traffic_light", "yellow")
+        tp = raw.get("trade_plan", {})
+        tech = raw.get("technicals", {})
+
+        # Build specific, measurable action string
+        if action_raw == "BUY":
+            entry_low  = tp.get("entry_zone", [raw.get("price", 0)])[0]
+            stop       = tp.get("stop_loss", 0)
+            t1         = tp.get("target_1", 0)
+            action_str = (f"Enter {symbol} at ${entry_low} zone. "
+                          f"Hard stop: ${stop}. Target 1: ${t1}. "
+                          f"Size to max 2% portfolio risk.")
+        elif action_raw == "AVOID":
+            action_str = (f"Avoid {symbol} — bearish structure. "
+                          f"Do not enter until price reclaims MA50 ${round(tech.get('ma50', 0), 2)}.")
+        elif action_raw == "WATCH":
+            action_str = (f"Add {symbol} to watchlist. Wait for RSI pullback to "
+                          f"40–50 range before entering. No position yet.")
+        else:
+            action_str = (f"Hold no position in {symbol}. "
+                          f"Re-evaluate on next earnings or major macro catalyst.")
+
+        signals = raw.get("signals", [])
+        rr_raw  = tp.get("risk_reward_estimate", "1.5:1")
+        risk_level = "high" if action_raw == "AVOID" else ("low" if action_raw == "BUY" and score >= 78 else "medium")
+        confidence = round(min(score / 100, 0.96), 3)
+
+        completeness = 1.0 if tech.get("volume_ratio") is not None else 0.85
+        return build_response(
+            confidence=confidence,
+            insight=(
+                f"{symbol} setup score {score}/100 ({action_raw}). "
+                f"RSI {tech.get('rsi', '–')}, MACD {'bullish' if tech.get('macd_bullish') else 'bearish'}, "
+                f"price vs MA50 {'above' if raw.get('price', 0) > tech.get('ma50', 0) else 'below'}. "
+                f"R/R estimate {rr_raw}."
+            ),
+            risk_level=risk_level,
+            action=action_str,
+            reason=(
+                f"Score={score}/100 derived from trend (MA20/MA50), RSI={tech.get('rsi','–')}, "
+                f"MACD={'bullish' if tech.get('macd_bullish') else 'bearish'}, "
+                f"volume={tech.get('volume_ratio','–')}×avg. "
+                f"Conviction: {raw.get('conviction', 'low')}."
+            ),
+            signals_used=signals[:5] if signals else [f"Insufficient signals for {symbol}"],
+            data_sources=["yfinance_3mo_daily", "technical_indicators"],
+            reasoning_path=[
+                "1. Fetch 3-month OHLCV data",
+                "2. Compute MA20/MA50 trend alignment (+/−18 pts)",
+                "3. RSI 14 momentum scoring (+/−12 pts)",
+                "4. MACD crossover confirmation (+/−10 pts)",
+                "5. Volume ratio institutional participation (+/−7 pts)",
+                f"6. Final score {score}/100 → {action_raw}",
+            ],
+            data_freshness=1.0,
+            data_completeness=completeness,
+        )
+
+    def run(self, symbol: str) -> Dict[str, Any]:
+        """Rich trade plan — used by ProductBrain / dashboard endpoints."""
+        return self._analyze_impl(symbol)
+
+    # ------------------------------------------------------------------
+    # Core implementation — returns rich format (unchanged)
+    # ------------------------------------------------------------------
+
+    # Common non-ticker uppercase abbreviations to skip in natural-language queries
+    _TICKER_SKIP = {
+        "I","A","US","UK","EU","AM","PM","AI","IS","TO","OF","AT","ON","IN",
+        "MY","ME","NO","SO","BY","DO","OR","IF","AS","AN","BE","GO","UP","WE",
+        "IT","HE","HIS","HER","CEO","CFO","COO","CTO","ETF","IPO","PE","VC",
+        "AND","THE","FOR","NOT","BUT","HAS","WHO","WHY","HOW","ANY","ALL",
+        "HQ","HR","IT","DC","USD","COP",  # currency codes — too generic
+    }
+
+    def _extract_symbol(self, query: str) -> str:
+        """
+        Extract ticker symbol from a natural-language query.
+        Works on ORIGINAL case — tickers written in ALL CAPS in text are found first.
+        Falls back to keyword-context extraction.
+        """
+        q = (query or "").strip()
+        # 1. Dollar-prefixed: $AAPL, $BTC
+        m = re.search(r'\$([A-Z]{1,6}(?:\.[A-Z]{1,2})?)\b', q)
+        if m:
+            return m.group(1)
+        # 2. All-caps tokens already in original text (tickers are usually in CAPS)
+        caps_tokens = re.findall(r'\b([A-Z]{2,6}(?:\.[A-Z]{1,2})?)\b', q)
+        for tok in caps_tokens:
+            if tok not in self._TICKER_SKIP:
+                return tok
+        # 3. Word immediately after signal keywords (case-insensitive)
+        m = re.search(
+            r'(?:stock|ticker|symbol|equity|share|invest(?:ing)? in|buy|sell|analyze|about|on|for)\s+([A-Za-z]{2,6})\b',
+            q, re.IGNORECASE,
+        )
+        if m:
+            candidate = m.group(1).upper()
+            if candidate not in self._TICKER_SKIP:
+                return candidate
+        return ""
+
+    def _analyze_impl(self, symbol: str) -> Dict[str, Any]:
         clean = (symbol or "").strip().upper()
         if not clean:
             return {"error": "symbol required", "source": "trader_alpha"}

@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class OpportunityRadarEngine:
     """
@@ -106,6 +108,14 @@ class OpportunityRadarEngine:
         return self.analyze(topic)
 
     def analyze(self, query: str) -> Dict[str, Any]:
+        if not (query or "").strip():
+            return degraded("Empty query — cannot scan for opportunities", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Opportunity scan failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
         text    = (query or "").lower()
         matched = {
             name: data
@@ -113,30 +123,16 @@ class OpportunityRadarEngine:
             if any(t in text for t in data["triggers"])
         }
 
-        all_opps:     List[Dict[str, Any]] = []
-        all_risks:    List[str]            = []
-        all_scenarios: List[Dict[str, Any]] = []
+        all_opps: List[Dict[str, Any]] = []
+        all_risks: List[str] = []
 
         for theme, data in matched.items():
             all_opps.extend(data.get("opportunities", []))
             all_risks.extend(data.get("risks", []))
-            sc = data.get("scenarios", {})
-            all_scenarios.append({
-                "theme":     theme,
-                "bull_case": sc.get("bull", ""),
-                "bear_case": sc.get("bear", ""),
-                "base_case": sc.get("base", ""),
-            })
 
         if not matched:
-            all_opps = [{
-                "asset":       "Diversified — no dominant theme",
-                "thesis":      "No single macro theme dominates — broad exposure and base allocation",
-                "timeframe":   "ongoing",
-                "conviction":  "medium",
-            }]
-            all_risks    = ["Insufficient context for targeted thesis — specificity improves signal quality"]
-            all_scenarios = [{"theme": "base_case", "bull_case": "", "bear_case": "", "base_case": "Mixed signals — maintain base allocation, reduce concentration risk"}]
+            all_opps  = [{"asset": "Diversified core", "thesis": "No dominant macro theme — maintain base allocation", "timeframe": "ongoing", "conviction": "medium"}]
+            all_risks = ["Insufficient context for targeted thesis — broaden query with asset class, geography, or macro theme"]
 
         high_conviction = sorted(
             all_opps,
@@ -144,43 +140,56 @@ class OpportunityRadarEngine:
             reverse=True,
         )[:3]
 
-        return {
-            "query":              query,
-            "themes_detected":    list(matched.keys()),
-            "opportunities":      all_opps[:6],
-            "highest_conviction": high_conviction,
-            "risks":              all_risks[:4],
-            "scenarios":          all_scenarios[:3],
-            "recommendations": {
-                "short_term": [
-                    "Position sizing: maximum 5% per speculative theme — conviction doesn't override risk",
-                    "Enter on confirmation, not anticipation — narrative moves reverse without warning",
-                    f"Monitor catalyst dates: earnings, Fed meeting, geopolitical updates",
-                ],
-                "mid_term": [
-                    "Scale into themes over 2–4 weeks — staged entry reduces timing risk",
-                    "Define your thesis invalidation trigger before entering — not after",
-                    "Pair speculative positions with protective structure (puts, inverse ETF)",
-                ],
-                "long_term": [
-                    "Structural themes (AI, energy transition, defense) warrant patient, larger positions",
-                    "Colombia-specific: hard assets + USD exposure as permanent structural allocation",
-                    "Compound winners by trimming at targets and redeploying — don't hold forever",
-                ],
-            },
-            "risk_assessment": {
-                "level":         "medium",
-                "key_risk":      "Narrative-driven moves revert fast — size for optionality not certainty",
-                "correlation":   "Geopolitical assets correlate 1.0 in crisis — not real diversification",
-                "position_note": "No single opportunity warrants >5% of total portfolio",
-            },
-            "confidence":       0.78 if matched else 0.52,
-            "decision_clarity": "high" if matched else "low",
-            "summary": (
-                f"Radar detected {len(matched)} macro theme(s). "
-                f"{len(all_opps)} opportunities identified, "
-                f"{len(high_conviction)} high-conviction."
+        best = high_conviction[0] if high_conviction else all_opps[0]
+        asset    = best.get("asset", "Diversified")
+        thesis   = best.get("thesis", "Maintain allocation")
+        tf       = best.get("timeframe", "ongoing")
+        conv     = best.get("conviction", "medium")
+
+        confidence  = 0.78 if matched else 0.48
+        completeness = min(0.5 + len(matched) * 0.15, 1.0)
+
+        action = (
+            f"Allocate up to 5% into {asset.split('—')[0].strip()} "
+            f"({tf} timeframe). Thesis: {thesis[:80]}. "
+            f"Enter on confirmation, staged over 2–4 weeks. Define invalidation trigger first."
+        )
+
+        base_signals = [f"Theme: {t}" for t in list(matched.keys())[:3]]
+        opp_signals  = [f"Opportunity: {o['asset'].split(',')[0].strip()}" for o in high_conviction[:2]]
+        if not matched:
+            base_signals = [
+                "Theme: none — no macro keyword matched in query",
+                f"Fallback: default diversified allocation active (conviction={conv})",
+            ]
+        all_signals = (base_signals + opp_signals)[:5]
+        if len(all_signals) < 2:
+            all_signals.append(f"Risk: {all_risks[0][:80]}")
+
+        return build_response(
+            confidence=confidence,
+            insight=(
+                f"Detected {len(matched)} macro theme(s): {', '.join(matched.keys()) or 'none'}. "
+                f"{len(all_opps)} opportunities identified. "
+                f"Top conviction ({conv}): {asset.split(',')[0].strip()}."
             ),
-            "source":       "opportunity_radar",
-            "generated_at": datetime.utcnow().isoformat(),
-        }
+            risk_level="medium",
+            action=action,
+            reason=(
+                f"Theme matching: {', '.join(matched.keys()) if matched else 'no dominant theme'}. "
+                f"High-conviction opportunities ranked by thesis strength. "
+                f"Key risk: {all_risks[0] if all_risks else 'narrative reversal'}."
+            ),
+            signals_used=all_signals,
+            data_sources=["macro_theme_matrix_internal", "query_pattern_matching"],
+            reasoning_path=[
+                "1. Match query against 4-theme macro matrix (geopolitical, inflation, AI/tech, Colombia/LatAm)",
+                f"2. Matched themes: {list(matched.keys()) or ['none']}",
+                f"3. Extracted {len(all_opps)} opportunities from matched themes",
+                "4. Sort by conviction (high > medium > low), select top 3",
+                f"5. Top conviction asset: {asset.split(',')[0].strip()} ({conv})",
+                f"6. Action: staged 5% allocation with thesis invalidation trigger",
+            ],
+            data_freshness=1.0,
+            data_completeness=completeness,
+        )

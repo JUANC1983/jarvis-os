@@ -14,7 +14,10 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\('core/agent_orchestrator_pro.py'\\).read\\(\\)\\); print\\('orchestrator OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('main OK'\\)\")",
       "Bash(python -u -c ' *)",
-      "Bash(python -c \"import core.vector_memory_pro\")"
+      "Bash(python -c \"import core.vector_memory_pro\")",
+      "Bash([ -f \"c:/Users/juanc/JARVIS/core/$f\" ])",
+      "Bash(rm -f *.bak *.bak_* *.BACKUP_* product_brain.pre_fix.bak product_brain.py.STABLE_NOW_20260406_122740.bak product_brain.py.fix_backup_20260331_120639 product_brain_backup.py product_brain_backup_20260331_204304.py)",
+      "Bash(ls *.bak* *.BACKUP_* product_brain_backup*.py)"
     ]
   }
 }

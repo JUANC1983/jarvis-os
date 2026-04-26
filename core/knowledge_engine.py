@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List
 
+from core.agent_schema import build_response, degraded
+
 
 class KnowledgeEngine:
     """
@@ -47,43 +49,58 @@ class KnowledgeEngine:
         return self.analyze(query)
 
     def analyze(self, query: str) -> Dict[str, Any]:
+        if not (query or "").strip():
+            return degraded("No knowledge query provided", confidence=0.2)
+        try:
+            return self._analyze_impl(query)
+        except Exception as exc:
+            return degraded(f"Knowledge synthesis failed: {exc}", confidence=0.25)
+
+    def _analyze_impl(self, query: str) -> Dict[str, Any]:
         text   = (query or "").lower()
         domain = self._detect_domain(text)
         fw     = self._FRAMEWORKS.get(domain, self._FRAMEWORKS["strategy"])
+        insight_str = self._DOMAIN_INSIGHTS[domain]
+        core_insight = self._build_core_insight(text, domain)
+        completeness = min(0.5 + len(text.split()) / 30, 1.0)
 
-        return {
-            "query":   query,
-            "domain":  domain,
-            "insight": self._DOMAIN_INSIGHTS[domain],
-            "core_insight": self._build_core_insight(text, domain),
-            "applicable_frameworks": fw["frameworks"][:3],
-            "mental_models":         fw["mental_models"][:2],
-            "recommendations": {
-                "short_term": [
-                    "Identify the single binding constraint preventing progress",
-                    "Gather 2–3 high-signal data points before acting — not 20",
-                    "Decide: is this reversible? If yes, move fast. If not, slow down.",
-                ],
-                "mid_term": [
-                    "Build systems over goals — automate the right default behavior",
-                    "Measure leading indicators, not just outcomes",
-                    f"Apply {fw['frameworks'][0]} to structure the decision",
-                ],
-                "long_term": [
-                    "Compound small advantages — 1% improvement daily = 37x in a year",
-                    "Protect optionality while pursuing asymmetric upside",
-                    "Document decisions and their reasoning — future you will thank you",
-                ],
-            },
-            "risk_assessment": {
-                "level": "low",
-                "note": "Knowledge synthesis stage — no execution risk until action is taken",
-            },
-            "confidence":       0.82,
-            "decision_clarity": "high" if len(text.split()) > 6 else "medium",
-            "source":           "knowledge_engine",
-            "generated_at":     datetime.utcnow().isoformat(),
-        }
+        top_framework = fw["frameworks"][0] if fw["frameworks"] else "Systems thinking"
+        top_model     = fw["mental_models"][0] if fw["mental_models"] else "Inversion"
+
+        action = (
+            f"Apply {top_framework} to structure this decision. "
+            f"Mental model: {top_model}. "
+            f"Core principle: {insight_str[:100]}. "
+            f"Next step: {core_insight[:100]}"
+        )
+
+        return build_response(
+            confidence=0.82 if len(text.split()) > 6 else 0.62,
+            insight=f"[{domain.upper()}] {insight_str}",
+            risk_level="low",
+            action=action,
+            reason=(
+                f"Domain: {domain}. "
+                f"Applicable framework: {top_framework}. "
+                f"Core principle applied: {insight_str[:80]}."
+            ),
+            signals_used=[
+                f"Domain: {domain}",
+                f"Framework: {top_framework}",
+                f"Mental model: {top_model}",
+                f"Query specificity: {'high' if len(text.split()) > 6 else 'low'}",
+            ],
+            data_sources=["knowledge_framework_library_internal", "mental_model_library_internal"],
+            reasoning_path=[
+                f"1. Detect domain from query keywords → {domain}",
+                f"2. Load framework library for {domain}: {fw['frameworks'][:2]}",
+                f"3. Load mental models: {fw['mental_models'][:2]}",
+                f"4. Synthesize core insight for domain",
+                f"5. Action: apply {top_framework} to this specific query",
+            ],
+            data_freshness=1.0,
+            data_completeness=round(completeness, 2),
+        )
 
     # ------------------------------------------------------------------
     # Private

@@ -30,6 +30,14 @@ from core.agent_orchestrator_pro import AgentOrchestratorPro
 from core.news_intelligence_engine import NewsIntelligenceEngine
 from core.golf_dashboard_engine import GolfDashboardEngine
 
+try:
+    from core.market_intelligence_engine import MarketIntelligenceEngine as _MarketIntelEngine
+    _mkt_engine = _MarketIntelEngine()
+    _MKT_AVAILABLE = True
+except Exception:
+    _mkt_engine = None
+    _MKT_AVAILABLE = False
+
 app = FastAPI(title="JARVIS OS")
 brain           = ProductBrain()
 brain_pro       = ProductBrainPro()
@@ -1000,13 +1008,14 @@ def add_task(data: dict):
         text     = (data.get("text") or "").strip()
         priority = (data.get("priority") or "medium").strip().lower()
         day      = (data.get("day") or "today").strip().lower()
+        category = (data.get("category") or "general").strip().lower()
 
         if not text:
             raise HTTPException(status_code=400, detail="text is required")
         if priority not in ["high", "medium", "low"]:
             priority = "medium"
 
-        return workspace.add_task(text, priority, day)
+        return workspace.add_task(text, priority, day, category)
     except HTTPException:
         raise
     except Exception as e:
@@ -1017,6 +1026,22 @@ def add_task(data: dict):
 def toggle_task(task_id: str):
     try:
         return workspace.toggle_task(task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.delete("/dashboard/tasks/{task_id}")
+def delete_task(task_id: str):
+    try:
+        return workspace.delete_task(task_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.patch("/dashboard/tasks/{task_id}")
+def edit_task(task_id: str, data: dict):
+    try:
+        return workspace.edit_task(task_id, data)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
@@ -1222,6 +1247,105 @@ def golf():
 
 
 # =========================
+# MARKET SNAPSHOT
+# =========================
+@app.get("/api/markets/snapshot")
+def markets_snapshot():
+    if not _MKT_AVAILABLE or _mkt_engine is None:
+        return {"status": "unavailable", "items": [], "regime": "unknown", "timestamp": datetime.now().isoformat()}
+    try:
+        data = _mkt_engine.snapshot()
+        items = data.get("items", [])
+        vix_item = next((x for x in items if x["label"] == "VIX"), None)
+        spy_item = next((x for x in items if x["label"] == "SPY"), None)
+
+        vix = vix_item["price"] if vix_item else None
+        spy_chg = spy_item["change_pct"] if spy_item else None
+
+        if vix is None:
+            regime = "unknown"
+        elif vix > 35:
+            regime = "FEAR"
+        elif vix > 25 and spy_chg is not None and spy_chg < 0:
+            regime = "RISK_OFF"
+        elif vix > 20:
+            regime = "CAUTION"
+        else:
+            regime = "NORMAL"
+
+        return {
+            "status": "ok",
+            "items": items,
+            "regime": regime,
+            "vix": vix,
+            "timestamp": data.get("timestamp", datetime.now().isoformat()),
+        }
+    except Exception as e:
+        return {"status": "error", "items": [], "regime": "unknown", "error": str(e), "timestamp": datetime.now().isoformat()}
+
+
+# =========================
+# GOLF API
+# =========================
+@app.get("/api/golf/courses")
+def golf_courses_search(q: str = "", limit: int = 10):
+    try:
+        if not q.strip():
+            items = golf_engine.db.get_all_courses()[:limit]
+        else:
+            items = golf_engine.search_courses(q.strip(), limit=limit)
+        return {"status": "ok", "query": q, "items": items, "count": len(items)}
+    except Exception as e:
+        return {"status": "error", "items": [], "error": str(e)}
+
+
+@app.post("/api/golf/caddy")
+def golf_caddy(data: dict):
+    try:
+        distance = float(data.get("distance") or 150)
+        wind_mph = float(data.get("wind_mph") or 0)
+        wind_direction = str(data.get("wind_direction") or "neutral")
+        elevation_delta = float(data.get("elevation_delta_yards") or 0)
+        lie = str(data.get("lie") or "fairway")
+        temperature_c = float(data.get("temperature_c") or 22)
+        result = golf_engine.caddie(
+            distance=distance,
+            wind_mph=wind_mph,
+            wind_direction=wind_direction,
+            elevation_delta_yards=elevation_delta,
+            lie=lie,
+            temperature_c=temperature_c,
+        )
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/golf/profile")
+def golf_profile():
+    try:
+        return {"status": "ok", "profile": golf_engine.get_profile()}
+    except Exception as e:
+        return {"status": "error", "profile": {}, "error": str(e)}
+
+
+@app.post("/api/golf/profile/round")
+def golf_log_round(data: dict):
+    try:
+        score = int(data.get("score") or 0)
+        course_name = str(data.get("course_name") or "Unknown course")
+        notes = str(data.get("notes") or "")
+        if score < 18 or score > 200:
+            raise HTTPException(status_code=400, detail="score must be between 18 and 200")
+        stats = golf_engine.log_round(score, course_name, notes)
+        return {"status": "ok", "profile": stats}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# =========================
 # AGENT PERFORMANCE STATS
 # =========================
 @app.get("/jarvis/agents/performance")
@@ -1230,6 +1354,30 @@ def agent_performance():
         return {"items": orchestrator.agent_performance_stats()}
     except Exception as e:
         return {"items": [], "error": str(e)}
+
+
+# =========================
+# COUNCIL ENDPOINT (Phase 3B)
+# =========================
+class CouncilRequest(BaseModel):
+    query: str
+    domain: str = "general"
+
+@app.post("/api/council")
+def council_execute(req: CouncilRequest):
+    """
+    Multi-agent council: runs all domain agents, detects conflicts,
+    returns confidence-weighted synthesis with full traceability.
+    """
+    try:
+        return orchestrator.execute_council(req.query, req.domain)
+    except Exception as e:
+        return {
+            "query":   req.query,
+            "domain":  req.domain,
+            "council": {"council_action": "Council failed", "weighted_confidence": 0.0},
+            "error":   str(e),
+        }
 
 
 # =========================

@@ -39,6 +39,25 @@ class GolfCourseDatabase:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_courses_name ON courses(name)")
         conn.commit()
         conn.close()
+        self._migrate_schema()
+
+    def _migrate_schema(self) -> None:
+        """Safely add new columns without touching existing data or structure."""
+        new_cols = [
+            ("department",       "TEXT"),
+            ("altitude_meters",  "REAL"),
+            ("course_type",      "TEXT"),
+            ("notes",            "TEXT"),
+        ]
+        conn = self._connect()
+        cur = conn.cursor()
+        for col, col_type in new_cols:
+            try:
+                cur.execute(f"ALTER TABLE courses ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass  # column already exists — safe to ignore
+        conn.commit()
+        conn.close()
 
     def upsert_course(self, course: Dict[str, Any]) -> None:
         conn = self._connect()
@@ -57,20 +76,26 @@ class GolfCourseDatabase:
         values = (
             course.get("name"),
             course.get("country"),
-            course.get("region"),
+            course.get("region", course.get("department")),
             course.get("city"),
             course.get("latitude"),
             course.get("longitude"),
             course.get("holes"),
             course.get("par_total"),
             course.get("source", "local"),
+            course.get("department", course.get("region")),
+            course.get("altitude_meters"),
+            course.get("course_type"),
+            course.get("notes"),
         )
 
         if row:
             cur.execute(
                 """
                 UPDATE courses
-                SET name=?, country=?, region=?, city=?, latitude=?, longitude=?, holes=?, par_total=?, source=?
+                SET name=?, country=?, region=?, city=?, latitude=?, longitude=?,
+                    holes=?, par_total=?, source=?,
+                    department=?, altitude_meters=?, course_type=?, notes=?
                 WHERE id=?
                 """,
                 values + (row[0],),
@@ -78,8 +103,11 @@ class GolfCourseDatabase:
         else:
             cur.execute(
                 """
-                INSERT INTO courses (name, country, region, city, latitude, longitude, holes, par_total, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO courses
+                    (name, country, region, city, latitude, longitude,
+                     holes, par_total, source,
+                     department, altitude_meters, course_type, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 values,
             )
@@ -102,17 +130,31 @@ class GolfCourseDatabase:
         return {"status": "ok", "imported": count, "source": json_path}
 
     def search_by_name(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search across name, city, region, and department — case-insensitive."""
+        conn = self._connect()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        pat = f"%{query}%"
+        cur.execute(
+            """
+            SELECT * FROM courses
+            WHERE name LIKE ? OR city LIKE ? OR region LIKE ? OR department LIKE ?
+            ORDER BY name ASC
+            LIMIT ?
+            """,
+            (pat, pat, pat, pat, limit),
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def search_by_city(self, city: str, limit: int = 20) -> List[Dict[str, Any]]:
         conn = self._connect()
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute(
-            """
-            SELECT * FROM courses
-            WHERE name LIKE ?
-            ORDER BY name ASC
-            LIMIT ?
-            """,
-            (f"%{query}%", limit),
+            "SELECT * FROM courses WHERE city LIKE ? ORDER BY name ASC LIMIT ?",
+            (f"%{city}%", limit),
         )
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
@@ -138,6 +180,21 @@ class GolfCourseDatabase:
             best["distance_km"] = round(best_dist, 3)
             return best
         return None
+
+    def get_all_courses(self, country: Optional[str] = None) -> List[Dict[str, Any]]:
+        conn = self._connect()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        if country:
+            cur.execute("SELECT * FROM courses WHERE country = ? ORDER BY city, name", (country,))
+        else:
+            cur.execute("SELECT * FROM courses ORDER BY country, city, name")
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def get_by_country(self, country: str) -> List[Dict[str, Any]]:
+        return self.get_all_courses(country=country)
 
     def stats(self) -> Dict[str, Any]:
         conn = self._connect()
