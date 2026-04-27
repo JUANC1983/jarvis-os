@@ -1,0 +1,185 @@
+{
+  "automations": [
+    {
+      "id": "aut_c4eff72857",
+      "user_id": "owner",
+      "name": "Owner Only",
+      "trigger_type": "manual",
+      "trigger_value": "",
+      "conditions": [],
+      "actions": [
+        {
+          "type": "log_event",
+          "config": {
+            "message": "owner"
+          }
+        }
+      ],
+      "cooldown_min": 5,
+      "enabled": true,
+      "run_count": 2,
+      "last_run": "2026-04-26T18:03:39.490194",
+      "created_at": "2026-04-26T18:03:39.396753"
+    }
+  ],
+  "execution_log": [
+    {
+      "ts": "2026-04-26T17:58:18.910378",
+      "automation_id": "aut_54afd396bd",
+      "name": "Daily Log",
+      "trigger_type": "manual",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "log_event",
+          "outcome": "ok",
+          "detail": "logged: Daily automation fired"
+        }
+      ],
+      "context_keys": [
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T17:58:18.932352",
+      "automation_id": "aut_264bcf1896",
+      "name": "Task Due Alert",
+      "trigger_type": "event",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "send_notification",
+          "outcome": "ok",
+          "detail": "notification ntf_83e86bfdc9"
+        }
+      ],
+      "context_keys": [
+        "priority",
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T17:58:18.992877",
+      "automation_id": "aut_54afd396bd",
+      "name": "Daily Log",
+      "trigger_type": "manual",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "log_event",
+          "outcome": "ok",
+          "detail": "logged: Daily automation fired"
+        }
+      ],
+      "context_keys": [
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T17:59:33.578163",
+      "automation_id": "aut_264bcf1896",
+      "name": "Task Due Alert",
+      "trigger_type": "event",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "send_notification",
+          "outcome": "ok",
+          "detail": "notification ntf_861f51dcdc"
+        }
+      ],
+      "context_keys": [
+        "priority",
+        "event",
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T17:59:33.613113",
+      "automation_id": "aut_3105cdd671",
+      "name": "Morning Briefing",
+      "trigger_type": "time",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "call_agent",
+          "outcome": "ok",
+          "detail": "Your productivity workspace is empty. Want me to help you plan your day? Recall: User prefers compact responses without trailing summaries"
+        }
+      ],
+      "context_keys": [
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T17:59:33.721857",
+      "automation_id": "aut_264bcf1896",
+      "name": "Task Due Alert",
+      "trigger_type": "event",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "send_notification",
+          "outcome": "ok",
+          "detail": "notification ntf_ec1ea3fb2c"
+        }
+      ],
+      "context_keys": [
+        "priority",
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T18:03:39.454016",
+      "automation_id": "aut_c4eff72857",
+      "name": "Owner Only",
+      "trigger_type": "manual",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "log_event",
+          "outcome": "ok",
+          "detail": "logged: owner"
+        }
+      ],
+      "context_keys": [
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T18:03:39.490194",
+      "automation_id": "aut_c4eff72857",
+      "name": "Owner Only",
+      "trigger_type": "manual",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "log_event",
+          "outcome": "ok",
+          "detail": "logged: owner"
+        }
+      ],
+      "context_keys": [
+        "automation_id"
+      ]
+    },
+    {
+      "ts": "2026-04-26T18:03:39.523811",
+      "automation_id": "aut_a26fc79b67",
+      "name": "Owner Task",
+      "trigger_type": "event",
+      "status": "executed",
+      "actions": [
+        {
+          "type": "send_notification",
+          "outcome": "ok",
+          "detail": "notification ntf_9d06661df0"
+        }
+      ],
+      "context_keys": [
+        "event",
+        "automation_id"
+      ]
+    }
+  ]
+}

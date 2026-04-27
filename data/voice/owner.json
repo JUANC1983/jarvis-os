@@ -1,0 +1,76 @@
+{
+  "settings": {
+    "language": "en-US",
+    "auto_speak": false,
+    "speed": 1.0,
+    "wake_word_enabled": true,
+    "wake_word": "hey jarvis",
+    "use_whisper": false,
+    "voice_id": ""
+  },
+  "history": [
+    {
+      "id": "2ad015ed3120",
+      "ts": "2026-04-26T18:39:06.695427",
+      "transcript": "how many tasks do I have",
+      "response": "Task board: 0 todo, 0 in-progress, 0 done. 2 meeting(s) today — next: Board Review Recall: User prefers compact responses without trailing summaries",
+      "domain": "productivity",
+      "confidence": 1.0,
+      "source": "mic"
+    },
+    {
+      "id": "62a2b5db6244",
+      "ts": "2026-04-27T00:37:08.512297",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
+    },
+    {
+      "id": "8fe47c9c9067",
+      "ts": "2026-04-27T00:39:00.596116",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
+    },
+    {
+      "id": "508de018d7af",
+      "ts": "2026-04-27T00:42:08.528500",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
+    },
+    {
+      "id": "7fb0cb87cb38",
+      "ts": "2026-04-27T00:45:19.375739",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
+    },
+    {
+      "id": "bbe276300f03",
+      "ts": "2026-04-27T00:47:38.965298",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
+    },
+    {
+      "id": "75fd78068bb5",
+      "ts": "2026-04-27T00:57:13.698611",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
+    }
+  ]
+}

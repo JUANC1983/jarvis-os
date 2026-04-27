@@ -1,5 +1,57 @@
 [
   {
+    "id": "ntf_9d06661df0",
+    "title": "Task created!",
+    "message": "",
+    "type": "general",
+    "priority": "medium",
+    "source_id": "aut_a26fc79b67",
+    "action_url": "",
+    "dedup_key": "general::task created!::aut_a26fc79b67",
+    "read": false,
+    "created_at": "2026-04-26T18:03:39.522774",
+    "read_at": null
+  },
+  {
+    "id": "ntf_ec1ea3fb2c",
+    "title": "Critical task due!",
+    "message": "",
+    "type": "general",
+    "priority": "critical",
+    "source_id": "aut_264bcf1896",
+    "action_url": "",
+    "dedup_key": "general::critical task due!::aut_264bcf1896",
+    "read": false,
+    "created_at": "2026-04-26T17:59:33.720847",
+    "read_at": null
+  },
+  {
+    "id": "ntf_861f51dcdc",
+    "title": "Critical task due!",
+    "message": "",
+    "type": "general",
+    "priority": "critical",
+    "source_id": "aut_264bcf1896",
+    "action_url": "",
+    "dedup_key": "general::critical task due!::aut_264bcf1896",
+    "read": false,
+    "created_at": "2026-04-26T17:59:33.578163",
+    "read_at": null
+  },
+  {
+    "id": "ntf_83e86bfdc9",
+    "title": "Critical task due!",
+    "message": "",
+    "type": "general",
+    "priority": "critical",
+    "source_id": "aut_264bcf1896",
+    "action_url": "",
+    "dedup_key": "general::critical task due!::aut_264bcf1896",
+    "read": false,
+    "created_at": "2026-04-26T17:58:18.932352",
+    "read_at": null
+  },
+  {
     "id": "ntf_a0ab5a64f7",
     "title": "System",
     "message": "Memory usage above 90%",

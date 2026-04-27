@@ -1,0 +1,105 @@
+{
+  "swings": [
+    {
+      "id": "5b5662e4e9c1",
+      "ts": "2026-04-27T00:01:46.752423",
+      "status": "ok",
+      "club": "7-iron",
+      "frame_count": 40,
+      "duration_s": 1.33,
+      "tempo_ratio": 1.0,
+      "phases": [
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "mid-swing",
+        "mid-swing",
+        "mid-swing",
+        "backswing / follow-through",
+        "backswing / follow-through",
+        "backswing / follow-through",
+        "backswing / follow-through",
+        "backswing / follow-through",
+        "backswing / follow-through",
+        "mid-swing",
+        "mid-swing",
+        "mid-swing",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact",
+        "address / impact"
+      ],
+      "biomechanics": {
+        "x_factor_avg": 2.0,
+        "x_factor_max": 2.0,
+        "x_factor_min": 2.0,
+        "lead_arm_angle_avg": 71.8,
+        "lead_arm_angle_max": 149.4,
+        "lead_arm_angle_min": 26.8,
+        "shoulder_turn_avg": 4.0,
+        "shoulder_turn_max": 4.0,
+        "shoulder_turn_min": 4.0,
+        "spine_angle_avg": 0.0,
+        "spine_angle_max": 0.0,
+        "spine_angle_min": 0.0,
+        "lead_knee_flex_avg": 176.6,
+        "lead_knee_flex_max": 176.6,
+        "lead_knee_flex_min": 176.6,
+        "hip_turn_avg": 2.0,
+        "hip_turn_max": 2.0,
+        "hip_turn_min": 2.0,
+        "lead_wrist_height_avg": -0.1,
+        "lead_wrist_height_max": 0.1,
+        "lead_wrist_height_min": -0.3,
+        "trail_knee_flex_avg": 176.6,
+        "trail_knee_flex_max": 176.6,
+        "trail_knee_flex_min": 176.6
+      },
+      "coaching": [
+        {
+          "area": "tempo",
+          "severity": "high",
+          "tip": "Swing too fast (ratio 1.0:1) — slow your backswing for better control. Tour average is ~3:1."
+        },
+        {
+          "area": "setup",
+          "severity": "medium",
+          "tip": "Avg spine angle 0.0° too upright — more hip hinge at address."
+        },
+        {
+          "area": "backswing",
+          "severity": "medium",
+          "tip": "Lead arm minimum angle 26.8° — keep it straighter through the swing."
+        },
+        {
+          "area": "rotation",
+          "severity": "low",
+          "tip": "Low X-factor — rotate shoulders more while keeping hips quieter to generate power."
+        }
+      ],
+      "score": 60,
+      "generated_at": "2026-04-27T00:01:46.751425"
+    }
+  ]
+}

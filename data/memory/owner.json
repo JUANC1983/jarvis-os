@@ -148,6 +148,76 @@
       "fingerprint": "1c7bcdf867fe5c61",
       "timestamp": "2026-04-26T14:40:28.482708",
       "last_seen": "2026-04-26T14:40:28.482708"
+    },
+    {
+      "id": "mem_8c590aa937",
+      "type": "event",
+      "content": "Automation log: Daily automation fired",
+      "importance": 3,
+      "tags": [
+        "automation"
+      ],
+      "metadata": {},
+      "fingerprint": "dae32d88259e2207",
+      "timestamp": "2026-04-26T17:58:18.908389",
+      "last_seen": "2026-04-26T17:58:18.908389"
+    },
+    {
+      "id": "mem_3eaefa7821",
+      "type": "interaction",
+      "content": "User: What is my agenda today? | AI: Your productivity workspace is empty. Want me to help you plan your day? Recall: User prefers compact responses without",
+      "importance": 4,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "What is my agenda today?"
+      },
+      "fingerprint": "f810ce63727f90ac",
+      "timestamp": "2026-04-26T17:59:33.612117",
+      "last_seen": "2026-04-26T17:59:33.612117"
+    },
+    {
+      "id": "mem_32cc1d2f98",
+      "type": "event",
+      "content": "Automation log: owner",
+      "importance": 3,
+      "tags": [
+        "automation"
+      ],
+      "metadata": {},
+      "fingerprint": "10c828e978ed03e3",
+      "timestamp": "2026-04-26T18:03:39.453016",
+      "last_seen": "2026-04-26T18:03:39.453016"
+    },
+    {
+      "id": "mem_bb1a14bd13",
+      "type": "event",
+      "content": "Disconnected integration: slack",
+      "importance": 5,
+      "tags": [
+        "integration",
+        "slack"
+      ],
+      "metadata": {},
+      "fingerprint": "d2b33e3d811c9c79",
+      "timestamp": "2026-04-26T18:12:26.942979",
+      "last_seen": "2026-04-26T18:12:26.942979"
+    },
+    {
+      "id": "mem_aa8140fcff",
+      "type": "interaction",
+      "content": "User: what tasks do I have? | AI: Task board: 0 todo, 0 in-progress, 0 done. 2 meeting(s) today — next: Board Review Recall: User prefers compact response",
+      "importance": 3,
+      "tags": [
+        "chat"
+      ],
+      "metadata": {
+        "raw_input": "what tasks do I have?"
+      },
+      "fingerprint": "4f5ad2f7987d7404",
+      "timestamp": "2026-04-27T00:42:21.456327",
+      "last_seen": "2026-04-27T00:42:21.456327"
     }
   ],
   "insights": [
@@ -159,5 +229,5 @@
       "timestamp": "2026-04-26T14:31:27.390008"
     }
   ],
-  "last_updated": "2026-04-26T14:40:28.482708"
+  "last_updated": "2026-04-27T00:42:21.456327"
 }

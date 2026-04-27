@@ -1,4 +1,41 @@
 {
-  "projects": [],
+  "projects": [
+    {
+      "id": "p_8e287a0baa",
+      "user_id": "owner",
+      "name": "__test_proj__",
+      "description": "QA test",
+      "color": "cyan",
+      "status": "active",
+      "created_at": "2026-04-27T00:36:35.404725"
+    },
+    {
+      "id": "p_5aec4c6b2c",
+      "user_id": "owner",
+      "name": "__test_proj__",
+      "description": "QA test",
+      "color": "cyan",
+      "status": "active",
+      "created_at": "2026-04-27T00:38:27.756937"
+    },
+    {
+      "id": "p_768e86c922",
+      "user_id": "owner",
+      "name": "__test_proj__",
+      "description": "QA test",
+      "color": "cyan",
+      "status": "active",
+      "created_at": "2026-04-27T00:41:35.636460"
+    },
+    {
+      "id": "p_6bbb560beb",
+      "user_id": "owner",
+      "name": "__test_proj2__",
+      "description": "QA test",
+      "color": "cyan",
+      "status": "active",
+      "created_at": "2026-04-27T00:42:55.402492"
+    }
+  ],
   "tasks": []
 }

@@ -567,6 +567,191 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .vb-btn.active{border-color:rgba(68,240,255,.35);color:var(--cyan);background:rgba(68,240,255,.08)}
 .vb-btn:disabled{opacity:.38;cursor:default}
 
+/* ── Phase 5K-2: Golf Swing Vision Pro ──────────────────────────── */
+.sv-main{display:grid;grid-template-columns:1fr 220px;gap:14px;margin-top:10px}
+@media(max-width:700px){.sv-main{grid-template-columns:1fr}}
+.sv-cam-wrap{
+  position:relative;border-radius:var(--rs);overflow:hidden;
+  background:#000;aspect-ratio:4/3;min-height:200px;
+}
+.sv-video{width:100%;height:100%;object-fit:cover;display:block;border-radius:var(--rs)}
+.sv-canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:var(--rs)}
+.sv-cam-placeholder{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.75);border-radius:var(--rs);transition:opacity .3s;pointer-events:none;
+}
+.sv-cam-placeholder.hidden{opacity:0}
+.sv-metrics-panel{
+  background:rgba(68,240,255,.03);border:1px solid var(--border2);
+  border-radius:var(--rs);padding:12px 14px;display:flex;flex-direction:column;gap:0;
+}
+.sv-metrics-title{
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:8px;margin-top:10px;
+}
+.sv-metrics-title:first-child{margin-top:0}
+.sv-metric{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border3);font-size:12px;
+}
+.sv-metric span:last-child{color:var(--cyan);font-weight:700}
+.sv-tip{font-size:11px;color:var(--soft2);padding:4px 0;border-bottom:1px solid var(--border3);line-height:1.4}
+.sv-record-bar{height:4px;background:var(--border2);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.sv-record-progress{height:100%;width:0%;background:#ff4d4d;transition:width .1s;border-radius:2px}
+.sv-result-header{
+  display:flex;align-items:center;gap:16px;padding:12px 0;
+  border-bottom:1px solid var(--border3);margin-bottom:10px;
+}
+.sv-score-ring{
+  width:64px;height:64px;border-radius:50%;border:3px solid var(--cyan);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sv-score-num{font-size:22px;font-weight:900;color:var(--white);line-height:1}
+.sv-score-lbl{font-size:10px;color:var(--soft)}
+.sv-coaching{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.sv-coaching-item{
+  display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
+  border-radius:6px;background:rgba(255,255,255,.03);font-size:12px;color:var(--soft2);line-height:1.5;
+}
+.sv-sev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.sv-dot-high{background:#ff4d4d}.sv-dot-medium{background:#ffaa00}
+.sv-dot-low{background:var(--cyan)}.sv-dot-ok{background:var(--ok)}
+.sv-tabs{display:flex;gap:0;border-bottom:1px solid var(--border2);margin:14px 0 10px}
+.sv-tab{
+  padding:7px 16px;font-size:12px;font-weight:600;color:var(--soft);
+  background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .18s;
+}
+.sv-tab.active{color:var(--white);border-bottom-color:var(--cyan)}
+.sv-history-item{
+  display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
+}
+.sv-score-badge{
+  background:rgba(68,240,255,.1);border:1px solid rgba(68,240,255,.25);
+  border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;color:var(--cyan);
+}
+.sv-drill{padding:10px 0;border-bottom:1px solid var(--border3)}
+.sv-drill-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+.sv-drill-focus{font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.sv-drill-desc{font-size:12px;color:var(--soft2);line-height:1.5}
+.sv-status-bar{font-size:11px;color:var(--soft);margin:6px 0 10px;min-height:16px}
+.sv-recording .vb-btn,.btn-recording{
+  border-color:#ff4d4d!important;color:#ff4d4d!important;
+  animation:blink .8s ease-in-out infinite;
+}
+
+/* ── Phase 5K: WOW Layer ─────────────────────────────────────────── */
+.wow-section{margin-bottom:18px}
+.wow-section-title{
+  font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.wow-pulse{
+  width:8px;height:8px;border-radius:50%;background:var(--cyan);flex-shrink:0;
+  animation:pulseRing 2s ease-in-out infinite;
+}
+@keyframes pulseRing{
+  0%,100%{box-shadow:0 0 0 0 rgba(68,240,255,.5)}
+  50%{box-shadow:0 0 0 6px rgba(68,240,255,0)}
+}
+/* insight cards */
+.wow-insights{display:flex;flex-direction:column;gap:8px}
+.wow-card{
+  display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+  border-radius:var(--rs);border-left:3px solid var(--border2);
+  background:rgba(255,255,255,.03);transition:all .18s;cursor:default;
+  position:relative;
+}
+.wow-card:hover{background:rgba(255,255,255,.055)}
+.wow-card.priority-critical{border-left-color:#ff4d4d}
+.wow-card.priority-high{border-left-color:#ffaa00}
+.wow-card.priority-medium{border-left-color:var(--cyan)}
+.wow-card.priority-low{border-left-color:rgba(68,240,255,.3)}
+.wow-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.wow-body{flex:1;min-width:0}
+.wow-title{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+.wow-text{font-size:12px;color:var(--soft);line-height:1.5}
+.wow-action{
+  margin-top:7px;font-size:11px;font-weight:600;color:var(--cyan);
+  background:rgba(68,240,255,.08);border:1px solid rgba(68,240,255,.2);
+  border-radius:6px;padding:4px 10px;cursor:pointer;display:inline-block;
+  transition:all .15s;
+}
+.wow-action:hover{background:rgba(68,240,255,.16)}
+.wow-dismiss{
+  position:absolute;top:8px;right:10px;font-size:13px;color:var(--soft);
+  cursor:pointer;opacity:.45;transition:opacity .15s;background:none;border:none;
+}
+.wow-dismiss:hover{opacity:1}
+/* suggestion chips */
+.wow-chips{display:flex;gap:8px;flex-wrap:wrap}
+.wow-chip{
+  display:flex;align-items:center;gap:6px;padding:7px 13px;
+  border-radius:20px;border:1px solid var(--border2);background:var(--s3);
+  font-size:12px;color:var(--soft2);cursor:pointer;transition:all .18s;
+  white-space:nowrap;
+}
+.wow-chip:hover{border-color:rgba(68,240,255,.3);color:var(--white);background:var(--s4)}
+.wow-chip-icon{font-size:14px}
+/* morning brief */
+.wow-brief-card{
+  padding:14px 16px;border-radius:var(--rs);
+  border:1px solid rgba(68,240,255,.15);
+  background:linear-gradient(135deg,rgba(68,240,255,.04),rgba(0,0,0,0));
+}
+.wow-brief-toggle{
+  display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+}
+.wow-brief-toggle-label{font-size:13px;font-weight:700;color:var(--white)}
+.wow-brief-toggle-sub{font-size:11px;color:var(--soft);margin-left:auto}
+.wow-brief-body{margin-top:12px;display:none}
+.wow-brief-body.open{display:block}
+.wow-brief-section{margin-bottom:10px}
+.wow-brief-section-title{font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:4px}
+.wow-brief-line{font-size:12px;color:var(--soft2);padding:2px 0 2px 10px;line-height:1.5}
+/* empty state */
+.wow-empty{font-size:13px;color:var(--soft);padding:16px 0;text-align:center}
+
+/* ── Phase 5J: waveform + voice settings + history ── */
+.vb-wave{display:flex;align-items:center;gap:2px;height:20px;margin-left:6px}
+.vb-wave span{
+  display:block;width:3px;border-radius:3px;
+  background:var(--cyan);opacity:0;
+  transition:opacity .2s;
+}
+.vb-wave.active span{opacity:.85;animation:waveBar .6s ease-in-out infinite}
+.vb-wave span:nth-child(1){animation-delay:0s;    height:6px}
+.vb-wave span:nth-child(2){animation-delay:.12s;  height:14px}
+.vb-wave span:nth-child(3){animation-delay:.24s;  height:10px}
+.vb-wave span:nth-child(4){animation-delay:.12s;  height:18px}
+.vb-wave span:nth-child(5){animation-delay:0s;    height:8px}
+@keyframes waveBar{0%,100%{transform:scaleY(.4)} 50%{transform:scaleY(1)}}
+
+.vb-settings-panel{
+  width:100%;margin-top:10px;padding:12px 14px;
+  background:rgba(0,0,0,.25);border:1px solid var(--border2);
+  border-radius:var(--rs);display:none;flex-direction:column;gap:10px;
+}
+.vb-settings-panel.open{display:flex}
+.vb-setting-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.vb-setting-row label{font-size:11px;color:var(--soft);min-width:110px}
+.vb-setting-row select,.vb-setting-row input[type=range]{
+  background:var(--s3);border:1px solid var(--border2);border-radius:6px;
+  color:var(--white);font-size:11px;padding:4px 7px;
+}
+.vb-setting-row input[type=checkbox]{accent-color:var(--cyan);width:14px;height:14px;cursor:pointer}
+.vb-speed-val{font-size:11px;color:var(--cyan);min-width:26px}
+
+.vb-history{width:100%;margin-top:10px;display:none}
+.vb-history.open{display:block}
+.vb-history-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin-bottom:6px}
+.vb-cmd{
+  padding:6px 10px;border-radius:6px;border:1px solid var(--border3);
+  margin-bottom:4px;display:flex;align-items:flex-start;gap:8px;
+}
+.vb-cmd-text{font-size:12px;flex:1}
+.vb-cmd-domain{font-size:10px;color:var(--cyan);white-space:nowrap}
+.vb-cmd-ts{font-size:10px;color:var(--soft);white-space:nowrap}
+
 /* ═══════════════════════════════════════════
    COURSES LIBRARY
 ═══════════════════════════════════════════ */
@@ -848,6 +1033,41 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   color:var(--cyan);text-transform:uppercase;letter-spacing:.05em;
 }
 
+/* ── Analytics ──────────────────────────── */
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:20px}
+.analytics-wide{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:680px){.analytics-wide{grid-template-columns:1fr}}
+.an-card{background:var(--s2);border:1px solid var(--border2);border-radius:var(--r);padding:18px 20px}
+.an-card-title{font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+.an-score-wrap{display:flex;align-items:center;gap:20px;margin-bottom:12px}
+.an-score-ring{position:relative;width:80px;height:80px;flex-shrink:0}
+.an-score-ring svg{transform:rotate(-90deg)}
+.an-score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--white)}
+.an-score-label{font-size:26px;font-weight:900;color:var(--white);line-height:1}
+.an-score-sub{font-size:12px;color:var(--soft);margin-top:4px}
+.an-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.an-bar-label{font-size:11px;color:var(--soft);width:52px;flex-shrink:0;text-align:right}
+.an-bar-track{flex:1;height:8px;background:var(--s3);border-radius:4px;overflow:hidden}
+.an-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.an-bar-val{font-size:11px;color:var(--soft2);width:34px;text-align:right;flex-shrink:0}
+.an-stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border3)}
+.an-stat-row:last-child{border-bottom:none}
+.an-stat-key{font-size:12px;color:var(--soft)}
+.an-stat-val{font-size:13px;font-weight:700;color:var(--white)}
+.an-insight{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border3);font-size:12px;color:var(--soft2)}
+.an-insight:last-child{border-bottom:none}
+.an-insight-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);margin-top:5px;flex-shrink:0}
+.an-trend-up{color:var(--bad)}
+.an-trend-down{color:var(--ok)}
+.an-trend-stable{color:var(--soft)}
+.an-sparkline{display:flex;align-items:flex-end;gap:3px;height:40px;margin:8px 0}
+.an-spark-bar{flex:1;background:var(--cyan);border-radius:2px 2px 0 0;min-height:3px;transition:height .4s ease;opacity:.75}
+.an-spark-bar.last{background:var(--ok);opacity:1}
+.an-empty{padding:24px;text-align:center;color:var(--soft);font-size:13px}
+.an-health-num{font-size:52px;font-weight:900;line-height:1;
+  background:linear-gradient(135deg,var(--cyan) 0%,var(--ok) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
 /* ── Notifications ───────────────────────── */
 .notif-btn{
   position:relative;background:none;border:1px solid var(--border2);
@@ -916,9 +1136,66 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .notif-item-del:hover{opacity:1;color:var(--bad)}
 .notif-empty{padding:28px 14px;text-align:center;color:var(--soft);font-size:13px}
 .notif-wrap{position:relative}
+
+/* ── Toast / Snackbar ── */
+#toast-container{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;
+  pointer-events:none;
+}
+.toast{
+  padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
+  color:var(--white);display:flex;align-items:center;gap:8px;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(12px) scale(.97);
+  transition:opacity .22s ease, transform .22s ease;
+  pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateY(0) scale(1)}
+.toast.success{background:linear-gradient(90deg,#1a3a2a,#0d2e1e);border:1px solid var(--ok)}
+.toast.error{background:linear-gradient(90deg,#3a1a1a,#2e0d0d);border:1px solid var(--bad)}
+.toast.info{background:linear-gradient(90deg,#1a2a3a,#0d1e2e);border:1px solid var(--cyan)}
+.toast.warning{background:linear-gradient(90deg,#3a2e1a,#2e220d);border:1px solid var(--warn)}
+
+/* ── Tab section descriptions ── */
+.tab-desc{
+  font-size:11px;color:var(--soft);margin-bottom:16px;
+  padding:8px 12px;background:rgba(68,240,255,.04);
+  border-left:2px solid rgba(68,240,255,.25);border-radius:0 6px 6px 0;
+}
+
+/* ── Skeleton loader ── */
+.skel{
+  background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);
+  background-size:400% 100%;animation:skelShim 1.4s ease infinite;
+  border-radius:6px;
+}
+@keyframes skelShim{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* ── Empty state CTA ── */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;
+  padding:32px 20px;gap:10px;text-align:center;
+}
+.empty-state-icon{font-size:32px;opacity:.5}
+.empty-state-title{font-size:14px;font-weight:700;color:var(--soft2)}
+.empty-state-sub{font-size:12px;color:var(--soft);max-width:260px;line-height:1.5}
+
+/* ── Section intro band ── */
+.section-intro{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:rgba(68,240,255,.03);border:1px solid rgba(68,240,255,.1);
+  border-radius:var(--rs);margin-bottom:16px;
+}
+.section-intro-icon{font-size:18px;flex-shrink:0}
+.section-intro-text{font-size:12px;color:var(--soft);line-height:1.5}
+.section-intro-text strong{color:var(--soft2)}
 </style>
 </head>
 <body>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
 
 <!-- ══════════════ HERO ══════════════ -->
 <header class="hero">
@@ -968,6 +1245,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn" data-tab="projects">Projects</button>
     <button class="tab-btn" data-tab="golf">Golf</button>
     <button class="tab-btn" data-tab="intelligence">Intelligence</button>
+    <button class="tab-btn" data-tab="analytics">Analytics</button>
     <button class="tab-btn" data-tab="system">System</button>
     <button class="tab-btn" data-tab="chat">Chat</button>
   </nav>
@@ -994,6 +1272,37 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <div class="tl">Assets</div>
       <div class="tv" id="assetsCount">0</div>
     </div>
+  </div>
+
+  <!-- ── WOW Layer ────────────────────────────── -->
+  <div class="card wow-section" id="wow-section" style="margin-bottom:18px">
+    <!-- Morning Brief -->
+    <div class="wow-brief-card" id="wowBriefCard" style="margin-bottom:14px">
+      <div class="wow-brief-toggle" onclick="toggleWowBrief()">
+        <span style="font-size:18px">🧠</span>
+        <span class="wow-brief-toggle-label">JARVIS Morning Brief</span>
+        <span class="wow-brief-toggle-sub" id="wowBriefDate">Loading…</span>
+        <span style="font-size:13px;color:var(--soft);margin-left:8px" id="wowBriefChevron">▼</span>
+      </div>
+      <div class="wow-brief-body" id="wowBriefBody"></div>
+    </div>
+
+    <!-- Proactive Insights -->
+    <div class="wow-section-title">
+      <div class="wow-pulse" id="wowPulseDot"></div>
+      JARVIS Insights
+      <span style="font-size:10px;font-weight:400;color:var(--soft)" id="wowInsightCount"></span>
+      <button class="vb-btn" style="margin-left:auto;font-size:10px;padding:3px 8px" onclick="loadWow()">↻</button>
+    </div>
+    <div class="wow-insights" id="wowInsightsList">
+      <div class="wow-empty">Loading insights…</div>
+    </div>
+
+    <!-- Smart Suggestions -->
+    <div class="wow-section-title" style="margin-top:16px">
+      <span>⚡</span> Quick Actions
+    </div>
+    <div class="wow-chips" id="wowChips"></div>
   </div>
 
   <div class="g2">
@@ -1085,6 +1394,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ MARKETS ══════════════ -->
 <div id="tab-markets" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">📈</span>
+    <span class="section-intro-text"><strong>Markets</strong> — Real-time market indices, stock analysis with AI trade plans, and trending opportunities detected by JARVIS agents.</span>
+  </div>
   <div class="col">
     <!-- Market indices snapshot bar -->
     <div class="card" style="padding:12px 16px">
@@ -1157,6 +1470,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ PRODUCTIVITY ══════════════ -->
 <div id="tab-productivity" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">✅</span>
+    <span class="section-intro-text"><strong>Productivity</strong> — Manage tasks and meetings. Set priorities, due dates, and categories. JARVIS tracks completion and surfaces overdue items automatically.</span>
+  </div>
   <div class="g2">
     <!-- Tasks -->
     <div class="card">
@@ -1267,6 +1584,85 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ GOLF ══════════════ -->
 <div id="tab-golf" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">⛳</span>
+    <span class="section-intro-text"><strong>Golf</strong> — AI swing analysis with live pose detection, round tracking, bag management, course library, and personalized coaching drills powered by JARVIS.</span>
+  </div>
+
+  <!-- ── Swing Vision Pro ── -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="ch">
+      <div>
+        <span class="ct">🎯 Swing Vision Pro</span>
+        <span class="cs">AI biomechanics · real-time pose analysis</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="svClubSelect" class="select" style="font-size:11px;padding:4px 8px">
+          <option value="driver">Driver</option>
+          <option value="3-wood">3 Wood</option>
+          <option value="5-iron">5 Iron</option>
+          <option value="7-iron" selected>7 Iron</option>
+          <option value="9-iron">9 Iron</option>
+          <option value="pitching-wedge">PW</option>
+          <option value="sand-wedge">SW</option>
+          <option value="putter">Putter</option>
+        </select>
+        <button class="btn-p btn-sm" id="svStartBtn" onclick="toggleSwingCamera()">📷 Start Camera</button>
+        <button class="vb-btn"       id="svRecordBtn" onclick="toggleSwingRecording()" disabled>⏺ Record Swing</button>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="sv-status-bar" id="svStatus">Click "Start Camera" to begin pose analysis.</div>
+
+    <!-- Recording progress bar -->
+    <div class="sv-record-bar" id="svRecordBar" style="display:none">
+      <div class="sv-record-progress" id="svRecordProgress"></div>
+    </div>
+
+    <!-- Camera feed + live metrics -->
+    <div class="sv-main">
+      <div class="sv-cam-wrap">
+        <video  id="svVideo"  class="sv-video" autoplay muted playsinline></video>
+        <canvas id="svCanvas" class="sv-canvas"></canvas>
+        <div class="sv-cam-placeholder" id="svPlaceholder">
+          <div style="text-align:center;padding:20px">
+            <div style="font-size:32px;margin-bottom:10px">🎯</div>
+            <div style="font-size:15px;font-weight:700;color:var(--white)">Swing Vision Pro</div>
+            <div style="font-size:12px;color:var(--soft);margin-top:6px">Press Start Camera, then record your swing</div>
+          </div>
+        </div>
+      </div>
+      <div class="sv-metrics-panel">
+        <div class="sv-metrics-title">Live Biomechanics</div>
+        <div id="svLiveMetrics">
+          <div class="sv-metric"><span>Spine angle</span><span>—</span></div>
+          <div class="sv-metric"><span>Lead knee</span><span>—</span></div>
+          <div class="sv-metric"><span>Lead arm</span><span>—</span></div>
+          <div class="sv-metric"><span>X-factor</span><span>—</span></div>
+          <div class="sv-metric"><span>Phase</span><span id="svPhaseLabel">—</span></div>
+        </div>
+        <div class="sv-metrics-title">Real-time Tips</div>
+        <div id="svLiveTips"></div>
+      </div>
+    </div>
+
+    <!-- Swing analysis result -->
+    <div id="svSwingResult"></div>
+
+    <!-- Sub-tabs -->
+    <div class="sv-tabs">
+      <button class="sv-tab active" onclick="svShowTab('history',this)">History</button>
+      <button class="sv-tab" onclick="svShowTab('drills',this)">Recommended Drills</button>
+    </div>
+    <div id="svTabHistory">
+      <div id="svHistoryList" style="font-size:12px;color:var(--soft)">No swings recorded yet.</div>
+    </div>
+    <div id="svTabDrills" style="display:none">
+      <div id="svDrillsList" style="font-size:12px;color:var(--soft)">Loading drills…</div>
+    </div>
+  </div>
+
   <div class="g2">
 
     <!-- LEFT: Smart Caddie + Course Search -->
@@ -1395,6 +1791,89 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 </div>
 
 <!-- ══════════════ SYSTEM ══════════════ -->
+<!-- ══════════════ ANALYTICS TAB ══════════════ -->
+<div id="tab-analytics" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">📊</span>
+    <span class="section-intro-text"><strong>Analytics</strong> — Productivity trends, project velocity, task completion rates, and golf performance data — all unified into a single intelligence view.</span>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <span class="ct">Analytics Dashboard</span>
+      <button class="btn-g btn-sm" onclick="loadAnalytics()">Refresh</button>
+    </div>
+    <!-- JARVIS Health Score -->
+    <div style="display:flex;align-items:center;gap:24px;padding:12px 0 8px;border-bottom:1px solid var(--border3);margin-bottom:16px">
+      <div>
+        <div style="font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">JARVIS Health Score</div>
+        <div class="an-health-num" id="an-health-num">—</div>
+      </div>
+      <div style="flex:1">
+        <div id="an-health-insights" style="font-size:12px;color:var(--soft2);line-height:1.6"></div>
+      </div>
+      <div style="text-align:right;font-size:11px;color:var(--soft)" id="an-generated-at"></div>
+    </div>
+  </div>
+
+  <!-- Row 1: Productivity + Projects -->
+  <div class="analytics-wide">
+
+    <!-- Productivity Score Card -->
+    <div class="an-card">
+      <div class="an-card-title">Productivity</div>
+      <div class="an-score-wrap">
+        <div class="an-score-ring">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(68,240,255,.1)" stroke-width="8"/>
+            <circle id="an-prod-ring" cx="40" cy="40" r="32" fill="none"
+              stroke="var(--cyan)" stroke-width="8"
+              stroke-dasharray="201" stroke-dashoffset="201"
+              stroke-linecap="round" style="transition:stroke-dashoffset .6s ease"/>
+          </svg>
+          <div class="an-score-num" id="an-prod-score">—</div>
+        </div>
+        <div>
+          <div class="an-score-label" id="an-prod-label">—</div>
+          <div class="an-score-sub" id="an-prod-sub"></div>
+        </div>
+      </div>
+      <!-- Task bars -->
+      <div id="an-task-bars"></div>
+      <!-- Insights -->
+      <div id="an-prod-insights" style="margin-top:10px"></div>
+    </div>
+
+    <!-- Project Health Card -->
+    <div class="an-card">
+      <div class="an-card-title">Project Health</div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:28px;font-weight:900;color:var(--white)" id="an-proj-rate">—%</div>
+        <div style="font-size:12px;color:var(--soft)" id="an-proj-sub">overall completion</div>
+      </div>
+      <div id="an-proj-bars" style="margin-bottom:10px"></div>
+      <div id="an-proj-insights"></div>
+    </div>
+  </div>
+
+  <!-- Row 2: Golf + System -->
+  <div class="analytics-wide">
+
+    <!-- Golf Performance Card -->
+    <div class="an-card">
+      <div class="an-card-title">Golf Performance</div>
+      <div id="an-golf-stats"></div>
+      <div id="an-golf-sparkline" class="an-sparkline" style="margin:12px 0"></div>
+      <div id="an-golf-insights" style="margin-top:6px"></div>
+    </div>
+
+    <!-- System Overview Card -->
+    <div class="an-card">
+      <div class="an-card-title">System Overview</div>
+      <div id="an-system-stats"></div>
+    </div>
+  </div>
+</div>
+
 <div id="tab-system" class="tab-panel">
   <div class="g2">
     <div class="card">
@@ -1499,13 +1978,60 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <div class="vb-state">
           <div class="vb-dot idle" id="vbDot"></div>
           <span id="vbLabel" style="font-size:12px;color:var(--soft)">Voice ready</span>
+          <div class="vb-wave" id="vbWave"><span></span><span></span><span></span><span></span><span></span></div>
         </div>
         <div class="vb-controls">
-          <button class="vb-btn" id="speakLastBtn" title="Speak last JARVIS reply">🔊 Speak</button>
-          <button class="vb-btn" id="stopSpeakBtn" title="Stop audio">⏹ Stop</button>
+          <button class="vb-btn" id="speakLastBtn"    title="Speak last JARVIS reply">🔊 Speak</button>
+          <button class="vb-btn" id="stopSpeakBtn"    title="Stop audio">⏹ Stop</button>
           <button class="vb-btn" id="autoSpeakToggle" title="Auto-speak responses">🔁 Auto</button>
-          <button class="vb-btn" id="micInputBtn" title="Voice input">🎙 Mic</button>
+          <button class="vb-btn" id="micInputBtn"     title="Voice input">🎙 Mic</button>
+          <button class="vb-btn" id="wakeWordToggle"  title="Wake word: Hey JARVIS">👂 Wake</button>
+          <button class="vb-btn" id="vbSettingsToggle" title="Voice settings">⚙ Settings</button>
+          <button class="vb-btn" id="vbHistoryToggle"  title="Command history">📋 Log</button>
           <span id="voiceStatusBadge" class="badge b-idle" style="font-size:10px;margin-left:4px">TTS --</span>
+        </div>
+        <!-- Settings panel -->
+        <div class="vb-settings-panel" id="vbSettingsPanel">
+          <div class="vb-setting-row">
+            <label>Language</label>
+            <select id="vbLangSel">
+              <option value="en-US">English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="es-ES">Spanish (ES)</option>
+              <option value="es-US">Spanish (US)</option>
+              <option value="fr-FR">French</option>
+              <option value="de-DE">German</option>
+              <option value="pt-BR">Portuguese (BR)</option>
+            </select>
+          </div>
+          <div class="vb-setting-row">
+            <label>Speech speed</label>
+            <input type="range" id="vbSpeedSlider" min="0.5" max="2.0" step="0.1" value="1.0" style="width:110px">
+            <span class="vb-speed-val" id="vbSpeedVal">1.0×</span>
+          </div>
+          <div class="vb-setting-row">
+            <label>Auto-speak replies</label>
+            <input type="checkbox" id="vbAutoSpeakChk">
+          </div>
+          <div class="vb-setting-row">
+            <label>Wake word</label>
+            <input type="checkbox" id="vbWakeChk">
+            <span style="font-size:11px;color:var(--soft)">"Hey JARVIS"</span>
+          </div>
+          <div class="vb-setting-row">
+            <label>Use Whisper STT</label>
+            <input type="checkbox" id="vbWhisperChk">
+            <span style="font-size:10px;color:var(--soft)">(requires OpenAI key)</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="vb-btn" onclick="saveVoiceSettings()">Save</button>
+            <button class="vb-btn" onclick="toggleVbSettings()">Close</button>
+          </div>
+        </div>
+        <!-- Command history panel -->
+        <div class="vb-history" id="vbHistoryPanel">
+          <div class="vb-history-title">Recent voice commands</div>
+          <div id="vbCmdList"></div>
         </div>
       </div>
     </div>
@@ -1526,6 +2052,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ CALENDAR TAB ══════════════ -->
 <div id="tab-calendar" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">📅</span>
+    <span class="section-intro-text"><strong>Calendar</strong> — View and manage events by day or week. Create events, set times, and let JARVIS surface upcoming commitments in your morning brief.</span>
+  </div>
   <div class="card">
     <div class="ch">
       <span class="ct">Calendar</span>
@@ -1552,6 +2082,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ PROJECTS TAB ══════════════ -->
 <div id="tab-projects" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">📋</span>
+    <span class="section-intro-text"><strong>Projects</strong> — Kanban-style task boards for each project. Create projects, add tasks manually or with AI generation, and track progress across todo / doing / done.</span>
+  </div>
   <div class="proj-layout">
 
     <!-- Left: project list -->
@@ -1990,6 +2524,25 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 /* ── Utils ──────────────────────────── */
 const qs   = id => document.getElementById(id);
 const safe = v  => (v != null && v !== "" && v !== undefined) ? String(v) : "--";
+const _esc = s  => (s+"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+function openModal(id) { const el = qs(id); if (el) el.style.display = "flex"; }
+
+let _toastTimer = null;
+function showToast(msg, type = 'success', duration = 3000) {
+  const container = qs('toast-container');
+  if (!container) return;
+  const icons = { success: '✓', error: '✗', info: 'ℹ', warning: '⚠' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = (icons[type] || '') + '  ' + msg;
+  container.appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
 const state = { recognition: null, listening: false };
 
 const AGENT_META = {
@@ -2059,7 +2612,7 @@ async function loadHome() {
 function renderTasks(items) {
   const box = qs("tasksList"); if (!box) return;
   box.innerHTML = "";
-  if (!items.length) { box.innerHTML = `<div class="row-card" style="color:var(--soft);text-align:center">No tasks yet.</div>`; return; }
+  if (!items.length) { box.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-title">No tasks yet</div><div class="empty-state-sub">Add your first task using the form above. Set a priority and due date to let JARVIS track it.</div></div>`; return; }
   const clr = { high:"var(--bad)", medium:"var(--warn)", low:"var(--ok)" };
   const catClr = { work:"var(--cyan)", finance:"var(--ok)", golf:"#a8e6a3", health:"var(--warn)", general:"var(--soft)" };
   items.forEach(item => {
@@ -2081,12 +2634,12 @@ function renderTasks(items) {
       </div>`;
     const btns = div.querySelectorAll(".check-btn");
     btns[0].onclick = async () => {
-      try { await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"}); await loadHome(); }
-      catch(e) { console.warn("toggle:", e); }
+      try { await fetch("/dashboard/tasks/" + item.id + "/toggle", {method:"POST"}); await loadHome(); showToast(item.done ? "Task reopened" : "Task completed!", "success"); }
+      catch(e) { showToast("Could not toggle task", "error"); }
     };
     btns[1].onclick = async () => {
-      try { await fetch("/dashboard/tasks/" + item.id, {method:"DELETE"}); await loadHome(); }
-      catch(e) { console.warn("delete task:", e); }
+      try { await fetch("/dashboard/tasks/" + item.id, {method:"DELETE"}); await loadHome(); showToast("Task deleted", "info"); }
+      catch(e) { showToast("Could not delete task", "error"); }
     };
     box.appendChild(div);
   });
@@ -2096,7 +2649,7 @@ function renderTasks(items) {
 function renderMeetings(items) {
   const box = qs("meetingsList"); if (!box) return;
   box.innerHTML = "";
-  if (!items.length) { box.innerHTML = `<div class="row-card" style="color:var(--soft);text-align:center">No meetings scheduled.</div>`; return; }
+  if (!items.length) { box.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📞</div><div class="empty-state-title">No meetings today</div><div class="empty-state-sub">Add a meeting using the form above. JARVIS will surface it in your morning brief.</div></div>`; return; }
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "row-card";
@@ -2113,7 +2666,8 @@ function renderMeetings(items) {
       try {
         await fetch("/api/meetings/" + item.id, {method:"DELETE"});
         await loadHome();
-      } catch(e) { console.warn("deleteMeeting:", e); }
+        showToast("Meeting removed", "info");
+      } catch(e) { showToast("Could not delete meeting", "error"); }
     };
     box.appendChild(div);
   });
@@ -2130,7 +2684,8 @@ async function addTask() {
     await fetch("/dashboard/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text,priority,day,category})});
     qs("newTaskText").value = "";
     await loadHome();
-  } catch(e) { console.warn("addTask:", e); }
+    showToast("Task added", "success");
+  } catch(e) { showToast("Could not add task", "error"); }
 }
 
 /* ── Add meeting ────────────────────── */
@@ -2143,7 +2698,8 @@ async function addMeeting() {
     await fetch("/dashboard/meetings", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({title,time,notes})});
     qs("newMeetingTitle").value = qs("newMeetingTime").value = qs("newMeetingNotes").value = "";
     await loadHome();
-  } catch(e) { console.warn("addMeeting:", e); }
+    showToast("Meeting added", "success");
+  } catch(e) { showToast("Could not add meeting", "error"); }
 }
 
 /* ── Schedule meeting (modal) ───────── */
@@ -2173,10 +2729,11 @@ async function saveMeetingModal() {
       closeModal("schedModal");
       ["sm-title","sm-notes","sm-participants"].forEach(id => { if(qs(id)) qs(id).value = ""; });
       await loadHome();
+      showToast("Meeting scheduled", "success");
     } else {
-      alert("Error: " + (d.detail || d.error || "unknown"));
+      showToast("Error: " + (d.detail || d.error || "unknown"), "error");
     }
-  } catch(e) { alert("Failed to schedule meeting."); console.warn("saveMeeting:", e); }
+  } catch(e) { showToast("Failed to schedule meeting", "error"); }
 }
 
 // Keep legacy scheduleMeeting as alias
@@ -2930,11 +3487,11 @@ async function golfLogRound() {
     }).then(r => r.json());
     if (d.status === "ok") {
       renderGolfProfile(d.profile || {});
-      alert(`Round logged! Score: ${score} at ${course_name}.`);
+      showToast(`Round logged — ${score} at ${course_name}`, "success");
     } else {
-      alert("Error: " + (d.error || "unknown"));
+      showToast("Error logging round: " + (d.error || "unknown"), "error");
     }
-  } catch(e) { alert("Failed to log round."); console.warn("golfLogRound:", e); }
+  } catch(e) { showToast("Failed to log round", "error"); }
 }
 
 /* ═══════════════════════════════════════
@@ -2950,30 +3507,396 @@ document.addEventListener("keydown", e => {
 });
 
 /* ═══════════════════════════════════════
-   VOICE SYSTEM
+   SWING VISION PRO  (Phase 5K-2)
+═══════════════════════════════════════ */
+const sv = {
+  pose:            null,
+  stream:          null,
+  active:          false,
+  recording:       false,
+  frames:          [],
+  maxFrames:       90,       // ~3 s at 30 fps
+  lastAnalysisMs:  0,
+  analysisGap:     250,      // ms between frame POSTs
+  mpLoaded:        false,
+};
+
+// ── lazy MediaPipe loader ─────────────────────────────────────────────
+function _loadMediaPipe() {
+  return new Promise((resolve, reject) => {
+    if (sv.mpLoaded || (typeof Pose !== "undefined")) { sv.mpLoaded = true; resolve(); return; }
+    let loaded = 0;
+    const srcs = [
+      "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js",
+    ];
+    srcs.forEach(src => {
+      const s = document.createElement("script");
+      s.src   = src;
+      s.onload = () => { if (++loaded === srcs.length) { sv.mpLoaded = true; resolve(); } };
+      s.onerror = () => reject(new Error("MediaPipe CDN load failed"));
+      document.head.appendChild(s);
+    });
+  });
+}
+
+// ── camera toggle ─────────────────────────────────────────────────────
+async function toggleSwingCamera() {
+  if (sv.active) { _stopSwingCamera(); return; }
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = "Loading AI pose model…";
+  try {
+    await _loadMediaPipe();
+    await _startSwingCamera();
+  } catch(e) {
+    if (statusEl) statusEl.textContent = "Error: " + e.message;
+    console.warn("SwingVision:", e);
+  }
+}
+
+async function _startSwingCamera() {
+  const video  = qs("svVideo");
+  const canvas = qs("svCanvas");
+  if (!video || !canvas) return;
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+    audio: false,
+  });
+  sv.stream = stream;
+  video.srcObject = stream;
+  await video.play();
+  sv.active = true;
+
+  // Hide placeholder
+  const ph = qs("svPlaceholder");
+  if (ph) ph.classList.add("hidden");
+
+  // Setup MediaPipe Pose
+  const pose = new Pose({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`,
+  });
+  pose.setOptions({
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    enableSegmentation: false,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+  });
+  pose.onResults(_onPoseResults);
+  sv.pose = pose;
+
+  qs("svStartBtn").textContent = "⏹ Stop Camera";
+  qs("svRecordBtn").disabled = false;
+  qs("svStatus").textContent = "Camera active — align yourself and start recording";
+
+  _poseLoop();
+}
+
+function _stopSwingCamera() {
+  sv.active    = false;
+  sv.recording = false;
+  if (sv.stream) { sv.stream.getTracks().forEach(t => t.stop()); sv.stream = null; }
+  const video = qs("svVideo");
+  if (video) video.srcObject = null;
+  const ph = qs("svPlaceholder");
+  if (ph) ph.classList.remove("hidden");
+  qs("svStartBtn").textContent = "📷 Start Camera";
+  qs("svRecordBtn").disabled = true;
+  qs("svRecordBtn").classList.remove("btn-recording");
+  qs("svStatus").textContent = "Camera stopped.";
+  _setRecordBarVisible(false);
+}
+
+async function _poseLoop() {
+  if (!sv.active || !sv.pose) return;
+  const video = qs("svVideo");
+  if (video && video.readyState >= 2) {
+    await sv.pose.send({ image: video });
+  }
+  requestAnimationFrame(_poseLoop);
+}
+
+// ── pose results ──────────────────────────────────────────────────────
+function _onPoseResults(results) {
+  const canvas = qs("svCanvas");
+  const video  = qs("svVideo");
+  if (!canvas || !video) return;
+
+  const w = video.videoWidth  || 640;
+  const h = video.videoHeight || 480;
+  canvas.width  = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, w, h);
+
+  if (!results.poseLandmarks) return;
+
+  // Draw skeleton
+  if (typeof drawConnectors !== "undefined" && typeof POSE_CONNECTIONS !== "undefined") {
+    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
+                   { color: "rgba(68,240,255,0.75)", lineWidth: 2 });
+    drawLandmarks(ctx, results.poseLandmarks,
+                  { color: "rgba(68,240,255,0.9)", lineWidth: 1, radius: 3 });
+  } else {
+    _drawFallbackSkeleton(ctx, results.poseLandmarks, w, h);
+  }
+
+  const landmarks = results.poseLandmarks.map(p => ({
+    x: p.x, y: p.y, z: p.z, visibility: p.visibility,
+  }));
+
+  // Record frame
+  if (sv.recording) {
+    sv.frames.push({ landmarks, frame_time: Date.now() });
+    const pct = Math.min(100, sv.frames.length / sv.maxFrames * 100);
+    const bar = qs("svRecordProgress");
+    if (bar) bar.style.width = pct + "%";
+    if (sv.frames.length >= sv.maxFrames) _stopSwingRecording();
+  }
+
+  // Throttled real-time analysis
+  const now = Date.now();
+  if (now - sv.lastAnalysisMs > sv.analysisGap) {
+    sv.lastAnalysisMs = now;
+    _sendFrameAnalysis(landmarks);
+  }
+}
+
+function _drawFallbackSkeleton(ctx, lms, w, h) {
+  const conns = [[11,12],[11,13],[13,15],[12,14],[14,16],
+                 [11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+  ctx.strokeStyle = "rgba(68,240,255,0.8)";
+  ctx.lineWidth = 2;
+  conns.forEach(([a, b]) => {
+    const pa = lms[a], pb = lms[b];
+    if (!pa || !pb || (pa.visibility||1) < 0.25 || (pb.visibility||1) < 0.25) return;
+    ctx.beginPath();
+    ctx.moveTo(pa.x * w, pa.y * h);
+    ctx.lineTo(pb.x * w, pb.y * h);
+    ctx.stroke();
+  });
+  ctx.fillStyle = "rgba(68,240,255,0.9)";
+  [11,12,13,14,15,16,23,24,25,26,27,28].forEach(i => {
+    const p = lms[i];
+    if (!p || (p.visibility||1) < 0.25) return;
+    ctx.beginPath();
+    ctx.arc(p.x * w, p.y * h, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ── real-time frame analysis ──────────────────────────────────────────
+async function _sendFrameAnalysis(landmarks) {
+  try {
+    const d = await fetch("/api/golf/vision/analyze", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ landmarks }),
+    }).then(r => r.json());
+    if (d.status === "ok") _renderLiveMetrics(d);
+  } catch(e) { /* real-time — silent fail */ }
+}
+
+function _renderLiveMetrics(d) {
+  const bio   = d.biomechanics || {};
+  const metricsEl = qs("svLiveMetrics");
+  if (metricsEl) {
+    metricsEl.innerHTML = [
+      _svMetricRow("Spine angle",  bio.spine_angle    != null ? bio.spine_angle + "°"  : "—"),
+      _svMetricRow("Lead knee",    bio.lead_knee_flex != null ? bio.lead_knee_flex + "°": "—"),
+      _svMetricRow("Lead arm",     bio.lead_arm_angle != null ? bio.lead_arm_angle + "°": "—"),
+      _svMetricRow("X-factor",     bio.x_factor       != null ? bio.x_factor           : "—"),
+      _svMetricRow("Phase",        d.phase || "—"),
+    ].join("");
+  }
+  const tips = d.tips || [];
+  const tipsEl = qs("svLiveTips");
+  if (tipsEl) {
+    tipsEl.innerHTML = tips.length
+      ? tips.map(t => `<div class="sv-tip">${_esc(t)}</div>`).join("")
+      : '<div class="sv-tip" style="color:var(--soft)">Position yourself in frame…</div>';
+  }
+}
+
+function _svMetricRow(label, val) {
+  return `<div class="sv-metric"><span>${label}</span><span>${val}</span></div>`;
+}
+
+// ── swing recording ───────────────────────────────────────────────────
+function toggleSwingRecording() {
+  if (sv.recording) _stopSwingRecording();
+  else _startSwingRecording();
+}
+
+function _startSwingRecording() {
+  sv.frames    = [];
+  sv.recording = true;
+  qs("svRecordBtn").textContent = "⏹ Stop";
+  qs("svRecordBtn").classList.add("btn-recording");
+  _setRecordBarVisible(true);
+  qs("svRecordProgress").style.width = "0%";
+  qs("svStatus").textContent = "Recording… swing when ready. Auto-stops at 3 s.";
+}
+
+async function _stopSwingRecording() {
+  sv.recording = false;
+  qs("svRecordBtn").textContent = "⏺ Record Swing";
+  qs("svRecordBtn").classList.remove("btn-recording");
+  _setRecordBarVisible(false);
+
+  if (sv.frames.length < 5) {
+    qs("svStatus").textContent = "Too few frames — record a full swing.";
+    return;
+  }
+  qs("svStatus").textContent = `Analyzing ${sv.frames.length} frames…`;
+  await _sendSwingAnalysis();
+}
+
+async function _sendSwingAnalysis() {
+  const club = qs("svClubSelect")?.value || "unknown";
+  try {
+    const d = await fetch("/api/golf/vision/swing", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ frames: sv.frames, club, fps: 30.0 }),
+    }).then(r => r.json());
+    if (d.status === "ok") {
+      _renderSwingResult(d);
+      loadSwingHistory();
+      qs("svStatus").textContent = `Swing saved — Score: ${d.score}/100 · Tempo: ${(d.tempo_ratio||0).toFixed(1)}:1`;
+    } else {
+      qs("svStatus").textContent = "Analysis error — " + (d.error || "unknown");
+    }
+  } catch(e) {
+    qs("svStatus").textContent = "Analysis failed: " + e.message;
+  }
+}
+
+function _renderSwingResult(d) {
+  const el = qs("svSwingResult");
+  if (!el) return;
+  const score    = d.score || 0;
+  const tempo    = d.tempo_ratio || 0;
+  const coaching = d.coaching || [];
+  const tempoOk  = tempo >= 2.5 && tempo <= 3.5;
+  el.innerHTML = `
+    <div class="sv-result-header">
+      <div class="sv-score-ring">
+        <div class="sv-score-num">${score}</div>
+        <div class="sv-score-lbl">/ 100</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--white)">Swing Analysis — ${_esc(d.club||"—")}</div>
+        <div style="font-size:12px;color:var(--soft);margin-top:3px">
+          ${d.frame_count||0} frames · ${d.duration_s||0}s recorded
+        </div>
+        <div style="font-size:12px;color:${tempoOk?"var(--ok)":"var(--warn)"};margin-top:2px">
+          Tempo ${tempo.toFixed(1)}:1 ${tempoOk ? "✓ Good" : "⚠ Adjust"}
+        </div>
+      </div>
+    </div>
+    ${coaching.length ? `<div class="sv-coaching">${coaching.map(c => `
+      <div class="sv-coaching-item">
+        <span class="sv-sev-dot sv-dot-${c.severity}"></span>
+        <span>${_esc(c.tip)}</span>
+      </div>`).join("")}
+    </div>` : ""}
+  `;
+}
+
+// ── history & drills ─────────────────────────────────────────────────
+async function loadSwingHistory() {
+  try {
+    const d = await fetch("/api/golf/vision/history?limit=6").then(r => r.json());
+    const el = qs("svHistoryList");
+    if (!el) return;
+    if (!d.items || d.items.length === 0) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--soft)">No swings recorded yet.</div>';
+      return;
+    }
+    el.innerHTML = d.items.map(s => {
+      const ts = s.ts ? new Date(s.ts + "Z").toLocaleDateString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+      return `<div class="sv-history-item">
+        <div style="flex:1">
+          <span style="font-size:13px;font-weight:600">${_esc(s.club||"—")}</span>
+          <span style="font-size:11px;color:var(--soft);margin-left:8px">${ts}</span>
+          <span style="font-size:11px;color:var(--soft);margin-left:6px">· ${s.frame_count||0} frames</span>
+        </div>
+        <span class="sv-score-badge">${s.score||0}</span>
+      </div>`;
+    }).join("");
+  } catch(e) { console.warn("loadSwingHistory:", e); }
+}
+
+async function _loadSwingDrills() {
+  try {
+    const d = await fetch("/api/golf/vision/drills").then(r => r.json());
+    const el = qs("svDrillsList");
+    if (!el || !d.drills) return;
+    el.innerHTML = d.drills.map(drill => `
+      <div class="sv-drill">
+        <div class="sv-drill-name">${_esc(drill.name)}</div>
+        <div class="sv-drill-focus">${_esc(drill.focus)} · ${drill.duration_min} min</div>
+        <div class="sv-drill-desc">${_esc(drill.description)}</div>
+      </div>`).join("");
+  } catch(e) { console.warn("_loadSwingDrills:", e); }
+}
+
+function svShowTab(tab, btn) {
+  const map = { history: "svTabHistory", drills: "svTabDrills" };
+  Object.values(map).forEach(id => { const el = qs(id); if (el) el.style.display = "none"; });
+  const target = qs(map[tab]);
+  if (target) target.style.display = "";
+  document.querySelectorAll(".sv-tab").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  if (tab === "drills") _loadSwingDrills();
+}
+
+function _setRecordBarVisible(v) {
+  const bar = qs("svRecordBar");
+  if (bar) bar.style.display = v ? "" : "none";
+}
+
+/* ═══════════════════════════════════════
+   VOICE SYSTEM  (Phase 5J)
 ═══════════════════════════════════════ */
 const voiceState = {
-  autoSpeak:    false,
-  currentAudio: null,
-  lastReply:    "",
-  ttsAvailable: null,   // null = unknown, true/false after status check
+  autoSpeak:        false,
+  currentAudio:     null,
+  lastReply:        "",
+  ttsAvailable:     null,
+  wakeActive:       false,
+  wakeRecognition:  null,
+  settings:         null,   // loaded from /api/voice/settings
 };
 
 function vbSetState(state, label) {
-  const dot   = qs("vbDot");
-  const lbl   = qs("vbLabel");
-  if (dot) { dot.className = "vb-dot " + state; }
-  if (lbl) lbl.textContent = label;
+  const dot  = qs("vbDot");
+  const lbl  = qs("vbLabel");
+  const wave = qs("vbWave");
+  if (dot)  dot.className = "vb-dot " + state;
+  if (lbl)  lbl.textContent = label;
+  if (wave) wave.classList.toggle("active", state === "listening");
 }
 
+// ── TTS status ───────────────────────────────────────────────────────
 async function initVoiceStatus() {
   try {
-    const d = await fetch("/api/voice/status").then(r => r.json());
-    voiceState.ttsAvailable = d.elevenlabs_configured === true;
+    const [statusD, settingsD] = await Promise.all([
+      fetch("/api/voice/status").then(r => r.json()),
+      fetch("/api/voice/settings").then(r => r.json()),
+    ]);
+    voiceState.ttsAvailable = statusD.elevenlabs_configured === true;
     const badge = qs("voiceStatusBadge");
     if (badge) {
       badge.textContent = voiceState.ttsAvailable ? "TTS ✓" : "TTS Off";
       badge.className   = "badge " + (voiceState.ttsAvailable ? "b-ok" : "b-idle");
+    }
+    if (settingsD.settings) {
+      voiceState.settings = settingsD.settings;
+      _applyVoiceSettings(settingsD.settings);
     }
   } catch(e) {
     voiceState.ttsAvailable = false;
@@ -2982,13 +3905,92 @@ async function initVoiceStatus() {
   }
 }
 
+function _applyVoiceSettings(s) {
+  voiceState.autoSpeak = !!s.auto_speak;
+  const at = qs("autoSpeakToggle");
+  if (at) at.classList.toggle("active", voiceState.autoSpeak);
+  const langSel = qs("vbLangSel");
+  if (langSel && s.language) langSel.value = s.language;
+  const speedSlider = qs("vbSpeedSlider");
+  if (speedSlider) {
+    speedSlider.value = s.speed || 1.0;
+    const val = qs("vbSpeedVal");
+    if (val) val.textContent = (s.speed || 1.0).toFixed(1) + "x";
+  }
+  const autoChk = qs("vbAutoSpeakChk");
+  if (autoChk) autoChk.checked = !!s.auto_speak;
+  const wakeChk = qs("vbWakeChk");
+  if (wakeChk) wakeChk.checked = !!s.wake_word_enabled;
+  const whisperChk = qs("vbWhisperChk");
+  if (whisperChk) whisperChk.checked = !!s.use_whisper;
+  if (s.wake_word_enabled) _startWakeWord();
+}
+
+// ── Settings panel ───────────────────────────────────────────────────
+function toggleVbSettings() {
+  const panel = qs("vbSettingsPanel");
+  if (panel) panel.classList.toggle("open");
+}
+
+async function saveVoiceSettings() {
+  const lang  = qs("vbLangSel")?.value   || "en-US";
+  const speed = parseFloat(qs("vbSpeedSlider")?.value || 1.0);
+  const auto  = qs("vbAutoSpeakChk")?.checked || false;
+  const wake  = qs("vbWakeChk")?.checked || false;
+  const whisp = qs("vbWhisperChk")?.checked || false;
+  try {
+    const d = await fetch("/api/voice/settings", {
+      method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({language: lang, speed, auto_speak: auto,
+                            wake_word_enabled: wake, use_whisper: whisp}),
+    }).then(r => r.json());
+    if (d.settings) {
+      voiceState.settings = d.settings;
+      _applyVoiceSettings(d.settings);
+    }
+    vbSetState("idle", "Settings saved");
+    setTimeout(() => vbSetState("idle", "Voice ready"), 2000);
+    toggleVbSettings();
+    showToast("Voice settings saved", "success");
+  } catch(e) {
+    showToast("Could not save voice settings", "error");
+  }
+}
+
+// ── Command history panel ─────────────────────────────────────────────
+function toggleVbHistory() {
+  const panel = qs("vbHistoryPanel");
+  if (!panel) return;
+  const open = panel.classList.toggle("open");
+  if (open) _loadVoiceHistory();
+}
+
+async function _loadVoiceHistory() {
+  try {
+    const d = await fetch("/api/voice/history?limit=8").then(r => r.json());
+    const list = qs("vbCmdList");
+    if (!list) return;
+    if (!d.items || d.items.length === 0) {
+      list.innerHTML = '<div style="font-size:12px;color:var(--soft);padding:6px 0">No voice commands yet.</div>';
+      return;
+    }
+    list.innerHTML = d.items.map(c => {
+      const t = c.ts ? new Date(c.ts + "Z").toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : "";
+      return `<div class="vb-cmd">
+        <div class="vb-cmd-text">${_esc(c.transcript)}</div>
+        <div class="vb-cmd-domain">${c.domain}</div>
+        <div class="vb-cmd-ts">${t}</div>
+      </div>`;
+    }).join("");
+  } catch(e) { console.warn("_loadVoiceHistory:", e); }
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────
 async function speakText(text) {
   if (!text || !text.trim()) return;
   stopSpeaking();
-  if (!voiceState.ttsAvailable) {
-    browserSpeak(text);
-    return;
-  }
+  if (!voiceState.ttsAvailable) { browserSpeak(text); return; }
   vbSetState("processing", "Generating speech…");
   try {
     const resp = await fetch("/api/voice/speak", {
@@ -3001,8 +4003,8 @@ async function speakText(text) {
       if (err.fallback) { browserSpeak(text); return; }
       vbSetState("error", "TTS error"); return;
     }
-    const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
+    const blob  = await resp.blob();
+    const url   = URL.createObjectURL(blob);
     const audio = new Audio(url);
     voiceState.currentAudio = audio;
     vbSetState("speaking", "Speaking…");
@@ -3018,9 +4020,11 @@ async function speakText(text) {
 
 function browserSpeak(text) {
   if (!window.speechSynthesis) return;
-  const utt = new SpeechSynthesisUtterance(text.slice(0, 600));
-  utt.lang = "es-ES";
-  utt.rate = 1.0;
+  const lang  = voiceState.settings?.language || "en-US";
+  const speed = voiceState.settings?.speed    || 1.0;
+  const utt   = new SpeechSynthesisUtterance(text.slice(0, 600));
+  utt.lang = lang;
+  utt.rate = speed;
   vbSetState("speaking", "Speaking (browser)…");
   utt.onend = () => vbSetState("idle", "Voice ready");
   speechSynthesis.speak(utt);
@@ -3040,37 +4044,132 @@ function toggleAutoSpeak() {
   voiceState.autoSpeak = !voiceState.autoSpeak;
   const btn = qs("autoSpeakToggle");
   if (btn) btn.classList.toggle("active", voiceState.autoSpeak);
+  const chk = qs("vbAutoSpeakChk");
+  if (chk) chk.checked = voiceState.autoSpeak;
   vbSetState("idle", voiceState.autoSpeak ? "Auto-speak ON" : "Voice ready");
 }
 
-/* ── Voice ──────────────────────────── */
+// ── Wake word "Hey JARVIS" ─────────────────────────────────────────────
+function toggleWakeWord() {
+  if (voiceState.wakeActive) {
+    _stopWakeWord();
+  } else {
+    _startWakeWord();
+  }
+}
+
+function _startWakeWord() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  if (voiceState.wakeRecognition) _stopWakeWord();
+
+  const rec = new SR();
+  rec.lang = voiceState.settings?.language || "en-US";
+  rec.continuous   = true;
+  rec.interimResults = true;
+
+  rec.onresult = ev => {
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const txt = ev.results[i][0].transcript.toLowerCase().trim();
+      if (txt.includes("hey jarvis") || txt.includes("jarvis")) {
+        _stopWakeWord();
+        vbSetState("listening", "Wake word detected!");
+        setTimeout(() => {
+          if (state.recognition) {
+            switchTab("chat");
+            try { state.recognition.start(); } catch(e) {}
+          }
+          setTimeout(() => _startWakeWord(), 5000);
+        }, 400);
+        return;
+      }
+    }
+  };
+  rec.onerror = () => {
+    voiceState.wakeActive = false;
+    const btn = qs("wakeWordToggle");
+    if (btn) btn.classList.remove("active");
+  };
+  rec.onend = () => {
+    if (voiceState.wakeActive) {
+      try { rec.start(); } catch(e) { voiceState.wakeActive = false; }
+    }
+  };
+
+  try {
+    rec.start();
+    voiceState.wakeRecognition = rec;
+    voiceState.wakeActive      = true;
+    const btn = qs("wakeWordToggle");
+    if (btn) btn.classList.add("active");
+  } catch(e) {
+    console.warn("Wake word start failed:", e);
+  }
+}
+
+function _stopWakeWord() {
+  if (voiceState.wakeRecognition) {
+    voiceState.wakeActive = false;
+    try { voiceState.wakeRecognition.stop(); } catch(e) {}
+    voiceState.wakeRecognition = null;
+  }
+  const btn = qs("wakeWordToggle");
+  if (btn) btn.classList.remove("active");
+}
+
+// ── Main initVoice ────────────────────────────────────────────────────
 function initVoice() {
-  // Voice bar button wiring
   const sl = qs("speakLastBtn");
   const ss = qs("stopSpeakBtn");
   const at = qs("autoSpeakToggle");
   const mb = qs("micInputBtn");
+  const wk = qs("wakeWordToggle");
+  const st = qs("vbSettingsToggle");
+  const hi = qs("vbHistoryToggle");
+  const sp = qs("vbSpeedSlider");
+
   if (sl) sl.onclick = () => { if (voiceState.lastReply) speakText(voiceState.lastReply); };
   if (ss) ss.onclick = stopSpeaking;
   if (at) at.onclick = toggleAutoSpeak;
+  if (wk) wk.onclick = toggleWakeWord;
+  if (st) st.onclick = toggleVbSettings;
+  if (hi) hi.onclick = toggleVbHistory;
+  if (sp) sp.oninput = () => {
+    const val = qs("vbSpeedVal");
+    if (val) val.textContent = parseFloat(sp.value).toFixed(1) + "x";
+  };
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    ["voiceBtn","voiceBtnMob","stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.disabled=true; });
+    ["voiceBtn","voiceBtnMob","stopVoiceBtn","stopVoiceBtnMob"].forEach(id => {
+      const el = qs(id); if (el) el.disabled = true;
+    });
     if (mb) { mb.disabled = true; mb.title = "Speech recognition not supported"; }
+    if (wk) { wk.disabled = true; }
     return;
   }
+
   state.recognition = new SR();
-  state.recognition.lang = "es-ES";
-  state.recognition.interimResults = false;
+  state.recognition.lang = voiceState.settings?.language || "en-US";
+  state.recognition.interimResults  = false;
   state.recognition.maxAlternatives = 1;
-  state.recognition.onstart = () => { state.listening = true; vbSetState("listening","Listening…"); };
-  state.recognition.onend   = () => { state.listening = false; vbSetState("idle","Voice ready"); };
+
+  state.recognition.onstart  = () => { state.listening = true;  vbSetState("listening","Listening…"); };
+  state.recognition.onend    = () => { state.listening = false; vbSetState("idle","Voice ready"); };
   state.recognition.onresult = async ev => {
-    qs("chatInput").value = ev.results[0][0].transcript;
+    const transcript = ev.results[0][0].transcript;
+    const confidence = ev.results[0][0].confidence || 1.0;
+    qs("chatInput").value = transcript;
+    // Log to voice engine before routing
+    await fetch("/api/voice/command", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({transcript, source: "mic", speak_response: false}),
+    }).catch(()=>{});
     await sendChat();
   };
-  const startMic = () => { switchTab("chat"); if (state.recognition) state.recognition.start(); };
+
+  const startMic = () => { switchTab("chat"); if (state.recognition) { try { state.recognition.start(); } catch(e) {} } };
   const stopMic  = () => { if (state.recognition && state.listening) state.recognition.stop(); };
   ["voiceBtn","voiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=startMic; });
   ["stopVoiceBtn","stopVoiceBtnMob"].forEach(id => { const el=qs(id); if(el) el.onclick=stopMic; });
@@ -3288,18 +4387,18 @@ async function saveClubModal() {
     const r = await fetch("/api/golf/bag/" + encodeURIComponent(club), {
       method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data),
     }).then(x=>x.json());
-    if (r.status === "ok") { closeModal("clubModal"); await loadGolfBag(); }
-    else alert("Error: " + (r.error || "unknown"));
-  } catch(e) { alert("Save failed."); console.warn("saveClub:", e); }
+    if (r.status === "ok") { closeModal("clubModal"); await loadGolfBag(); showToast("Club saved to bag", "success"); }
+    else showToast("Error: " + (r.error || "unknown"), "error");
+  } catch(e) { showToast("Save failed", "error"); }
 }
 
 async function deleteClub(clubName) {
   if (!confirm("Remove " + clubName + " from bag?")) return;
   try {
     const r = await fetch("/api/golf/bag/" + encodeURIComponent(clubName), {method:"DELETE"}).then(x=>x.json());
-    if (r.status === "ok") await loadGolfBag();
-    else alert("Error: " + (r.error || "not found"));
-  } catch(e) { console.warn("deleteClub:", e); }
+    if (r.status === "ok") { await loadGolfBag(); showToast(clubName + " removed from bag", "info"); }
+    else showToast("Error: " + (r.error || "not found"), "error");
+  } catch(e) { showToast("Could not remove club", "error"); }
 }
 
 /* ═══════════════════════════════════════
@@ -3329,7 +4428,7 @@ async function loadProjects() {
 function renderProjectList(projects) {
   const el = qs("projectListEl"); if (!el) return;
   if (!projects.length) {
-    el.innerHTML = `<div class="proj-list-empty">No projects yet.<br>Create your first one.</div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No projects yet</div><div class="empty-state-sub">Click <strong>+ New Project</strong> to create one. Use AI task generation to fill it instantly.</div></div>`;
     return;
   }
   el.innerHTML = "";
@@ -3351,6 +4450,7 @@ function renderProjectList(projects) {
       await fetch("/api/projects/" + p.id, {method:"DELETE"});
       if (_proj.currentId === p.id) { _proj.currentId = null; showBoard(false); }
       await loadProjects();
+      showToast("Project deleted", "info");
     };
     div.addEventListener("click", () => selectProject(p));
     el.appendChild(div);
@@ -3472,7 +4572,8 @@ async function saveNewProject() {
     closeModal("newProjectModal");
     await loadProjects();
     if (d.project) selectProject(d.project);
-  } catch(e) { alert("Error creating project: " + e); }
+    showToast("Project created", "success");
+  } catch(e) { showToast("Could not create project", "error"); }
 }
 
 async function deleteCurrentProject() {
@@ -3482,6 +4583,7 @@ async function deleteCurrentProject() {
   _proj.currentId = null;
   showBoard(false);
   await loadProjects();
+  showToast("Project deleted", "info");
 }
 
 function openNewTaskModal() {
@@ -3535,7 +4637,8 @@ async function saveTask() {
     closeModal("taskModal");
     await loadBoardTasks(_proj.currentId);
     await loadProjects();
-  } catch(e) { alert("Error saving task: " + e); }
+    showToast(tid ? "Task updated" : "Task created", "success");
+  } catch(e) { showToast("Could not save task", "error"); }
 }
 
 async function deleteTask(taskId) {
@@ -3544,7 +4647,8 @@ async function deleteTask(taskId) {
     await fetch("/api/projects/" + _proj.currentId + "/task/" + taskId, {method:"DELETE"});
     await loadBoardTasks(_proj.currentId);
     await loadProjects();
-  } catch(e) { console.warn("deleteTask:", e); }
+    showToast("Task deleted", "info");
+  } catch(e) { showToast("Could not delete task", "error"); }
 }
 
 function openAITasksModal() {
@@ -3568,13 +4672,278 @@ async function runAITasks() {
     if (d.status === "ok") {
       await loadBoardTasks(_proj.currentId);
       await loadProjects();
+      showToast("AI tasks generated!", "success");
     } else {
-      alert("AI error: " + (d.error || "Unknown error"));
+      showToast("AI error: " + (d.error || "unknown"), "error");
     }
   } catch(e) {
-    alert("Error generating tasks: " + e);
+    showToast("Error generating tasks", "error");
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = "Generate Tasks"; }
+  }
+}
+
+/* ── Analytics ──────────────────────── */
+async function loadAnalytics() {
+  try {
+    const r = await fetch("/api/analytics/summary");
+    const d = await r.json();
+    if (d.status !== "ok") return;
+    _renderAnalytics(d);
+  } catch(e) { console.warn("loadAnalytics:", e); }
+}
+
+function _renderAnalytics(d) {
+  const prod = d.productivity  || {};
+  const golf = d.golf          || {};
+  const proj = d.projects      || {};
+  const sys  = d.system        || {};
+
+  // ── Health Score ────────────────────────────────────────
+  const healthEl = qs("an-health-num");
+  if (healthEl) healthEl.textContent = d.jarvis_health_score ?? "—";
+  const genEl = qs("an-generated-at");
+  if (genEl && d.generated_at) {
+    const dt = new Date(d.generated_at);
+    genEl.textContent = "Updated " + dt.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"});
+  }
+
+  // Collect all insights
+  const allInsights = [
+    ...(prod.insights || []),
+    ...(golf.insights || []),
+    ...(proj.insights || []),
+  ].slice(0,3);
+  const insEl = qs("an-health-insights");
+  if (insEl) insEl.innerHTML = allInsights.map(i => `• ${i}`).join("<br>") || "All systems nominal.";
+
+  // ── Productivity ────────────────────────────────────────
+  const score = prod.productivity_score ?? 0;
+  const ringEl = qs("an-prod-ring");
+  if (ringEl) {
+    const circ = 2 * Math.PI * 32;
+    const offset = circ - (score / 100) * circ;
+    ringEl.style.strokeDashoffset = offset.toFixed(1);
+    ringEl.style.stroke = score >= 70 ? "var(--ok)" : score >= 40 ? "var(--warn)" : "var(--bad)";
+  }
+  const scoreEl = qs("an-prod-score");
+  if (scoreEl) scoreEl.textContent = score;
+
+  const band = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Average" : "Needs focus";
+  const labelEl = qs("an-prod-label");
+  if (labelEl) labelEl.textContent = band;
+  const subEl = qs("an-prod-sub");
+  if (subEl) subEl.textContent = `${prod.completion_rate ?? 0}% completion rate`;
+
+  // Task bars
+  const barsEl = qs("an-task-bars");
+  if (barsEl) {
+    const total = prod.task_total || 1;
+    const bars = [
+      { label:"Done",  val: prod.task_done   || 0, color:"var(--ok)"   },
+      { label:"Doing", val: prod.task_doing  || 0, color:"var(--cyan)"  },
+      { label:"Todo",  val: prod.task_todo   || 0, color:"var(--soft)"  },
+      { label:"Overdue",val:prod.task_overdue|| 0, color:"var(--bad)"   },
+    ];
+    barsEl.innerHTML = bars.map(b => `
+      <div class="an-bar-row">
+        <div class="an-bar-label">${b.label}</div>
+        <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round(b.val/total*100)}%;background:${b.color}"></div></div>
+        <div class="an-bar-val">${b.val}</div>
+      </div>`).join("");
+  }
+
+  const prodInsEl = qs("an-prod-insights");
+  if (prodInsEl) {
+    prodInsEl.innerHTML = (prod.insights || []).map(i =>
+      `<div class="an-insight"><div class="an-insight-dot"></div>${i}</div>`
+    ).join("");
+  }
+
+  // ── Projects ────────────────────────────────────────────
+  const rateEl = qs("an-proj-rate");
+  if (rateEl) rateEl.textContent = `${proj.overall_rate ?? 0}%`;
+  const projSubEl = qs("an-proj-sub");
+  if (projSubEl) {
+    projSubEl.textContent = `${proj.active_projects || 0} active · ${proj.total_done || 0}/${proj.total_tasks || 0} tasks done`;
+  }
+
+  const projBarsEl = qs("an-proj-bars");
+  if (projBarsEl) {
+    const breakdown = (proj.project_breakdown || []).slice(0, 4);
+    if (!breakdown.length) {
+      projBarsEl.innerHTML = '<div class="an-empty">No projects yet</div>';
+    } else {
+      projBarsEl.innerHTML = breakdown.map(p => `
+        <div class="an-bar-row" title="${p.name}: ${p.done}/${p.total} done">
+          <div class="an-bar-label" style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.name}">${p.name.slice(0,8)}</div>
+          <div class="an-bar-track"><div class="an-bar-fill" style="width:${p.rate}%;background:var(--cyan)"></div></div>
+          <div class="an-bar-val">${p.rate}%</div>
+        </div>`).join("");
+    }
+  }
+  const projInsEl = qs("an-proj-insights");
+  if (projInsEl) {
+    projInsEl.innerHTML = (proj.insights || []).map(i =>
+      `<div class="an-insight"><div class="an-insight-dot"></div>${i}</div>`
+    ).join("");
+  }
+
+  // ── Golf ────────────────────────────────────────────────
+  const golfStatsEl = qs("an-golf-stats");
+  if (golfStatsEl) {
+    const trendCls = golf.trend === "improving" ? "an-trend-down" : golf.trend === "declining" ? "an-trend-up" : "an-trend-stable";
+    const trendIcon = golf.trend === "improving" ? "↓" : golf.trend === "declining" ? "↑" : "→";
+    const rows = [
+      ["Rounds Played",   golf.rounds_played ?? "—"],
+      ["Avg Score",       golf.avg_score ?? "—"],
+      ["Best Score",      golf.best_score ?? "—"],
+      ["Last Round",      golf.last_score ?? "—"],
+      ["Est. Handicap",   golf.handicap_estimate ?? "—"],
+      ["Trend",           `<span class="${trendCls}">${trendIcon} ${golf.trend || "—"}</span>`],
+    ];
+    golfStatsEl.innerHTML = rows.map(([k,v]) =>
+      `<div class="an-stat-row"><div class="an-stat-key">${k}</div><div class="an-stat-val">${v}</div></div>`
+    ).join("");
+  }
+
+  // Sparkline
+  const sparkEl = qs("an-golf-sparkline");
+  if (sparkEl) {
+    const scores = golf.recent_scores || [];
+    if (scores.length < 2) {
+      sparkEl.innerHTML = '<div style="font-size:12px;color:var(--soft);align-self:center">No round data yet</div>';
+    } else {
+      const min = Math.min(...scores) - 2;
+      const max = Math.max(...scores) + 2;
+      const range = max - min || 1;
+      sparkEl.innerHTML = scores.map((s, i) => {
+        const h = Math.round(((max - s) / range) * 36) + 4;
+        const isLast = i === scores.length - 1;
+        return `<div class="an-spark-bar${isLast ? " last" : ""}" style="height:${h}px" title="Score: ${s}"></div>`;
+      }).join("");
+    }
+  }
+
+  const golfInsEl = qs("an-golf-insights");
+  if (golfInsEl) {
+    golfInsEl.innerHTML = (golf.insights || []).map(i =>
+      `<div class="an-insight"><div class="an-insight-dot"></div>${i}</div>`
+    ).join("");
+  }
+
+  // ── System ──────────────────────────────────────────────
+  const sysEl = qs("an-system-stats");
+  if (sysEl) {
+    const rows = [
+      ["Memory Entries",     sys.memory_entries       ?? "—"],
+      ["Memory Insights",    sys.insights             ?? "—"],
+      ["Unread Notifications", sys.unread_notifications ?? "—"],
+      ["Active Projects",    proj.active_projects     ?? "—"],
+      ["Clubs in Bag",       golf.club_count          ?? "—"],
+    ];
+    sysEl.innerHTML = rows.map(([k,v]) =>
+      `<div class="an-stat-row"><div class="an-stat-key">${k}</div><div class="an-stat-val">${v}</div></div>`
+    ).join("");
+  }
+}
+
+/* ═══════════════════════════════════════
+   WOW LAYER  (Phase 5K)
+═══════════════════════════════════════ */
+const _wowState = { briefOpen: false, dismissed: new Set() };
+
+async function loadWow() {
+  try {
+    const [insR, briR, sugR] = await Promise.all([
+      fetch("/api/wow/insights").then(r => r.json()).catch(()=>({insights:[]})),
+      fetch("/api/wow/briefing").then(r => r.json()).catch(()=>({})),
+      fetch("/api/wow/suggestions").then(r => r.json()).catch(()=>({suggestions:[]})),
+    ]);
+    _renderInsights(insR.insights || []);
+    _renderBriefing(briR);
+    _renderSuggestions(sugR.suggestions || []);
+  } catch(e) { console.warn("loadWow:", e); }
+}
+
+function _renderInsights(insights) {
+  const el = qs("wowInsightsList");
+  const ct = qs("wowInsightCount");
+  if (!el) return;
+  const visible = insights.filter(i => !_wowState.dismissed.has(i.id));
+  if (ct) ct.textContent = visible.length ? `(${visible.length})` : "";
+  if (visible.length === 0) {
+    el.innerHTML = '<div class="wow-empty">All clear — no urgent insights right now.</div>';
+    return;
+  }
+  el.innerHTML = visible.map(ins => `
+    <div class="wow-card priority-${ins.priority}" id="wowCard-${ins.id}">
+      <div class="wow-icon">${ins.icon}</div>
+      <div class="wow-body">
+        <div class="wow-title">${_esc(ins.title)}</div>
+        <div class="wow-text">${_esc(ins.body)}</div>
+        ${ins.action ? `<span class="wow-action" onclick="wowAction('${ins.action}','${_esc(ins.action_label||'')}')">${_esc(ins.action_label||'View')}</span>` : ""}
+      </div>
+      <button class="wow-dismiss" onclick="wowDismiss('${ins.id}')" title="Dismiss">✕</button>
+    </div>
+  `).join("");
+}
+
+function wowDismiss(id) {
+  _wowState.dismissed.add(id);
+  const card = document.getElementById("wowCard-" + id);
+  if (card) { card.style.opacity="0"; card.style.transition="opacity .2s"; setTimeout(()=>card.remove(),210); }
+  const ct = qs("wowInsightCount");
+  const remaining = document.querySelectorAll(".wow-card").length - 1;
+  if (ct) ct.textContent = remaining > 0 ? `(${remaining})` : "";
+  if (remaining <= 0) {
+    const el = qs("wowInsightsList");
+    if (el) el.innerHTML = '<div class="wow-empty">All clear — no urgent insights right now.</div>';
+  }
+}
+
+function wowAction(tab, label) {
+  switchTab(tab);
+}
+
+function _renderBriefing(d) {
+  const dateEl = qs("wowBriefDate");
+  if (dateEl) dateEl.textContent = d.date || "";
+  const body = qs("wowBriefBody");
+  if (!body || !d.sections) return;
+  body.innerHTML = (d.sections || []).map(s => `
+    <div class="wow-brief-section">
+      <div class="wow-brief-section-title">${s.icon} ${_esc(s.title)}</div>
+      ${(s.lines || []).filter(Boolean).map(l => `<div class="wow-brief-line">${_esc(l)}</div>`).join("")}
+    </div>
+  `).join("");
+}
+
+function toggleWowBrief() {
+  _wowState.briefOpen = !_wowState.briefOpen;
+  const body = qs("wowBriefBody");
+  const chev = qs("wowBriefChevron");
+  if (body) body.classList.toggle("open", _wowState.briefOpen);
+  if (chev) chev.textContent = _wowState.briefOpen ? "▲" : "▼";
+}
+
+function _renderSuggestions(suggestions) {
+  const el = qs("wowChips");
+  if (!el) return;
+  if (suggestions.length === 0) { el.innerHTML = ""; return; }
+  el.innerHTML = suggestions.map(s => `
+    <div class="wow-chip" onclick="wowChipClick('${s.tab}','${_esc(s.prefill_chat||'')}')">
+      <span class="wow-chip-icon">${s.icon}</span>
+      <span>${_esc(s.label)}</span>
+    </div>
+  `).join("");
+}
+
+function wowChipClick(tab, prefill) {
+  switchTab(tab);
+  if (prefill && tab === "chat") {
+    const inp = qs("chatInput");
+    if (inp) { inp.value = prefill; inp.focus(); }
   }
 }
 
@@ -3891,8 +5260,9 @@ async function saveEvent() {
     }
     closeModal("eventModal");
     loadCalendarEvents(_cal.range);
+    showToast(id ? "Event updated" : "Event created", "success");
   } catch(e) {
-    alert("Failed to save event: " + e);
+    showToast("Could not save event", "error");
   }
 }
 
@@ -3901,8 +5271,9 @@ async function deleteCalEvent(id) {
   try {
     await fetch(`/api/calendar/events/${id}`, { method: "DELETE" });
     loadCalendarEvents(_cal.range);
+    showToast("Event deleted", "info");
   } catch(e) {
-    alert("Failed to delete event: " + e);
+    showToast("Could not delete event", "error");
   }
 }
 
@@ -3928,8 +5299,9 @@ function initEvents() {
 async function boot() {
   initEvents(); initVoice(); initUpload(); initVoiceStatus();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
-  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day')]);
+  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day'), loadAnalytics(), loadWow()]);
   loadNotifications();
+  loadSwingHistory();
   setInterval(loadMarketSnapshot,  30000);
   setInterval(loadRecommendations, 30000);
   setInterval(loadNotifications,   60000);

@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import json
 import os
 import shutil
@@ -40,6 +40,22 @@ from core.calendar_engine import CalendarEngine
 from core.memory_engine import MemoryEngine
 from core.notification_engine import NotificationEngine
 from core.ai_orchestrator import AIOrchestrator, classify_intent
+from core.automation_engine import AutomationEngine
+from core.integrations import (
+    TokenStore,
+    GoogleCalendarIntegration,
+    OutlookIntegration,
+    GmailIntegration,
+    SlackIntegration,
+)
+from core.integrations.base import ConfigError as _IntegrationConfigError
+from core.analytics_engine import AnalyticsEngine as _AnalyticsEngine
+from core.voice_engine import VoiceEngine
+from core.wow_engine import WowEngine as _WowEngine
+from core.golf_vision_engine import GolfVisionEngine
+
+_analytics = _AnalyticsEngine()
+_wow       = _WowEngine()
 
 try:
     from core.market_intelligence_engine import MarketIntelligenceEngine as _MarketIntelEngine
@@ -147,6 +163,62 @@ def _notif(user_id: str) -> NotificationEngine:
         path = BASE_DIR / "data" / f"notifications_{user_id}.json"
         _notif_cache[user_id] = NotificationEngine(str(path))
     return _notif_cache[user_id]
+
+_auto_cache: dict = {}
+
+def _auto(user_id: str) -> AutomationEngine:
+    if user_id not in _auto_cache:
+        path = BASE_DIR / "data" / "automations" / f"{user_id}.json"
+        eng  = AutomationEngine(str(path), user_id=user_id)
+        eng.inject(
+            notify=_notif(user_id),
+            memory=_memory(user_id),
+            orchestrator=ai_orchestrator,
+            workspace=_ws(user_id),
+        )
+        _auto_cache[user_id] = eng
+    return _auto_cache[user_id]
+
+# ── Integrations hub ─────────────────────────────────────────────────
+
+_tok_cache: dict = {}
+
+def _tok(user_id: str) -> TokenStore:
+    if user_id not in _tok_cache:
+        path = BASE_DIR / "data" / "integrations" / f"{user_id}.json"
+        _tok_cache[user_id] = TokenStore(str(path))
+    return _tok_cache[user_id]
+
+_PROVIDERS = ("google_calendar", "outlook", "gmail", "slack")
+
+# ── Golf Vision Engine ───────────────────────────────────────────────
+
+_gve_cache: dict = {}
+
+def _gve(user_id: str) -> GolfVisionEngine:
+    if user_id not in _gve_cache:
+        path = BASE_DIR / "data" / "golf_vision" / f"{user_id}.json"
+        _gve_cache[user_id] = GolfVisionEngine(str(path), user_id)
+    return _gve_cache[user_id]
+
+# ── Voice Engine ──────────────────────────────────────────────────────
+
+_ve_cache: dict = {}
+
+def _voice_engine(user_id: str) -> VoiceEngine:
+    if user_id not in _ve_cache:
+        path = BASE_DIR / "data" / "voice" / f"{user_id}.json"
+        _ve_cache[user_id] = VoiceEngine(str(path), user_id)
+    return _ve_cache[user_id]
+
+def _integration(user_id: str, provider: str):
+    """Return the correct integration instance for a given provider."""
+    ts = _tok(user_id)
+    if provider == "google_calendar": return GoogleCalendarIntegration(ts)
+    if provider == "outlook":         return OutlookIntegration(ts)
+    if provider == "gmail":           return GmailIntegration(ts)
+    if provider == "slack":           return SlackIntegration(ts)
+    raise ValueError(f"Unknown provider: {provider}")
 
 BASE_DIR       = Path(__file__).resolve().parent
 DASHBOARD_HTML = BASE_DIR / "dashboard" / "jarvis_futuristic.html"
@@ -1524,6 +1596,116 @@ def voice_speak(req: VoiceSpeakRequest):
     return Response(content=audio, media_type="audio/mpeg")
 
 
+# ── Phase 5J: Voice Engine endpoints ─────────────────────────────────
+
+class _VoiceCommandRequest(BaseModel):
+    transcript: str
+    source: str = "mic"          # "mic" | "whisper" | "text"
+    speak_response: bool = False  # if True, return audio/mpeg instead of JSON
+
+class _VoiceSettingsUpdate(BaseModel):
+    language:          Optional[str]  = None
+    auto_speak:        Optional[bool] = None
+    speed:             Optional[float]= None
+    wake_word_enabled: Optional[bool] = None
+    wake_word:         Optional[str]  = None
+    use_whisper:       Optional[bool] = None
+    voice_id:          Optional[str]  = None
+
+
+@app.post("/api/voice/transcribe")
+async def voice_transcribe(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_optional_user),
+):
+    """Accept a WebM/WAV/MP4 audio blob and return Whisper transcript."""
+    llm = _get_llm()
+    if llm is None:
+        raise HTTPException(503, "OPENAI_API_KEY not configured — Whisper unavailable")
+    try:
+        audio_bytes = await file.read()
+        import io
+        audio_file  = io.BytesIO(audio_bytes)
+        audio_file.name = file.filename or "audio.webm"
+        transcript = llm.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+        )
+        text = transcript.text.strip()
+        return {"status": "ok", "transcript": text, "language": "auto"}
+    except Exception as e:
+        raise HTTPException(500, f"Whisper transcription failed: {e}")
+
+
+@app.post("/api/voice/command")
+def voice_command(
+    req: _VoiceCommandRequest,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Route a voice transcript through the AI orchestrator, log it, optionally TTS."""
+    uid = current_user["user_id"]
+    ve  = _voice_engine(uid)
+
+    # Route through orchestrator
+    ctx  = _build_orchestrator_context(uid)
+    result = ai_orchestrator.route(req.transcript, ctx)
+    response_text = result.get("response", "")
+    domain        = result.get("domain", "general")
+
+    # Log to voice history
+    ve.log_command(
+        transcript = req.transcript,
+        response   = response_text,
+        domain     = domain,
+        source     = req.source,
+    )
+
+    # Optionally return TTS audio
+    if req.speak_response:
+        svc = get_voice_service()
+        if svc.configured:
+            audio = svc.speak(response_text)
+            if audio:
+                return Response(content=audio, media_type="audio/mpeg")
+
+    return {
+        "status":   "ok",
+        "domain":   domain,
+        "response": response_text,
+        "agent":    result.get("agent", ""),
+        "data":     result.get("data", {}),
+    }
+
+
+@app.get("/api/voice/settings")
+def voice_settings_get(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    return {"status": "ok", "settings": _voice_engine(uid).get_settings()}
+
+
+@app.put("/api/voice/settings")
+def voice_settings_update(
+    body: _VoiceSettingsUpdate,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid     = current_user["user_id"]
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    updated = _voice_engine(uid).update_settings(updates)
+    return {"status": "ok", "settings": updated}
+
+
+@app.get("/api/voice/history")
+def voice_history(
+    limit:  int = 20,
+    offset: int = 0,
+    domain: str = "",
+    source: str = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    return {"status": "ok", **_voice_engine(uid).get_history(limit, offset, domain, source)}
+
+
 # ================================================================
 # QUERY API  (normalised chat endpoint for external integrations)
 # ================================================================
@@ -2321,3 +2503,462 @@ def orchestrator_audit(
         return {"status": "ok", "log": ai_orchestrator.audit_log(limit=limit)}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+# ================================================================
+# AUTOMATIONS  — Phase 5G
+# ================================================================
+
+class _AutoCreate(BaseModel):
+    name:          str
+    trigger_type:  str        = "manual"   # time | event | manual
+    trigger_value: str        = ""         # "09:00" for time, event name for event
+    conditions:    List[dict] = []
+    actions:       List[dict] = []         # [{type, config}]
+    cooldown_min:  int        = 5
+    enabled:       bool       = True
+
+class _AutoUpdate(BaseModel):
+    name:          Optional[str]       = None
+    trigger_type:  Optional[str]       = None
+    trigger_value: Optional[str]       = None
+    conditions:    Optional[List[dict]] = None
+    actions:       Optional[List[dict]] = None
+    cooldown_min:  Optional[int]       = None
+    enabled:       Optional[bool]      = None
+
+class _AutoRunBody(BaseModel):
+    context: dict = {}
+    force:   bool = True   # manual runs bypass cooldown by default
+
+@app.get("/api/automations")
+def auto_list(
+    enabled_only: bool = False,
+    trigger_type: str  = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        items = _auto(uid).list_automations(enabled_only=enabled_only,
+                                             trigger_type=trigger_type)
+        return {"status": "ok", "automations": items, "total": len(items)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/automations")
+def auto_create(body: _AutoCreate, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        item = _auto(uid).create(
+            name=body.name,
+            trigger_type=body.trigger_type,
+            trigger_value=body.trigger_value,
+            conditions=body.conditions,
+            actions=body.actions,
+            cooldown_min=body.cooldown_min,
+            enabled=body.enabled,
+        )
+        return {"status": "ok", "automation": item}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.put("/api/automations/{automation_id}")
+def auto_update(
+    automation_id: str,
+    body: _AutoUpdate,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        updates = {k: v for k, v in body.model_dump().items() if v is not None}
+        item = _auto(uid).update(automation_id, updates)
+        return {"status": "ok", "automation": item}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.delete("/api/automations/{automation_id}")
+def auto_delete(automation_id: str, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ok = _auto(uid).delete(automation_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Automation not found")
+        return {"status": "ok", "deleted": automation_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/automations/{automation_id}/run")
+def auto_run(
+    automation_id: str,
+    body: _AutoRunBody,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        result = _auto(uid).run(automation_id, context=body.context, force=body.force)
+        return {"status": "ok", **result}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/automations/fire-event")
+def auto_fire_event(
+    event_name:   str,
+    context:      dict = {},
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        results = _auto(uid).fire_event(event_name, context=context)
+        return {"status": "ok", "fired": len(results), "results": results}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/automations/log")
+def auto_log(limit: int = 20, current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        return {"status": "ok", "log": _auto(uid).execution_log(limit=limit)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/automations/stats")
+def auto_stats(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        return {"status": "ok", **_auto(uid).stats()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ================================================================
+# INTEGRATIONS HUB  — Phase 5H
+# ================================================================
+
+class _ConnectBody(BaseModel):
+    provider:     str
+    redirect_uri: str = "http://localhost:8000/api/integrations/callback"
+    state:        str = ""
+
+class _CallbackBody(BaseModel):
+    provider:     str
+    code:         str
+    redirect_uri: str = "http://localhost:8000/api/integrations/callback"
+
+class _SyncBody(BaseModel):
+    provider: str
+
+@app.get("/api/integrations/status")
+def integrations_status(current_user: dict = Depends(get_optional_user)):
+    """Return connection status for all providers."""
+    uid = current_user["user_id"]
+    try:
+        ts  = _tok(uid)
+        out = {}
+        for provider in _PROVIDERS:
+            intg = _integration(uid, provider)
+            st   = intg.status()
+            st["configured"] = intg._configured() if hasattr(intg, "_configured") else True
+            out[provider]    = st
+        return {"status": "ok", "integrations": out}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/integrations/connect")
+def integrations_connect(
+    body: _ConnectBody,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Return OAuth authorisation URL for the requested provider."""
+    uid = current_user["user_id"]
+    if body.provider not in _PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {body.provider}")
+    try:
+        intg     = _integration(uid, body.provider)
+        auth_url = intg.get_auth_url(body.redirect_uri, body.state)
+        return {"status": "ok", "provider": body.provider, "auth_url": auth_url}
+    except _IntegrationConfigError as e:
+        return {
+            "status":       "not_configured",
+            "provider":     body.provider,
+            "message":      str(e),
+            "auth_url":     None,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/integrations/callback")
+def integrations_callback(
+    body: _CallbackBody,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Exchange OAuth code for tokens and persist them."""
+    uid = current_user["user_id"]
+    if body.provider not in _PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {body.provider}")
+    try:
+        intg   = _integration(uid, body.provider)
+        result = intg.exchange_code(body.code, body.redirect_uri)
+        # Auto-save connection event to memory
+        try:
+            _memory(uid).save(
+                content    = f"Connected integration: {body.provider}",
+                entry_type = "event",
+                importance = 6,
+                tags       = ["integration", body.provider],
+            )
+        except Exception:
+            pass
+        return {"status": "ok", **result}
+    except _IntegrationConfigError as e:
+        return {"status": "not_configured", "message": str(e)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/integrations/sync")
+def integrations_sync(
+    body: _SyncBody,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Trigger a data sync for a connected provider."""
+    uid = current_user["user_id"]
+    if body.provider not in _PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {body.provider}")
+    try:
+        intg   = _integration(uid, body.provider)
+        result = intg.sync(
+            calendar = _cal(uid),
+            memory   = _memory(uid),
+        )
+        return {"status": "ok", "provider": body.provider, **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.delete("/api/integrations/{provider}")
+def integrations_disconnect(
+    provider: str,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Revoke tokens and disconnect a provider."""
+    uid = current_user["user_id"]
+    if provider not in _PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+    try:
+        intg = _integration(uid, provider)
+        ok   = intg.revoke()
+        if not ok:
+            return {"status": "not_connected", "provider": provider}
+        try:
+            _memory(uid).save(
+                content    = f"Disconnected integration: {provider}",
+                entry_type = "event",
+                importance = 5,
+                tags       = ["integration", provider],
+            )
+        except Exception:
+            pass
+        return {"status": "ok", "disconnected": provider}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ================================================================
+# ANALYTICS  — Phase 5I
+# ================================================================
+
+def _fetch_analytics_context(uid: str) -> dict:
+    """Gather all data needed for analytics in one place."""
+    ctx: dict = {}
+    try:
+        ws      = _ws(uid)
+        ws_data = ws.home(_user_name(uid))
+        ctx["tasks"]    = ws_data.get("tasks", [])
+        ctx["meetings"] = ws_data.get("meetings", [])
+    except Exception:
+        ctx["tasks"] = []
+        ctx["meetings"] = []
+
+    try:
+        ctx["events"] = _cal(uid).get_today_events()
+    except Exception:
+        ctx["events"] = []
+
+    try:
+        ctx["projects"] = planner.list_projects(user_id=uid)
+    except Exception:
+        ctx["projects"] = []
+
+    try:
+        ge = _ge(uid)
+        ctx["bag"]    = ge.get_bag() if hasattr(ge, "get_bag") else []
+        ctx["rounds"] = ge.get_rounds() if hasattr(ge, "get_rounds") else []
+    except Exception:
+        ctx["bag"]    = []
+        ctx["rounds"] = []
+
+    try:
+        ctx["memory_stats"] = _memory(uid).stats()
+    except Exception:
+        ctx["memory_stats"] = {}
+
+    try:
+        ctx["notif_unread"] = _notif(uid).unread_count()
+    except Exception:
+        ctx["notif_unread"] = 0
+
+    return ctx
+
+@app.get("/api/analytics/summary")
+def analytics_summary(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        result = _analytics.full_summary(
+            tasks    = ctx["tasks"],
+            meetings = ctx["meetings"],
+            projects = ctx["projects"],
+            rounds   = ctx["rounds"],
+            bag      = ctx["bag"],
+            events   = ctx["events"],
+            memory_stats  = ctx["memory_stats"],
+            notif_unread  = ctx["notif_unread"],
+        )
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/analytics/productivity")
+def analytics_productivity(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        result = _analytics.productivity_metrics(
+            tasks    = ctx["tasks"],
+            meetings = ctx["meetings"],
+            events   = ctx["events"],
+        )
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/analytics/golf")
+def analytics_golf(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        result = _analytics.golf_metrics(rounds=ctx["rounds"], bag=ctx["bag"])
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/analytics/projects")
+def analytics_projects(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        result = _analytics.project_metrics(projects=ctx["projects"])
+        return {"status": "ok", **result}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ── Phase 5K: WOW Layer endpoints ─────────────────────────────────────
+
+@app.get("/api/wow/insights")
+def wow_insights(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        insights = _wow.generate_insights(ctx)
+        return {"status": "ok", "insights": insights, "count": len(insights)}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "insights": []}
+
+
+@app.get("/api/wow/briefing")
+def wow_briefing(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        briefing = _wow.generate_briefing(ctx)
+        return {"status": "ok", **briefing}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/wow/suggestions")
+def wow_suggestions(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        ctx = _fetch_analytics_context(uid)
+        suggestions = _wow.smart_suggestions(ctx)
+        return {"status": "ok", "suggestions": suggestions}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "suggestions": []}
+
+
+# ── Phase 5K-2: Golf Swing Vision Pro endpoints ───────────────────────
+
+class _VisionFrameRequest(BaseModel):
+    landmarks: list   # 33 × {x, y, z, visibility}
+
+class _VisionSwingRequest(BaseModel):
+    frames: list      # [{landmarks: [...], frame_time: float}, ...]
+    club:   str  = "unknown"
+    fps:    float = 30.0
+
+
+@app.post("/api/golf/vision/analyze")
+def golf_vision_analyze(
+    req: _VisionFrameRequest,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        result = _gve(uid).analyze_frame(req.landmarks)
+        return result
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/golf/vision/swing")
+def golf_vision_swing(
+    req: _VisionSwingRequest,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        result = _gve(uid).analyze_swing_sequence(req.frames, req.club, req.fps)
+        return result
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/golf/vision/history")
+def golf_vision_history(
+    limit:  int = 10,
+    offset: int = 0,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        return {"status": "ok", **_gve(uid).get_history(limit, offset)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/golf/vision/drills")
+def golf_vision_drills(current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    try:
+        # Pass last swing as context for targeted drills
+        history = _gve(uid).get_history(limit=1)
+        last    = history["items"][0] if history["items"] else None
+        drills  = _gve(uid).get_drills(last)
+        return {"status": "ok", "drills": drills}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "drills": []}
