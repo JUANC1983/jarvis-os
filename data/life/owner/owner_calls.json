@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "d2a72df06d",
+      "contact": "Al",
+      "due": "2026-04-27T10:00:00",
+      "notes": "llamar al banco hoy a las 10",
+      "phone": "",
+      "done": false,
+      "created_at": "2026-04-27T16:08:27.348857"
+    },
+    {
+      "id": "2a59305317",
+      "contact": "Juan",
+      "due": "2026-04-27T18:00:00",
+      "notes": "",
+      "phone": "",
+      "done": false,
+      "created_at": "2026-04-27T16:08:27.435578"
+    }
+  ]
+}

@@ -48,10 +48,24 @@ _DOMAIN_KEYWORDS: Dict[str, List[str]] = {
         "pipeline", "performance", "cpu", "ram", "disk", "log", "error",
         "uptime", "unread", "sistema", "configuración", "notificaciones",
     ],
+    "family": [
+        "family", "familia", "hijo", "hija", "esposa", "esposo", "mamá", "mama",
+        "papá", "papa", "hermano", "hermana", "cumpleaños", "birthday", "anniversary",
+        "aniversario", "school", "colegio", "kids", "niños", "niño", "niña",
+        "appointment", "cita familiar", "evento familiar", "padres", "hijos",
+    ],
+    "office": [
+        "office", "oficina", "colega", "colleague", "coworker", "compañero", "compañera",
+        "work task", "tarea de trabajo", "gasto", "expense", "reembolso", "reimburs",
+        "departamento", "department", "jefe", "boss", "equipo de trabajo", "team",
+        "factura de trabajo", "invoice", "cliente", "client", "proveedor", "vendor",
+        "reunión de trabajo", "work meeting",
+    ],
 }
 
 _DOMAIN_WEIGHT: Dict[str, int] = {
     "productivity": 0, "golf": 0, "project": 0, "system": 0,
+    "family": 0, "office": 0,
 }
 
 _AGENT_NAMES = {
@@ -59,6 +73,8 @@ _AGENT_NAMES = {
     "golf":         "golf_agent",
     "project":      "project_agent",
     "system":       "system_agent",
+    "family":       "family_agent",
+    "office":       "office_agent",
     "general":      "general_agent",
 }
 
@@ -67,6 +83,8 @@ _AGENT_DESCRIPTIONS = {
     "golf_agent":         "Golf performance, swing, courses, bag",
     "project_agent":      "Projects, kanban, sprints, roadmaps",
     "system_agent":       "JARVIS status, memory, notifications, config",
+    "family_agent":       "Family members, events, birthdays, shared notes",
+    "office_agent":       "Colleagues, work tasks, expenses, office management",
     "general_agent":      "Cross-domain reasoning and fallback",
 }
 
@@ -285,6 +303,113 @@ def _handle_system(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _handle_family(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    members  = context.get("family_members", [])
+    events   = context.get("family_events", [])
+    summary  = context.get("family_summary", {})
+    mem_ctx  = context.get("memory_context", [])
+
+    lines = []
+    if members:
+        lines.append(f"{len(members)} family member(s) tracked.")
+    if events:
+        next_ev = events[0]
+        days = next_ev.get("days_away", "?")
+        lines.append(f"Next event: '{next_ev['title']}' in {days} day(s).")
+    upcoming_bd = summary.get("upcoming_birthdays", 0)
+    if upcoming_bd:
+        lines.append(f"{upcoming_bd} birthday(s) coming up in the next 30 days.")
+    if not lines:
+        lines.append("No family data yet. Add members and upcoming events to get started.")
+
+    mem_tip = ""
+    fam_mem = [e for e in mem_ctx if any(
+        w in e.get("content", "").lower() for w in ("family", "familia", "hijo", "esposa")
+    )]
+    if fam_mem:
+        mem_tip = f" Note: {fam_mem[0]['content'][:100]}"
+
+    return {
+        "agent":    "family_agent",
+        "domain":   "family",
+        "response": " ".join(lines) + mem_tip,
+        "data": {
+            "member_count":       len(members),
+            "upcoming_events":    len(events),
+            "upcoming_birthdays": upcoming_bd,
+        },
+        "suggestions": _family_suggestions(members, events),
+    }
+
+
+def _family_suggestions(members: List[Dict], events: List[Dict]) -> List[str]:
+    tips = []
+    if not members:
+        tips.append("Add family members to track birthdays and important events.")
+    soon = [e for e in events if e.get("days_away", 999) <= 7]
+    if soon:
+        titles = ", ".join(e["title"] for e in soon[:2])
+        tips.append(f"Events this week: {titles}.")
+    bdays = [m for m in members if m.get("birthday_in_days", 999) <= 14]
+    if bdays:
+        names = ", ".join(m["name"] for m in bdays[:2])
+        tips.append(f"Upcoming birthdays: {names}.")
+    return tips[:3]
+
+
+def _handle_office(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    colleagues = context.get("office_colleagues", [])
+    tasks      = context.get("office_tasks", [])
+    expenses   = context.get("office_expenses", [])
+    summary    = context.get("office_summary", {})
+    mem_ctx    = context.get("memory_context", [])
+
+    todo_cnt  = sum(1 for t in tasks if t.get("status") == "todo")
+    doing_cnt = sum(1 for t in tasks if t.get("status") == "doing")
+    critical  = sum(1 for t in tasks if t.get("priority") == "critical")
+    pending_exp = len([e for e in expenses if e.get("status") == "pending"])
+
+    lines = []
+    if tasks:
+        lines.append(f"Work tasks: {todo_cnt} todo, {doing_cnt} in-progress.")
+        if critical:
+            lines.append(f"{critical} critical task(s) need attention.")
+    if pending_exp:
+        amt = summary.get("expense_pending_amt", 0)
+        cur = summary.get("currency", "COP")
+        lines.append(f"{pending_exp} pending expense(s) — {cur} {amt:,.0f} awaiting approval.")
+    if not lines:
+        lines.append("Office workspace is empty. Add colleagues, tasks, or expenses to get started.")
+
+    return {
+        "agent":    "office_agent",
+        "domain":   "office",
+        "response": " ".join(lines),
+        "data": {
+            "colleague_count":  len(colleagues),
+            "tasks_todo":       todo_cnt,
+            "tasks_doing":      doing_cnt,
+            "tasks_critical":   critical,
+            "expenses_pending": pending_exp,
+        },
+        "suggestions": _office_suggestions(tasks, expenses),
+    }
+
+
+def _office_suggestions(tasks: List[Dict], expenses: List[Dict]) -> List[str]:
+    tips = []
+    critical = [t for t in tasks if t.get("priority") == "critical"]
+    if critical:
+        tips.append(f"Critical task: '{critical[0]['title']}' — handle first.")
+    overdue = [t for t in tasks if t.get("due") and t.get("due") < datetime.now().strftime("%Y-%m-%d") and t.get("status") != "done"]
+    if overdue:
+        tips.append(f"{len(overdue)} overdue work task(s). Review and reschedule?")
+    old_exp = [e for e in expenses if e.get("status") == "pending"]
+    if old_exp:
+        tips.append(f"{len(old_exp)} expense(s) waiting for approval.")
+    return tips[:3]
+
+
 def _handle_general(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
     mem_ctx = context.get("memory_context", [])
     lines   = ["I'm JARVIS, your AI operating system."]
@@ -315,6 +440,8 @@ _AGENT_HANDLERS = {
     "golf":         _handle_golf,
     "project":      _handle_project,
     "system":       _handle_system,
+    "family":       _handle_family,
+    "office":       _handle_office,
     "general":      _handle_general,
 }
 
@@ -364,11 +491,12 @@ class AIOrchestrator:
     def classify(self, message: str) -> Dict[str, Any]:
         """Classify only — no dispatch. Useful for UI routing."""
         domain = classify_intent(message)
+        agent  = _AGENT_NAMES.get(domain, _AGENT_NAMES["general"])
         return {
             "domain":     domain,
-            "agent":      _AGENT_NAMES[domain],
+            "agent":      agent,
             "confidence": "keyword",
-            "description": _AGENT_DESCRIPTIONS[_AGENT_NAMES[domain]],
+            "description": _AGENT_DESCRIPTIONS.get(agent, ""),
         }
 
     def health(self) -> Dict[str, Any]:

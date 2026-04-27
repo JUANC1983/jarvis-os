@@ -71,6 +71,15 @@
       "domain": "general",
       "confidence": 1.0,
       "source": "text"
+    },
+    {
+      "id": "396fe5a069b3",
+      "ts": "2026-04-27T15:20:28.950801",
+      "transcript": "test command",
+      "response": "I'm JARVIS, your AI operating system. Recent context: User prefers compact responses without trailing summaries I can help with productivity, golf, projects, and system management. What do you need?",
+      "domain": "general",
+      "confidence": 1.0,
+      "source": "text"
     }
   ]
 }

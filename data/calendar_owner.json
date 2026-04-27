@@ -1,1 +1,62 @@
-[]
+[
+  {
+    "id": "ev_8934c6a783",
+    "title": "Market Open Review",
+    "description": "Check overnight moves, futures, key levels for the day",
+    "start": "2026-04-27T09:00:00",
+    "end": "2026-04-27T09:30",
+    "timezone": "America/Bogota",
+    "participants": [],
+    "linked_project_id": null,
+    "linked_task_id": null,
+    "reminder_minutes": 15,
+    "source": "jarvis",
+    "created_at": "2026-04-27T15:37:36.549033",
+    "updated_at": "2026-04-27T15:37:36.549033"
+  },
+  {
+    "id": "ev_5fcd6393ba",
+    "title": "Team Weekly Standup",
+    "description": "Sprint check-in and blockers",
+    "start": "2026-04-27T10:30:00",
+    "end": "2026-04-27T11:15",
+    "timezone": "America/Bogota",
+    "participants": [],
+    "linked_project_id": null,
+    "linked_task_id": null,
+    "reminder_minutes": 15,
+    "source": "jarvis",
+    "created_at": "2026-04-27T15:37:36.550033",
+    "updated_at": "2026-04-27T15:37:36.550033"
+  },
+  {
+    "id": "ev_91f0185b5b",
+    "title": "Golf Lesson — Coach",
+    "description": "Focus on short game and putting",
+    "start": "2026-04-29T16:00:00",
+    "end": "2026-04-29T17:00",
+    "timezone": "America/Bogota",
+    "participants": [],
+    "linked_project_id": null,
+    "linked_task_id": null,
+    "reminder_minutes": 15,
+    "source": "jarvis",
+    "created_at": "2026-04-27T15:37:36.561031",
+    "updated_at": "2026-04-27T15:37:36.561031"
+  },
+  {
+    "id": "ev_ab8d15d566",
+    "title": "Portfolio Rebalance",
+    "description": "Monthly allocation review with risk adjustment",
+    "start": "2026-04-30T14:00:00",
+    "end": "2026-04-30T15:30",
+    "timezone": "America/Bogota",
+    "participants": [],
+    "linked_project_id": null,
+    "linked_task_id": null,
+    "reminder_minutes": 15,
+    "source": "jarvis",
+    "created_at": "2026-04-27T15:37:36.572034",
+    "updated_at": "2026-04-27T15:37:36.572034"
+  }
+]

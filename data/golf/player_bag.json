@@ -1,9 +1,11 @@
 [
   {
     "club": "Driver",
-    "carry_yards": 250,
-    "total_yards": 270,
-    "miss": "neutral"
+    "carry_yards": 265,
+    "total_yards": 280,
+    "miss": "right",
+    "brand": "TaylorMade",
+    "model": "Stealth 2"
   },
   {
     "club": "3W",
@@ -56,8 +58,10 @@
   {
     "club": "PW",
     "carry_yards": 125,
-    "total_yards": 131,
-    "miss": "neutral"
+    "total_yards": 132,
+    "miss": "straight",
+    "brand": "Callaway",
+    "model": "Jaws MD5"
   },
   {
     "club": "GW",
@@ -81,6 +85,24 @@
     "club": "Putter",
     "carry_yards": 0,
     "total_yards": 0,
-    "miss": "neutral"
+    "miss": "straight",
+    "brand": "Scotty Cameron",
+    "model": "Newport"
+  },
+  {
+    "club": "3-Wood",
+    "brand": "TaylorMade",
+    "model": "Stealth 2",
+    "carry_yards": 230,
+    "total_yards": 245,
+    "miss": "straight"
+  },
+  {
+    "club": "7-Iron",
+    "brand": "Callaway",
+    "model": "Apex Pro",
+    "carry_yards": 170,
+    "total_yards": 180,
+    "miss": "left"
   }
 ]

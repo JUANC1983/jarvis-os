@@ -1,0 +1,21 @@
+{
+  "workouts": [
+    {
+      "id": "b438467216",
+      "date": "",
+      "logged_at": "2026-04-27T15:17:50.544561",
+      "distance_km": 5.2,
+      "duration_min": 28.0,
+      "pace_min_km": 5.38,
+      "notes": "QA test run"
+    },
+    {
+      "id": "c387e0e1f4",
+      "date": "",
+      "logged_at": "2026-04-27T15:21:34.882861",
+      "distance_km": 5.0,
+      "duration_min": 25.0,
+      "notes": "QA"
+    }
+  ]
+}

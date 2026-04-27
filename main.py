@@ -1,7 +1,9 @@
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+import asyncio
 import json
+import logging
 import os
 import shutil
 import threading
@@ -19,7 +21,7 @@ try:
 except ImportError:
     _OPENAI_AVAILABLE = False
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
@@ -53,9 +55,64 @@ from core.analytics_engine import AnalyticsEngine as _AnalyticsEngine
 from core.voice_engine import VoiceEngine
 from core.wow_engine import WowEngine as _WowEngine
 from core.golf_vision_engine import GolfVisionEngine
+from core.golf_swing_elite import GolfSwingElite as _GolfSwingElite
+from core.fitness_engine import FitnessEngine as _FitnessEngine
+from core.weather_engine import weather_engine as _weather_engine
+from core.family_engine import FamilyEngine as _FamilyEngine
+from core.office_engine import OfficeEngine as _OfficeEngine
+
+# ── Outlook / Microsoft Graph integration ───────────────────────────────
+try:
+    from opsx.connectors.outlook_auth    import (
+        token_store as _ms_token_store,
+        get_login_url as _ms_login_url,
+        exchange_code as _ms_exchange_code,
+        get_valid_token as _ms_get_token,
+        is_configured as _ms_configured,
+    )
+    from opsx.connectors.outlook_webhook import (
+        subscription_store as _ms_sub_store,
+        create_subscription as _ms_create_sub,
+        renew_subscription  as _ms_renew_sub,
+        delete_subscription as _ms_delete_sub,
+        validate_client_state as _ms_validate_state,
+        start_renewal_loop  as _ms_start_renewal,
+        stop_renewal_loop   as _ms_stop_renewal,
+    )
+    from opsx.connectors.outlook_email   import (
+        fetch_email  as _ms_fetch_email,
+        list_inbox   as _ms_list_inbox,
+        count_unread as _ms_count_unread,
+        mark_as_read as _ms_mark_read,
+    )
+    from opsx.agents.email_agent         import process_email as _ms_process_email
+    from opsx.services.email_actions     import (
+        email_store            as _ms_email_store,
+        store_processed_email  as _ms_store_email,
+        send_approved_reply    as _ms_send_reply,
+        delete_approved_email  as _ms_delete_email,
+        ignore_email           as _ms_ignore_email,
+        mark_email_read        as _ms_mark_email_read,
+        update_reply_draft     as _ms_update_draft,
+        create_task_from_email           as _ms_task_from_email,
+        create_calendar_event_from_email as _ms_event_from_email,
+    )
+    from opsx.core.event_queue import event_queue as _ms_event_queue
+    _OUTLOOK_AVAILABLE = True
+except Exception as _e:
+    _OUTLOOK_AVAILABLE = False
+    logging.getLogger("jarvis").warning("Outlook integration unavailable: %s", _e)
 
 _analytics = _AnalyticsEngine()
 _wow       = _WowEngine()
+
+# ── Fitness engine cache ─────────────────────────────────────────────
+_fit_cache: dict = {}
+def _fit(user_id: str) -> _FitnessEngine:
+    if user_id not in _fit_cache:
+        base = BASE_DIR / "data" / "fitness" / user_id
+        _fit_cache[user_id] = _FitnessEngine(str(base), user_id)
+    return _fit_cache[user_id]
 
 try:
     from core.market_intelligence_engine import MarketIntelligenceEngine as _MarketIntelEngine
@@ -413,6 +470,25 @@ def _detect_feedback_signal(message: str) -> str:
 _ctx_cache: dict = {"data": "", "ts": 0.0}
 _CTX_TTL = 120.0
 
+# Per-user weather context: {uid: {lat, lon, data, ts}}
+_weather_user_cache: dict = {}
+
+# ── Family / Office engine caches ────────────────────────────────────────────
+_family_cache: dict = {}
+_office_cache: dict = {}
+
+def _family(user_id: str) -> _FamilyEngine:
+    if user_id not in _family_cache:
+        path = BASE_DIR / "data" / "family" / user_id
+        _family_cache[user_id] = _FamilyEngine(str(path), user_id)
+    return _family_cache[user_id]
+
+def _office(user_id: str) -> _OfficeEngine:
+    if user_id not in _office_cache:
+        path = BASE_DIR / "data" / "office" / user_id
+        _office_cache[user_id] = _OfficeEngine(str(path), user_id)
+    return _office_cache[user_id]
+
 
 def _get_context() -> str:
     now = time.monotonic()
@@ -438,6 +514,16 @@ def _get_context() -> str:
     except Exception:
         pass
 
+    # Weather (injected if user has a cached location)
+    try:
+        for uid_w, wc in _weather_user_cache.items():
+            ws = _weather_engine.as_context_string(wc["lat"], wc["lon"])
+            if ws:
+                parts.append(ws)
+            break  # only need one (single-user system)
+    except Exception:
+        pass
+
     ctx = "\n".join(parts)
     _ctx_cache["data"] = ctx
     _ctx_cache["ts"]   = now
@@ -457,6 +543,8 @@ _VALID_ACTIONS = frozenset({
     "golf", "workspace",
     # specialist agents
     "medical", "legal", "fitness", "coach",
+    # life modules
+    "family", "office",
 })
 
 
@@ -576,6 +664,20 @@ def _detect_intent(message: str) -> str:
     ]):
         return "coach"
 
+    if any(w in low for w in [
+        "familia", "family", "hijo", "hija", "esposa", "esposo", "mama", "papa",
+        "cumpleaños", "birthday", "aniversario", "anniversary", "colegio", "school",
+        "niños", "ninos", "kids", "evento familiar",
+    ]):
+        return "family"
+
+    if any(w in low for w in [
+        "oficina", "office", "colega", "colleague", "compañero", "companero",
+        "gasto laboral", "expense", "reembolso", "departamento", "jefe",
+        "tarea de trabajo", "work task", "equipo de trabajo",
+    ]):
+        return "office"
+
     # Finance / market — specific asset queries
     if any(w in low for w in [
         "analiz", "analyze", "trade", "setup", "entry", "chart",
@@ -658,6 +760,10 @@ def _dispatch_tool(intent: str, message: str) -> dict | None:
             return orchestrator.execute(message, "fitness")
         elif intent == "coach":
             return orchestrator.execute(message, "coach")
+        elif intent == "family":
+            return _family("owner").summary()
+        elif intent == "office":
+            return _office("owner").summary()
     except Exception:
         pass
     return None
@@ -683,6 +789,8 @@ Available tools:
   legal     → legal_agent()           — legal questions, contracts, compliance, Colombian law and taxes
   fitness   → fitness_agent()         — fitness plans, training, nutrition, body performance
   coach     → council_agent()         — strategic coaching, life decisions, multi-perspective council advice
+  family    → family_agent()          — family members, birthdays, events, notes, kids schedule
+  office    → office_agent()          — colleagues, work tasks, expenses, office management
 
 Routing rules:
 - "analyze"   → user asks about a specific asset: ticker (NVDA, BTC, TSLA) OR company name (Tesla→TSLA, Apple→AAPL, Bitcoin→BTC, Nvidia→NVDA, Amazon→AMZN). Always resolve company name to ticker in the "symbol" field.
@@ -696,12 +804,14 @@ Routing rules:
 - "legal"     → "legal", "abogado", "contrato", "ley", "demanda", compliance, taxes, "impuesto"
 - "fitness"   → "ejercicio", "entrenamiento", "gym", "nutrición", fitness, training, "perder peso"
 - "coach"     → "actúa como coach", strategic advice, "ayúdame a decidir", life decisions, personal strategy
+- "family"    → "familia", "hijo", "cumpleaños", "birthday", "colegio", kids schedule, family events
+- "office"    → "oficina", "colega", "gasto", "expense", "compañero de trabajo", work tasks, expenses
 - "none"      → greetings, general questions, opinions, philosophy, definitions, anything else
 
 Critical: Respond ONLY with valid JSON — no markdown, no explanation, no extra text.
 
 {
-  "action": "none | analyze | scan | news | pipeline | agents | golf | workspace | medical | legal | fitness | coach",
+  "action": "none | analyze | scan | news | pipeline | agents | golf | workspace | medical | legal | fitness | coach | family | office",
   "symbol": "UPPERCASE_TICKER or null",
   "reason": "one sentence",
   "reply":  "natural answer in user language — fill ONLY when action is none, else empty string"
@@ -2453,7 +2563,82 @@ def _build_orchestrator_context(uid: str, include_data: bool = True) -> dict:
     except Exception:
         ctx["golf_bag"] = {}
 
+    # Family context
+    try:
+        fam = _family(uid)
+        ctx["family_members"] = fam.get_members()
+        ctx["family_events"]  = fam.get_events(upcoming_days=30)
+        ctx["family_summary"] = fam.summary()
+    except Exception:
+        ctx["family_members"] = []
+        ctx["family_events"]  = []
+        ctx["family_summary"] = {}
+
+    # Office context
+    try:
+        off = _office(uid)
+        ctx["office_colleagues"] = off.get_colleagues()
+        ctx["office_tasks"]      = off.get_tasks()
+        ctx["office_expenses"]   = off.get_expenses()
+        ctx["office_summary"]    = off.summary()
+    except Exception:
+        ctx["office_colleagues"] = []
+        ctx["office_tasks"]      = []
+        ctx["office_expenses"]   = []
+        ctx["office_summary"]    = {}
+
+    # Weather context (injected when user has shared location)
+    try:
+        wc = _weather_user_cache.get(uid) or _weather_user_cache.get("owner")
+        if wc:
+            ctx["weather"] = _weather_engine.get_current(wc["lat"], wc["lon"])
+            ctx["weather_golf"]    = _weather_engine.golf_context(wc["lat"], wc["lon"])
+            ctx["weather_running"] = _weather_engine.running_context(wc["lat"], wc["lon"])
+        else:
+            ctx["weather"] = {"available": False}
+    except Exception:
+        ctx["weather"] = {"available": False}
+
     return ctx
+
+
+# ── Weather context endpoint ─────────────────────────────────────────────────
+
+class _WeatherLocReq(BaseModel):
+    lat: float
+    lon: float
+    city: str = ""
+
+@app.get("/api/context/weather")
+def get_weather_context(
+    lat: float,
+    lon: float,
+    city: str = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    data = _weather_engine.get_current(lat, lon)
+    if data.get("available", False):
+        _weather_user_cache[uid] = {"lat": lat, "lon": lon, "city": city}
+        _weather_user_cache["owner"] = {"lat": lat, "lon": lon, "city": city}
+        # Invalidate system context cache so next LLM call picks up weather
+        _ctx_cache["ts"] = 0.0
+    forecast = _weather_engine.get_forecast(lat, lon)
+    return {
+        "status": "ok",
+        "current": data,
+        "forecast": forecast,
+        "golf_context": _weather_engine.golf_context(lat, lon),
+        "running_context": _weather_engine.running_context(lat, lon),
+    }
+
+@app.post("/api/context/weather")
+def post_weather_context(
+    body: _WeatherLocReq,
+    current_user: dict = Depends(get_optional_user),
+):
+    return get_weather_context(body.lat, body.lon, body.city, current_user)
+
 
 @app.post("/api/orchestrator/chat")
 def orchestrator_chat(
@@ -2962,3 +3147,1171 @@ def golf_vision_drills(current_user: dict = Depends(get_optional_user)):
         return {"status": "ok", "drills": drills}
     except Exception as e:
         return {"status": "error", "error": str(e), "drills": []}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# GOLF ELITE v9 ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════
+
+class _EliteAnalyzeRequest(BaseModel):
+    frames: List[Dict[str, Any]] = []
+    club:   str   = "unknown"
+    fps:    float = 30.0
+    lang:   str   = "es"
+
+class _EliteLiveRequest(BaseModel):
+    landmarks: List[Dict[str, Any]] = []
+    lang:      str = "es"
+
+
+@app.post("/api/golf/elite/analyze")
+def golf_elite_analyze(
+    req: _EliteAnalyzeRequest,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        ve    = _gve(uid)
+        elite = _GolfSwingElite(ve)
+        result = elite.analyze(req.frames, req.club, req.fps, req.lang)
+        return result
+    except Exception as e:
+        return {"status": "error", "error": str(e)[:120]}
+
+
+@app.post("/api/golf/elite/live")
+def golf_elite_live(
+    req: _EliteLiveRequest,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        ve    = _gve(uid)
+        elite = _GolfSwingElite(ve)
+        return {"status": "ok", **elite.live_cue(req.landmarks, req.lang)}
+    except Exception as e:
+        return {"status": "error", "cue": "Otra vez", "color": "#888"}
+
+
+@app.get("/api/golf/elite/progress")
+def golf_elite_progress(
+    lang:   str = "es",
+    limit:  int = 10,
+    current_user: dict = Depends(get_optional_user),
+):
+    uid = current_user["user_id"]
+    try:
+        ve    = _gve(uid)
+        elite = _GolfSwingElite(ve)
+        hist  = ve.get_history(limit=limit)
+        report = elite.progress_report(hist.get("items", []), lang)
+        return {"status": "ok", **report}
+    except Exception as e:
+        return {"status": "error", "available": False, "error": str(e)[:80]}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FITNESS ENDPOINTS  (running, cycling, gym, tennis)
+# ══════════════════════════════════════════════════════════════════════
+
+class _WorkoutLog(BaseModel):
+    date:        str = ""
+    # running / cycling
+    distance_km: Optional[float] = None
+    duration_min: Optional[float] = None
+    pace_min_km: Optional[float] = None
+    avg_speed_kmh: Optional[float] = None
+    elevation_m: Optional[float] = None
+    heart_rate: Optional[int] = None
+    route: Optional[str] = None
+    # gym
+    exercises: Optional[list] = None
+    muscle_groups: Optional[str] = None
+    # tennis
+    result:   Optional[str] = None
+    opponent: Optional[str] = None
+    score:    Optional[str] = None
+    # common
+    notes: Optional[str] = None
+
+
+@app.get("/api/fitness/{sport}/stats")
+def fitness_stats(sport: str, current_user: dict = Depends(get_optional_user)):
+    try:
+        return {"status": "ok", **_fit(current_user["user_id"]).get_stats(sport)}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/fitness/{sport}/history")
+def fitness_history(sport: str, limit: int = 10, offset: int = 0,
+                    current_user: dict = Depends(get_optional_user)):
+    try:
+        return {"status": "ok", **_fit(current_user["user_id"]).get_history(sport, limit, offset)}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/fitness/{sport}/log")
+def fitness_log(sport: str, body: _WorkoutLog,
+                current_user: dict = Depends(get_optional_user)):
+    try:
+        data = {k: v for k, v in body.model_dump().items() if v is not None}
+        entry = _fit(current_user["user_id"]).log_workout(sport, data)
+        return {"status": "ok", "entry": entry}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/fitness/{sport}/tips")
+def fitness_tips(sport: str, current_user: dict = Depends(get_optional_user)):
+    try:
+        tips = _fit(current_user["user_id"]).get_tips(sport)
+        return {"status": "ok", "sport": sport, "tips": tips}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/fitness-overview")
+def fitness_all_stats(current_user: dict = Depends(get_optional_user)):
+    try:
+        return {"status": "ok", "sports": _fit(current_user["user_id"]).all_stats()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# ── Personality / tone endpoint ───────────────────────────────────────
+
+class _PersonalityRequest(BaseModel):
+    message: str
+    context: Optional[str] = "general"
+    tone:    Optional[str] = "professional"  # professional | coach | friendly
+
+
+@app.post("/api/personality/respond")
+def personality_respond(body: _PersonalityRequest,
+                        current_user: dict = Depends(get_optional_user)):
+    """Wrap a raw message with a chosen JARVIS personality tone."""
+    tone_prompts = {
+        "professional": (
+            "You are JARVIS, a sharp, direct AI executive assistant. "
+            "Respond in 1-3 sentences. Be concise, data-driven, and actionable. "
+            "No filler. No pleasantries beyond a single opener."
+        ),
+        "coach": (
+            "You are JARVIS in Coach mode. "
+            "You motivate, challenge, and guide the user with energy and precision. "
+            "Use short, punchy sentences. Be direct. End with an action or challenge."
+        ),
+        "friendly": (
+            "You are JARVIS, a warm, encouraging AI companion. "
+            "Be conversational, supportive, and clear. "
+            "Keep it short and human."
+        ),
+    }
+    system = tone_prompts.get(body.tone or "professional", tone_prompts["professional"])
+    try:
+        if not _OPENAI_AVAILABLE:
+            return {"status": "ok", "reply": body.message, "tone": body.tone}
+        client = _OpenAI()
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": body.message},
+            ],
+            max_tokens=200, temperature=0.7,
+        )
+        return {
+            "status": "ok",
+            "reply": resp.choices[0].message.content.strip(),
+            "tone": body.tone,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "reply": body.message}
+
+
+# ── Command intent router (for global command bar) ────────────────────
+import unicodedata as _ud
+
+def _normalize_cmd(text: str) -> str:
+    """Lowercase + strip accents/diacritics for language-agnostic keyword matching."""
+    nfkd = _ud.normalize("NFKD", text)
+    stripped = "".join(c for c in nfkd if not _ud.combining(c))
+    return stripped.lower().replace("¿", "").replace("¡", "")
+
+
+class _CommandRequest(BaseModel):
+    command: str
+    context: Optional[str] = ""
+
+
+# Each entry: intent → (tab, [english keywords], [spanish keywords])
+_COMMAND_ROUTES = {
+    "task": ("productivity", [
+        "add task", "create task", "new task", "remind", "todo", "to-do",
+    ], [
+        "agregar tarea", "crear tarea", "nueva tarea", "tengo que", "debo hacer",
+        "hay que", "apuntar", "anotar", "recordar", "pendiente", "necesito",
+        "me falta", "debo", "tarea", "hacer",
+    ]),
+    "meeting": ("productivity", [
+        "meeting", "schedule", "calendar", "appointment",
+    ], [
+        "reunion", "cita", "agenda", "agendar", "programar", "llamada",
+        "videollamada", "junta",
+    ]),
+    "market": ("markets", [
+        "stock", "market", "price", "trade", "buy", "sell", "analyse", "analyze",
+        "chart", "signal",
+    ], [
+        "accion", "bolsa", "mercado", "precio", "comprar", "vender", "analizar",
+        "cotizacion", "invertir", "inversion", "portafolio",
+    ]),
+    "golf": ("golf", [
+        "golf", "swing", "round", "handicap", "birdie", "par", "course", "putt",
+    ], [
+        "golf", "swing", "ronda", "hoyo", "green", "campo", "handicap",
+        "birdie", "eagle", "putt", "putter",
+    ]),
+    "running": ("fitness", [
+        "run", "jog", "km", "mile", "pace", "marathon", "5k", "10k",
+    ], [
+        "correr", "carrera", "kilómetros", "kilometros", "ritmo", "trote",
+        "maraton", "corri", "sali a correr",
+    ]),
+    "cycling": ("fitness", [
+        "bike", "cycle", "cycling", "ride", "cadence",
+    ], [
+        "bicicleta", "cicla", "ciclismo", "pedalear", "rodada", "salida en bici",
+    ]),
+    "gym": ("fitness", [
+        "gym", "workout", "lift", "bench", "squat", "deadlift", "exercise", "weights",
+    ], [
+        "gimnasio", "ejercicio", "entreno", "entrenamiento", "pesas", "sentadilla",
+        "press", "levantamiento", "fui al gym", "entrene",
+    ]),
+    "tennis": ("fitness", [
+        "tennis", "match", "serve", "rally", "set",
+    ], [
+        "tenis", "partido", "saque", "raqueta", "volea", "jugar tenis",
+    ]),
+    "chat": ("chat", [
+        "chat", "ask", "what", "who", "when", "how", "why", "help", "tell me",
+    ], [
+        "que", "quien", "como", "cuando", "por que", "ayuda", "dime", "explicame",
+        "cuanto", "donde", "informacion",
+    ]),
+    "analytics": ("analytics", [
+        "analytics", "stats", "statistics", "report", "summary", "dashboard",
+    ], [
+        "estadisticas", "reporte", "resumen", "analitica", "metricas",
+        "rendimiento", "cuanto llevo",
+    ]),
+    "project": ("projects", [
+        "project", "board", "kanban", "sprint",
+    ], [
+        "proyecto", "tablero", "sprint", "proyectos",
+    ]),
+    "news": ("intelligence", [
+        "news", "headline", "article", "feed",
+    ], [
+        "noticias", "titulares", "articulo", "novedades",
+    ]),
+    "system": ("system", [
+        "system", "health", "pipeline", "status", "agents",
+    ], [
+        "sistema", "salud del sistema", "estado", "agentes",
+    ]),
+    "family": ("family", [
+        "family", "birthday", "anniversary", "kids", "children", "school",
+        "family event", "family member",
+    ], [
+        "familia", "cumpleanos", "cumpleaños", "aniversario", "hijo", "hija",
+        "esposa", "esposo", "colegio", "evento familiar", "ninos",
+    ]),
+    "office": ("office", [
+        "office", "colleague", "coworker", "expense", "work task", "department",
+        "reimbursement",
+    ], [
+        "oficina", "colega", "companero", "gasto", "tarea laboral", "departamento",
+        "reembolso", "equipo trabajo",
+    ]),
+}
+
+
+@app.post("/api/command/route")
+def command_route(body: _CommandRequest,
+                  current_user: dict = Depends(get_optional_user)):
+    """Classify a natural-language command and route it to the correct tab/action."""
+    raw  = body.command
+    cmd  = _normalize_cmd(raw)  # accent-stripped, lowercased
+    matched_tab    = "chat"
+    matched_intent = "general"
+    confidence     = 0.5
+
+    for intent, (tab, en_kws, es_kws) in _COMMAND_ROUTES.items():
+        for kw in en_kws + es_kws:
+            if kw in cmd:
+                matched_tab    = tab
+                matched_intent = intent
+                confidence     = 0.85
+                break
+        if confidence > 0.5:
+            break
+
+    # Try orchestrator for a real reply
+    reply = ""
+    try:
+        result = ai_orchestrator.route(raw, {"user_id": current_user["user_id"]})
+        reply = result.get("reply") or result.get("response") or result.get("answer") or ""
+    except Exception:
+        pass
+
+    return {
+        "status":     "ok",
+        "tab":        matched_tab,
+        "intent":     matched_intent,
+        "confidence": confidence,
+        "reply":      reply or f"Entendido — abriendo {matched_tab}…",
+        "command":    raw,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════
+# DEMO MODE + SEED  (Phase 6Y)
+# ══════════════════════════════════════════════════════════════════════
+
+from core.demo_engine import DemoEngine as _DemoEngine
+
+_MODE_FILE = BASE_DIR / "data" / "jarvis_mode.json"
+
+def _read_mode() -> dict:
+    try:
+        return json.loads(_MODE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {"mode": "demo", "seeded": False}
+
+def _write_mode(data: dict) -> None:
+    _MODE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _MODE_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+@app.get("/api/mode")
+def get_mode(current_user: dict = Depends(get_optional_user)):
+    return {"status": "ok", **_read_mode()}
+
+
+class _ModeSet(BaseModel):
+    mode: str  # "demo" or "real"
+
+
+@app.post("/api/mode")
+def set_mode(body: _ModeSet, current_user: dict = Depends(get_optional_user)):
+    d = _read_mode()
+    d["mode"] = body.mode
+    _write_mode(d)
+    return {"status": "ok", "mode": body.mode}
+
+
+@app.post("/api/demo/seed")
+def demo_seed(
+    force: bool = False,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Seed demo data for the current user. Safe to call multiple times."""
+    uid  = current_user["user_id"]
+    eng  = _DemoEngine(uid)
+    report = eng.seed_all(force=force)
+    d = _read_mode()
+    d["seeded"] = True
+    d["mode"]   = "demo"
+    _write_mode(d)
+    return {"status": "ok", "report": report, "mode": "demo"}
+
+
+@app.get("/api/demo/status")
+def demo_status(current_user: dict = Depends(get_optional_user)):
+    """Check whether demo data has been seeded and what mode is active."""
+    mode_data = _read_mode()
+    return {
+        "status": "ok",
+        "mode":   mode_data.get("mode", "demo"),
+        "seeded": mode_data.get("seeded", False),
+    }
+
+
+# ── 1-Click Action endpoints (Phase 6Y) ──────────────────────────────
+
+class _QuickActionRequest(BaseModel):
+    action: str          # plan_day | analyze_market | create_tasks | start_workout
+    params: Optional[dict] = None
+
+
+@app.post("/api/quick-action")
+def quick_action(body: _QuickActionRequest,
+                 current_user: dict = Depends(get_optional_user)):
+    """Execute a 1-click action and return structured result + next step."""
+    uid = current_user["user_id"]
+    action = body.action
+
+    _QUICK_ACTIONS = {
+        "plan_day": {
+            "label":    "Plan My Day",
+            "message":  "Good morning! Here's your day plan: check your top tasks, review today's meetings, and prioritise your 3 most important items. Start with the hardest task first (eat the frog). Your focus window is 90 min — protect it.",
+            "tab":      "productivity",
+            "chips":    ["View tasks", "Check calendar", "Ask JARVIS for priorities"],
+        },
+        "analyze_market": {
+            "label":    "Market Analysis",
+            "message":  "Market analysis initiated. Check the Markets tab for live indices, run the Trader Analysis for any symbol, and review AI-generated signals. Key levels and recommended setups are updated in real-time.",
+            "tab":      "markets",
+            "chips":    ["Go to Markets", "Analyse AAPL", "View signals"],
+        },
+        "create_tasks": {
+            "label":    "Create Tasks",
+            "message":  "Ready to capture your priorities! Add tasks in the Productivity tab, or tell me what you need to do and I'll structure them for you. Use the AI task generator in Projects for complex work.",
+            "tab":      "productivity",
+            "chips":    ["Add task", "AI task generation", "View backlog"],
+        },
+        "start_workout": {
+            "label":    "Start Workout",
+            "message":  "Let's go! Choose your workout type: Running, Cycling, Gym, or Tennis. Log your session afterward to track progress and get personalised coaching tips from JARVIS.",
+            "tab":      "fitness",
+            "chips":    ["Log a run", "Log gym session", "View this week's stats"],
+        },
+    }
+
+    if action not in _QUICK_ACTIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown action '{action}'")
+
+    result = _QUICK_ACTIONS[action]
+
+    # Try to enrich the message with live orchestrator data
+    try:
+        live = ai_orchestrator.route(result["message"], {"user_id": uid})
+        enriched = live.get("reply") or live.get("response") or ""
+        if enriched and len(enriched) > 30:
+            result = {**result, "message": enriched}
+    except Exception:
+        pass
+
+    return {"status": "ok", **result, "action": action}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# LIFE AUTOMATION SYSTEM  (Phase 6Z-4)
+# ══════════════════════════════════════════════════════════════════════
+
+import asyncio as _asyncio
+from core.life_engine import LifeEngine as _LifeEngine, parse_life_text as _parse_life_text
+
+_life_cache: dict = {}
+
+def _life(user_id: str) -> _LifeEngine:
+    if user_id not in _life_cache:
+        path = BASE_DIR / "data" / "life" / user_id
+        _life_cache[user_id] = _LifeEngine(str(path), user_id)
+    return _life_cache[user_id]
+
+
+class _LifeTaskReq(BaseModel):
+    text: str
+
+class _ReminderReq(BaseModel):
+    title: str
+    due: str
+    repeat: Optional[str] = None
+    notes: str = ""
+
+class _ShoppingReq(BaseModel):
+    name: str
+    qty: int = 1
+    category: str = "general"
+    notes: str = ""
+
+class _CallReq(BaseModel):
+    contact: str
+    due: str
+    notes: str = ""
+    phone: str = ""
+
+class _PaymentReq(BaseModel):
+    title: str
+    amount: float
+    due: str
+    recurrence: Optional[str] = None
+    currency: str = "COP"
+
+
+@app.post("/api/life/task")
+def life_task(body: _LifeTaskReq, current_user: dict = Depends(get_optional_user)):
+    uid    = current_user["user_id"]
+    parsed = _parse_life_text(body.text)
+    engine = _life(uid)
+    created = []
+
+    if parsed["type"] == "payment":
+        item = engine.add_payment(parsed["title"], parsed["amount"] or 0.0, parsed["due"])
+        created.append({"module": "payment", "item": item})
+        try:
+            from datetime import datetime as _dt, timedelta as _td
+            remind_dt = (_dt.fromisoformat(parsed["due"]) - _td(days=1)).isoformat()
+            rem = engine.add_reminder(f"Pagar: {parsed['title']}", remind_dt)
+            created.append({"module": "reminder", "item": rem})
+        except Exception:
+            pass
+    elif parsed["type"] == "call":
+        item = engine.add_call(parsed["contact"] or parsed["title"], parsed["due"], parsed["raw"])
+        created.append({"module": "call", "item": item})
+    elif parsed["type"] == "shopping":
+        item = engine.add_shopping(name=parsed["title"])
+        created.append({"module": "shopping", "item": item})
+    else:
+        item = engine.add_reminder(parsed["title"], parsed["due"], notes=parsed["raw"])
+        created.append({"module": "reminder", "item": item})
+
+    return {"status": "ok", "parsed": parsed, "created": created}
+
+
+@app.post("/api/life/reminder")
+def add_reminder(body: _ReminderReq, current_user: dict = Depends(get_optional_user)):
+    from core.life_engine import _parse_due
+    due = body.due if "T" in body.due else _parse_due(body.due)
+    item = _life(current_user["user_id"]).add_reminder(body.title, due, body.repeat, body.notes)
+    return {"status": "ok", "item": item}
+
+@app.get("/api/life/reminders")
+def get_reminders(include_done: bool = False, current_user: dict = Depends(get_optional_user)):
+    items = _life(current_user["user_id"]).get_reminders(include_done)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/life/reminder/{item_id}/done")
+def complete_reminder(item_id: str, current_user: dict = Depends(get_optional_user)):
+    item = _life(current_user["user_id"]).complete_reminder(item_id)
+    if not item: raise HTTPException(404, "Reminder not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/life/reminder/{item_id}")
+def delete_reminder(item_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _life(current_user["user_id"]).delete_reminder(item_id)
+    return {"status": "ok" if ok else "not_found"}
+
+
+@app.post("/api/life/shopping")
+def add_shopping(body: _ShoppingReq, current_user: dict = Depends(get_optional_user)):
+    item = _life(current_user["user_id"]).add_shopping(body.name, body.qty, body.category, body.notes)
+    return {"status": "ok", "item": item}
+
+@app.get("/api/life/shopping")
+def get_shopping(current_user: dict = Depends(get_optional_user)):
+    items = _life(current_user["user_id"]).get_shopping()
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/life/shopping/{item_id}/toggle")
+def toggle_shopping(item_id: str, current_user: dict = Depends(get_optional_user)):
+    item = _life(current_user["user_id"]).toggle_shopping(item_id)
+    if not item: raise HTTPException(404, "Item not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/life/shopping/{item_id}")
+def delete_shopping(item_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _life(current_user["user_id"]).delete_shopping(item_id)
+    return {"status": "ok" if ok else "not_found"}
+
+@app.post("/api/life/shopping/clear-checked")
+def clear_checked_shopping(current_user: dict = Depends(get_optional_user)):
+    n = _life(current_user["user_id"]).clear_checked()
+    return {"status": "ok", "cleared": n}
+
+
+@app.post("/api/life/call")
+def add_call(body: _CallReq, current_user: dict = Depends(get_optional_user)):
+    from core.life_engine import _parse_due
+    due = body.due if "T" in body.due else _parse_due(body.due)
+    item = _life(current_user["user_id"]).add_call(body.contact, due, body.notes, body.phone)
+    return {"status": "ok", "item": item}
+
+@app.get("/api/life/calls")
+def get_calls(include_done: bool = False, current_user: dict = Depends(get_optional_user)):
+    items = _life(current_user["user_id"]).get_calls(include_done)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/life/call/{item_id}/done")
+def complete_call(item_id: str, current_user: dict = Depends(get_optional_user)):
+    item = _life(current_user["user_id"]).complete_call(item_id)
+    if not item: raise HTTPException(404, "Call not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/life/call/{item_id}")
+def delete_call(item_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _life(current_user["user_id"]).delete_call(item_id)
+    return {"status": "ok" if ok else "not_found"}
+
+
+@app.post("/api/life/payment")
+def add_payment(body: _PaymentReq, current_user: dict = Depends(get_optional_user)):
+    from core.life_engine import _parse_due
+    due = body.due if "T" in body.due else _parse_due(body.due)
+    item = _life(current_user["user_id"]).add_payment(
+        body.title, body.amount, due, body.recurrence, body.currency)
+    return {"status": "ok", "item": item}
+
+@app.get("/api/life/payments")
+def get_payments(include_done: bool = False, current_user: dict = Depends(get_optional_user)):
+    items = _life(current_user["user_id"]).get_payments(include_done)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/life/payment/{item_id}/done")
+def complete_payment(item_id: str, current_user: dict = Depends(get_optional_user)):
+    item = _life(current_user["user_id"]).complete_payment(item_id)
+    if not item: raise HTTPException(404, "Payment not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/life/payment/{item_id}")
+def delete_payment(item_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _life(current_user["user_id"]).delete_payment(item_id)
+    return {"status": "ok" if ok else "not_found"}
+
+
+@app.get("/api/life/summary")
+def life_summary(current_user: dict = Depends(get_optional_user)):
+    return {"status": "ok", **_life(current_user["user_id"]).summary()}
+
+
+async def _reminder_scheduler() -> None:
+    while True:
+        try:
+            engine = _life("owner")
+            for item in engine.check_due():
+                try:
+                    _notif("owner").create(
+                        title=f"Recordatorio: {item['title']}",
+                        message=item.get("notes", ""),
+                        notif_type="reminder",
+                        priority="high",
+                        action_url="life",
+                    )
+                    engine.complete_reminder(item["id"])
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        await _asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def _start_scheduler() -> None:
+    _asyncio.create_task(_reminder_scheduler())
+
+
+@app.on_event("startup")
+async def _start_outlook_services() -> None:
+    if not _OUTLOOK_AVAILABLE:
+        return
+    # Register the email processing handler on the event queue
+    async def _handle_new_email(payload: dict) -> None:
+        msg_id  = payload.get("message_id")
+        user_id = payload.get("user_id", "owner")
+        if not msg_id:
+            return
+        email = await _ms_fetch_email(msg_id, user_id)
+        if not email:
+            logging.getLogger("jarvis.outlook").warning("Could not fetch message %s", msg_id)
+            return
+        result = await _ms_process_email(email)
+        await _ms_store_email(result)
+        logging.getLogger("jarvis.outlook").info(
+            "Email processed and stored: %s priority=%s", msg_id, result.get("priority")
+        )
+
+    _ms_event_queue.register("new_email", _handle_new_email)
+    _ms_event_queue.start()
+    _ms_start_renewal()
+    logging.getLogger("jarvis").info("Outlook event queue + renewal loop started")
+
+
+@app.on_event("shutdown")
+async def _stop_outlook_services() -> None:
+    if not _OUTLOOK_AVAILABLE:
+        return
+    await _ms_stop_renewal()
+    await _ms_event_queue.stop()
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FAMILY AGENT ENDPOINTS  (Phase 6Z-6)
+# ══════════════════════════════════════════════════════════════════════
+
+class _FamilyMemberReq(BaseModel):
+    name: str
+    relation: str = "other"
+    birthday: str = ""
+    phone: str = ""
+    email: str = ""
+    notes: str = ""
+
+class _FamilyEventReq(BaseModel):
+    title: str
+    date: str
+    event_type: str = "family"
+    members: list = []
+    notes: str = ""
+    repeat_yearly: bool = False
+
+class _FamilyNoteReq(BaseModel):
+    content: str
+    member_id: str = ""
+    tags: list = []
+
+
+@app.get("/api/family/summary")
+def family_summary(current_user: dict = Depends(get_optional_user)):
+    return {"status": "ok", **_family(current_user["user_id"]).summary()}
+
+@app.get("/api/family/members")
+def family_members(current_user: dict = Depends(get_optional_user)):
+    items = _family(current_user["user_id"]).get_members()
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/family/members")
+def add_family_member(body: _FamilyMemberReq, current_user: dict = Depends(get_optional_user)):
+    item = _family(current_user["user_id"]).add_member(
+        body.name, body.relation, body.birthday, body.phone, body.email, body.notes)
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/family/members/{member_id}")
+def delete_family_member(member_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _family(current_user["user_id"]).delete_member(member_id)
+    return {"status": "ok" if ok else "not_found"}
+
+@app.get("/api/family/events")
+def family_events(upcoming_days: int = 90, current_user: dict = Depends(get_optional_user)):
+    items = _family(current_user["user_id"]).get_events(upcoming_days)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/family/events")
+def add_family_event(body: _FamilyEventReq, current_user: dict = Depends(get_optional_user)):
+    item = _family(current_user["user_id"]).add_event(
+        body.title, body.date, body.event_type, body.members, body.notes, body.repeat_yearly)
+    return {"status": "ok", "item": item}
+
+@app.post("/api/family/events/{event_id}/done")
+def complete_family_event(event_id: str, current_user: dict = Depends(get_optional_user)):
+    item = _family(current_user["user_id"]).complete_event(event_id)
+    if not item: raise HTTPException(404, "Event not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/family/events/{event_id}")
+def delete_family_event(event_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _family(current_user["user_id"]).delete_event(event_id)
+    return {"status": "ok" if ok else "not_found"}
+
+@app.get("/api/family/notes")
+def family_notes(member_id: str = "", current_user: dict = Depends(get_optional_user)):
+    items = _family(current_user["user_id"]).get_notes(member_id)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/family/notes")
+def add_family_note(body: _FamilyNoteReq, current_user: dict = Depends(get_optional_user)):
+    item = _family(current_user["user_id"]).add_note(body.content, body.member_id, body.tags)
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/family/notes/{note_id}")
+def delete_family_note(note_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _family(current_user["user_id"]).delete_note(note_id)
+    return {"status": "ok" if ok else "not_found"}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# OFFICE AGENT ENDPOINTS  (Phase 6Z-6)
+# ══════════════════════════════════════════════════════════════════════
+
+class _ColleagueReq(BaseModel):
+    name: str
+    role: str = ""
+    department: str = ""
+    email: str = ""
+    phone: str = ""
+    notes: str = ""
+
+class _OfficeTaskReq(BaseModel):
+    title: str
+    due: str = ""
+    priority: str = "medium"
+    assigned_to: str = ""
+    project: str = ""
+    notes: str = ""
+
+class _ExpenseReq(BaseModel):
+    title: str
+    amount: float
+    category: str = "other"
+    currency: str = "COP"
+    date: str = ""
+    reimbursable: bool = True
+    notes: str = ""
+
+
+@app.get("/api/office/summary")
+def office_summary(current_user: dict = Depends(get_optional_user)):
+    return {"status": "ok", **_office(current_user["user_id"]).summary()}
+
+@app.get("/api/office/colleagues")
+def office_colleagues(current_user: dict = Depends(get_optional_user)):
+    items = _office(current_user["user_id"]).get_colleagues()
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/office/colleagues")
+def add_colleague(body: _ColleagueReq, current_user: dict = Depends(get_optional_user)):
+    item = _office(current_user["user_id"]).add_colleague(
+        body.name, body.role, body.department, body.email, body.phone, body.notes)
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/office/colleagues/{colleague_id}")
+def delete_colleague(colleague_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _office(current_user["user_id"]).delete_colleague(colleague_id)
+    return {"status": "ok" if ok else "not_found"}
+
+@app.get("/api/office/tasks")
+def office_tasks(include_done: bool = False, current_user: dict = Depends(get_optional_user)):
+    items = _office(current_user["user_id"]).get_tasks(include_done=include_done)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/office/tasks")
+def add_office_task(body: _OfficeTaskReq, current_user: dict = Depends(get_optional_user)):
+    item = _office(current_user["user_id"]).add_task(
+        body.title, body.due, body.priority, body.assigned_to, body.project, body.notes)
+    return {"status": "ok", "item": item}
+
+@app.post("/api/office/tasks/{task_id}/status")
+def update_office_task_status(task_id: str, status: str, current_user: dict = Depends(get_optional_user)):
+    item = _office(current_user["user_id"]).update_task_status(task_id, status)
+    if not item: raise HTTPException(404, "Task not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/office/tasks/{task_id}")
+def delete_office_task(task_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _office(current_user["user_id"]).delete_task(task_id)
+    return {"status": "ok" if ok else "not_found"}
+
+@app.get("/api/office/expenses")
+def office_expenses(include_closed: bool = False, current_user: dict = Depends(get_optional_user)):
+    items = _office(current_user["user_id"]).get_expenses(include_closed)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+@app.post("/api/office/expenses")
+def add_expense(body: _ExpenseReq, current_user: dict = Depends(get_optional_user)):
+    item = _office(current_user["user_id"]).add_expense(
+        body.title, body.amount, body.category, body.currency,
+        body.date, body.reimbursable, body.notes)
+    return {"status": "ok", "item": item}
+
+@app.post("/api/office/expenses/{expense_id}/status")
+def update_expense_status(expense_id: str, status: str, current_user: dict = Depends(get_optional_user)):
+    item = _office(current_user["user_id"]).update_expense_status(expense_id, status)
+    if not item: raise HTTPException(404, "Expense not found")
+    return {"status": "ok", "item": item}
+
+@app.delete("/api/office/expenses/{expense_id}")
+def delete_expense(expense_id: str, current_user: dict = Depends(get_optional_user)):
+    ok = _office(current_user["user_id"]).delete_expense(expense_id)
+    return {"status": "ok" if ok else "not_found"}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# OUTLOOK / MICROSOFT GRAPH INTEGRATION
+# ══════════════════════════════════════════════════════════════════════
+
+def _outlook_guard():
+    if not _OUTLOOK_AVAILABLE:
+        raise HTTPException(503, "Outlook integration not available")
+
+
+# ── OAuth2 ────────────────────────────────────────────────────────────
+
+@app.get("/auth/microsoft/login")
+async def ms_login():
+    """Redirect the user to Microsoft login."""
+    _outlook_guard()
+    from fastapi.responses import RedirectResponse
+    url, _state = _ms_login_url()
+    return RedirectResponse(url)
+
+
+@app.get("/auth/microsoft/callback")
+async def ms_callback(code: str = "", state: str = "", error: str = ""):
+    """Handle the OAuth2 callback from Microsoft."""
+    _outlook_guard()
+    if error:
+        raise HTTPException(400, f"Microsoft auth error: {error}")
+    if not code:
+        raise HTTPException(400, "Missing authorization code")
+
+    user_id = _ms_token_store.consume_state(state)
+    if not user_id:
+        raise HTTPException(400, "Invalid or expired state parameter")
+
+    try:
+        tokens = await _ms_exchange_code(code)
+    except Exception as exc:
+        raise HTTPException(500, f"Token exchange failed: {exc}")
+
+    _ms_token_store.save(user_id, tokens)
+    asyncio.create_task(_ms_create_sub(user_id))
+
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/dashboard?outlook=connected")
+
+
+@app.get("/api/outlook/status")
+async def outlook_status(current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    uid   = current_user["user_id"]
+    auth  = _ms_token_store.is_authenticated(uid)
+    sub   = _ms_sub_store.get(uid)
+    unread = await _ms_count_unread(uid) if auth else 0
+    return {
+        "status":          "ok",
+        "configured":      _ms_configured(),
+        "authenticated":   auth,
+        "subscription":    bool(sub),
+        "subscription_id": sub.get("id") if sub else None,
+        "sub_expires":     sub.get("expirationDateTime") if sub else None,
+        "unread_count":    unread,
+        "pending_emails":  _ms_email_store.pending_count(),
+    }
+
+
+@app.post("/api/outlook/subscribe")
+async def outlook_subscribe(current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    uid = current_user["user_id"]
+    existing = _ms_sub_store.get(uid)
+    if existing and not _ms_sub_store.is_near_expiry(uid):
+        return {"status": "ok", "message": "Subscription already active", "subscription": existing}
+    sub = await _ms_create_sub(uid)
+    if sub:
+        return {"status": "ok", "subscription": sub}
+    raise HTTPException(500, "Failed to create subscription")
+
+
+@app.post("/api/outlook/unsubscribe")
+async def outlook_unsubscribe(current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    ok = await _ms_delete_sub(current_user["user_id"])
+    return {"status": "ok" if ok else "error"}
+
+
+# ── Webhook endpoint ──────────────────────────────────────────────────
+
+@app.api_route("/webhook/outlook", methods=["GET", "POST"])
+async def outlook_webhook(request: Request, validationToken: str = ""):
+    """
+    Microsoft Graph webhook endpoint.
+    GET/POST with validationToken -> return as text/plain (handshake).
+    POST JSON body -> enqueue events, return 202 immediately.
+    """
+    from fastapi.responses import PlainTextResponse
+
+    if validationToken:
+        return PlainTextResponse(content=validationToken, status_code=200)
+
+    _outlook_guard()
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid body"}, status_code=400)
+
+    notifications = body.get("value", [])
+    queued = 0
+    _log   = logging.getLogger("jarvis.webhook")
+
+    for note in notifications:
+        received_state = note.get("clientState", "")
+        if not _ms_validate_state(received_state):
+            _log.warning("Invalid clientState in webhook notification — skipping")
+            continue
+
+        resource = note.get("resourceData", {})
+        msg_id   = resource.get("id")
+        change   = note.get("changeType", "")
+        sub_id   = note.get("subscriptionId", "")
+
+        _log.info("Webhook: changeType=%s messageId=%s sub=%s", change, msg_id, sub_id)
+
+        if change == "created" and msg_id:
+            user_id = "owner"
+            for uid in _ms_sub_store.all_users():
+                s = _ms_sub_store.get(uid)
+                if s and s.get("id") == sub_id:
+                    user_id = uid
+                    break
+
+            ok = await _ms_event_queue.enqueue("new_email", {
+                "message_id": msg_id,
+                "user_id":    user_id,
+                "sub_id":     sub_id,
+            })
+            if ok:
+                queued += 1
+
+    return JSONResponse({"queued": queued}, status_code=202)
+
+
+# ── Inbox / email store ───────────────────────────────────────────────
+
+@app.get("/api/outlook/inbox")
+async def outlook_inbox(
+    limit: int = 20,
+    status: str = "",
+    priority: str = "",
+    current_user: dict = Depends(get_optional_user),
+):
+    _outlook_guard()
+    items = _ms_email_store.list(
+        status   = status   or None,
+        limit    = limit,
+        priority = priority or None,
+    )
+    return {
+        "status":  "ok",
+        "items":   items,
+        "count":   len(items),
+        "pending": _ms_email_store.pending_count(),
+        "stats":   _ms_email_store.stats(),
+    }
+
+
+@app.get("/api/outlook/email/{message_id}")
+async def outlook_get_email(message_id: str, current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    rec = _ms_email_store.get(message_id)
+    if not rec:
+        raise HTTPException(404, "Email not found")
+    return {"status": "ok", "email": rec}
+
+
+class _FetchEmailReq(BaseModel):
+    message_id: str
+
+
+@app.post("/api/outlook/fetch")
+async def outlook_fetch_now(body: _FetchEmailReq, current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    uid   = current_user["user_id"]
+    email = await _ms_fetch_email(body.message_id, uid)
+    if not email:
+        raise HTTPException(404, "Message not found in Microsoft Graph")
+    result = await _ms_process_email(email)
+    saved  = await _ms_store_email(result)
+    return {"status": "ok", "email": saved}
+
+
+@app.get("/api/outlook/live-inbox")
+async def outlook_live_inbox(
+    limit: int = 15,
+    unread_only: bool = False,
+    current_user: dict = Depends(get_optional_user),
+):
+    _outlook_guard()
+    items = await _ms_list_inbox(limit=limit, user_id=current_user["user_id"], unread_only=unread_only)
+    return {"status": "ok", "items": items, "count": len(items)}
+
+
+# ── Actions ───────────────────────────────────────────────────────────
+
+class _SendReplyReq(BaseModel):
+    message_id: str
+    reply_text: str
+
+
+@app.post("/api/outlook/send-reply")
+async def outlook_send_reply(body: _SendReplyReq, current_user: dict = Depends(get_optional_user)):
+    """Send a reply — ONLY called after explicit user approval."""
+    _outlook_guard()
+    result = await _ms_send_reply(body.message_id, body.reply_text, current_user["user_id"])
+    if not result["success"]:
+        raise HTTPException(500, result.get("error", "Send failed"))
+    return {"status": "ok", **result}
+
+
+@app.post("/api/outlook/delete/{message_id}")
+async def outlook_delete_email(message_id: str, current_user: dict = Depends(get_optional_user)):
+    """Delete email — ONLY called after explicit user approval."""
+    _outlook_guard()
+    result = await _ms_delete_email(message_id, current_user["user_id"])
+    if not result["success"]:
+        raise HTTPException(500, result.get("error", "Delete failed"))
+    return {"status": "ok", **result}
+
+
+@app.post("/api/outlook/ignore/{message_id}")
+async def outlook_ignore(message_id: str, current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    return {"status": "ok", **(await _ms_ignore_email(message_id))}
+
+
+@app.post("/api/outlook/mark-read/{message_id}")
+async def outlook_mark_read(message_id: str, current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    return {"status": "ok", **(await _ms_mark_email_read(message_id, current_user["user_id"]))}
+
+
+class _UpdateDraftReq(BaseModel):
+    new_draft: str
+
+
+@app.patch("/api/outlook/email/{message_id}/draft")
+async def outlook_update_draft(
+    message_id: str,
+    body: _UpdateDraftReq,
+    current_user: dict = Depends(get_optional_user),
+):
+    _outlook_guard()
+    return {"status": "ok", **(await _ms_update_draft(message_id, body.new_draft))}
+
+
+@app.post("/api/outlook/email/{message_id}/create-task")
+async def outlook_create_task(message_id: str, current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    result = await _ms_task_from_email(message_id)
+    if result["success"]:
+        task = result.get("task", {})
+        try:
+            _office(current_user["user_id"]).add_task(
+                title    = task["title"],
+                notes    = task.get("notes", ""),
+                priority = task.get("priority", "medium"),
+            )
+        except Exception:
+            pass
+    return {"status": "ok", **result}
+
+
+@app.post("/api/outlook/email/{message_id}/create-event")
+async def outlook_create_event(message_id: str, current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    return {"status": "ok", **(await _ms_event_from_email(message_id))}
+
+
+# ── Observability ─────────────────────────────────────────────────────
+
+@app.get("/api/outlook/queue-stats")
+async def outlook_queue_stats(current_user: dict = Depends(get_optional_user)):
+    _outlook_guard()
+    return {
+        "status":        "ok",
+        "queue":         _ms_event_queue.stats(),
+        "subscriptions": _ms_sub_store.summary(),
+        "email_store":   _ms_email_store.stats(),
+    }

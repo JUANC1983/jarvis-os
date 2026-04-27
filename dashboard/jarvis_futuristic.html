@@ -106,6 +106,9 @@ body{
 .hc-item strong{color:var(--white);font-weight:600}
 .status-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:blink 2.2s ease-in-out infinite;flex-shrink:0}
 .hero-right{display:flex;gap:10px;align-items:center}
+.weather-chip{display:none;align-items:center;gap:6px;font-size:12px;color:var(--soft);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:4px 10px;cursor:default;transition:opacity .3s}
+.weather-chip .wc-temp{color:var(--white);font-weight:600}
+.weather-chip .wc-icon{font-size:14px}
 
 /* ═══════════════════════════════════════════
    TABS
@@ -574,6 +577,14 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   position:relative;border-radius:var(--rs);overflow:hidden;
   background:#000;aspect-ratio:4/3;min-height:200px;
 }
+.sv-switch-btn{
+  position:absolute;top:10px;right:10px;z-index:20;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);
+  color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;
+  cursor:pointer;backdrop-filter:blur(4px);transition:background .2s;display:none;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.sv-switch-btn:hover,.sv-switch-btn:active{background:rgba(68,240,255,.3)}
 .sv-video{width:100%;height:100%;object-fit:cover;display:block;border-radius:var(--rs)}
 .sv-canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:var(--rs)}
 .sv-cam-placeholder{
@@ -638,6 +649,101 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   border-color:#ff4d4d!important;color:#ff4d4d!important;
   animation:blink .8s ease-in-out infinite;
 }
+
+/* ── Golf Elite v9 result styles ──────────────────────────────── */
+.elite-result{display:flex;flex-direction:column;gap:14px;margin-top:12px}
+.elite-score-row{display:flex;align-items:center;gap:18px;padding:14px;
+  background:rgba(68,240,255,.05);border:1px solid rgba(68,240,255,.18);border-radius:12px}
+.elite-score-circle{
+  width:76px;height:76px;border-radius:50%;flex-shrink:0;
+  border:3px solid var(--cyan);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  box-shadow:0 0 18px rgba(68,240,255,.25);
+}
+.elite-score-big{font-size:26px;font-weight:900;color:var(--white);line-height:1}
+.elite-score-sub{font-size:10px;color:var(--soft)}
+.elite-level-badge{
+  display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;margin-top:4px;
+}
+.elite-level-beginner{background:rgba(255,170,0,.15);color:#ffaa00;border:1px solid rgba(255,170,0,.3)}
+.elite-level-intermediate{background:rgba(68,240,255,.12);color:var(--cyan);border:1px solid rgba(68,240,255,.3)}
+.elite-level-advanced{background:rgba(0,230,118,.12);color:var(--ok);border:1px solid rgba(0,230,118,.3)}
+.elite-breakdown{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media(max-width:600px){.elite-breakdown{grid-template-columns:repeat(3,1fr)}}
+.elite-break-item{text-align:center;padding:8px 4px;background:rgba(255,255,255,.03);
+  border:1px solid var(--border2);border-radius:8px}
+.elite-break-val{font-size:18px;font-weight:800;color:var(--white)}
+.elite-break-lbl{font-size:9px;color:var(--soft);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.elite-break-bar{height:3px;border-radius:2px;background:var(--border2);margin-top:5px;overflow:hidden}
+.elite-break-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),#44ffee)}
+.elite-section-title{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--soft);margin-bottom:8px}
+.elite-strengths{display:flex;flex-direction:column;gap:5px}
+.elite-strength-item{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--soft2);
+  padding:6px 10px;background:rgba(0,230,118,.05);border-radius:6px;
+  border:1px solid rgba(0,230,118,.15);
+}
+.elite-strength-item::before{content:"✓";color:var(--ok);font-weight:700;flex-shrink:0}
+.elite-error-card{
+  border:1px solid rgba(255,75,75,.25);border-radius:10px;
+  background:rgba(255,75,75,.04);overflow:hidden;
+}
+.elite-error-header{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:rgba(255,75,75,.08);cursor:pointer;user-select:none;
+}
+.elite-error-num{
+  width:22px;height:22px;border-radius:50%;background:#ff4d4d;color:#fff;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.elite-error-name{font-size:13px;font-weight:700;color:var(--white);flex:1}
+.elite-error-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.elite-error-row{display:flex;gap:8px;font-size:12px;color:var(--soft2);line-height:1.5}
+.elite-error-row strong{color:var(--soft2);flex-shrink:0;min-width:80px}
+.elite-drill-box{
+  background:rgba(68,240,255,.04);border:1px solid rgba(68,240,255,.15);
+  border-radius:8px;padding:10px 12px;margin-top:4px;
+}
+.elite-drill-box .drill-name{font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:4px}
+.elite-drill-box .drill-body{font-size:11px;color:var(--soft2);line-height:1.5}
+.elite-next-step{
+  padding:12px 14px;background:rgba(68,240,255,.07);
+  border:1px solid rgba(68,240,255,.25);border-radius:10px;
+  font-size:13px;color:var(--white);line-height:1.5;
+}
+.elite-next-step strong{color:var(--cyan)}
+.elite-progress-row{
+  padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border2);
+  border-radius:10px;font-size:12px;color:var(--soft2);
+  display:flex;align-items:center;gap:12px;
+}
+.elite-progress-delta{font-size:18px;font-weight:800}
+.elite-delta-pos{color:var(--ok)}.elite-delta-neg{color:#ff6b6b}.elite-delta-neu{color:var(--soft)}
+.elite-pro-row{padding:6px 0;border-bottom:1px solid var(--border3);font-size:12px;color:var(--soft2)}
+.elite-pro-row strong{color:var(--white)}
+.elite-live-cue{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.78);backdrop-filter:blur(6px);
+  border:2px solid;border-radius:24px;padding:6px 18px;
+  font-size:15px;font-weight:700;letter-spacing:.03em;
+  transition:all .2s;z-index:25;white-space:nowrap;
+  animation:fade-up .2s ease;
+}
+.elite-qa-warning{
+  padding:8px 12px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);
+  border-radius:8px;font-size:11px;color:#ffaa00;
+}
+.sv-lang-toggle{
+  display:flex;gap:0;background:rgba(255,255,255,.06);border:1px solid var(--border2);
+  border-radius:6px;overflow:hidden;
+}
+.sv-lang-toggle button{
+  padding:4px 10px;font-size:11px;font-weight:700;border:none;background:none;
+  color:var(--soft);cursor:pointer;transition:all .15s;
+}
+.sv-lang-toggle button.active{background:rgba(68,240,255,.18);color:var(--white)}
 
 /* ── Phase 5K: WOW Layer ─────────────────────────────────────────── */
 .wow-section{margin-bottom:18px}
@@ -820,6 +926,32 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   text-decoration:none;transition:background .18s;
 }
 .cdp-map-btn:hover{background:rgba(68,240,255,.08)}
+
+/* ── Embedded Course Map ── */
+#course-map{
+  height:260px;width:100%;border-radius:var(--r);overflow:hidden;
+  margin-top:12px;border:1px solid rgba(68,240,255,.15);
+  background:#0a1520;display:none;position:relative;
+}
+@media(max-width:700px){#course-map{height:210px}}
+#course-map .leaflet-control-attribution{
+  background:rgba(0,0,0,.55)!important;color:rgba(255,255,255,.45)!important;font-size:9px!important
+}
+#course-map .leaflet-bar a{
+  background:rgba(10,18,30,.9)!important;color:var(--cyan)!important;
+  border-color:rgba(68,240,255,.25)!important;font-size:15px!important;
+}
+#course-map .leaflet-bar a:hover{background:rgba(68,240,255,.15)!important}
+#course-map .leaflet-popup-content-wrapper{
+  background:rgba(10,18,30,.95);border:1px solid rgba(68,240,255,.3);
+  color:var(--white);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+#course-map .leaflet-popup-tip{background:rgba(10,18,30,.95)}
+#course-map .leaflet-popup-content{margin:8px 12px;font-size:13px;font-weight:700}
+.cdp-map-no-coords{
+  display:flex;align-items:center;justify-content:center;height:100%;
+  color:var(--soft);font-size:12px;gap:6px;
+}
 
 /* MOBILE BOTTOM NAV */
 .mob-nav{
@@ -1190,12 +1322,514 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .section-intro-icon{font-size:18px;flex-shrink:0}
 .section-intro-text{font-size:12px;color:var(--soft);line-height:1.5}
 .section-intro-text strong{color:var(--soft2)}
+
+/* ══════════════════════════════════════
+   GLOBAL COMMAND BAR
+══════════════════════════════════════ */
+#cmd-bar{
+  position:sticky;top:0;z-index:200;
+  padding:10px 20px;
+  background:rgba(6,6,10,.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(68,240,255,.12);
+  display:flex;align-items:center;gap:10px;
+}
+#cmd-input{
+  flex:1;background:rgba(255,255,255,.05);
+  border:1px solid rgba(68,240,255,.2);border-radius:10px;
+  color:var(--white);font-size:13px;padding:9px 14px;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  font-family:inherit;
+}
+#cmd-input:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 0 3px rgba(68,240,255,.1);
+}
+#cmd-input::placeholder{color:var(--soft)}
+.cmd-btn{
+  background:rgba(68,240,255,.1);border:1px solid rgba(68,240,255,.2);
+  border-radius:9px;color:var(--cyan);cursor:pointer;
+  font-size:13px;padding:8px 14px;transition:all .15s;white-space:nowrap;
+}
+.cmd-btn:hover{background:rgba(68,240,255,.2);border-color:var(--cyan)}
+.cmd-btn.primary{background:var(--cyan);color:#000;font-weight:700}
+.cmd-btn.primary:hover{background:#5ef8ff}
+#cmd-result{
+  display:none;
+  padding:10px 20px 10px;
+  background:rgba(6,6,10,.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(68,240,255,.08);
+  animation:fade-up .18s ease;
+}
+#cmd-result-inner{
+  max-width:860px;margin:0 auto;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.cmd-res-icon{font-size:20px;flex-shrink:0;margin-top:2px}
+.cmd-res-body{flex:1;min-width:0}
+.cmd-res-agent{font-size:10px;color:var(--cyan);font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.cmd-res-text{font-size:13px;color:var(--soft2);line-height:1.6}
+.cmd-res-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.cmd-res-act{
+  font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;
+  background:rgba(68,240,255,.08);border:1px solid rgba(68,240,255,.15);
+  color:var(--cyan);transition:all .15s;
+}
+.cmd-res-act:hover{background:rgba(68,240,255,.2)}
+.cmd-spinner{
+  display:inline-block;width:14px;height:14px;border:2px solid rgba(68,240,255,.2);
+  border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════
+   ONBOARDING OVERLAY
+══════════════════════════════════════ */
+#onboarding-overlay{
+  position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  animation:fade-up .3s ease;
+}
+.onboarding-card{
+  background:linear-gradient(135deg,var(--s2),var(--s3));
+  border:1px solid rgba(68,240,255,.2);border-radius:20px;
+  padding:40px 36px;max-width:560px;width:94%;
+  box-shadow:0 30px 80px rgba(0,0,0,.7);
+}
+.onboarding-title{
+  font-size:28px;font-weight:900;color:var(--white);
+  margin-bottom:8px;text-align:center;
+}
+.onboarding-sub{
+  font-size:14px;color:var(--soft);text-align:center;
+  margin-bottom:28px;line-height:1.6;
+}
+.module-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-bottom:28px;
+}
+.module-card{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border-radius:12px;cursor:pointer;
+  border:2px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);
+  transition:all .2s;user-select:none;
+}
+.module-card:hover{border-color:rgba(68,240,255,.3);background:rgba(68,240,255,.05)}
+.module-card.selected{
+  border-color:var(--cyan);background:rgba(68,240,255,.12);
+}
+.module-card-icon{font-size:22px;flex-shrink:0}
+.module-card-label{font-size:13px;font-weight:600;color:var(--soft2)}
+.module-card-sub{font-size:10px;color:var(--soft);margin-top:2px}
+.onboarding-cta{
+  display:flex;justify-content:center;gap:12px;flex-wrap:wrap;
+}
+.onboarding-skip{
+  font-size:12px;color:var(--soft);cursor:pointer;
+  text-align:center;margin-top:14px;text-decoration:underline;
+}
+.onboarding-skip:hover{color:var(--soft2)}
+
+/* ── Guided tour overlay ─────────────────────────────────────── */
+#guided-overlay{
+  position:fixed;bottom:24px;right:24px;z-index:8500;
+  width:320px;max-width:94vw;
+  background:linear-gradient(135deg,#0d1b2a,#101c2e);
+  border:1px solid rgba(68,240,255,.35);border-radius:16px;
+  padding:22px 22px 18px;box-shadow:0 12px 48px rgba(0,0,0,.65);
+  animation:fade-up .35s ease;
+}
+.guided-close{position:absolute;top:10px;right:12px;background:none;border:none;
+  color:var(--soft);font-size:16px;cursor:pointer;padding:4px;line-height:1}
+.guided-close:hover{color:var(--white)}
+.guided-title{font-size:14px;font-weight:800;color:var(--white);margin-bottom:12px}
+.guided-steps{list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
+.guided-step{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--soft2);line-height:1.5}
+.guided-step-num{
+  width:20px;height:20px;border-radius:50%;background:var(--cyan);
+  color:#000;font-size:10px;font-weight:800;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;
+}
+.guided-actions{display:flex;gap:8px}
+.guided-try-btn{
+  flex:1;background:rgba(68,240,255,.12);border:1px solid rgba(68,240,255,.3);
+  color:var(--cyan);border-radius:8px;font-size:12px;font-weight:600;
+  padding:7px 10px;cursor:pointer;transition:background .15s;
+}
+.guided-try-btn:hover{background:rgba(68,240,255,.22)}
+.guided-dismiss{
+  flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  color:var(--soft);border-radius:8px;font-size:12px;
+  padding:7px 10px;cursor:pointer;transition:background .15s;
+}
+.guided-dismiss:hover{background:rgba(255,255,255,.1);color:var(--white)}
+
+/* ── Example commands bar ───────────────────────────────────── */
+.example-cmds-wrap{margin-bottom:16px}
+.example-cmds-label{font-size:11px;color:var(--soft);margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:.08em}
+.example-cmds-row{display:flex;gap:8px;flex-wrap:wrap}
+.example-cmd-chip{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:6px 14px;font-size:12px;color:var(--soft2);
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.example-cmd-chip:hover{
+  background:rgba(68,240,255,.1);border-color:rgba(68,240,255,.4);color:var(--white);
+  transform:translateY(-1px);
+}
+.example-cmd-chip .ec-icon{font-size:13px}
+
+/* ══════════════════════════════════════
+   FITNESS MODULE STYLES
+══════════════════════════════════════ */
+.fitness-hero{
+  display:flex;align-items:center;gap:14px;margin-bottom:20px;
+}
+.fitness-hero-icon{font-size:36px}
+.fitness-hero-name{font-size:24px;font-weight:900;color:var(--white)}
+.fitness-hero-sub{font-size:12px;color:var(--soft);margin-top:2px}
+.fitness-stat-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:12px;margin-bottom:20px;
+}
+.fitness-stat{
+  background:rgba(255,255,255,.03);border:1px solid var(--border2);
+  border-radius:12px;padding:14px;text-align:center;
+  transition:border-color .2s,transform .15s;
+}
+.fitness-stat:hover{border-color:rgba(68,240,255,.3);transform:translateY(-2px)}
+.fitness-stat-val{font-size:22px;font-weight:800;color:var(--white)}
+.fitness-stat-lbl{font-size:10px;color:var(--soft);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.fitness-progress-bar{
+  height:6px;background:rgba(255,255,255,.07);
+  border-radius:3px;margin-top:8px;overflow:hidden;
+}
+.fitness-progress-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--cyan),var(--ok));
+  transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+.log-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.log-form .input{flex:1;min-width:110px}
+.log-form .btn-p{flex-shrink:0}
+.fitness-tip{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;background:rgba(68,240,255,.04);
+  border:1px solid rgba(68,240,255,.12);border-radius:10px;margin-bottom:8px;
+}
+.fitness-tip-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.fitness-tip-text{font-size:12px;color:var(--soft2);line-height:1.55}
+.workout-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:rgba(255,255,255,.02);
+  border:1px solid var(--border2);border-radius:8px;margin-bottom:6px;
+  transition:border-color .15s;
+}
+.workout-row:hover{border-color:rgba(68,240,255,.2)}
+.workout-row-date{font-size:10px;color:var(--soft);min-width:70px}
+.workout-row-main{flex:1;font-size:13px;color:var(--soft2)}
+.workout-row-badge{font-size:11px;padding:2px 8px;border-radius:5px;
+  background:rgba(68,240,255,.1);color:var(--cyan)}
+
+/* ══════════════════════════════════════
+   PREMIUM HOVER & INTERACTION STATES
+══════════════════════════════════════ */
+.tile{transition:transform .15s,border-color .15s,box-shadow .15s}
+.tile:hover{transform:translateY(-2px);border-color:rgba(68,240,255,.25);
+  box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.card{transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 24px rgba(0,0,0,.25)}
+.btn-p{transition:all .15s;position:relative;overflow:hidden}
+.btn-p::after{
+  content:'';position:absolute;inset:0;background:rgba(255,255,255,.08);
+  opacity:0;transition:opacity .15s;
+}
+.btn-p:hover::after{opacity:1}
+.btn-p:active{transform:scale(.97)}
+.btn-ol{transition:all .15s}
+.btn-ol:hover{background:rgba(68,240,255,.08);color:var(--cyan)}
+
+/* Tooltip */
+[data-tip]{position:relative;cursor:default}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);
+  background:rgba(10,10,18,.95);color:var(--soft2);
+  font-size:11px;padding:4px 10px;border-radius:6px;
+  white-space:nowrap;pointer-events:none;opacity:0;
+  transition:opacity .15s;z-index:500;
+  border:1px solid rgba(68,240,255,.15);
+}
+[data-tip]:hover::after{opacity:1}
+
+/* Pulse ring on orb when JARVIS is busy */
+.orb-busy .orb-ring{
+  animation:orbRingPulse 1s ease-in-out infinite !important;
+  border-color:var(--warn) !important;
+}
+@keyframes orbRingPulse{
+  0%,100%{transform:scale(1);opacity:.4}
+  50%{transform:scale(1.25);opacity:.8}
+}
+/* ── Phase 6Z-4: Life Tab ── */
+.life-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.life-grid{grid-template-columns:1fr}}
+.life-add-row{display:flex;gap:8px;margin-bottom:12px}
+.life-add-row input,.life-add-row select{flex:1;min-width:0}
+.life-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.life-item{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:8px;
+  transition:background .15s;font-size:13px}
+.life-item:hover{background:rgba(255,255,255,.055)}
+.life-item.done{opacity:.45;text-decoration:line-through}
+.life-item-body{flex:1;min-width:0}
+.life-item-title{font-weight:600;color:var(--text);line-height:1.3;word-break:break-word}
+.life-item-due{font-size:10px;color:var(--soft);margin-top:2px}
+.life-item-due.overdue{color:var(--bad)}
+.life-item-due.soon{color:var(--warn)}
+.life-item-actions{display:flex;gap:5px;flex-shrink:0}
+.life-btn{background:none;border:none;cursor:pointer;font-size:14px;
+  color:var(--soft);padding:2px 4px;border-radius:4px;transition:color .15s}
+.life-btn:hover{color:var(--cyan)}
+.life-btn.done-btn:hover{color:var(--ok)}
+.life-btn.del-btn:hover{color:var(--bad)}
+.shop-qty{font-size:10px;color:var(--soft);background:var(--s3);padding:1px 6px;
+  border-radius:999px;margin-left:6px;flex-shrink:0}
+.shop-check{width:16px;height:16px;flex-shrink:0;accent-color:var(--cyan);cursor:pointer;margin-top:2px}
+.life-nlp-row{display:flex;gap:8px;margin-bottom:16px;padding:12px 14px;
+  background:rgba(68,240,255,.04);border:1px solid rgba(68,240,255,.12);border-radius:10px}
+.life-nlp-row input{flex:1}
+.life-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;
+  border-radius:999px;margin-left:6px;text-transform:uppercase;letter-spacing:.06em}
+.badge-reminder{background:rgba(68,240,255,.12);color:var(--cyan)}
+.badge-payment{background:rgba(255,170,0,.12);color:var(--warn)}
+.badge-call{background:rgba(0,230,118,.12);color:var(--ok)}
+.badge-shopping{background:rgba(255,80,120,.12);color:#ff5078}
+.life-section-header{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.life-count-badge{background:var(--s3);padding:2px 7px;border-radius:999px;font-size:10px}
+/* ── Phase 6Z-3: Lang Toggle ── */
+#cmd-lang-toggle{
+  font-size:11px;font-weight:700;letter-spacing:.05em;
+  padding:5px 9px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--soft);transition:all .2s;flex-shrink:0;white-space:nowrap;
+}
+#cmd-lang-toggle:hover{background:rgba(68,240,255,.12);color:var(--cyan);border-color:rgba(68,240,255,.3)}
+#cmd-lang-toggle.es{color:var(--cyan);border-color:rgba(68,240,255,.35);background:rgba(68,240,255,.08)}
+/* ── Phase 6Y: Status Ticker ── */
+#jarvis-ticker{display:none;align-items:center;gap:8px;padding:5px 20px;
+  background:rgba(68,240,255,.04);border-bottom:1px solid rgba(68,240,255,.08);
+  font-size:11px;color:var(--soft);font-family:var(--mono);letter-spacing:.04em}
+.ticker-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  animation:tickerPulse 1s ease-in-out infinite}
+@keyframes tickerPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.5)}}
+/* ── Phase 6Y: Mode Badge ── */
+.mode-badge{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;cursor:pointer;border:1px solid;transition:all .2s}
+.mode-badge.demo{color:#f9a825;border-color:rgba(249,168,37,.4);background:rgba(249,168,37,.08)}
+.mode-badge.real{color:var(--ok);border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.08)}
+/* ── Phase 6Y: 1-Click Action Bar ── */
+.action-bar-card{padding:18px 22px;margin-bottom:18px}
+.action-bar-title{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:12px}
+.action-bar-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:700px){.action-bar-btns{grid-template-columns:repeat(2,1fr)}}
+.action-btn{display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 10px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  cursor:pointer;transition:all .2s;color:var(--text);width:100%}
+.action-btn:hover{background:rgba(68,240,255,.08);border-color:rgba(68,240,255,.3);transform:translateY(-2px)}
+.action-btn.loading{opacity:.5;pointer-events:none}
+.action-btn-icon{font-size:22px;line-height:1}
+.action-btn-label{font-size:11px;font-weight:600;text-align:center;color:var(--text);line-height:1.2}
+#action-result{margin-top:12px;padding:12px 14px;background:rgba(68,240,255,.05);
+  border-radius:10px;border-left:3px solid var(--cyan);font-size:13px;color:var(--text);line-height:1.5}
+.action-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.action-chip{padding:4px 13px;background:rgba(68,240,255,.1);border:1px solid rgba(68,240,255,.2);
+  border-radius:20px;font-size:11px;cursor:pointer;color:var(--cyan);transition:all .15s}
+.action-chip:hover{background:rgba(68,240,255,.2)}
+/* ── Phase 6Y: Guided Hint Pulse ── */
+@keyframes hintGlow{0%,100%{box-shadow:0 0 0 0 rgba(68,240,255,.5)}60%{box-shadow:0 0 0 8px rgba(68,240,255,0)}}
+.hint-active{animation:hintGlow 1.4s ease 4;border-color:rgba(68,240,255,.5)!important}
+
+/* ── Outlook Inbox Agent ── */
+.ol-status-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:12px;flex-wrap:wrap}
+.ol-auth-chip{padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.ol-chip-ok{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.ol-chip-warn{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.ol-unread-badge{padding:3px 10px;border-radius:20px;font-size:12px;background:rgba(68,240,255,.12);color:var(--cyan);border:1px solid rgba(68,240,255,.25);font-weight:600}
+.ol-pending-badge{padding:3px 10px;border-radius:20px;font-size:12px;background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);font-weight:600}
+.ol-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ol-filter-btn{padding:4px 12px;border-radius:16px;font-size:11px;border:1px solid rgba(255,255,255,.12);background:none;color:var(--soft);cursor:pointer;transition:all .15s}
+.ol-filter-btn:hover{color:var(--white);border-color:var(--cyan)}
+.ol-filter-btn.active{background:rgba(68,240,255,.1);color:var(--cyan);border-color:rgba(68,240,255,.35)}
+.ol-inbox{display:flex;flex-direction:column;gap:14px}
+.ol-empty-state{text-align:center;padding:40px 20px;color:var(--soft2);font-size:14px}
+.ol-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.ol-card:hover{border-color:rgba(68,240,255,.25)}
+.ol-card.priority-high{border-left:3px solid #ef4444}
+.ol-card.priority-medium{border-left:3px solid #f59e0b}
+.ol-card.priority-low{border-left:3px solid rgba(255,255,255,.2)}
+.ol-card-header{padding:12px 16px;cursor:pointer;display:flex;align-items:flex-start;gap:12px}
+.ol-card-header:hover{background:rgba(255,255,255,.03)}
+.ol-sender{font-size:13px;font-weight:700;color:var(--white);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ol-subject{font-size:12px;color:var(--soft2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ol-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ol-priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ol-priority-dot.high{background:#ef4444}
+.ol-priority-dot.medium{background:#f59e0b}
+.ol-priority-dot.low{background:#6b7280}
+.ol-time{font-size:11px;color:var(--soft);white-space:nowrap}
+.ol-status-chip{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+.ol-status-chip.pending_approval{background:rgba(245,158,11,.15);color:#f59e0b}
+.ol-status-chip.sent{background:rgba(16,185,129,.15);color:#10b981}
+.ol-status-chip.ignored{background:rgba(107,114,128,.15);color:#6b7280}
+.ol-status-chip.deleted{background:rgba(239,68,68,.12);color:#ef4444}
+.ol-status-chip.task_created{background:rgba(99,102,241,.15);color:#818cf8}
+.ol-status-chip.calendar_created{background:rgba(168,85,247,.15);color:#c084fc}
+.ol-card-body{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:none}
+.ol-card-body.expanded{display:block}
+.ol-section{margin-bottom:12px}
+.ol-section-label{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.ol-summary-text{font-size:13px;color:var(--soft2);line-height:1.5}
+.ol-key-points{margin:0;padding-left:16px}
+.ol-key-points li{font-size:12px;color:var(--soft);margin-bottom:3px}
+.ol-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ol-tag{padding:2px 9px;border-radius:10px;font-size:10px;font-weight:600}
+.ol-tag.intent-urgent{background:rgba(239,68,68,.15);color:#ef4444}
+.ol-tag.intent-action_required{background:rgba(245,158,11,.15);color:#f59e0b}
+.ol-tag.intent-normal{background:rgba(68,240,255,.1);color:var(--cyan)}
+.ol-tag.intent-informational{background:rgba(99,102,241,.12);color:#818cf8}
+.ol-tag.intent-spam{background:rgba(107,114,128,.12);color:#6b7280}
+.ol-tag.type{background:rgba(255,255,255,.07);color:var(--soft2)}
+.ol-tag.lang{background:rgba(255,255,255,.05);color:var(--soft)}
+.ol-reply-box{background:rgba(0,0,0,.25);border:1px solid rgba(68,240,255,.2);border-radius:8px;padding:10px;margin-bottom:10px}
+.ol-reply-label{font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.ol-reply-confidence{font-size:10px;color:var(--soft)}
+.ol-reply-textarea{width:100%;min-height:90px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-size:12px;padding:8px;resize:vertical;font-family:inherit;box-sizing:border-box}
+.ol-reply-textarea:focus{outline:none;border-color:rgba(68,240,255,.4)}
+.ol-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}
+.ol-btn-send{padding:6px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(16,185,129,.2);color:#10b981;border:1px solid rgba(16,185,129,.4);transition:all .15s}
+.ol-btn-send:hover{background:rgba(16,185,129,.35)}
+.ol-btn-delete{padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3);transition:all .15s}
+.ol-btn-delete:hover{background:rgba(239,68,68,.25)}
+.ol-btn-secondary{padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;background:rgba(255,255,255,.06);color:var(--soft2);border:1px solid rgba(255,255,255,.1);transition:all .15s}
+.ol-btn-secondary:hover{color:var(--white);border-color:rgba(255,255,255,.25)}
+.ol-btn-task{padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.3);transition:all .15s}
+.ol-btn-task:hover{background:rgba(99,102,241,.25)}
+.ol-btn-cal{padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.3);transition:all .15s}
+.ol-btn-cal:hover{background:rgba(168,85,247,.25)}
+.ol-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ol-suggestion-chip{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:600;border:1px dashed rgba(68,240,255,.3);color:var(--cyan);background:none;cursor:pointer}
+.ol-suggestion-chip:hover{background:rgba(68,240,255,.08)}
+@keyframes olSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.ol-card{animation:olSlideIn .25s ease forwards}
 </style>
 </head>
 <body>
 
 <!-- Toast container -->
 <div id="toast-container"></div>
+
+<!-- ══════════════ ONBOARDING ══════════════ -->
+<div id="onboarding-overlay" style="display:none">
+  <div class="onboarding-card">
+    <div style="text-align:center;margin-bottom:20px;font-size:36px">🤖</div>
+    <div class="onboarding-title">Welcome to JARVIS</div>
+    <div class="onboarding-sub">Your AI OS for life and work.<br>Which areas do you want to level up?</div>
+    <div class="module-grid" id="moduleGrid">
+      <div class="module-card selected" data-module="productivity">
+        <div class="module-card-icon">✅</div>
+        <div><div class="module-card-label">Productivity</div><div class="module-card-sub">Tasks & meetings</div></div>
+      </div>
+      <div class="module-card selected" data-module="markets">
+        <div class="module-card-icon">📈</div>
+        <div><div class="module-card-label">Markets</div><div class="module-card-sub">Stocks & signals</div></div>
+      </div>
+      <div class="module-card selected" data-module="projects">
+        <div class="module-card-icon">📋</div>
+        <div><div class="module-card-label">Projects</div><div class="module-card-sub">Kanban boards</div></div>
+      </div>
+      <div class="module-card" data-module="golf">
+        <div class="module-card-icon">⛳</div>
+        <div><div class="module-card-label">Golf</div><div class="module-card-sub">Swing AI & rounds</div></div>
+      </div>
+      <div class="module-card" data-module="running">
+        <div class="module-card-icon">🏃</div>
+        <div><div class="module-card-label">Running</div><div class="module-card-sub">Distance & pace</div></div>
+      </div>
+      <div class="module-card" data-module="cycling">
+        <div class="module-card-icon">🚴</div>
+        <div><div class="module-card-label">Cycling</div><div class="module-card-sub">Rides & cadence</div></div>
+      </div>
+      <div class="module-card" data-module="gym">
+        <div class="module-card-icon">🏋️</div>
+        <div><div class="module-card-label">Gym</div><div class="module-card-sub">Lifts & PRs</div></div>
+      </div>
+      <div class="module-card" data-module="tennis">
+        <div class="module-card-icon">🎾</div>
+        <div><div class="module-card-label">Tennis</div><div class="module-card-sub">Matches & skills</div></div>
+      </div>
+    </div>
+    <div class="onboarding-cta">
+      <button class="btn-p" onclick="saveOnboarding()" style="padding:12px 32px;font-size:14px">
+        Launch JARVIS →
+      </button>
+    </div>
+    <div class="onboarding-skip" onclick="skipOnboarding()">Skip for now</div>
+  </div>
+</div>
+
+<!-- ── Guided Steps Overlay ── -->
+<div id="guided-overlay" style="display:none">
+  <button class="guided-close" onclick="dismissGuided()">✕</button>
+  <div class="guided-title">🤖 You're live in Demo Mode</div>
+  <ul class="guided-steps">
+    <li class="guided-step"><span class="guided-step-num">1</span><span>Your workspace is pre-loaded with demo data — explore freely</span></li>
+    <li class="guided-step"><span class="guided-step-num">2</span><span>Try an example command below or use the action bar</span></li>
+    <li class="guided-step"><span class="guided-step-num">3</span><span>When ready, click <strong style="color:var(--white)">DEMO</strong> in the header to switch to Real Mode</span></li>
+  </ul>
+  <div class="guided-actions">
+    <button class="guided-try-btn" onclick="tryExampleCmd('Plan my day');dismissGuided()">▶ Try it now</button>
+    <button class="guided-dismiss" onclick="dismissGuided()">Got it</button>
+  </div>
+</div>
+
+<!-- ══════════════ GLOBAL COMMAND BAR ══════════════ -->
+<div id="cmd-bar">
+  <span style="font-size:16px;flex-shrink:0;opacity:.7">🤖</span>
+  <input id="cmd-input" type="text"
+    placeholder="Ask JARVIS anything or give a command — 'add task', 'analyse AAPL', 'log a 5k run'…"
+    onkeydown="if(event.key==='Enter')cmdSend()"
+    oninput="cmdTyping(this.value)"/>
+  <button id="cmd-lang-toggle" class="es" onclick="toggleVoiceLang()" data-tip="Toggle voice language: ES / EN">ES</button>
+  <button class="cmd-btn" onclick="cmdMic()" id="cmd-mic-btn" data-tip="Voice input" style="padding:8px 10px;font-size:15px">🎤</button>
+  <button class="cmd-btn primary" onclick="cmdSend()" id="cmd-send-btn">Ask</button>
+</div>
+<div id="cmd-result">
+  <div id="cmd-result-inner">
+    <div class="cmd-res-icon" id="cmd-res-icon">🧠</div>
+    <div class="cmd-res-body">
+      <div class="cmd-res-agent" id="cmd-res-agent">JARVIS</div>
+      <div class="cmd-res-text" id="cmd-res-text"></div>
+      <div class="cmd-res-actions" id="cmd-res-actions"></div>
+    </div>
+    <button onclick="cmdDismiss()" style="background:none;border:none;color:var(--soft);cursor:pointer;font-size:16px;flex-shrink:0;align-self:flex-start;margin-top:2px">✕</button>
+  </div>
+</div>
+
+<!-- ══════════════ STATUS TICKER (Phase 6Y) ══════════════ -->
+<div id="jarvis-ticker">
+  <div class="ticker-dot"></div>
+  <span id="ticker-text">JARVIS ready</span>
+</div>
 
 <!-- ══════════════ HERO ══════════════ -->
 <header class="hero">
@@ -1213,9 +1847,16 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <div class="hc-item"><strong id="todayDate">--</strong></div>
       <div class="hc-item" id="clockEl"></div>
       <div class="hc-item"><div class="status-dot"></div><span>System Online</span></div>
+      <div class="weather-chip hc-item" id="weather-chip" title="Click to refresh location">
+        <span class="wc-icon" id="wc-icon">🌤</span>
+        <span class="wc-temp" id="wc-temp">--°C</span>
+        <span id="wc-desc"></span>
+        <span id="wc-wind"></span>
+      </div>
     </div>
 
     <div class="hero-right">
+      <span id="mode-badge" class="mode-badge demo" onclick="toggleDemoMode()" data-tip="Click to switch DEMO / REAL mode">DEMO</span>
       <button id="autoBtn" class="btn-p">⚡ Auto JARVIS</button>
       <button class="btn-g btn-sm" onclick="switchTab('chat')">💬 Chat</button>
       <div class="notif-wrap">
@@ -1244,8 +1885,17 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn" data-tab="calendar">Calendar</button>
     <button class="tab-btn" data-tab="projects">Projects</button>
     <button class="tab-btn" data-tab="golf">Golf</button>
-    <button class="tab-btn" data-tab="intelligence">Intelligence</button>
-    <button class="tab-btn" data-tab="analytics">Analytics</button>
+    <button class="tab-btn module-tab" data-tab="intelligence" data-module="intelligence">Intelligence</button>
+    <button class="tab-btn module-tab" data-tab="analytics" data-module="analytics">Analytics</button>
+    <button class="tab-btn module-tab" data-tab="running" data-module="running" style="display:none">🏃 Running</button>
+    <button class="tab-btn module-tab" data-tab="cycling" data-module="cycling" style="display:none">🚴 Cycling</button>
+    <button class="tab-btn module-tab" data-tab="gym" data-module="gym" style="display:none">🏋️ Gym</button>
+    <button class="tab-btn module-tab" data-tab="tennis" data-module="tennis" style="display:none">🎾 Tennis</button>
+    <button class="tab-btn" data-tab="life">🏠 Life</button>
+    <button class="tab-btn" data-tab="family">👨‍👩‍👧 Family</button>
+    <button class="tab-btn" data-tab="office">🏢 Office</button>
+    <button class="tab-btn" data-tab="outlook" id="outlook-tab-btn">📧 Outlook <span class="tab-dot" id="outlook-unread-dot" style="display:none;background:#f59e0b"></span></button>
+    <button class="tab-btn" data-tab="automations">⚡ Automations</button>
     <button class="tab-btn" data-tab="system">System</button>
     <button class="tab-btn" data-tab="chat">Chat</button>
   </nav>
@@ -1255,6 +1905,47 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ OVERVIEW ══════════════ -->
 <div id="tab-overview" class="tab-panel active">
+
+  <!-- 1-CLICK ACTION BAR (Phase 6Y) -->
+  <div class="card action-bar-card" id="action-bar">
+    <div class="action-bar-title">What do you want to do right now?</div>
+    <div class="action-bar-btns">
+      <button class="action-btn hint-active" id="act-plan" onclick="quickAction('plan_day')">
+        <span class="action-btn-icon">📅</span>
+        <span class="action-btn-label">Plan my day</span>
+      </button>
+      <button class="action-btn" id="act-market" onclick="quickAction('analyze_market')">
+        <span class="action-btn-icon">📈</span>
+        <span class="action-btn-label">Analyze market</span>
+      </button>
+      <button class="action-btn" id="act-tasks" onclick="quickAction('create_tasks')">
+        <span class="action-btn-icon">✅</span>
+        <span class="action-btn-label">Create tasks</span>
+      </button>
+      <button class="action-btn" id="act-workout" onclick="quickAction('start_workout')">
+        <span class="action-btn-icon">💪</span>
+        <span class="action-btn-label">Start workout</span>
+      </button>
+    </div>
+    <div id="action-result" style="display:none">
+      <div id="action-result-msg"></div>
+      <div class="action-chips" id="action-result-chips"></div>
+    </div>
+  </div>
+
+  <!-- Example Commands Bar -->
+  <div class="example-cmds-wrap card" id="example-cmds-card">
+    <div class="example-cmds-label">💡 Try an example command</div>
+    <div class="example-cmds-row">
+      <button class="example-cmd-chip" onclick="tryExampleCmd('Plan my day')"><span class="ec-icon">📅</span>Plan my day</button>
+      <button class="example-cmd-chip" onclick="tryExampleCmd('Log a run — 5km in 28 minutes')"><span class="ec-icon">🏃</span>Log a run</button>
+      <button class="example-cmd-chip" onclick="tryExampleCmd('Analyze AAPL')"><span class="ec-icon">📈</span>Analyze AAPL</button>
+      <button class="example-cmd-chip" onclick="tryExampleCmd('tengo que pagar la factura de electricidad mañana')"><span class="ec-icon">💡</span>Pay electricity bill</button>
+      <button class="example-cmd-chip" onclick="tryExampleCmd('What golf courses are near me?')"><span class="ec-icon">⛳</span>Find golf courses</button>
+      <button class="example-cmd-chip" onclick="tryExampleCmd('Show my office tasks')"><span class="ec-icon">🏢</span>Office tasks</button>
+    </div>
+  </div>
+
   <div class="g4 mb">
     <div class="tile">
       <div class="tl">Top Priority</div>
@@ -1309,6 +2000,39 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div class="col">
       <!-- Auto JARVIS result -->
       <div id="ov-auto" class="auto-card" style="display:none"></div>
+
+      <!-- ── EXECUTIVE COMMAND CENTER ── -->
+      <div class="card" style="border-color:rgba(68,240,255,.18)">
+        <div class="ch" style="margin-bottom:14px">
+          <span class="ct">Command Center</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="personality-tone-label" style="font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;border:1px solid rgba(68,240,255,.2);padding:2px 8px;border-radius:20px;cursor:pointer" onclick="cyclePersonalityTone()" data-tip="Click to change JARVIS tone">professional</span>
+            <button class="btn-ol btn-sm" onclick="openModuleSettings()" data-tip="Manage modules">⚙ Modules</button>
+          </div>
+        </div>
+
+        <!-- Top Priorities -->
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Top Priorities Today</div>
+        <div id="cc-priorities" style="margin-bottom:16px">
+          <div class="skel" style="height:14px;margin-bottom:6px;width:90%"></div>
+          <div class="skel" style="height:14px;margin-bottom:6px;width:75%"></div>
+          <div class="skel" style="height:14px;width:60%"></div>
+        </div>
+
+        <!-- Critical Alerts -->
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Alerts</div>
+        <div id="cc-alerts" style="margin-bottom:16px">
+          <div class="skel" style="height:32px;border-radius:8px"></div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Quick Commands</div>
+        <div id="cc-actions" style="display:flex;flex-wrap:wrap;gap:8px">
+          <div class="skel" style="height:28px;width:120px;border-radius:6px"></div>
+          <div class="skel" style="height:28px;width:100px;border-radius:6px"></div>
+          <div class="skel" style="height:28px;width:110px;border-radius:6px"></div>
+        </div>
+      </div>
 
       <!-- Executive Brief -->
       <div class="card">
@@ -1597,6 +2321,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <span class="cs">AI biomechanics · real-time pose analysis</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="sv-lang-toggle">
+          <button id="sv-lang-es" class="active" onclick="svSetLang('es')">ES</button>
+          <button id="sv-lang-en" onclick="svSetLang('en')">EN</button>
+        </div>
         <select id="svClubSelect" class="select" style="font-size:11px;padding:4px 8px">
           <option value="driver">Driver</option>
           <option value="3-wood">3 Wood</option>
@@ -1625,6 +2353,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <div class="sv-cam-wrap">
         <video  id="svVideo"  class="sv-video" autoplay muted playsinline></video>
         <canvas id="svCanvas" class="sv-canvas"></canvas>
+        <button id="svSwitchBtn" class="sv-switch-btn" onclick="switchSwingCamera()" aria-label="Switch camera">🔄</button>
+        <div id="sv-live-cue" class="elite-live-cue" style="display:none;color:#fff;border-color:#888"></div>
         <div class="sv-cam-placeholder" id="svPlaceholder">
           <div style="text-align:center;padding:20px">
             <div style="font-size:32px;margin-bottom:10px">🎯</div>
@@ -1652,14 +2382,18 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
     <!-- Sub-tabs -->
     <div class="sv-tabs">
-      <button class="sv-tab active" onclick="svShowTab('history',this)">History</button>
-      <button class="sv-tab" onclick="svShowTab('drills',this)">Recommended Drills</button>
+      <button class="sv-tab active" onclick="svShowTab('history',this)">Historia</button>
+      <button class="sv-tab" onclick="svShowTab('drills',this)">Drills</button>
+      <button class="sv-tab" onclick="svShowTab('progress',this)">Progreso</button>
     </div>
     <div id="svTabHistory">
       <div id="svHistoryList" style="font-size:12px;color:var(--soft)">No swings recorded yet.</div>
     </div>
     <div id="svTabDrills" style="display:none">
-      <div id="svDrillsList" style="font-size:12px;color:var(--soft)">Loading drills…</div>
+      <div id="svDrillsList" style="font-size:12px;color:var(--soft)">Cargando drills…</div>
+    </div>
+    <div id="svTabProgress" style="display:none">
+      <div id="svProgressPanel" style="font-size:12px;color:var(--soft)">Analiza al menos 2 swings para ver tu progreso.</div>
     </div>
   </div>
 
@@ -1712,9 +2446,13 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
               <input id="caddyTemp" class="input" type="number" placeholder="22" value="22"/>
             </div>
           </div>
-          <button class="btn-p" onclick="golfCaddie()">Get Club Recommendation</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-p" onclick="golfCaddie()">Get Club Recommendation</button>
+            <button class="btn-g btn-sm" id="caddy-weather-btn" onclick="caddyFillWeather()" style="display:none">🌤 Use Live Weather</button>
+          </div>
         </div>
         <div id="caddyResult" style="margin-top:14px"></div>
+        <div id="caddy-weather-note" style="margin-top:8px;font-size:12px;color:var(--soft);display:none"></div>
       </div>
 
       <!-- Course Library -->
@@ -1730,6 +2468,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <div id="courseLibEl" class="course-lib-scroll"></div>
         <!-- Selected course detail -->
         <div id="selectedCourseDetail" style="display:none"></div>
+        <!-- Embedded satellite map (Leaflet + Esri, loads on course click) -->
+        <div id="course-map"></div>
         <!-- Legacy search results (hidden by default) -->
         <div id="golfSearchResults" style="display:none"></div>
       </div>
@@ -1994,10 +2734,11 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <div class="vb-settings-panel" id="vbSettingsPanel">
           <div class="vb-setting-row">
             <label>Language</label>
-            <select id="vbLangSel">
+            <select id="vbLangSel" onchange="onVbLangChange(this.value)">
+              <option value="es-ES" selected>Español (ES)</option>
+              <option value="es-US">Español (US)</option>
               <option value="en-US">English (US)</option>
               <option value="en-GB">English (UK)</option>
-              <option value="es-ES">Spanish (ES)</option>
               <option value="es-US">Spanish (US)</option>
               <option value="fr-FR">French</option>
               <option value="de-DE">German</option>
@@ -2165,6 +2906,492 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ══════════════ AUTOMATIONS ══════════════ -->
+<!-- ══════════════ LIFE AUTOMATION ══════════════ -->
+<div id="tab-life" class="tab-panel">
+
+  <!-- NLP fast-entry -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="ch" style="margin-bottom:10px">
+      <span class="ct">🏠 Life Automations</span>
+      <span style="font-size:11px;color:var(--soft)">Say or type anything</span>
+    </div>
+    <div class="life-nlp-row">
+      <input id="life-nlp-input" class="input" type="text"
+        placeholder="tengo que pagar la luz mañana · llamar al banco · comprar leche · recordar reunión a las 10"
+        onkeydown="if(event.key==='Enter')lifeNlpSend()"/>
+      <button class="cmd-btn" onclick="lifeNlpMic()" data-tip="Voice input">🎤</button>
+      <button class="btn-p btn-sm" onclick="lifeNlpSend()">+ Add</button>
+    </div>
+    <div id="life-nlp-result" style="display:none;font-size:12px;color:var(--soft);margin-top:4px"></div>
+  </div>
+
+  <div class="life-grid">
+
+    <!-- Reminders -->
+    <div class="card">
+      <div class="life-section-header">
+        ⏰ Reminders
+        <span class="life-count-badge" id="life-rem-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadLifeReminders()">↻</button>
+      </div>
+      <div class="life-add-row">
+        <input id="life-rem-title" class="input" type="text" placeholder="Título del recordatorio" style="font-size:12px"/>
+        <input id="life-rem-due"   class="input" type="text" placeholder="mañana / hoy 18:00"     style="font-size:12px;max-width:130px"/>
+        <button class="btn-g btn-sm" onclick="lifeAddReminder()">+</button>
+      </div>
+      <div id="life-rem-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Shopping List -->
+    <div class="card">
+      <div class="life-section-header">
+        🛒 Shopping List
+        <span class="life-count-badge" id="life-shop-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="lifeShopClearChecked()">✓ Clear</button>
+      </div>
+      <div class="life-add-row">
+        <input id="life-shop-name" class="input" type="text" placeholder="Add item…" style="font-size:12px"
+          onkeydown="if(event.key==='Enter')lifeAddShopping()"/>
+        <input id="life-shop-qty"  class="input" type="number" placeholder="Qty" style="font-size:12px;max-width:60px" value="1"/>
+        <button class="btn-g btn-sm" onclick="lifeAddShopping()">+</button>
+      </div>
+      <div id="life-shop-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Calls -->
+    <div class="card">
+      <div class="life-section-header">
+        📞 Calls to Make
+        <span class="life-count-badge" id="life-call-count">0</span>
+      </div>
+      <div class="life-add-row">
+        <input id="life-call-contact" class="input" type="text" placeholder="Contact / name" style="font-size:12px"/>
+        <input id="life-call-due"     class="input" type="text" placeholder="mañana 10:00"   style="font-size:12px;max-width:130px"/>
+        <button class="btn-g btn-sm" onclick="lifeAddCall()">+</button>
+      </div>
+      <div id="life-call-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Payments -->
+    <div class="card">
+      <div class="life-section-header">
+        💸 Payments
+        <span class="life-count-badge" id="life-pay-count">0</span>
+      </div>
+      <div class="life-add-row">
+        <input id="life-pay-title"  class="input" type="text"   placeholder="Luz / arriendo / tarjeta" style="font-size:12px"/>
+        <input id="life-pay-amount" class="input" type="number" placeholder="Monto"  style="font-size:12px;max-width:90px"/>
+        <input id="life-pay-due"    class="input" type="text"   placeholder="mañana" style="font-size:12px;max-width:100px"/>
+        <button class="btn-g btn-sm" onclick="lifeAddPayment()">+</button>
+      </div>
+      <div id="life-pay-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ FAMILY TAB ═══════════════════════════════ -->
+<div id="tab-family" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">👨‍👩‍👧</span>
+    <span class="section-intro-text"><strong>Family</strong> — Track members, birthdays, events, and notes.</span>
+  </div>
+
+  <div id="family-summary-strip" style="display:none;background:rgba(255,200,100,.07);border:1px solid rgba(255,200,100,.2);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px;color:var(--soft)"></div>
+
+  <div class="g2">
+
+    <!-- Members -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">👥 Members</span>
+        <span class="life-count-badge" id="fam-mem-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadFamilyMembers()">↻</button>
+      </div>
+      <div class="life-add-row">
+        <input id="fam-mem-name"     class="input" type="text" placeholder="Name"       style="font-size:12px;flex:2"/>
+        <select id="fam-mem-rel"     class="select" style="font-size:12px;flex:1">
+          <option value="spouse">Spouse</option><option value="child">Child</option>
+          <option value="parent">Parent</option><option value="sibling">Sibling</option>
+          <option value="friend">Friend</option><option value="other">Other</option>
+        </select>
+        <input id="fam-mem-bday"     class="input" type="date" placeholder="Birthday"   style="font-size:12px;flex:1"/>
+        <button class="btn-g btn-sm" onclick="familyAddMember()">+</button>
+      </div>
+      <div id="fam-mem-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Events -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">📅 Upcoming Events</span>
+        <span class="life-count-badge" id="fam-ev-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadFamilyEvents()">↻</button>
+      </div>
+      <div class="life-add-row">
+        <input id="fam-ev-title"  class="input" type="text" placeholder="Event title" style="font-size:12px;flex:2"/>
+        <input id="fam-ev-date"   class="input" type="date"                           style="font-size:12px;flex:1"/>
+        <select id="fam-ev-type"  class="select" style="font-size:12px;flex:1">
+          <option value="birthday">Birthday</option><option value="anniversary">Anniversary</option>
+          <option value="school">School</option><option value="appointment">Appointment</option>
+          <option value="family">Family</option><option value="other">Other</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--soft);white-space:nowrap">
+          <input type="checkbox" id="fam-ev-repeat"/> Yearly
+        </label>
+        <button class="btn-g btn-sm" onclick="familyAddEvent()">+</button>
+      </div>
+      <div id="fam-ev-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="ch"><span class="ct">📝 Family Notes</span></div>
+      <div class="life-add-row">
+        <input id="fam-note-content" class="input" type="text" placeholder="Quick note…"
+          style="font-size:12px;flex:3" onkeydown="if(event.key==='Enter')familyAddNote()"/>
+        <button class="btn-g btn-sm" onclick="familyAddNote()">+ Note</button>
+      </div>
+      <div id="fam-note-list" class="life-list" style="max-height:180px">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ OFFICE TAB ═══════════════════════════════ -->
+<div id="tab-office" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">🏢</span>
+    <span class="section-intro-text"><strong>Office</strong> — Colleagues, work tasks, and expense tracking.</span>
+  </div>
+
+  <div id="office-summary-strip" style="display:none;background:rgba(100,200,255,.07);border:1px solid rgba(100,200,255,.2);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px;color:var(--soft)"></div>
+
+  <div class="g2">
+
+    <!-- Work Tasks -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">✅ Work Tasks</span>
+        <span class="life-count-badge" id="off-task-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadOfficeTasks()">↻</button>
+      </div>
+      <div class="life-add-row">
+        <input id="off-task-title"    class="input" type="text" placeholder="Task title" style="font-size:12px;flex:2"/>
+        <select id="off-task-priority" class="select" style="font-size:12px;flex:1">
+          <option value="medium">Medium</option><option value="high">High</option>
+          <option value="critical">Critical</option><option value="low">Low</option>
+        </select>
+        <input id="off-task-due"      class="input" type="date" style="font-size:12px;flex:1"/>
+        <button class="btn-g btn-sm"  onclick="officeAddTask()">+</button>
+      </div>
+      <div id="off-task-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Colleagues -->
+    <div class="card">
+      <div class="ch">
+        <span class="ct">👤 Colleagues</span>
+        <span class="life-count-badge" id="off-col-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadOfficeColleagues()">↻</button>
+      </div>
+      <div class="life-add-row">
+        <input id="off-col-name"  class="input" type="text" placeholder="Name"       style="font-size:12px;flex:2"/>
+        <input id="off-col-role"  class="input" type="text" placeholder="Role"       style="font-size:12px;flex:1"/>
+        <input id="off-col-dept"  class="input" type="text" placeholder="Department" style="font-size:12px;flex:1"/>
+        <button class="btn-g btn-sm" onclick="officeAddColleague()">+</button>
+      </div>
+      <div id="off-col-list" class="life-list">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Expenses -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="ch">
+        <span class="ct">💰 Expenses</span>
+        <span class="life-count-badge" id="off-exp-count">0</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadOfficeExpenses()">↻</button>
+      </div>
+      <div class="life-add-row">
+        <input id="off-exp-title"  class="input" type="text"   placeholder="Description"   style="font-size:12px;flex:2"/>
+        <input id="off-exp-amount" class="input" type="number" placeholder="Amount"         style="font-size:12px;flex:1"/>
+        <select id="off-exp-cat"   class="select" style="font-size:12px;flex:1">
+          <option value="other">Other</option><option value="travel">Travel</option>
+          <option value="meals">Meals</option><option value="supplies">Supplies</option>
+          <option value="software">Software</option><option value="equipment">Equipment</option>
+        </select>
+        <button class="btn-g btn-sm" onclick="officeAddExpense()">+</button>
+      </div>
+      <div id="off-exp-list" class="life-list" style="max-height:200px">
+        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ OUTLOOK TAB ═══════════════════════════════ -->
+<div id="tab-outlook" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">📧</span>
+    <span class="section-intro-text">
+      <strong>Outlook Inbox Agent</strong> — Real-time email intelligence. AI summarizes, drafts replies, and suggests actions.
+      <strong>No email is sent without your explicit approval.</strong>
+    </span>
+  </div>
+
+  <!-- Status bar -->
+  <div id="ol-status-bar" class="ol-status-bar">
+    <div id="ol-auth-status" class="ol-auth-chip ol-chip-warn">⚠ Not connected</div>
+    <div id="ol-unread-badge" class="ol-unread-badge" style="display:none">0 unread</div>
+    <div id="ol-pending-badge" class="ol-pending-badge" style="display:none">0 pending approval</div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn-ol btn-sm" onclick="outlookConnect()" id="ol-connect-btn">🔗 Connect Outlook</button>
+      <button class="btn-ol btn-sm" onclick="loadOutlookInbox()" id="ol-refresh-btn">↻ Refresh</button>
+      <button class="btn-sm" onclick="outlookSubscribe()" id="ol-sub-btn" style="font-size:11px;padding:4px 10px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);border-radius:6px">🔔 Subscribe</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="ol-filter-bar">
+    <button class="ol-filter-btn active" data-filter="" onclick="setOutlookFilter(this,'')">All</button>
+    <button class="ol-filter-btn" data-filter="pending_approval" onclick="setOutlookFilter(this,'pending_approval')">⏳ Pending</button>
+    <button class="ol-filter-btn" data-filter="sent"    onclick="setOutlookFilter(this,'sent')">✅ Sent</button>
+    <button class="ol-filter-btn" data-filter="ignored" onclick="setOutlookFilter(this,'ignored')">🚫 Ignored</button>
+    <button class="ol-filter-btn" data-filter="deleted" onclick="setOutlookFilter(this,'deleted')">🗑 Deleted</button>
+    <button class="ol-filter-btn" data-filter="high"    onclick="setOutlookFilter(this,'high','priority')" style="color:#ef4444;border-color:rgba(239,68,68,.3)">🔴 High priority</button>
+    <div style="margin-left:auto;font-size:11px;color:var(--soft)" id="ol-stats-line"></div>
+  </div>
+
+  <!-- Email cards -->
+  <div id="ol-inbox" class="ol-inbox">
+    <div class="ol-empty-state">
+      <div style="font-size:32px;margin-bottom:10px">📬</div>
+      <div>Connect your Outlook account to see emails here.</div>
+      <div style="font-size:12px;color:var(--soft);margin-top:6px">Real-time notifications via Microsoft Graph Webhooks</div>
+      <button class="btn-p" style="margin-top:14px" onclick="outlookConnect()">Connect Outlook</button>
+    </div>
+  </div>
+</div>
+
+<div id="tab-automations" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">⚡</span>
+    <span class="section-intro-text"><strong>Automations</strong> — JARVIS executes workflows automatically based on triggers and schedules. Monitor what's running, review execution logs, and create new automations.</span>
+  </div>
+
+  <div class="fitness-stat-grid" id="auto-stats-grid"></div>
+
+  <div class="g2" style="margin-top:16px">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Active Automations</span>
+        <button class="btn-ol btn-sm" onclick="loadAutomationsUpgraded()">↻ Refresh</button>
+      </div>
+      <div id="auto-list-upgraded">
+        <div class="skel" style="height:48px;border-radius:8px;margin-bottom:8px"></div>
+        <div class="skel" style="height:48px;border-radius:8px;margin-bottom:8px"></div>
+        <div class="skel" style="height:48px;border-radius:8px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Execution Log</span>
+        <span class="cs">last 10 runs</span>
+      </div>
+      <div id="auto-log-list">
+        <div class="skel" style="height:36px;border-radius:6px;margin-bottom:6px"></div>
+        <div class="skel" style="height:36px;border-radius:6px;margin-bottom:6px"></div>
+        <div class="skel" style="height:36px;border-radius:6px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ RUNNING ══════════════ -->
+<div id="tab-running" class="tab-panel">
+  <div class="fitness-hero">
+    <div class="fitness-hero-icon">🏃</div>
+    <div>
+      <div class="fitness-hero-name">Running</div>
+      <div class="fitness-hero-sub">Track your runs, monitor pace, build endurance</div>
+    </div>
+    <button class="btn-p btn-sm" onclick="fitRefreshTips('running')" style="margin-left:auto" data-tip="Refresh coaching tips">↻ Tips</button>
+  </div>
+
+  <div id="run-weather-strip" style="display:none;background:rgba(0,200,255,.07);border:1px solid rgba(0,200,255,.18);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--soft);margin-bottom:10px">
+    <span style="color:var(--cyan);font-weight:600">🌤 Live Conditions · </span><span id="run-weather-text"></span>
+  </div>
+
+  <div class="fitness-stat-grid" id="run-stats"></div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">Log a Run</span></div>
+      <div class="log-form" style="margin-bottom:10px">
+        <input class="input" id="run-dist" type="number" step="0.1" min="0" placeholder="Distance (km)" style="flex:1;min-width:100px"/>
+        <input class="input" id="run-dur" type="number" min="0" placeholder="Duration (min)" style="flex:1;min-width:100px"/>
+        <input class="input" id="run-pace" type="number" step="0.01" min="0" placeholder="Pace (min/km)" style="flex:1;min-width:100px"/>
+        <input class="input" id="run-hr" type="number" min="0" placeholder="Heart rate" style="flex:1;min-width:90px"/>
+      </div>
+      <div class="log-form">
+        <input class="input" id="run-route" type="text" placeholder="Route / location (optional)" style="flex:2;min-width:160px"/>
+        <input class="input" id="run-notes" type="text" placeholder="Notes" style="flex:2;min-width:120px"/>
+        <button class="btn-p" onclick="fitLog('running')">Log Run</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Coaching Tips</span><span class="cs">AI-powered</span></div>
+      <div id="run-tips"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="ch"><span class="ct">Recent Runs</span></div>
+    <div id="run-history"></div>
+  </div>
+</div>
+
+<!-- ══════════════ CYCLING ══════════════ -->
+<div id="tab-cycling" class="tab-panel">
+  <div class="fitness-hero">
+    <div class="fitness-hero-icon">🚴</div>
+    <div>
+      <div class="fitness-hero-name">Cycling</div>
+      <div class="fitness-hero-sub">Track rides, monitor speed, conquer elevation</div>
+    </div>
+    <button class="btn-p btn-sm" onclick="fitRefreshTips('cycling')" style="margin-left:auto" data-tip="Refresh coaching tips">↻ Tips</button>
+  </div>
+
+  <div class="fitness-stat-grid" id="cyc-stats"></div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">Log a Ride</span></div>
+      <div class="log-form" style="margin-bottom:10px">
+        <input class="input" id="cyc-dist" type="number" step="0.1" min="0" placeholder="Distance (km)" style="flex:1;min-width:100px"/>
+        <input class="input" id="cyc-dur" type="number" min="0" placeholder="Duration (min)" style="flex:1;min-width:100px"/>
+        <input class="input" id="cyc-speed" type="number" step="0.1" min="0" placeholder="Avg speed (km/h)" style="flex:1;min-width:110px"/>
+        <input class="input" id="cyc-elev" type="number" min="0" placeholder="Elevation (m)" style="flex:1;min-width:90px"/>
+      </div>
+      <div class="log-form">
+        <input class="input" id="cyc-notes" type="text" placeholder="Notes / route" style="flex:2"/>
+        <button class="btn-p" onclick="fitLog('cycling')">Log Ride</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Coaching Tips</span><span class="cs">AI-powered</span></div>
+      <div id="cyc-tips"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="ch"><span class="ct">Recent Rides</span></div>
+    <div id="cyc-history"></div>
+  </div>
+</div>
+
+<!-- ══════════════ GYM ══════════════ -->
+<div id="tab-gym" class="tab-panel">
+  <div class="fitness-hero">
+    <div class="fitness-hero-icon">🏋️</div>
+    <div>
+      <div class="fitness-hero-name">Gym</div>
+      <div class="fitness-hero-sub">Track workouts, hit PRs, build strength</div>
+    </div>
+    <button class="btn-p btn-sm" onclick="fitRefreshTips('gym')" style="margin-left:auto" data-tip="Refresh coaching tips">↻ Tips</button>
+  </div>
+
+  <div class="fitness-stat-grid" id="gym-stats"></div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <span class="ct">Log a Session</span>
+        <button class="btn-ol btn-sm" onclick="gymAddExercise()">+ Add Exercise</button>
+      </div>
+      <div id="gym-exercises" style="margin-bottom:12px"></div>
+      <div class="log-form">
+        <input class="input" id="gym-muscle" type="text" placeholder="Muscle groups (e.g. chest, back)" style="flex:2"/>
+        <input class="input" id="gym-notes" type="text" placeholder="Notes" style="flex:2"/>
+        <button class="btn-p" onclick="fitLog('gym')">Log Session</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Coaching Tips</span><span class="cs">AI-powered</span></div>
+      <div id="gym-tips"></div>
+      <div class="ch" style="margin-top:16px"><span class="ct">Personal Bests</span></div>
+      <div id="gym-pbs" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="ch"><span class="ct">Recent Sessions</span></div>
+    <div id="gym-history"></div>
+  </div>
+</div>
+
+<!-- ══════════════ TENNIS ══════════════ -->
+<div id="tab-tennis" class="tab-panel">
+  <div class="fitness-hero">
+    <div class="fitness-hero-icon">🎾</div>
+    <div>
+      <div class="fitness-hero-name">Tennis</div>
+      <div class="fitness-hero-sub">Log matches, track wins, improve your game</div>
+    </div>
+    <button class="btn-p btn-sm" onclick="fitRefreshTips('tennis')" style="margin-left:auto" data-tip="Refresh coaching tips">↻ Tips</button>
+  </div>
+
+  <div class="fitness-stat-grid" id="ten-stats"></div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">Log a Match</span></div>
+      <div class="log-form" style="margin-bottom:10px">
+        <select class="input" id="ten-result" style="flex:1;min-width:100px">
+          <option value="win">Win</option>
+          <option value="loss">Loss</option>
+          <option value="practice">Practice</option>
+        </select>
+        <input class="input" id="ten-opp" type="text" placeholder="Opponent" style="flex:1;min-width:110px"/>
+        <input class="input" id="ten-score" type="text" placeholder="Score (e.g. 6-4, 7-5)" style="flex:1;min-width:110px"/>
+        <input class="input" id="ten-dur" type="number" min="0" placeholder="Duration (min)" style="flex:1;min-width:90px"/>
+      </div>
+      <div class="log-form">
+        <input class="input" id="ten-notes" type="text" placeholder="Notes / key moments" style="flex:2"/>
+        <button class="btn-p" onclick="fitLog('tennis')">Log Match</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Coaching Tips</span><span class="cs">AI-powered</span></div>
+      <div id="ten-tips"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="ch"><span class="ct">Match History</span></div>
+    <div id="ten-history"></div>
   </div>
 </div>
 
@@ -2567,6 +3794,14 @@ function switchTab(name) {
   const panel = qs("tab-" + name);
   if (panel) panel.classList.add("active");
   document.querySelectorAll(`[data-tab="${name}"]`).forEach(b => b.classList.add("active"));
+  // Lazy-load tab-specific data
+  if (name === "automations") loadAutomationsUpgraded();
+  if (name === "life")   loadAllLife();
+  if (name === "family") loadAllFamily();
+  if (name === "office") loadAllOffice();
+  if (name === "outlook") _onOutlookTabActivated();
+  if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
+  if (name === "golf") { _loadSwingDrills(); }
 }
 document.querySelectorAll(".tab-btn,.mob-btn").forEach(b =>
   b.addEventListener("click", () => switchTab(b.dataset.tab)));
@@ -2590,6 +3825,7 @@ function trafficTag(level) {
 async function loadHome() {
   try {
     const d = await fetch("/dashboard/home").then(r => r.json());
+    window._lastHomeData = d; // cache for Command Center
     if (qs("greeting"))    qs("greeting").textContent    = d.greeting      || "JARVIS ready";
     if (qs("todayDate"))   qs("todayDate").textContent   = d.date          || "--";
     if (qs("topPriority")) qs("topPriority").textContent = d.top_priority  || "Protect capital";
@@ -3518,6 +4754,8 @@ const sv = {
   maxFrames:       90,       // ~3 s at 30 fps
   lastAnalysisMs:  0,
   analysisGap:     250,      // ms between frame POSTs
+  liveCueMs:       0,
+  liveCueGap:      500,      // ms between live-cue POSTs
   mpLoaded:        false,
 };
 
@@ -3541,56 +4779,110 @@ function _loadMediaPipe() {
 }
 
 // ── camera toggle ─────────────────────────────────────────────────────
+// Default to rear (environment) camera — better for recording a swing
+sv.facingMode = "environment";
+
 async function toggleSwingCamera() {
   if (sv.active) { _stopSwingCamera(); return; }
   const statusEl = qs("svStatus");
   if (statusEl) statusEl.textContent = "Loading AI pose model…";
   try {
     await _loadMediaPipe();
-    await _startSwingCamera();
+    await _startSwingCamera(sv.facingMode);
   } catch(e) {
     if (statusEl) statusEl.textContent = "Error: " + e.message;
     console.warn("SwingVision:", e);
   }
 }
 
-async function _startSwingCamera() {
+// Switch between front and rear camera live
+async function switchSwingCamera() {
+  if (!sv.active) return;
+  sv.facingMode = (sv.facingMode === "environment") ? "user" : "environment";
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = "Switching camera…";
+  // Stop current stream tracks (don't fully reset sv.active)
+  if (sv.stream) { sv.stream.getTracks().forEach(t => t.stop()); sv.stream = null; }
+  const video = qs("svVideo");
+  if (video) video.srcObject = null;
+  try {
+    await _startSwingCamera(sv.facingMode, true /* keepPose */);
+  } catch(e) {
+    // Flip back on failure
+    sv.facingMode = (sv.facingMode === "environment") ? "user" : "environment";
+    if (statusEl) statusEl.textContent = "Camera switch failed — try again";
+  }
+}
+
+async function _startSwingCamera(facingMode, keepPose) {
   const video  = qs("svVideo");
   const canvas = qs("svCanvas");
   if (!video || !canvas) return;
 
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+  // Always stop any existing tracks first to prevent black screen / resource leak
+  if (sv.stream) { sv.stream.getTracks().forEach(t => t.stop()); sv.stream = null; }
+  video.srcObject = null;
+
+  // Build constraints — use ideal so it gracefully falls back instead of hard-failing
+  const constraints = {
+    video: {
+      facingMode: { ideal: facingMode },
+      width:  { ideal: 1280 },
+      height: { ideal: 720 },
+    },
     audio: false,
-  });
+  };
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch(err) {
+    // Rear camera unavailable (common on desktop) — fall back to any camera
+    if (facingMode === "environment") {
+      sv.facingMode = "user";
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    } else {
+      throw err;
+    }
+  }
+
   sv.stream = stream;
   video.srcObject = stream;
-  await video.play();
+
+  // iOS Safari requires a manual play() call after srcObject assignment
+  try { await video.play(); } catch(e) { /* autoplay policy — user gesture already present */ }
+
   sv.active = true;
+
+  // Show / hide switch button (only useful if device has multiple cameras)
+  const switchBtn = qs("svSwitchBtn");
+  if (switchBtn) switchBtn.style.display = "block";
 
   // Hide placeholder
   const ph = qs("svPlaceholder");
   if (ph) ph.classList.add("hidden");
 
-  // Setup MediaPipe Pose
-  const pose = new Pose({
-    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`,
-  });
-  pose.setOptions({
-    modelComplexity: 1,
-    smoothLandmarks: true,
-    enableSegmentation: false,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-  });
-  pose.onResults(_onPoseResults);
-  sv.pose = pose;
+  // Only (re)init MediaPipe Pose when not switching cameras
+  if (!keepPose) {
+    const pose = new Pose({
+      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`,
+    });
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+    pose.onResults(_onPoseResults);
+    sv.pose = pose;
+    _poseLoop();
+  }
 
+  const label = sv.facingMode === "environment" ? "rear" : "front";
   qs("svStartBtn").textContent = "⏹ Stop Camera";
   qs("svRecordBtn").disabled = false;
-  qs("svStatus").textContent = "Camera active — align yourself and start recording";
-
-  _poseLoop();
+  qs("svStatus").textContent = `Camera active (${label}) — align yourself and start recording`;
 }
 
 function _stopSwingCamera() {
@@ -3599,6 +4891,8 @@ function _stopSwingCamera() {
   if (sv.stream) { sv.stream.getTracks().forEach(t => t.stop()); sv.stream = null; }
   const video = qs("svVideo");
   if (video) video.srcObject = null;
+  const switchBtn = qs("svSwitchBtn");
+  if (switchBtn) switchBtn.style.display = "none";
   const ph = qs("svPlaceholder");
   if (ph) ph.classList.remove("hidden");
   qs("svStartBtn").textContent = "📷 Start Camera";
@@ -3654,6 +4948,13 @@ function _onPoseResults(results) {
     const bar = qs("svRecordProgress");
     if (bar) bar.style.width = pct + "%";
     if (sv.frames.length >= sv.maxFrames) _stopSwingRecording();
+
+    // Live coach cue (throttled)
+    const nowCue = Date.now();
+    if (nowCue - sv.liveCueMs > sv.liveCueGap) {
+      sv.liveCueMs = nowCue;
+      _sendLiveCue(landmarks);
+    }
   }
 
   // Throttled real-time analysis
@@ -3697,6 +4998,24 @@ async function _sendFrameAnalysis(landmarks) {
     }).then(r => r.json());
     if (d.status === "ok") _renderLiveMetrics(d);
   } catch(e) { /* real-time — silent fail */ }
+}
+
+async function _sendLiveCue(landmarks) {
+  const cueEl = qs("sv-live-cue");
+  if (!cueEl) return;
+  try {
+    const d = await fetch("/api/golf/elite/live", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ landmarks, lang: _svLang }),
+    }).then(r => r.json());
+    if (d.status === "ok" && d.cue) {
+      cueEl.textContent    = d.cue;
+      cueEl.style.display  = "";
+      cueEl.style.color    = d.color || "#fff";
+      cueEl.style.borderColor = d.color || "#888";
+    }
+  } catch(e) { /* live coach — silent fail */ }
 }
 
 function _renderLiveMetrics(d) {
@@ -3745,6 +5064,7 @@ async function _stopSwingRecording() {
   qs("svRecordBtn").textContent = "⏺ Record Swing";
   qs("svRecordBtn").classList.remove("btn-recording");
   _setRecordBarVisible(false);
+  const cueEl = qs("sv-live-cue"); if (cueEl) cueEl.style.display = "none";
 
   if (sv.frames.length < 5) {
     qs("svStatus").textContent = "Too few frames — record a full swing.";
@@ -3754,56 +5074,162 @@ async function _stopSwingRecording() {
   await _sendSwingAnalysis();
 }
 
+let _svLang = localStorage.getItem("sv_lang") || "es";
+
+function svSetLang(lang) {
+  _svLang = lang;
+  localStorage.setItem("sv_lang", lang);
+  qs("sv-lang-es").classList.toggle("active", lang === "es");
+  qs("sv-lang-en").classList.toggle("active", lang === "en");
+}
+
 async function _sendSwingAnalysis() {
   const club = qs("svClubSelect")?.value || "unknown";
+  qs("svStatus").textContent = _svLang === "es" ? "Analizando swing…" : "Analyzing swing…";
   try {
-    const d = await fetch("/api/golf/vision/swing", {
+    const d = await fetch("/api/golf/elite/analyze", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ frames: sv.frames, club, fps: 30.0 }),
+      body:    JSON.stringify({ frames: sv.frames, club, fps: 30.0, lang: _svLang }),
     }).then(r => r.json());
     if (d.status === "ok") {
-      _renderSwingResult(d);
+      _renderEliteResult(d);
       loadSwingHistory();
-      qs("svStatus").textContent = `Swing saved — Score: ${d.score}/100 · Tempo: ${(d.tempo_ratio||0).toFixed(1)}:1`;
+      _loadEliteProgress();
+      const tempoStr = d.tempo_ratio ? `· Tempo ${d.tempo_ratio.toFixed(1)}:1` : "";
+      qs("svStatus").textContent = `Score: ${d.score}/100 ${tempoStr} — ${d.level || ""}`;
     } else {
-      qs("svStatus").textContent = "Analysis error — " + (d.error || "unknown");
+      qs("svStatus").textContent = "Error: " + (d.error || "unknown");
     }
   } catch(e) {
-    qs("svStatus").textContent = "Analysis failed: " + e.message;
+    qs("svStatus").textContent = "Error: " + e.message;
   }
 }
 
-function _renderSwingResult(d) {
+function _renderEliteResult(d) {
   const el = qs("svSwingResult");
   if (!el) return;
-  const score    = d.score || 0;
-  const tempo    = d.tempo_ratio || 0;
-  const coaching = d.coaching || [];
-  const tempoOk  = tempo >= 2.5 && tempo <= 3.5;
-  el.innerHTML = `
-    <div class="sv-result-header">
-      <div class="sv-score-ring">
-        <div class="sv-score-num">${score}</div>
-        <div class="sv-score-lbl">/ 100</div>
+  const isES       = (d.lang || _svLang) === "es";
+  const score      = d.score || 0;
+  const bd         = d.score_breakdown || {};
+  const errors     = d.errors || [];
+  const strengths  = d.strengths || [];
+  const tempo      = d.tempo_ratio || 0;
+  const tempoOk    = tempo >= 2.5 && tempo <= 3.5;
+  const potential  = d.potential || score;
+  const lvl        = d.level || "beginner";
+  const lvlLabel   = {beginner: isES?"Principiante":"Beginner", intermediate: isES?"Intermedio":"Intermediate", advanced: isES?"Avanzado":"Advanced"}[lvl] || lvl;
+  const qaWarn     = d.qa?.issues?.length ? `<div class="elite-qa-warning">⚠ ${d.qa.issues.join(" · ")}</div>` : "";
+
+  // Score breakdown bars (max values: setup 20, backswing 18, transition 20, impact 22, balance 20)
+  const maxes = {setup:20, backswing:18, transition:20, impact:22, balance:20};
+  const bdLabels = isES ? {setup:"Setup", backswing:"Backswing", transition:"Transición", impact:"Impacto", balance:"Equilibrio"}
+                        : {setup:"Setup", backswing:"Backswing", transition:"Transition", impact:"Impact", balance:"Balance"};
+  const breakdownHTML = Object.entries(maxes).map(([k, max]) => {
+    const val = bd[k] || 0;
+    const pct = Math.round((val / max) * 100);
+    return `<div class="elite-break-item">
+      <div class="elite-break-val">${val}</div>
+      <div class="elite-break-lbl">${bdLabels[k]}</div>
+      <div class="elite-break-bar"><div class="elite-break-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+
+  // Error cards (collapsible)
+  const errorHTML = errors.map((e, i) => `
+    <div class="elite-error-card">
+      <div class="elite-error-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+        <div class="elite-error-num">${i + 1}</div>
+        <div class="elite-error-name">${_esc(e.name || "")}</div>
+        <span style="font-size:11px;color:var(--soft)">▾</span>
       </div>
+      <div class="elite-error-body" style="display:none">
+        <div class="elite-error-row"><strong>${isES?"Causa:":"Cause:"}</strong> ${_esc(e.cause || "")}</div>
+        <div class="elite-error-row"><strong>${isES?"Efecto:":"Effect:"}</strong> ${_esc(e.effect || "")}</div>
+        <div class="elite-error-row"><strong>${isES?"Corrección:":"Fix:"}</strong> ${_esc(e.correction || "")}</div>
+        ${e.pga_ref ? `<div class="elite-error-row"><strong>PGA:</strong> <em style="color:var(--cyan)">${_esc(e.pga_ref)}</em></div>` : ""}
+        <div class="elite-drill-box">
+          <div class="drill-name">🏋️ ${_esc(e.drill || "")}</div>
+          <div class="drill-body">${isES?"Sensación:":"Feel:"} ${_esc(e.sensation || "")}</div>
+          <div class="drill-body" style="margin-top:4px">${isES?"En casa:":"At home:"} ${_esc(e.home_drill || "")}</div>
+        </div>
+      </div>
+    </div>`).join("");
+
+  // Pro comparisons
+  const proHTML = (d.pro_comparisons || []).map(p =>
+    `<div class="elite-pro-row"><strong>${_esc(p.pro)}:</strong> ${p.diffs.map(d => _esc(d)).join(" · ")}</div>`
+  ).join("");
+
+  // Progress badge
+  const prog = d.progress || {};
+  const progressHTML = prog.available
+    ? `<div class="elite-progress-row">
+        <div class="elite-progress-delta ${prog.delta > 0 ? 'elite-delta-pos' : prog.delta < 0 ? 'elite-delta-neg' : 'elite-delta-neu'}">${prog.delta > 0 ? "+" : ""}${prog.delta}</div>
+        <div>${prog.message || ""} <span style="color:var(--soft)">(${isES?"vs sesión anterior":"vs last session"})</span></div>
+       </div>` : "";
+
+  el.innerHTML = `
+    <div class="elite-result">
+      ${qaWarn}
+      ${progressHTML}
+
+      <!-- Score + level -->
+      <div class="elite-score-row">
+        <div class="elite-score-circle">
+          <div class="elite-score-big">${score}</div>
+          <div class="elite-score-sub">/ 100</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:800;color:var(--white)">${_esc(d.club||"—")} · ${d.frame_count||0} ${isES?"fotogramas":"frames"}</div>
+          <div class="elite-level-badge elite-level-${lvl}" style="margin-top:5px">${lvlLabel}</div>
+          <div style="font-size:12px;color:${tempoOk?"var(--ok)":"var(--warn)"};margin-top:5px">
+            Tempo ${tempo.toFixed(1)}:1 ${tempoOk ? "✓" : "⚠"}
+          </div>
+          ${potential > score ? `<div style="font-size:12px;color:var(--cyan);margin-top:3px">${isES?"Potencial si corriges:":"Potential if you fix:"} +${potential - score} pts</div>` : ""}
+        </div>
+      </div>
+
+      <!-- Breakdown -->
       <div>
-        <div style="font-size:13px;font-weight:700;color:var(--white)">Swing Analysis — ${_esc(d.club||"—")}</div>
-        <div style="font-size:12px;color:var(--soft);margin-top:3px">
-          ${d.frame_count||0} frames · ${d.duration_s||0}s recorded
-        </div>
-        <div style="font-size:12px;color:${tempoOk?"var(--ok)":"var(--warn)"};margin-top:2px">
-          Tempo ${tempo.toFixed(1)}:1 ${tempoOk ? "✓ Good" : "⚠ Adjust"}
-        </div>
+        <div class="elite-section-title">${isES?"Desglose del Score":"Score Breakdown"}</div>
+        <div class="elite-breakdown">${breakdownHTML}</div>
+      </div>
+
+      <!-- Strengths -->
+      ${strengths.length ? `<div>
+        <div class="elite-section-title">${isES?"Lo que haces bien ✓":"What you do well ✓"}</div>
+        <div class="elite-strengths">${strengths.map(s => `<div class="elite-strength-item">${_esc(s)}</div>`).join("")}</div>
+      </div>` : ""}
+
+      <!-- Errors -->
+      ${errors.length ? `<div>
+        <div class="elite-section-title">${isES?"Top Errores (prioridad)":"Top Errors (priority)"}</div>
+        ${errorHTML}
+      </div>` : ""}
+
+      <!-- Sequencing -->
+      ${d.sequencing ? `<div>
+        <div class="elite-section-title">${isES?"Secuencia":"Sequencing"}</div>
+        <div style="font-size:12px;color:var(--soft2);padding:8px 10px;background:rgba(255,255,255,.03);border-radius:6px">${_esc(d.sequencing)}</div>
+      </div>` : ""}
+
+      <!-- Pro comparisons -->
+      ${proHTML ? `<div>
+        <div class="elite-section-title">${isES?"Comparación Pro":"Pro Comparison"}</div>
+        ${proHTML}
+      </div>` : ""}
+
+      <!-- Next step -->
+      <div class="elite-next-step">
+        <strong>📍 ${isES?"Próximo enfoque":"Next focus"}:</strong> ${_esc(d.next_step || "")}
       </div>
     </div>
-    ${coaching.length ? `<div class="sv-coaching">${coaching.map(c => `
-      <div class="sv-coaching-item">
-        <span class="sv-sev-dot sv-dot-${c.severity}"></span>
-        <span>${_esc(c.tip)}</span>
-      </div>`).join("")}
-    </div>` : ""}
   `;
+
+  // Auto-expand first error
+  const firstHeader = el.querySelector(".elite-error-header");
+  if (firstHeader) firstHeader.nextElementSibling.style.display = "flex";
 }
 
 // ── history & drills ─────────────────────────────────────────────────
@@ -3844,14 +5270,59 @@ async function _loadSwingDrills() {
   } catch(e) { console.warn("_loadSwingDrills:", e); }
 }
 
+async function _loadEliteProgress() {
+  const el = qs("svProgressPanel");
+  if (!el) return;
+  try {
+    const d = await fetch("/api/golf/elite/progress").then(r => r.json());
+    if (!d.available) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--soft)">Analiza al menos 2 swings para ver tu progreso.</div>';
+      return;
+    }
+    const isES    = _svLang === "es";
+    const scores  = d.scores || [];
+    const trend   = d.trend  || "stable";
+    const trendIcon  = trend === "improving" ? "📈" : trend === "declining" ? "📉" : "➡";
+    const trendColor = trend === "improving" ? "var(--ok)" : trend === "declining" ? "var(--warn)" : "var(--soft2)";
+    const improving  = (d.improving || []).join(" · ") || "—";
+    const maxScore   = Math.max(...scores, 1);
+    const barsHTML   = scores.map((s, i) => {
+      const h = Math.max(4, Math.round((s / 100) * 80));
+      return `<div title="${isES?"Sesión":"Session"} ${i+1}: ${s}" style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;margin:0 3px">
+        <span style="font-size:10px;color:var(--soft)">${s}</span>
+        <div style="width:18px;height:${h}px;background:var(--cyan);border-radius:3px;opacity:0.85"></div>
+        <span style="font-size:9px;color:var(--soft)">${i+1}</span>
+      </div>`;
+    }).join("");
+    el.innerHTML = `
+      <div style="padding:10px 0">
+        <div style="font-size:12px;color:var(--soft2);margin-bottom:10px">
+          ${isES?"Historial de scores":"Score history"} — ${scores.length} ${isES?"sesiones":"sessions"}
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:0;margin-bottom:14px;min-height:90px">${barsHTML}</div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px">
+          <div><span style="color:var(--soft)">Avg</span> <strong style="color:var(--white)">${d.avg || 0}</strong></div>
+          <div><span style="color:var(--soft)">Best</span> <strong style="color:var(--cyan)">${d.best || 0}</strong></div>
+          <div><span style="color:var(--soft)">${isES?"Tendencia":"Trend"}</span> <strong style="color:${trendColor}">${trendIcon} ${isES ? trend : trend}</strong></div>
+        </div>
+        ${improving !== "—" ? `<div style="font-size:12px;margin-top:10px;color:var(--ok)">✓ ${isES?"Mejorando:":"Improving:"} ${_esc(improving)}</div>` : ""}
+        ${d.message ? `<div style="font-size:12px;margin-top:8px;color:var(--soft2)">${_esc(d.message)}</div>` : ""}
+      </div>`;
+  } catch(e) {
+    if (el) el.innerHTML = '<div style="font-size:12px;color:var(--soft)">Error loading progress.</div>';
+    console.warn("_loadEliteProgress:", e);
+  }
+}
+
 function svShowTab(tab, btn) {
-  const map = { history: "svTabHistory", drills: "svTabDrills" };
+  const map = { history: "svTabHistory", drills: "svTabDrills", progress: "svTabProgress" };
   Object.values(map).forEach(id => { const el = qs(id); if (el) el.style.display = "none"; });
   const target = qs(map[tab]);
   if (target) target.style.display = "";
   document.querySelectorAll(".sv-tab").forEach(b => b.classList.remove("active"));
   if (btn) btn.classList.add("active");
   if (tab === "drills") _loadSwingDrills();
+  if (tab === "progress") _loadEliteProgress();
 }
 
 function _setRecordBarVisible(v) {
@@ -4020,8 +5491,8 @@ async function speakText(text) {
 
 function browserSpeak(text) {
   if (!window.speechSynthesis) return;
-  const lang  = voiceState.settings?.language || "en-US";
-  const speed = voiceState.settings?.speed    || 1.0;
+  const lang  = _voiceLang || voiceState.settings?.language || "es-ES";
+  const speed = voiceState.settings?.speed || 1.0;
   const utt   = new SpeechSynthesisUtterance(text.slice(0, 600));
   utt.lang = lang;
   utt.rate = speed;
@@ -4064,7 +5535,7 @@ function _startWakeWord() {
   if (voiceState.wakeRecognition) _stopWakeWord();
 
   const rec = new SR();
-  rec.lang = voiceState.settings?.language || "en-US";
+  rec.lang = _voiceLang;
   rec.continuous   = true;
   rec.interimResults = true;
 
@@ -4117,6 +5588,46 @@ function _stopWakeWord() {
   if (btn) btn.classList.remove("active");
 }
 
+// ── Voice language — single source of truth ──────────────────────────
+let _voiceLang = localStorage.getItem("jarvis_voice_lang") || "es-ES";
+
+function _setVoiceLang(lang) {
+  _voiceLang = lang;
+  localStorage.setItem("jarvis_voice_lang", lang);
+  // Sync recognition instance lang
+  if (state.recognition) state.recognition.lang = lang;
+  // Sync settings dropdown
+  const sel = qs("vbLangSel");
+  if (sel) sel.value = lang;
+  // Sync cmd bar toggle label + style
+  const btn = qs("cmd-lang-toggle");
+  if (btn) {
+    const label = lang.startsWith("es") ? "ES" : "EN";
+    btn.textContent = label;
+    btn.className = lang.startsWith("es") ? "es" : "";
+  }
+}
+
+function toggleVoiceLang() {
+  const next = _voiceLang.startsWith("es") ? "en-US" : "es-ES";
+  _setVoiceLang(next);
+  showToast("Voice language: " + (next.startsWith("es") ? "Español" : "English"), "info", 2000);
+}
+
+function onVbLangChange(val) {
+  _setVoiceLang(val);
+}
+
+// ── Text normalization — accent-strip for intent matching ─────────────
+function _normalizeText(s) {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")  // strip combining diacritics (é→e, ñ→n, etc.)
+    .replace(/[¿¡]/g, "")             // strip inverted punctuation
+    .toLowerCase()
+    .trim();
+}
+
 // ── Main initVoice ────────────────────────────────────────────────────
 function initVoice() {
   const sl = qs("speakLastBtn");
@@ -4139,6 +5650,9 @@ function initVoice() {
     if (val) val.textContent = parseFloat(sp.value).toFixed(1) + "x";
   };
 
+  // Sync UI to current _voiceLang on init
+  _setVoiceLang(_voiceLang);
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     ["voiceBtn","voiceBtnMob","stopVoiceBtn","stopVoiceBtnMob"].forEach(id => {
@@ -4150,21 +5664,28 @@ function initVoice() {
   }
 
   state.recognition = new SR();
-  state.recognition.lang = voiceState.settings?.language || "en-US";
-  state.recognition.interimResults  = false;
-  state.recognition.maxAlternatives = 1;
+  state.recognition.lang             = _voiceLang;
+  state.recognition.interimResults   = false;
+  state.recognition.maxAlternatives  = 3;  // more alternatives helps with accented words
 
-  state.recognition.onstart  = () => { state.listening = true;  vbSetState("listening","Listening…"); };
-  state.recognition.onend    = () => { state.listening = false; vbSetState("idle","Voice ready"); };
+  state.recognition.onstart  = () => { state.listening = true;  vbSetState("listening", _voiceLang.startsWith("es") ? "Escuchando…" : "Listening…"); };
+  state.recognition.onend    = () => { state.listening = false; vbSetState("idle", "Voice ready"); };
   state.recognition.onresult = async ev => {
-    const transcript = ev.results[0][0].transcript;
-    const confidence = ev.results[0][0].confidence || 1.0;
-    qs("chatInput").value = transcript;
+    // Pick the highest-confidence alternative
+    let best = ev.results[0][0].transcript;
+    let bestConf = ev.results[0][0].confidence || 0;
+    for (let i = 1; i < ev.results[0].length; i++) {
+      const alt = ev.results[0][i];
+      if ((alt.confidence || 0) > bestConf) { best = alt.transcript; bestConf = alt.confidence; }
+    }
+    const transcript = best;
+    const chatEl = qs("chatInput");
+    if (chatEl) chatEl.value = transcript;
     // Log to voice engine before routing
     await fetch("/api/voice/command", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({transcript, source: "mic", speak_response: false}),
+      body: JSON.stringify({ transcript, source: "mic", speak_response: false, lang: _voiceLang }),
     }).catch(()=>{});
     await sendChat();
   };
@@ -4276,29 +5797,132 @@ function showCourseDetail(c) {
   const el = qs("selectedCourseDetail"); if (!el) return;
   const loc = [c.city, c.region || c.department, c.country].filter(Boolean).join(", ");
   const alt = c.altitude_meters ? Math.round(c.altitude_meters) + "m altitude" : "";
-  const mapUrl = (c.latitude && c.longitude)
-    ? `https://www.google.com/maps/search/?api=1&query=${c.latitude},${c.longitude}`
-    : null;
+  const hasCoords = !!(c.latitude && c.longitude);
+
   el.style.display = "block";
   el.innerHTML = `
     <div class="course-detail-panel">
-      <div class="cdp-name">⛳ ${c.name}</div>
+      <div class="cdp-name">⛳ ${_esc(c.name)}</div>
       <div class="cdp-meta">
-        ${loc ? `<span class="cdp-badge">📍 ${loc}</span>` : ""}
-        ${alt ? `<span class="cdp-badge">🏔 ${alt}</span>` : ""}
-        ${c.holes ? `<span class="cdp-badge">${c.holes} holes</span>` : ""}
+        ${loc  ? `<span class="cdp-badge">📍 ${_esc(loc)}</span>` : ""}
+        ${alt  ? `<span class="cdp-badge">🏔 ${_esc(alt)}</span>` : ""}
+        ${c.holes     ? `<span class="cdp-badge">${c.holes} holes</span>` : ""}
         ${c.par_total ? `<span class="cdp-badge">Par ${c.par_total}</span>` : ""}
-        ${c.course_type ? `<span class="cdp-badge">${c.course_type}</span>` : ""}
+        ${c.course_type ? `<span class="cdp-badge">${_esc(c.course_type)}</span>` : ""}
       </div>
-      ${c.notes ? `<div style="font-size:13px;color:var(--soft2);line-height:1.6;margin-bottom:10px">${c.notes}</div>` : ""}
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${mapUrl
-          ? `<a href="${mapUrl}" target="_blank" class="cdp-map-btn">🗺 Open in Google Maps</a>`
-          : `<span style="font-size:12px;color:var(--soft)">No GPS coordinates available</span>`
-        }
-        <button class="cdp-map-btn" onclick="quickSend('Tell me about ${c.name.replace(/'/g,"'")} golf course')">🧠 Ask JARVIS</button>
+      ${c.notes ? `<div style="font-size:13px;color:var(--soft2);line-height:1.6;margin-bottom:10px">${_esc(c.notes)}</div>` : ""}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        ${!hasCoords ? `<span style="font-size:11px;color:var(--soft)">📡 No GPS coordinates</span>` : ""}
+        <button class="cdp-map-btn" onclick="quickSend('Tell me about ${c.name.replace(/'/g,"\\'")} golf course')">🧠 Ask JARVIS</button>
       </div>
     </div>`;
+
+  // Load embedded satellite map (async, non-blocking)
+  _loadCourseMap(c.latitude, c.longitude, c.name);
+}
+
+/* ═══════════════════════════════════════
+   EMBEDDED COURSE MAP  (Leaflet + Esri)
+═══════════════════════════════════════ */
+let _courseMap    = null;
+let _courseMarker = null;
+let _leafletReady = false;
+let _leafletLoading = false;
+const _leafletQueue = [];
+
+async function _ensureLeaflet() {
+  if (_leafletReady) return;
+  if (_leafletLoading) return new Promise(res => _leafletQueue.push(res));
+  _leafletLoading = true;
+  return new Promise((resolve, reject) => {
+    // Load CSS
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    // Load JS
+    const js = document.createElement("script");
+    js.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    js.onload = () => {
+      _leafletReady = true;
+      _leafletLoading = false;
+      _leafletQueue.forEach(fn => fn());
+      _leafletQueue.length = 0;
+      resolve();
+    };
+    js.onerror = () => {
+      _leafletLoading = false;
+      reject(new Error("Leaflet CDN load failed"));
+    };
+    document.head.appendChild(js);
+  });
+}
+
+async function _loadCourseMap(lat, lng, name) {
+  const container = qs("course-map");
+  if (!container) return;
+
+  if (!lat || !lng) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "block";
+
+  try {
+    await _ensureLeaflet();
+  } catch(e) {
+    // Only set error HTML if Leaflet was never initialised (container is still empty)
+    if (!_courseMap) container.innerHTML = `<div class="cdp-map-no-coords">📡 Map unavailable — check your connection</div>`;
+    return;
+  }
+
+  if (!_courseMap) {
+    // First init — create the map instance once and reuse it
+    _courseMap = L.map("course-map", { zoomControl: true, attributionControl: true });
+
+    // Esri World Imagery — satellite, no API key required
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        attribution: "Tiles &copy; Esri, Maxar, GeoEye",
+        maxZoom: 19,
+      }
+    ).addTo(_courseMap);
+
+    // Labels + boundaries overlay on top of satellite
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, opacity: 0.9, zIndex: 2 }
+    ).addTo(_courseMap);
+  }
+
+  // Golf-pin emoji marker
+  const golfIcon = L.divIcon({
+    className: "",
+    html: `<div style="font-size:26px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.7))">⛳</div>`,
+    iconSize:   [30, 30],
+    iconAnchor: [15, 28],
+    popupAnchor:[0, -32],
+  });
+
+  if (_courseMarker) {
+    _courseMarker.setLatLng([lat, lng])
+                 .setPopupContent(`<span>⛳ ${name}</span>`)
+                 .openPopup();
+  } else {
+    _courseMarker = L.marker([lat, lng], { icon: golfIcon })
+      .addTo(_courseMap)
+      .bindPopup(`<span>⛳ ${name}</span>`)
+      .openPopup();
+  }
+
+  _courseMap.setView([lat, lng], 15);
+
+  // Leaflet needs the container to have real dimensions before sizing
+  setTimeout(() => {
+    if (_courseMap) _courseMap.invalidateSize();
+  }, 120);
 }
 
 /* ═══════════════════════════════════════
@@ -4863,6 +6487,9 @@ async function loadWow() {
     _renderInsights(insR.insights || []);
     _renderBriefing(briR);
     _renderSuggestions(sugR.suggestions || []);
+    // Populate Command Center with suggestions + alerts
+    const homeCache = window._lastHomeData || {};
+    renderCommandCenter(homeCache, { insights: insR.insights, suggestions: sugR.suggestions });
   } catch(e) { console.warn("loadWow:", e); }
 }
 
@@ -5295,9 +6922,102 @@ function initEvents() {
   kd("ev-title", saveEvent);
 }
 
+/* ── Weather / Location ──────────────────────────── */
+window._weatherCtx = null;
+
+const _OWM_ICONS = {
+  "01": "☀️","02": "🌤","03": "⛅","04": "☁️",
+  "09": "🌧","10": "🌦","11": "⛈","13": "❄️","50": "🌫"
+};
+function _owmIconEmoji(icon) {
+  return _OWM_ICONS[icon ? icon.slice(0,2) : ""] || "🌡";
+}
+
+async function fetchWeather(lat, lon) {
+  try {
+    const r = await fetch(`/api/context/weather?lat=${lat}&lon=${lon}`);
+    const d = await r.json();
+    if (d.status === "ok") {
+      window._weatherCtx = d;
+      _renderWeatherChip(d.current);
+      _applyWeatherToUI(d);
+    }
+  } catch(e) { /* silently fail — weather is optional */ }
+}
+
+function _renderWeatherChip(cur) {
+  if (!cur || !cur.available) return;
+  const chip = qs("weather-chip");
+  if (!chip) return;
+  qs("wc-temp").textContent = `${cur.temp_c}°C`;
+  qs("wc-icon").textContent = _owmIconEmoji(cur.icon);
+  qs("wc-desc").textContent = cur.description || "";
+  qs("wc-wind").textContent = cur.wind_kmh ? `· ${cur.wind_kmh}km/h ${cur.wind_dir}` : "";
+  chip.style.display = "flex";
+  chip.title = `${cur.city ? cur.city + " · " : ""}Humidity ${cur.humidity_pct}% · ${cur.wind_label}`;
+}
+
+function initWeather() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+    () => { /* user denied or unavailable */ },
+    { timeout: 8000, maximumAge: 600000 }
+  );
+  // Refresh every 15 min
+  setInterval(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+      () => {}
+    );
+  }, 900000);
+}
+
+// Helper: get weather-enhanced golf context string for prompts
+function getWeatherGolfCtx() {
+  if (!window._weatherCtx) return "";
+  return window._weatherCtx.golf_context || "";
+}
+function getWeatherRunningCtx() {
+  if (!window._weatherCtx) return "";
+  return window._weatherCtx.running_context || "";
+}
+
+function caddyFillWeather() {
+  const wc = window._weatherCtx;
+  if (!wc || !wc.current || !wc.current.available) return;
+  const cur = wc.current;
+  const tempEl = qs("caddyTemp"); if (tempEl) tempEl.value = cur.temp_c;
+  const windEl = qs("caddyWind"); if (windEl) windEl.value = Math.round(cur.wind_kmh / 1.60934); // km/h → mph
+  const noteEl = qs("caddy-weather-note");
+  if (noteEl) {
+    noteEl.textContent = `🌤 Live: ${wc.golf_context || (cur.temp_c + "°C · " + cur.wind_kmh + "km/h " + cur.wind_dir)}`;
+    noteEl.style.display = "block";
+  }
+  showToast("Caddie filled with live weather 🌤", "success", 2500);
+}
+
+function _applyWeatherToUI(data) {
+  // Show "Use Live Weather" button on caddie
+  const cadBtn = qs("caddy-weather-btn");
+  if (cadBtn) cadBtn.style.display = "inline-flex";
+  // Show running weather strip
+  const runStrip = qs("run-weather-strip");
+  const runText  = qs("run-weather-text");
+  if (runStrip && runText && data.running_context) {
+    runText.textContent = data.running_context;
+    runStrip.style.display = "block";
+  }
+}
+
 /* ── Boot ───────────────────────────── */
 async function boot() {
   initEvents(); initVoice(); initUpload(); initVoiceStatus();
+  initWeather();  // async geolocation — non-blocking
+  // Phase 6Y: seed demo data on first launch + set mode badge
+  updateModeBadge();
+  await checkAndSeedDemo();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
   await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day'), loadAnalytics(), loadWow()]);
   loadNotifications();
@@ -5305,8 +7025,1627 @@ async function boot() {
   setInterval(loadMarketSnapshot,  30000);
   setInterval(loadRecommendations, 30000);
   setInterval(loadNotifications,   60000);
+  // Engagement loop — daily suggestion pulse every 5 min
+  setInterval(loadWow, 300000);
+  // Onboarding check — skip if already configured
+  checkOnboarding();
 }
 boot();
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL COMMAND BAR
+═══════════════════════════════════════════════════════════════ */
+let _cmdPending = false;
+let _cmdTypingTimer = null;
+
+function cmdTyping(val) {
+  clearTimeout(_cmdTypingTimer);
+  if (!val.trim()) { cmdDismiss(); return; }
+}
+
+async function cmdSend() {
+  const input = qs("cmd-input");
+  const cmd = input.value.trim();
+  if (!cmd || _cmdPending) return;
+
+  _cmdPending = true;
+  const sendBtn = qs("cmd-send-btn");
+  sendBtn.innerHTML = '<span class="cmd-spinner"></span>';
+  sendBtn.disabled = true;
+  // Show orb busy state + ticker
+  document.querySelector(".orb-wrap")?.classList.add("orb-busy");
+  tickerShow("JARVIS is thinking…");
+
+  // Show result panel loading
+  qs("cmd-result").style.display = "block";
+  qs("cmd-res-agent").textContent = "JARVIS is thinking…";
+  qs("cmd-res-text").textContent = "";
+  qs("cmd-res-actions").innerHTML = "";
+  qs("cmd-res-icon").textContent = "⏳";
+
+  try {
+    const d = await fetch("/api/command/route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command: cmd }),
+    }).then(r => r.json());
+
+    const tabIcons = {
+      productivity: "✅", markets: "📈", golf: "⛳", chat: "💬",
+      analytics: "📊", projects: "📋", calendar: "📅",
+      intelligence: "📰", system: "⚙️",
+      fitness: "💪", running: "🏃", cycling: "🚴", gym: "🏋️", tennis: "🎾",
+    };
+    const icon = tabIcons[d.intent] || tabIcons[d.tab] || "🤖";
+    qs("cmd-res-icon").textContent = icon;
+    qs("cmd-res-agent").textContent = `JARVIS · ${d.intent?.toUpperCase() || "GENERAL"} · ${Math.round((d.confidence||0)*100)}% confidence`;
+    qs("cmd-res-text").textContent = d.reply || "Done.";
+
+    // Build action chips
+    const acts = qs("cmd-res-actions");
+    acts.innerHTML = "";
+    if (d.tab && d.tab !== "chat") {
+      const chip = document.createElement("button");
+      chip.className = "cmd-res-act";
+      chip.textContent = `Go to ${d.tab} →`;
+      chip.onclick = () => { switchTab(d.tab); cmdDismiss(); };
+      acts.appendChild(chip);
+    }
+    const chatChip = document.createElement("button");
+    chatChip.className = "cmd-res-act";
+    chatChip.textContent = "Ask in Chat";
+    chatChip.onclick = () => {
+      switchTab("chat");
+      const msgInput = qs("messageInput");
+      if (msgInput) { msgInput.value = cmd; msgInput.focus(); }
+      cmdDismiss();
+    };
+    acts.appendChild(chatChip);
+
+    tickerShow("Done", 2000);
+    input.value = "";
+  } catch(e) {
+    qs("cmd-res-icon").textContent = "⚠️";
+    qs("cmd-res-agent").textContent = "JARVIS";
+    qs("cmd-res-text").textContent = "Could not process command. Try asking in Chat.";
+    tickerShow("Command failed", 2500);
+  } finally {
+    _cmdPending = false;
+    sendBtn.innerHTML = "Ask";
+    sendBtn.disabled = false;
+    document.querySelector(".orb-wrap")?.classList.remove("orb-busy");
+  }
+}
+
+function cmdDismiss() {
+  qs("cmd-result").style.display = "none";
+}
+
+function cmdMic() {
+  const input = qs("cmd-input");
+  if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+    showToast("Speech recognition not supported in this browser", "warning");
+    return;
+  }
+  const SR  = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang             = _voiceLang;
+  rec.maxAlternatives  = 3;
+  rec.interimResults   = false;
+
+  const micBtn = qs("cmd-mic-btn");
+  if (micBtn) micBtn.style.opacity = "0.5";
+  tickerShow(_voiceLang.startsWith("es") ? "Escuchando…" : "Listening…");
+
+  rec.onresult = e => {
+    // Best alternative
+    let best = e.results[0][0].transcript, bestConf = e.results[0][0].confidence || 0;
+    for (let i = 1; i < e.results[0].length; i++) {
+      const a = e.results[0][i];
+      if ((a.confidence || 0) > bestConf) { best = a.transcript; bestConf = a.confidence; }
+    }
+    input.value = best;
+    tickerHide();
+    cmdSend();
+  };
+  rec.onerror = () => {
+    if (micBtn) micBtn.style.opacity = "";
+    tickerHide();
+    showToast("Mic error — try again", "error");
+  };
+  rec.onend = () => { if (micBtn) micBtn.style.opacity = ""; };
+  rec.start();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 6Y — STATUS TICKER, MODE, QUICK ACTIONS, AUTO-SEED
+═══════════════════════════════════════════════════════════════ */
+
+// ── Status Ticker ────────────────────────────────────────────
+let _tickerTimer = null;
+function tickerShow(msg, autohide = 0) {
+  const t = qs("jarvis-ticker");
+  if (!t) return;
+  t.style.display = "flex";
+  qs("ticker-text").textContent = msg;
+  clearTimeout(_tickerTimer);
+  if (autohide > 0) _tickerTimer = setTimeout(tickerHide, autohide);
+}
+function tickerHide() {
+  const t = qs("jarvis-ticker");
+  if (t) t.style.display = "none";
+}
+
+// ── Demo / Real Mode ─────────────────────────────────────────
+let _currentMode = localStorage.getItem("jarvis_mode") || "demo";
+
+async function loadMode() {
+  try {
+    const d = await fetch("/api/mode").then(r => r.json());
+    _currentMode = d.mode || "demo";
+    localStorage.setItem("jarvis_mode", _currentMode);
+    updateModeBadge();
+  } catch(e) {}
+}
+
+function updateModeBadge() {
+  const badge = qs("mode-badge");
+  if (!badge) return;
+  const isDemo = _currentMode === "demo";
+  badge.textContent = isDemo ? "● DEMO" : "● REAL";
+  badge.className   = "mode-badge " + _currentMode;
+  badge.title       = isDemo
+    ? "Demo mode — using sample data. Click to switch to Real mode."
+    : "Real mode — connected to live data. Click to switch to Demo.";
+}
+
+async function toggleDemoMode() {
+  const newMode = _currentMode === "demo" ? "real" : "demo";
+  try {
+    await fetch("/api/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: newMode }),
+    });
+    _currentMode = newMode;
+    localStorage.setItem("jarvis_mode", _currentMode);
+    updateModeBadge();
+    const msg = newMode === "real"
+      ? "Real mode active — connect your APIs in Settings to go live 🚀"
+      : "Demo mode — explore all features with sample data";
+    showToast(msg, "info", 4000);
+    if (newMode === "demo") {
+      localStorage.removeItem("jarvis_guided_shown");
+      setTimeout(() => showGuidedOverlay(), 600);
+    }
+  } catch(e) {
+    showToast("Could not switch mode", "error");
+  }
+}
+
+// ── Auto-seed on first launch ─────────────────────────────────
+async function checkAndSeedDemo() {
+  try {
+    const status = await fetch("/api/demo/status").then(r => r.json());
+    _currentMode = status.mode || "demo";
+    localStorage.setItem("jarvis_mode", _currentMode);
+    updateModeBadge();
+    if (!status.seeded) {
+      tickerShow("JARVIS is loading demo data…");
+      await fetch("/api/demo/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      tickerShow("Demo data loaded", 2500);
+      showToast("Welcome to JARVIS! Demo data ready.", "success", 4500);
+      // Auto-enable ALL modules so every tab is visible on first launch
+      _autoEnableAllModules();
+      // Show guided tour after short delay
+      setTimeout(() => showGuidedOverlay(), 1800);
+      await loadHome();
+    } else {
+      // Returning user — ensure modules are applied
+      const saved = localStorage.getItem("jarvis_modules");
+      if (saved) applyModules(JSON.parse(saved));
+    }
+  } catch(e) {}
+}
+
+function _autoEnableAllModules() {
+  if (localStorage.getItem("jarvis_modules")) return; // don't overwrite user choice
+  const all = ["productivity","markets","projects","golf","running","cycling","gym","tennis"];
+  localStorage.setItem("jarvis_modules", JSON.stringify(all));
+  applyModules(all);
+}
+
+/* ── Guided tour ─────────────────────────────────────────────── */
+function showGuidedOverlay() {
+  if (localStorage.getItem("jarvis_guided_shown")) return;
+  const el = qs("guided-overlay");
+  if (el) el.style.display = "block";
+}
+
+function dismissGuided() {
+  localStorage.setItem("jarvis_guided_shown", "1");
+  const el = qs("guided-overlay");
+  if (!el) return;
+  el.style.opacity = "0";
+  el.style.transition = "opacity .3s";
+  setTimeout(() => { el.style.display = "none"; el.style.opacity = ""; }, 320);
+}
+
+/* ── Example Commands ────────────────────────────────────────── */
+function tryExampleCmd(text) {
+  // Special routing: life tasks go to life NLP, others go to chat
+  const lifeKws = ["pagar", "pago", "factura", "electricity", "bill", "luz", "agua", "arriendo"];
+  const runKws  = ["run", "corr", "km", "pace", "log a run"];
+  const low = text.toLowerCase();
+
+  if (lifeKws.some(k => low.includes(k))) {
+    switchTab("life");
+    setTimeout(() => {
+      const inp = qs("life-nlp-input");
+      if (inp) { inp.value = text; inp.focus(); }
+      setTimeout(() => lifeNlpSend(), 120);
+    }, 300);
+    return;
+  }
+
+  if (runKws.some(k => low.includes(k))) {
+    switchTab("running");
+    setTimeout(() => {
+      // pre-fill distance/duration from text if detectable
+      const distMatch = text.match(/(\d+(?:\.\d+)?)\s*km/i);
+      const durMatch  = text.match(/(\d+)\s*min/i);
+      const distEl = qs("run-dist"), durEl = qs("run-dur");
+      if (distEl && distMatch) distEl.value = distMatch[1];
+      if (durEl  && durMatch)  durEl.value  = durMatch[1];
+      showToast("Fill in any details and tap Log Run 🏃", "info", 3000);
+    }, 350);
+    return;
+  }
+
+  // Default: send to chat
+  switchTab("chat");
+  setTimeout(() => {
+    const inp = qs("chatInput");
+    if (inp) { inp.value = text; inp.focus(); }
+    setTimeout(() => sendChat(), 120);
+  }, 300);
+}
+
+// ── 1-Click Quick Actions ─────────────────────────────────────
+async function quickAction(action) {
+  document.querySelectorAll(".action-btn").forEach(b => b.classList.add("loading"));
+  tickerShow("JARVIS is executing…");
+  document.querySelector(".orb-wrap")?.classList.add("orb-busy");
+
+  const resultDiv  = qs("action-result");
+  const msgDiv     = qs("action-result-msg");
+  const chipsDiv   = qs("action-result-chips");
+  if (resultDiv) resultDiv.style.display = "none";
+
+  try {
+    const d = await fetch("/api/quick-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    }).then(r => r.json());
+
+    tickerShow("Done: " + d.label, 3000);
+    showToast(d.label + " ready", "success");
+
+    if (resultDiv && msgDiv && chipsDiv) {
+      msgDiv.textContent = d.message || "";
+      chipsDiv.innerHTML = "";
+      (d.chips || []).forEach(chip => {
+        const el = document.createElement("button");
+        el.className = "action-chip";
+        el.textContent = chip;
+        el.onclick = () => { if (d.tab) switchTab(d.tab); };
+        chipsDiv.appendChild(el);
+      });
+      resultDiv.style.display = "block";
+    }
+
+    // Auto-navigate after a brief pause
+    if (d.tab) setTimeout(() => switchTab(d.tab), 900);
+
+  } catch(e) {
+    tickerShow("Action failed", 2000);
+    showToast("Action failed — try again", "error");
+  } finally {
+    document.querySelectorAll(".action-btn").forEach(b => b.classList.remove("loading"));
+    document.querySelector(".orb-wrap")?.classList.remove("orb-busy");
+  }
+}
+
+// ── Remove hint-active after first interaction ────────────────
+document.addEventListener("click", function removeHints(e) {
+  if (e.target.closest(".action-btn")) {
+    document.querySelectorAll(".hint-active").forEach(el => el.classList.remove("hint-active"));
+    document.removeEventListener("click", removeHints);
+  }
+}, { once: false });
+
+/* ═══════════════════════════════════════════════════════════════
+   ONBOARDING
+═══════════════════════════════════════════════════════════════ */
+const _MODULES_DEFAULT = ["productivity", "markets", "projects"];
+const _ALL_MODULES = ["productivity","markets","projects","golf","running","cycling","gym","tennis"];
+const _FITNESS_MODULES = ["running","cycling","gym","tennis"];
+
+function checkOnboarding() {
+  const saved = localStorage.getItem("jarvis_modules");
+  if (!saved) {
+    // If demo was seeded this session, _autoEnableAllModules already ran —
+    // don't show the picker again; guided overlay covers first-run UX.
+    const guidedShown = localStorage.getItem("jarvis_guided_shown");
+    if (!guidedShown) return; // guided overlay will show instead
+    qs("onboarding-overlay").style.display = "flex";
+    return;
+  }
+  applyModules(JSON.parse(saved));
+}
+
+// Toggle module card selection
+document.querySelectorAll(".module-card").forEach(card => {
+  card.addEventListener("click", () => card.classList.toggle("selected"));
+});
+
+function saveOnboarding() {
+  const selected = Array.from(document.querySelectorAll(".module-card.selected"))
+    .map(c => c.dataset.module);
+  if (selected.length === 0) { showToast("Select at least one module", "warning"); return; }
+  localStorage.setItem("jarvis_modules", JSON.stringify(selected));
+  qs("onboarding-overlay").style.display = "none";
+  applyModules(selected);
+  showToast("JARVIS personalised for you!", "success");
+  // Load fitness data for selected fitness modules
+  selected.filter(m => _FITNESS_MODULES.includes(m)).forEach(m => fitLoadModule(m));
+}
+
+function skipOnboarding() {
+  const defaults = _MODULES_DEFAULT;
+  localStorage.setItem("jarvis_modules", JSON.stringify(defaults));
+  qs("onboarding-overlay").style.display = "none";
+  applyModules(defaults);
+}
+
+function applyModules(modules) {
+  // Show/hide tab buttons for fitness modules
+  _FITNESS_MODULES.forEach(m => {
+    const btn = document.querySelector(`.tab-btn[data-module="${m}"]`);
+    if (btn) btn.style.display = modules.includes(m) ? "" : "none";
+  });
+  // Golf tab visibility
+  const golfBtn = document.querySelector('.tab-btn[data-tab="golf"]');
+  if (golfBtn) golfBtn.style.display = modules.includes("golf") ? "" : "none";
+  // Mobile nav
+  _FITNESS_MODULES.forEach(m => {
+    const mBtn = document.querySelector(`.mob-btn[data-tab="${m}"]`);
+    if (mBtn) mBtn.style.display = modules.includes(m) ? "" : "none";
+  });
+}
+
+function openModuleSettings() {
+  // Sync current state
+  const saved = JSON.parse(localStorage.getItem("jarvis_modules") || "[]");
+  document.querySelectorAll(".module-card").forEach(c => {
+    c.classList.toggle("selected", saved.includes(c.dataset.module));
+  });
+  qs("onboarding-overlay").style.display = "flex";
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FITNESS MODULES  (Running, Cycling, Gym, Tennis)
+═══════════════════════════════════════════════════════════════ */
+const _fitState = { gym_exercises: [] };
+
+const _fitPrefixes = { running:"run", cycling:"cyc", gym:"gym", tennis:"ten" };
+const _fitIcons    = { running:"🏃", cycling:"🚴", gym:"🏋️", tennis:"🎾" };
+const _fitColors   = { running:"var(--cyan)", cycling:"var(--ok)", gym:"var(--warn)", tennis:"var(--bad)" };
+
+async function fitLoadModule(sport) {
+  await Promise.allSettled([fitLoadStats(sport), fitLoadHistory(sport), fitLoadTips(sport)]);
+}
+
+async function fitLoadStats(sport) {
+  const p = _fitPrefixes[sport];
+  const el = qs(`${p}-stats`);
+  if (!el) return;
+  try {
+    const d = await fetch(`/api/fitness/${sport}/stats`).then(r => r.json());
+    el.innerHTML = _fitRenderStats(sport, d);
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${_fitIcons[sport]}</div><div class="empty-state-title">No data yet</div><div class="empty-state-sub">Log your first session to see stats.</div></div>`;
+  }
+}
+
+function _fitRenderStats(sport, d) {
+  const clr = _fitColors[sport];
+  if (sport === "running") {
+    const weekPct = d.targets?.weekly_km ? Math.min(100, Math.round(d.week_km / d.targets.weekly_km * 100)) : 0;
+    return `
+      <div class="fitness-stat"><div class="fitness-stat-val" style="color:${clr}">${d.total_km || 0}</div><div class="fitness-stat-lbl">Total KM</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_km || 0}</div><div class="fitness-stat-lbl">This Week KM<br><div class="fitness-progress-bar"><div class="fitness-progress-fill" style="width:${weekPct}%"></div></div></div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_sessions || 0}</div><div class="fitness-stat-lbl">Runs This Week</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.total_sessions || 0}</div><div class="fitness-stat-lbl">Total Runs</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.best_km || 0}</div><div class="fitness-stat-lbl">Longest Run</div></div>
+      ${d.avg_pace_min_km ? `<div class="fitness-stat"><div class="fitness-stat-val" style="font-size:16px">${d.avg_pace_min_km}</div><div class="fitness-stat-lbl">Avg Pace min/km</div></div>` : ""}
+    `;
+  }
+  if (sport === "cycling") {
+    const weekPct = d.targets?.weekly_km ? Math.min(100, Math.round(d.week_km / d.targets.weekly_km * 100)) : 0;
+    return `
+      <div class="fitness-stat"><div class="fitness-stat-val" style="color:${clr}">${d.total_km || 0}</div><div class="fitness-stat-lbl">Total KM</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_km || 0}</div><div class="fitness-stat-lbl">This Week KM<br><div class="fitness-progress-bar"><div class="fitness-progress-fill" style="width:${weekPct}%;background:${clr}"></div></div></div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_sessions || 0}</div><div class="fitness-stat-lbl">Rides This Week</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.total_sessions || 0}</div><div class="fitness-stat-lbl">Total Rides</div></div>
+      ${d.avg_speed_kmh ? `<div class="fitness-stat"><div class="fitness-stat-val">${d.avg_speed_kmh}</div><div class="fitness-stat-lbl">Avg Speed km/h</div></div>` : ""}
+    `;
+  }
+  if (sport === "gym") {
+    return `
+      <div class="fitness-stat"><div class="fitness-stat-val" style="color:${clr}">${d.total_sessions || 0}</div><div class="fitness-stat-lbl">Total Sessions</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_sessions || 0}</div><div class="fitness-stat-lbl">Sessions This Week</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_sets_est || 0}</div><div class="fitness-stat-lbl">Sets This Week</div></div>
+      ${Object.keys(d.personal_bests || {}).slice(0,3).map(k =>
+        `<div class="fitness-stat"><div class="fitness-stat-val" style="font-size:15px">${d.personal_bests[k]}kg</div><div class="fitness-stat-lbl">PR: ${_esc(k)}</div></div>`
+      ).join("")}
+    `;
+  }
+  if (sport === "tennis") {
+    return `
+      <div class="fitness-stat"><div class="fitness-stat-val" style="color:${clr}">${d.total_sessions || 0}</div><div class="fitness-stat-lbl">Total Matches</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val" style="color:var(--ok)">${d.total_wins || 0}</div><div class="fitness-stat-lbl">Wins</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val" style="color:var(--bad)">${d.total_losses || 0}</div><div class="fitness-stat-lbl">Losses</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.win_rate || 0}%</div><div class="fitness-stat-lbl">Win Rate</div></div>
+      <div class="fitness-stat"><div class="fitness-stat-val">${d.week_sessions || 0}</div><div class="fitness-stat-lbl">Played This Week</div></div>
+    `;
+  }
+  return "";
+}
+
+async function fitLoadHistory(sport) {
+  const p = _fitPrefixes[sport];
+  const el = qs(`${p}-history`);
+  if (!el) return;
+  try {
+    const d = await fetch(`/api/fitness/${sport}/history?limit=8`).then(r => r.json());
+    if (!d.items || !d.items.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${_fitIcons[sport]}</div><div class="empty-state-title">No sessions logged yet</div><div class="empty-state-sub">Log your first session above to track your progress here.</div></div>`;
+      return;
+    }
+    el.innerHTML = d.items.map(w => _fitWorkoutRow(sport, w)).join("");
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--soft);font-size:13px;padding:8px">Could not load history.</div>`;
+  }
+}
+
+function _fitWorkoutRow(sport, w) {
+  let main = "";
+  if (sport === "running")  main = `${w.distance_km || "—"} km · ${w.duration_min || "—"} min${w.pace_min_km ? ` · ${w.pace_min_km} min/km` : ""}`;
+  if (sport === "cycling")  main = `${w.distance_km || "—"} km · ${w.duration_min || "—"} min${w.avg_speed_kmh ? ` · ${w.avg_speed_kmh} km/h` : ""}`;
+  if (sport === "gym")      main = `${(w.exercises||[]).length} exercises${w.muscle_groups ? ` · ${w.muscle_groups}` : ""}`;
+  if (sport === "tennis") {
+    const res = (w.result||"?").toUpperCase();
+    const resClr = res === "WIN" ? "var(--ok)" : res === "LOSS" ? "var(--bad)" : "var(--soft)";
+    main = `<span style="color:${resClr};font-weight:700">${res}</span>${w.opponent ? ` vs ${_esc(w.opponent)}` : ""}${w.score ? ` · ${_esc(w.score)}` : ""}`;
+  }
+  return `<div class="workout-row">
+    <div class="workout-row-date">${w.date || "—"}</div>
+    <div class="workout-row-main">${main}${w.notes ? `<span style="color:var(--soft);margin-left:8px;font-size:11px">${_esc(w.notes)}</span>` : ""}</div>
+    <div class="workout-row-badge">${_fitIcons[sport]}</div>
+  </div>`;
+}
+
+async function fitLoadTips(sport) {
+  const p = _fitPrefixes[sport];
+  const el = qs(`${p}-tips`);
+  if (!el) return;
+  try {
+    const d = await fetch(`/api/fitness/${sport}/tips`).then(r => r.json());
+    el.innerHTML = (d.tips || []).map(t =>
+      `<div class="fitness-tip"><div class="fitness-tip-icon">💡</div><div class="fitness-tip-text">${_esc(t)}</div></div>`
+    ).join("") || `<div class="wow-empty">Loading tips…</div>`;
+  } catch(e) {}
+}
+
+async function fitRefreshTips(sport) {
+  await fitLoadTips(sport);
+  showToast("Tips refreshed", "info", 2000);
+}
+
+async function fitLog(sport) {
+  let payload = {};
+  const p = _fitPrefixes[sport];
+
+  if (sport === "running") {
+    payload = {
+      distance_km:  parseFloat(qs("run-dist")?.value) || undefined,
+      duration_min: parseFloat(qs("run-dur")?.value)  || undefined,
+      pace_min_km:  parseFloat(qs("run-pace")?.value) || undefined,
+      heart_rate:   parseInt(qs("run-hr")?.value)     || undefined,
+      route:        qs("run-route")?.value.trim()      || undefined,
+      notes:        qs("run-notes")?.value.trim()      || undefined,
+    };
+  } else if (sport === "cycling") {
+    payload = {
+      distance_km:    parseFloat(qs("cyc-dist")?.value)  || undefined,
+      duration_min:   parseFloat(qs("cyc-dur")?.value)   || undefined,
+      avg_speed_kmh:  parseFloat(qs("cyc-speed")?.value) || undefined,
+      elevation_m:    parseFloat(qs("cyc-elev")?.value)  || undefined,
+      notes:          qs("cyc-notes")?.value.trim()       || undefined,
+    };
+  } else if (sport === "gym") {
+    payload = {
+      exercises:     _fitState.gym_exercises.length ? _fitState.gym_exercises : undefined,
+      muscle_groups: qs("gym-muscle")?.value.trim() || undefined,
+      notes:         qs("gym-notes")?.value.trim()  || undefined,
+    };
+  } else if (sport === "tennis") {
+    payload = {
+      result:       qs("ten-result")?.value || "practice",
+      opponent:     qs("ten-opp")?.value.trim()   || undefined,
+      score:        qs("ten-score")?.value.trim()  || undefined,
+      duration_min: parseFloat(qs("ten-dur")?.value) || undefined,
+      notes:        qs("ten-notes")?.value.trim()  || undefined,
+    };
+  }
+  // Strip undefined
+  Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+  if (!Object.keys(payload).length) { showToast("Enter at least one value", "warning"); return; }
+
+  try {
+    const d = await fetch(`/api/fitness/${sport}/log`, {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload),
+    }).then(r => r.json());
+    if (d.status === "ok") {
+      showToast(`${_fitIcons[sport]} ${sport.charAt(0).toUpperCase()+sport.slice(1)} session logged!`, "success");
+      // Clear form fields
+      if (sport === "running")  ["run-dist","run-dur","run-pace","run-hr","run-route","run-notes"].forEach(id => { if(qs(id)) qs(id).value=""; });
+      if (sport === "cycling")  ["cyc-dist","cyc-dur","cyc-speed","cyc-elev","cyc-notes"].forEach(id => { if(qs(id)) qs(id).value=""; });
+      if (sport === "gym")      { _fitState.gym_exercises=[]; gymRenderExercises(); ["gym-muscle","gym-notes"].forEach(id => { if(qs(id)) qs(id).value=""; }); }
+      if (sport === "tennis")   ["ten-opp","ten-score","ten-dur","ten-notes"].forEach(id => { if(qs(id)) qs(id).value=""; });
+      await fitLoadModule(sport);
+    } else {
+      showToast("Error: " + (d.error || "unknown"), "error");
+    }
+  } catch(e) { showToast("Could not log session", "error"); }
+}
+
+// Gym exercise management
+function gymAddExercise() {
+  const name   = prompt("Exercise name (e.g. Bench Press):","");
+  if (!name) return;
+  const sets   = parseInt(prompt("Sets:", "3")) || 3;
+  const reps   = parseInt(prompt("Reps per set:", "10")) || 10;
+  const weight = parseFloat(prompt("Weight (kg, 0 if bodyweight):", "0")) || 0;
+  _fitState.gym_exercises.push({name: name.trim(), sets, reps, weight_kg: weight});
+  gymRenderExercises();
+}
+
+function gymRenderExercises() {
+  const el = qs("gym-exercises");
+  if (!el) return;
+  if (!_fitState.gym_exercises.length) {
+    el.innerHTML = `<div class="wow-empty" style="padding:8px 0">No exercises added yet. Click "+ Add Exercise" above.</div>`;
+    return;
+  }
+  el.innerHTML = _fitState.gym_exercises.map((ex, i) =>
+    `<div class="workout-row" style="margin-bottom:6px">
+      <div class="workout-row-main" style="font-size:13px;font-weight:600">${_esc(ex.name)}</div>
+      <div style="font-size:11px;color:var(--soft)">${ex.sets}×${ex.reps}${ex.weight_kg ? ` @ ${ex.weight_kg}kg` : ""}</div>
+      <button onclick="_fitState.gym_exercises.splice(${i},1);gymRenderExercises()" style="background:none;border:none;color:var(--bad);cursor:pointer;font-size:13px">✕</button>
+    </div>`
+  ).join("");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXECUTIVE COMMAND CENTER UPGRADE
+═══════════════════════════════════════════════════════════════ */
+function renderCommandCenter(homeData, wowData) {
+  // Update top 3 priorities from tasks
+  const tasks = homeData?.tasks || [];
+  const todo = tasks.filter(t => !t.done && t.status !== "done");
+  const high = todo.filter(t => t.priority === "high");
+  const top3 = [...high, ...todo.filter(t => t.priority !== "high")].slice(0, 3);
+
+  const priEl = qs("cc-priorities");
+  if (priEl) {
+    priEl.innerHTML = top3.length
+      ? top3.map(t => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2)">
+          <span style="font-size:11px;color:${t.priority==="high"?"var(--bad)":t.priority==="medium"?"var(--warn)":"var(--ok)"}">●</span>
+          <span style="font-size:13px;color:var(--soft2);flex:1">${_esc(t.text||t.title||"—")}</span>
+          <span style="font-size:10px;color:var(--soft)">${t.priority||"medium"}</span>
+        </div>`).join("")
+      : `<div class="empty-state" style="padding:16px 0"><div class="empty-state-icon">🎉</div><div class="empty-state-title">All clear!</div><div class="empty-state-sub">No pending tasks.</div></div>`;
+  }
+
+  // WOW suggestions as quick commands
+  const suggestions = wowData?.suggestions || [];
+  const ccActEl = qs("cc-actions");
+  if (ccActEl && suggestions.length) {
+    ccActEl.innerHTML = suggestions.slice(0, 4).map(s =>
+      `<button class="cmd-res-act" onclick="${s.tab ? `switchTab('${s.tab}')` : ""};${s.prefill_chat ? `(function(){const el=qs('messageInput');if(el){el.value=${JSON.stringify(s.prefill_chat||"")};switchTab('chat');}})()` : ""}">
+        ${s.icon || "⚡"} ${_esc(s.label||"")}
+      </button>`
+    ).join("");
+  }
+
+  // Critical alerts from insights
+  const insights = wowData?.insights || [];
+  const critical = insights.filter(i => i.priority === "critical" || i.priority === "high");
+  const alertEl = qs("cc-alerts");
+  if (alertEl) {
+    alertEl.innerHTML = critical.length
+      ? critical.slice(0, 3).map(ins =>
+        `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,80,80,.06);border:1px solid rgba(255,80,80,.15);border-radius:8px;margin-bottom:6px">
+          <span style="font-size:14px">${ins.icon||"⚠️"}</span>
+          <span style="font-size:12px;color:var(--soft2);flex:1">${_esc(ins.title||"")}</span>
+        </div>`).join("")
+      : `<div style="font-size:12px;color:var(--soft);padding:4px 0">No critical alerts right now.</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERSONALITY ENGINE
+═══════════════════════════════════════════════════════════════ */
+const _personality = {
+  tone: localStorage.getItem("jarvis_tone") || "professional"
+};
+
+function setPersonalityTone(tone) {
+  _personality.tone = tone;
+  localStorage.setItem("jarvis_tone", tone);
+  showToast(`JARVIS tone: ${tone.charAt(0).toUpperCase()+tone.slice(1)}`, "success", 2000);
+  const toneEl = qs("personality-tone-label");
+  if (toneEl) toneEl.textContent = tone;
+}
+
+function cyclePersonalityTone() {
+  const tones = ["professional", "coach", "friendly"];
+  const idx = tones.indexOf(_personality.tone);
+  setPersonalityTone(tones[(idx + 1) % tones.length]);
+}
+
+// Sync tone indicator on load
+(function() {
+  const toneEl = qs("personality-tone-label");
+  if (toneEl) toneEl.textContent = _personality.tone;
+})();
+
+async function getPersonalityResponse(message, context = "general") {
+  try {
+    const d = await fetch("/api/personality/respond", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ message, context, tone: _personality.tone }),
+    }).then(r => r.json());
+    return d.reply || message;
+  } catch(e) { return message; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTOMATION TAB UPGRADE
+═══════════════════════════════════════════════════════════════ */
+async function loadAutomationsUpgraded() {
+  const statsEl = qs("auto-stats-grid");
+  const listEl  = qs("auto-list-upgraded");
+  const logEl   = qs("auto-log-list");
+
+  try {
+    const [statsD, listD, logD] = await Promise.all([
+      fetch("/api/automations/stats").then(r => r.json()),
+      fetch("/api/automations").then(r => r.json()),
+      fetch("/api/automations/log?limit=10").then(r => r.json()),
+    ]);
+
+    // Stats
+    if (statsEl) {
+      const s = statsD.stats || statsD;
+      statsEl.innerHTML = `
+        <div class="fitness-stat"><div class="fitness-stat-val" style="color:var(--cyan)">${s.total||0}</div><div class="fitness-stat-lbl">Total</div></div>
+        <div class="fitness-stat"><div class="fitness-stat-val" style="color:var(--ok)">${s.enabled||0}</div><div class="fitness-stat-lbl">Active</div></div>
+        <div class="fitness-stat"><div class="fitness-stat-val">${s.executions_today||s.total_runs||0}</div><div class="fitness-stat-lbl">Runs Today</div></div>
+        <div class="fitness-stat"><div class="fitness-stat-val">${s.total_runs||0}</div><div class="fitness-stat-lbl">Total Runs</div></div>
+      `;
+    }
+
+    // Automation list
+    const autos = listD.automations || [];
+    if (listEl) {
+      listEl.innerHTML = autos.length ? autos.map(a => `
+        <div class="workout-row" style="cursor:pointer">
+          <div style="font-size:20px">${a.trigger_type==="schedule"?"⏰":a.trigger_type==="event"?"⚡":"🔗"}</div>
+          <div class="workout-row-main">
+            <div style="font-weight:600;color:var(--soft2)">${_esc(a.name||"Automation")}</div>
+            <div style="font-size:11px;color:var(--soft)">${_esc(a.trigger_type||"")} · ${_esc(a.action_type||"")}</div>
+          </div>
+          <div class="workout-row-badge" style="background:${a.enabled?"rgba(61,255,194,.1)":"rgba(255,255,255,.05)"};color:${a.enabled?"var(--ok)":"var(--soft)"}">
+            ${a.enabled?"ACTIVE":"OFF"}
+          </div>
+        </div>`).join("")
+        : `<div class="empty-state"><div class="empty-state-icon">⚡</div><div class="empty-state-title">No automations yet</div><div class="empty-state-sub">Create automations to let JARVIS work for you automatically.</div></div>`;
+    }
+
+    // Log
+    const logs = logD.log || logD.logs || [];
+    if (logEl) {
+      logEl.innerHTML = logs.length ? logs.map(l => `
+        <div class="workout-row">
+          <div class="workout-row-date" style="font-size:10px">${(l.timestamp||l.ts||"").slice(0,16)}</div>
+          <div class="workout-row-main">${_esc(l.automation_name||l.name||"—")}</div>
+          <div class="workout-row-badge" style="background:${l.success!==false?"rgba(61,255,194,.1)":"rgba(255,80,80,.1)"};color:${l.success!==false?"var(--ok)":"var(--bad)"}">
+            ${l.success!==false?"OK":"ERR"}
+          </div>
+        </div>`).join("")
+        : `<div style="color:var(--soft);font-size:13px;padding:12px 0">No execution logs yet.</div>`;
+    }
+  } catch(e) {
+    console.warn("loadAutomationsUpgraded:", e);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIFE AUTOMATION  (Phase 6Z-4)
+═══════════════════════════════════════════════════════════════ */
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function _fmtDue(isoStr) {
+  if (!isoStr) return "";
+  try {
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diff = d - now;
+    const abs  = Math.abs(diff);
+    if (abs < 60000)     return "right now";
+    if (abs < 3600000)   return Math.round(abs/60000) + " min" + (diff < 0 ? " ago" : "");
+    if (abs < 86400000)  return Math.round(abs/3600000) + "h" + (diff < 0 ? " ago" : "");
+    const days = Math.round(abs/86400000);
+    return days + "d" + (diff < 0 ? " ago" : "");
+  } catch(e) { return isoStr.slice(0,10); }
+}
+
+function _dueClass(isoStr) {
+  if (!isoStr) return "";
+  try {
+    const diff = new Date(isoStr) - new Date();
+    if (diff < 0)       return "overdue";
+    if (diff < 86400000) return "soon";
+    return "";
+  } catch(e) { return ""; }
+}
+
+// ── NLP fast-entry ────────────────────────────────────────────────────
+
+async function lifeNlpSend() {
+  const input = qs("life-nlp-input");
+  const text  = input.value.trim();
+  if (!text) return;
+  tickerShow("Procesando…");
+  try {
+    const d = await fetch("/api/life/task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }).then(r => r.json());
+
+    input.value = "";
+    const resultEl = qs("life-nlp-result");
+    if (resultEl) {
+      const p = d.parsed || {};
+      const typeLabels = { reminder:"Recordatorio", payment:"Pago", call:"Llamada", shopping:"Lista compras" };
+      const badge = `<span class="life-badge badge-${p.type}">${typeLabels[p.type]||p.type}</span>`;
+      resultEl.innerHTML = `Creado: <strong>${_esc(p.title||text)}</strong>${badge} · ${_fmtDue(p.due)}`;
+      resultEl.style.display = "block";
+      setTimeout(() => { resultEl.style.display = "none"; }, 4000);
+    }
+    tickerShow("Listo", 2000);
+    showToast("Tarea creada", "success");
+    loadAllLife();
+  } catch(e) {
+    tickerHide();
+    showToast("Error al crear tarea", "error");
+  }
+}
+
+function lifeNlpMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast("Micrófono no disponible", "warning"); return; }
+  const rec = new SR();
+  rec.lang = _voiceLang;
+  rec.maxAlternatives = 3;
+  tickerShow("Escuchando…");
+  rec.onresult = e => {
+    let best = e.results[0][0].transcript, bc = e.results[0][0].confidence || 0;
+    for (let i = 1; i < e.results[0].length; i++) {
+      const a = e.results[0][i];
+      if ((a.confidence||0) > bc) { best = a.transcript; bc = a.confidence; }
+    }
+    qs("life-nlp-input").value = best;
+    tickerHide();
+    lifeNlpSend();
+  };
+  rec.onerror = () => { tickerHide(); showToast("Error de micrófono", "error"); };
+  rec.start();
+}
+
+// ── Reminders ────────────────────────────────────────────────────────
+
+async function loadLifeReminders() {
+  try {
+    const d = await fetch("/api/life/reminders").then(r => r.json());
+    const el = qs("life-rem-list");
+    const countEl = qs("life-rem-count");
+    if (countEl) countEl.textContent = d.count;
+    if (!el) return;
+    if (!d.items.length) {
+      el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin recordatorios</div>`;
+      return;
+    }
+    el.innerHTML = d.items.map(item => `
+      <div class="life-item" id="life-rem-${item.id}">
+        <div class="life-item-body">
+          <div class="life-item-title">${_esc(item.title)}</div>
+          <div class="life-item-due ${_dueClass(item.due)}">⏰ ${_fmtDue(item.due)}</div>
+        </div>
+        <div class="life-item-actions">
+          <button class="life-btn done-btn" onclick="lifeRemDone('${item.id}')" title="Completar">✓</button>
+          <button class="life-btn del-btn"  onclick="lifeRemDel('${item.id}')"  title="Eliminar">✕</button>
+        </div>
+      </div>`).join("");
+  } catch(e) { console.warn("loadLifeReminders:", e); }
+}
+
+async function lifeAddReminder() {
+  const title = qs("life-rem-title")?.value.trim();
+  const due   = qs("life-rem-due")?.value.trim() || "mañana";
+  if (!title) { showToast("Ingresa un título", "warning"); return; }
+  try {
+    await fetch("/api/life/reminder", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ title, due }),
+    });
+    qs("life-rem-title").value = "";
+    qs("life-rem-due").value = "";
+    showToast("Recordatorio agregado", "success");
+    loadLifeReminders();
+  } catch(e) { showToast("Error", "error"); }
+}
+
+async function lifeRemDone(id) {
+  await fetch(`/api/life/reminder/${id}/done`, { method: "POST" });
+  const el = qs(`life-rem-${id}`);
+  if (el) el.classList.add("done");
+  setTimeout(loadLifeReminders, 600);
+}
+
+async function lifeRemDel(id) {
+  await fetch(`/api/life/reminder/${id}`, { method: "DELETE" });
+  loadLifeReminders();
+}
+
+// ── Shopping ─────────────────────────────────────────────────────────
+
+async function loadLifeShopping() {
+  try {
+    const d = await fetch("/api/life/shopping").then(r => r.json());
+    const el = qs("life-shop-list");
+    const countEl = qs("life-shop-count");
+    const unchecked = d.items.filter(i => !i.checked).length;
+    if (countEl) countEl.textContent = unchecked;
+    if (!el) return;
+    if (!d.items.length) {
+      el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Lista vacía</div>`;
+      return;
+    }
+    el.innerHTML = d.items.map(item => `
+      <div class="life-item ${item.checked ? 'done' : ''}" id="life-shop-${item.id}">
+        <input type="checkbox" class="shop-check" ${item.checked ? "checked" : ""}
+          onchange="lifeShopToggle('${item.id}', this)"/>
+        <div class="life-item-body">
+          <span class="life-item-title">${_esc(item.name)}</span>
+          ${item.qty > 1 ? `<span class="shop-qty">×${item.qty}</span>` : ""}
+          ${item.category !== "general" ? `<span class="life-badge" style="font-size:9px;margin-left:4px">${_esc(item.category)}</span>` : ""}
+        </div>
+        <div class="life-item-actions">
+          <button class="life-btn del-btn" onclick="lifeShopDel('${item.id}')" title="Eliminar">✕</button>
+        </div>
+      </div>`).join("");
+  } catch(e) { console.warn("loadLifeShopping:", e); }
+}
+
+async function lifeAddShopping() {
+  const name = qs("life-shop-name")?.value.trim();
+  const qty  = parseInt(qs("life-shop-qty")?.value) || 1;
+  if (!name) { showToast("Ingresa un artículo", "warning"); return; }
+  try {
+    await fetch("/api/life/shopping", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ name, qty }),
+    });
+    qs("life-shop-name").value = "";
+    qs("life-shop-qty").value = "1";
+    showToast("Artículo agregado", "success");
+    loadLifeShopping();
+  } catch(e) { showToast("Error", "error"); }
+}
+
+async function lifeShopToggle(id, el) {
+  try {
+    await fetch(`/api/life/shopping/${id}/toggle`, { method: "POST" });
+    loadLifeShopping();
+  } catch(e) { el.checked = !el.checked; }
+}
+
+async function lifeShopDel(id) {
+  await fetch(`/api/life/shopping/${id}`, { method: "DELETE" });
+  loadLifeShopping();
+}
+
+async function lifeShopClearChecked() {
+  await fetch("/api/life/shopping/clear-checked", { method: "POST" });
+  showToast("Artículos marcados eliminados", "info");
+  loadLifeShopping();
+}
+
+// ── Calls ─────────────────────────────────────────────────────────────
+
+async function loadLifeCalls() {
+  try {
+    const d = await fetch("/api/life/calls").then(r => r.json());
+    const el = qs("life-call-list");
+    const countEl = qs("life-call-count");
+    if (countEl) countEl.textContent = d.count;
+    if (!el) return;
+    if (!d.items.length) {
+      el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin llamadas pendientes</div>`;
+      return;
+    }
+    el.innerHTML = d.items.map(item => `
+      <div class="life-item" id="life-call-${item.id}">
+        <div class="life-item-body">
+          <div class="life-item-title">📞 ${_esc(item.contact)}</div>
+          <div class="life-item-due ${_dueClass(item.due)}">🕐 ${_fmtDue(item.due)}
+            ${item.notes ? ` · ${_esc(item.notes.slice(0,40))}` : ""}</div>
+        </div>
+        <div class="life-item-actions">
+          <button class="life-btn done-btn" onclick="lifeCallDone('${item.id}')" title="Llamada hecha">✓</button>
+          <button class="life-btn del-btn"  onclick="lifeCallDel('${item.id}')"  title="Eliminar">✕</button>
+        </div>
+      </div>`).join("");
+  } catch(e) { console.warn("loadLifeCalls:", e); }
+}
+
+async function lifeAddCall() {
+  const contact = qs("life-call-contact")?.value.trim();
+  const due     = qs("life-call-due")?.value.trim() || "mañana";
+  if (!contact) { showToast("Ingresa el contacto", "warning"); return; }
+  try {
+    await fetch("/api/life/call", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ contact, due }),
+    });
+    qs("life-call-contact").value = "";
+    qs("life-call-due").value = "";
+    showToast("Llamada agregada", "success");
+    loadLifeCalls();
+  } catch(e) { showToast("Error", "error"); }
+}
+
+async function lifeCallDone(id) {
+  await fetch(`/api/life/call/${id}/done`, { method: "POST" });
+  setTimeout(loadLifeCalls, 400);
+}
+
+async function lifeCallDel(id) {
+  await fetch(`/api/life/call/${id}`, { method: "DELETE" });
+  loadLifeCalls();
+}
+
+// ── Payments ──────────────────────────────────────────────────────────
+
+async function loadLifePayments() {
+  try {
+    const d = await fetch("/api/life/payments").then(r => r.json());
+    const el = qs("life-pay-list");
+    const countEl = qs("life-pay-count");
+    if (countEl) countEl.textContent = d.count;
+    if (!el) return;
+    if (!d.items.length) {
+      el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin pagos pendientes</div>`;
+      return;
+    }
+    el.innerHTML = d.items.map(item => `
+      <div class="life-item" id="life-pay-${item.id}">
+        <div class="life-item-body">
+          <div class="life-item-title">💸 ${_esc(item.title)}
+            ${item.amount ? `<span class="shop-qty">${item.currency} ${item.amount.toLocaleString()}</span>` : ""}
+          </div>
+          <div class="life-item-due ${_dueClass(item.due)}">📅 ${_fmtDue(item.due)}</div>
+        </div>
+        <div class="life-item-actions">
+          <button class="life-btn done-btn" onclick="lifePayDone('${item.id}')" title="Pagado">✓</button>
+          <button class="life-btn del-btn"  onclick="lifePayDel('${item.id}')"  title="Eliminar">✕</button>
+        </div>
+      </div>`).join("");
+  } catch(e) { console.warn("loadLifePayments:", e); }
+}
+
+async function lifeAddPayment() {
+  const title  = qs("life-pay-title")?.value.trim();
+  const amount = parseFloat(qs("life-pay-amount")?.value) || 0;
+  const due    = qs("life-pay-due")?.value.trim() || "mañana";
+  if (!title) { showToast("Ingresa el título del pago", "warning"); return; }
+  try {
+    await fetch("/api/life/payment", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ title, amount, due }),
+    });
+    qs("life-pay-title").value = "";
+    qs("life-pay-amount").value = "";
+    qs("life-pay-due").value = "";
+    showToast("Pago agregado", "success");
+    loadLifePayments();
+  } catch(e) { showToast("Error", "error"); }
+}
+
+async function lifePayDone(id) {
+  await fetch(`/api/life/payment/${id}/done`, { method: "POST" });
+  setTimeout(loadLifePayments, 400);
+}
+
+async function lifePayDel(id) {
+  await fetch(`/api/life/payment/${id}`, { method: "DELETE" });
+  loadLifePayments();
+}
+
+// ── Load all Life modules ─────────────────────────────────────────────
+
+function loadAllLife() {
+  loadLifeReminders();
+  loadLifeShopping();
+  loadLifeCalls();
+  loadLifePayments();
+}
+
+/* ── Family Agent ─────────────────────────────────────────── */
+
+function loadAllFamily() {
+  loadFamilyMembers();
+  loadFamilyEvents();
+  loadFamilyNotes();
+  loadFamilySummary();
+}
+
+async function loadFamilySummary() {
+  try {
+    const d = await fetch("/api/family/summary").then(r => r.json());
+    const el = qs("family-summary-strip"); if (!el) return;
+    const parts = [];
+    if (d.member_count)        parts.push(`${d.member_count} members`);
+    if (d.upcoming_events)     parts.push(`${d.upcoming_events} upcoming event(s)`);
+    if (d.upcoming_birthdays)  parts.push(`🎂 ${d.upcoming_birthdays} birthday(s) within 30 days`);
+    if (d.next_event)          parts.push(`Next: "${d.next_event}" in ${d.next_event_days} day(s)`);
+    if (parts.length) { el.textContent = parts.join(" · "); el.style.display = "block"; }
+  } catch(e) {}
+}
+
+async function loadFamilyMembers() {
+  const el = qs("fam-mem-list"); if (!el) return;
+  try {
+    const d = await fetch("/api/family/members").then(r => r.json());
+    qs("fam-mem-count").textContent = d.count || 0;
+    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No members yet</div>`; return; }
+    el.innerHTML = d.items.map(m => {
+      const rel  = m.relation !== "other" ? `<span style="color:var(--soft2);font-size:11px"> · ${m.relation}</span>` : "";
+      const bday = m.birthday_in_days != null ? `<span style="color:var(--warn);font-size:11px;margin-left:6px">🎂 ${m.birthday_in_days}d</span>` : "";
+      return `<div class="life-item">
+        <span style="flex:1">👤 ${m.name}${rel}${bday}</span>
+        ${m.phone ? `<span style="font-size:11px;color:var(--soft)">${m.phone}</span>` : ""}
+        <button class="life-del-btn" onclick="familyDelMember('${m.id}')">✕</button>
+      </div>`;
+    }).join("");
+  } catch(e) { el.innerHTML = `<div style="color:var(--bad);font-size:12px;padding:8px">Error loading members</div>`; }
+}
+
+async function loadFamilyEvents() {
+  const el = qs("fam-ev-list"); if (!el) return;
+  try {
+    const d = await fetch("/api/family/events?upcoming_days=90").then(r => r.json());
+    qs("fam-ev-count").textContent = d.count || 0;
+    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No upcoming events</div>`; return; }
+    el.innerHTML = d.items.map(ev => {
+      const color = ev.days_away <= 3 ? "var(--bad)" : ev.days_away <= 7 ? "var(--warn)" : "var(--soft)";
+      const rep   = ev.repeat_yearly ? " 🔁" : "";
+      return `<div class="life-item">
+        <span style="flex:1">${ev.title}${rep} <span style="color:${color};font-size:11px">${ev.days_away}d away</span></span>
+        <span style="font-size:11px;color:var(--soft2)">${ev.type}</span>
+        <button class="life-del-btn" onclick="familyDelEvent('${ev.id}')">✕</button>
+      </div>`;
+    }).join("");
+  } catch(e) { el.innerHTML = `<div style="color:var(--bad);font-size:12px;padding:8px">Error loading events</div>`; }
+}
+
+async function loadFamilyNotes() {
+  const el = qs("fam-note-list"); if (!el) return;
+  try {
+    const d = await fetch("/api/family/notes").then(r => r.json());
+    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No notes yet</div>`; return; }
+    el.innerHTML = d.items.map(n => `<div class="life-item">
+      <span style="flex:1;font-size:12px">${n.content}</span>
+      <span style="font-size:10px;color:var(--soft2)">${n.created_at?.slice(0,10) || ""}</span>
+      <button class="life-del-btn" onclick="familyDelNote('${n.id}')">✕</button>
+    </div>`).join("");
+  } catch(e) {}
+}
+
+async function familyAddMember() {
+  const name = qs("fam-mem-name")?.value.trim(); if (!name) return;
+  const rel  = qs("fam-mem-rel")?.value  || "other";
+  const bday = qs("fam-mem-bday")?.value || "";
+  await fetch("/api/family/members", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ name, relation: rel, birthday: bday }) });
+  qs("fam-mem-name").value = "";
+  qs("fam-mem-bday").value = "";
+  loadFamilyMembers(); loadFamilySummary();
+  showToast(`${name} added 👨‍👩‍👧`, "success", 2000);
+}
+
+async function familyAddEvent() {
+  const title = qs("fam-ev-title")?.value.trim(); if (!title) return;
+  const date  = qs("fam-ev-date")?.value;         if (!date)  { showToast("Pick a date", "warn", 2000); return; }
+  const type  = qs("fam-ev-type")?.value  || "family";
+  const repeat= qs("fam-ev-repeat")?.checked || false;
+  await fetch("/api/family/events", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ title, date, event_type: type, repeat_yearly: repeat }) });
+  qs("fam-ev-title").value = ""; qs("fam-ev-date").value = "";
+  loadFamilyEvents(); loadFamilySummary();
+  showToast("Event added 📅", "success", 2000);
+}
+
+async function familyAddNote() {
+  const content = qs("fam-note-content")?.value.trim(); if (!content) return;
+  await fetch("/api/family/notes", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ content }) });
+  qs("fam-note-content").value = "";
+  loadFamilyNotes();
+}
+
+async function familyDelMember(id) {
+  await fetch(`/api/family/members/${id}`, { method:"DELETE" });
+  loadFamilyMembers(); loadFamilySummary();
+}
+async function familyDelEvent(id) {
+  await fetch(`/api/family/events/${id}`, { method:"DELETE" });
+  loadFamilyEvents(); loadFamilySummary();
+}
+async function familyDelNote(id) {
+  await fetch(`/api/family/notes/${id}`, { method:"DELETE" });
+  loadFamilyNotes();
+}
+
+/* ── Office Agent ─────────────────────────────────────────── */
+
+function loadAllOffice() {
+  loadOfficeTasks();
+  loadOfficeColleagues();
+  loadOfficeExpenses();
+  loadOfficeSummary();
+}
+
+async function loadOfficeSummary() {
+  try {
+    const d = await fetch("/api/office/summary").then(r => r.json());
+    const el = qs("office-summary-strip"); if (!el) return;
+    const parts = [];
+    if (d.tasks_todo || d.tasks_doing) parts.push(`${d.tasks_todo} todo · ${d.tasks_doing} in-progress`);
+    if (d.tasks_critical)  parts.push(`⚠️ ${d.tasks_critical} critical`);
+    if (d.expenses_pending) parts.push(`${d.expenses_pending} expense(s) pending · ${d.currency} ${(d.expense_pending_amt||0).toLocaleString()}`);
+    if (parts.length) { el.textContent = parts.join(" · "); el.style.display = "block"; }
+  } catch(e) {}
+}
+
+async function loadOfficeTasks() {
+  const el = qs("off-task-list"); if (!el) return;
+  try {
+    const d = await fetch("/api/office/tasks").then(r => r.json());
+    qs("off-task-count").textContent = d.count || 0;
+    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No tasks yet</div>`; return; }
+    const pColor = { critical:"var(--bad)", high:"var(--warn)", medium:"var(--cyan)", low:"var(--soft)" };
+    el.innerHTML = d.items.map(t => {
+      const pc = pColor[t.priority] || "var(--soft)";
+      const statuses = ["todo","doing","done"];
+      const next = statuses[statuses.indexOf(t.status) + 1];
+      return `<div class="life-item">
+        <span style="width:8px;height:8px;border-radius:50%;background:${pc};flex-shrink:0;margin-top:4px"></span>
+        <span style="flex:1;font-size:12px">${t.title}</span>
+        ${t.due ? `<span style="font-size:11px;color:var(--soft2)">${t.due}</span>` : ""}
+        <span style="font-size:11px;color:var(--soft);padding:2px 6px;border:1px solid rgba(255,255,255,.1);border-radius:4px">${t.status}</span>
+        ${next ? `<button class="btn-g btn-sm" style="padding:2px 6px;font-size:10px" onclick="officeTaskStatus('${t.id}','${next}')">→${next}</button>` : ""}
+        <button class="life-del-btn" onclick="officeDelTask('${t.id}')">✕</button>
+      </div>`;
+    }).join("");
+  } catch(e) { el.innerHTML = `<div style="color:var(--bad);font-size:12px;padding:8px">Error</div>`; }
+}
+
+async function loadOfficeColleagues() {
+  const el = qs("off-col-list"); if (!el) return;
+  try {
+    const d = await fetch("/api/office/colleagues").then(r => r.json());
+    qs("off-col-count").textContent = d.count || 0;
+    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No colleagues yet</div>`; return; }
+    el.innerHTML = d.items.map(c => `<div class="life-item">
+      <span style="flex:1">👤 ${c.name}${c.role ? ` <span style="color:var(--soft2);font-size:11px">· ${c.role}</span>` : ""}${c.department ? ` <span style="color:var(--soft2);font-size:11px">· ${c.department}</span>` : ""}</span>
+      ${c.email ? `<span style="font-size:11px;color:var(--soft)">${c.email}</span>` : ""}
+      <button class="life-del-btn" onclick="officeDelColleague('${c.id}')">✕</button>
+    </div>`).join("");
+  } catch(e) {}
+}
+
+async function loadOfficeExpenses() {
+  const el = qs("off-exp-list"); if (!el) return;
+  try {
+    const d = await fetch("/api/office/expenses").then(r => r.json());
+    qs("off-exp-count").textContent = d.count || 0;
+    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No expenses yet</div>`; return; }
+    const sc = { pending:"var(--warn)", approved:"var(--ok)", rejected:"var(--bad)", paid:"var(--soft)" };
+    el.innerHTML = d.items.map(e => `<div class="life-item">
+      <span style="flex:1;font-size:12px">${e.title} <span style="font-size:11px;color:var(--soft2)">· ${e.category}</span></span>
+      <span style="font-weight:600;color:var(--white)">${e.currency} ${(e.amount||0).toLocaleString()}</span>
+      <span style="font-size:11px;color:${sc[e.status]||"var(--soft)"}">${e.status}</span>
+      <button class="life-del-btn" onclick="officeDelExpense('${e.id}')">✕</button>
+    </div>`).join("");
+  } catch(e) {}
+}
+
+async function officeAddTask() {
+  const title = qs("off-task-title")?.value.trim(); if (!title) return;
+  const priority = qs("off-task-priority")?.value || "medium";
+  const due      = qs("off-task-due")?.value || "";
+  await fetch("/api/office/tasks", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ title, priority, due }) });
+  qs("off-task-title").value = ""; qs("off-task-due").value = "";
+  loadOfficeTasks(); loadOfficeSummary();
+  showToast("Work task added ✅", "success", 2000);
+}
+
+async function officeTaskStatus(id, status) {
+  await fetch(`/api/office/tasks/${id}/status?status=${status}`, { method:"POST" });
+  loadOfficeTasks(); loadOfficeSummary();
+}
+
+async function officeAddColleague() {
+  const name = qs("off-col-name")?.value.trim(); if (!name) return;
+  const role = qs("off-col-role")?.value.trim() || "";
+  const dept = qs("off-col-dept")?.value.trim() || "";
+  await fetch("/api/office/colleagues", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ name, role, department: dept }) });
+  qs("off-col-name").value = ""; qs("off-col-role").value = ""; qs("off-col-dept").value = "";
+  loadOfficeColleagues();
+  showToast(`${name} added 👤`, "success", 2000);
+}
+
+async function officeAddExpense() {
+  const title  = qs("off-exp-title")?.value.trim(); if (!title) return;
+  const amount = parseFloat(qs("off-exp-amount")?.value || 0); if (!amount) { showToast("Enter amount", "warn", 2000); return; }
+  const cat    = qs("off-exp-cat")?.value || "other";
+  await fetch("/api/office/expenses", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ title, amount, category: cat }) });
+  qs("off-exp-title").value = ""; qs("off-exp-amount").value = "";
+  loadOfficeExpenses(); loadOfficeSummary();
+  showToast("Expense logged 💰", "success", 2000);
+}
+
+async function officeDelTask(id)      { await fetch(`/api/office/tasks/${id}`,      { method:"DELETE" }); loadOfficeTasks();      loadOfficeSummary(); }
+async function officeDelColleague(id) { await fetch(`/api/office/colleagues/${id}`, { method:"DELETE" }); loadOfficeColleagues(); }
+async function officeDelExpense(id)   { await fetch(`/api/office/expenses/${id}`,   { method:"DELETE" }); loadOfficeExpenses();   loadOfficeSummary(); }
+
+/* ═══════════════════════════════════════════════════════════════
+   OUTLOOK INBOX AGENT
+═══════════════════════════════════════════════════════════════ */
+
+let _olFilter     = "";
+let _olFilterType = "status";   // "status" or "priority"
+let _olPollTimer  = null;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+async function initOutlook() {
+  await loadOutlookStatus();
+  await loadOutlookInbox();
+  _olStartPolling();
+}
+
+function _olStartPolling() {
+  if (_olPollTimer) clearInterval(_olPollTimer);
+  _olPollTimer = setInterval(async () => {
+    if (document.querySelector('[data-tab="outlook"]')?.classList.contains("active")) return;
+    await loadOutlookStatus();
+    await loadOutlookInbox();
+  }, 30000);  // poll every 30 seconds when tab not active
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+
+async function loadOutlookStatus() {
+  try {
+    const d = await fetch("/api/outlook/status").then(r => r.json());
+    if (d.status !== "ok") return;
+
+    const authEl    = qs("ol-auth-status");
+    const unreadEl  = qs("ol-unread-badge");
+    const pendingEl = qs("ol-pending-badge");
+    const dotEl     = document.getElementById("outlook-unread-dot");
+
+    if (authEl) {
+      if (d.authenticated) {
+        authEl.textContent = "✓ Connected" + (d.subscription ? " · Live" : " · No webhook");
+        authEl.className   = "ol-auth-chip " + (d.subscription ? "ol-chip-ok" : "ol-chip-warn");
+        qs("ol-connect-btn").style.display = "none";
+        qs("ol-sub-btn").style.display     = d.subscription ? "none" : "";
+      } else {
+        authEl.textContent = "⚠ Not connected";
+        authEl.className   = "ol-auth-chip ol-chip-warn";
+        qs("ol-connect-btn").style.display = "";
+      }
+    }
+    if (unreadEl) {
+      unreadEl.textContent = d.unread_count + " unread";
+      unreadEl.style.display = d.unread_count > 0 ? "" : "none";
+      if (dotEl) dotEl.style.display = d.unread_count > 0 ? "block" : "none";
+    }
+    if (pendingEl) {
+      pendingEl.textContent = d.pending_emails + " pending approval";
+      pendingEl.style.display = d.pending_emails > 0 ? "" : "none";
+    }
+  } catch(e) { console.warn("loadOutlookStatus:", e); }
+}
+
+// ── Inbox loading ─────────────────────────────────────────────────────────────
+
+async function loadOutlookInbox() {
+  const container = qs("ol-inbox");
+  if (!container) return;
+  try {
+    const params = new URLSearchParams({ limit: 30 });
+    if (_olFilterType === "status" && _olFilter)   params.set("status",   _olFilter);
+    if (_olFilterType === "priority" && _olFilter) params.set("priority", _olFilter);
+
+    const d = await fetch(`/api/outlook/inbox?${params}`).then(r => r.json());
+    if (d.status !== "ok") return;
+
+    const statsEl = qs("ol-stats-line");
+    if (statsEl && d.stats) {
+      const s = d.stats;
+      statsEl.textContent = `Total: ${s.total || 0} · Pending: ${s.pending || 0} · Sent: ${(s.by_status || {}).sent || 0}`;
+    }
+
+    if (!d.items || d.items.length === 0) {
+      container.innerHTML = `<div class="ol-empty-state">
+        <div style="font-size:28px;margin-bottom:8px">📭</div>
+        <div>${_olFilter ? "No emails with this filter." : "No emails yet. Connect and emails will appear here in real time."}</div>
+      </div>`;
+      return;
+    }
+    container.innerHTML = d.items.map(e => _renderOlCard(e)).join("");
+  } catch(e) {
+    console.warn("loadOutlookInbox:", e);
+    const el = qs("ol-inbox");
+    if (el) el.innerHTML = '<div class="ol-empty-state" style="color:#ef4444">Error loading emails. Check connection.</div>';
+  }
+}
+
+// ── Card renderer ─────────────────────────────────────────────────────────────
+
+function _renderOlCard(e) {
+  const priority  = e.priority || "medium";
+  const status    = e.status   || "pending_approval";
+  const intent    = e.intent   || "normal";
+  const etype     = e.email_type || "unknown";
+  const lang      = e.language  || "";
+  const conf      = e.confidence_score != null ? Math.round(e.confidence_score * 100) : null;
+  const mid       = e.message_id || e.store_id || "";
+  const safeMid   = _esc(mid);
+
+  const timeStr = e.received_at
+    ? new Date(e.received_at).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"})
+    : "";
+
+  const sugAct = e.suggested_actions || {};
+  const suggestions = [
+    sugAct.create_task           ? `<button class="ol-suggestion-chip" onclick="olCreateTask('${safeMid}')">➕ Create Task</button>` : "",
+    sugAct.create_calendar_event ? `<button class="ol-suggestion-chip" onclick="olCreateEvent('${safeMid}')">📅 Calendar Event</button>` : "",
+    sugAct.follow_up_reminder    ? `<button class="ol-suggestion-chip" onclick="olIgnore('${safeMid}')">🔔 Remind me</button>` : "",
+  ].filter(Boolean).join("");
+
+  const keyPointsHTML = (e.key_points || []).length
+    ? `<ul class="ol-key-points">${(e.key_points||[]).map(p=>`<li>${_esc(p)}</li>`).join("")}</ul>`
+    : "";
+
+  const replySection = (e.final_reply || e.draft_reply) && status === "pending_approval"
+    ? `<div class="ol-section">
+        <div class="ol-reply-label">
+          <span>🤖 AI Suggested Reply ${e.stage2_applied ? "(humanized)" : "(draft)"}</span>
+          ${conf !== null ? `<span class="ol-reply-confidence">Confidence: ${conf}% · Tone: ${_esc(e.tone_used||"professional")}</span>` : ""}
+        </div>
+        <textarea class="ol-reply-textarea" id="reply-${safeMid}">${_esc(e.final_reply || e.draft_reply || "")}</textarea>
+      </div>` : "";
+
+  const actionsSection = status === "pending_approval"
+    ? `<div class="ol-actions">
+        <button class="ol-btn-send" onclick="olSendReply('${safeMid}')">✅ SEND APPROVED REPLY</button>
+        <button class="ol-btn-delete" onclick="olDelete('${safeMid}')">🗑 Delete</button>
+        <button class="ol-btn-secondary" onclick="olIgnore('${safeMid}')">🚫 Ignore</button>
+        <button class="ol-btn-secondary" onclick="olMarkRead('${safeMid}')">👁 Mark Read</button>
+        <button class="ol-btn-task" onclick="olCreateTask('${safeMid}')">✅ Create Task</button>
+        <button class="ol-btn-cal" onclick="olCreateEvent('${safeMid}')">📅 Event</button>
+      </div>`
+    : `<div class="ol-actions">
+        <span class="ol-status-chip ${status}">${_olStatusLabel(status)}</span>
+        <button class="ol-btn-secondary" onclick="olMarkRead('${safeMid}')">👁 Mark Read</button>
+        <button class="ol-btn-task" onclick="olCreateTask('${safeMid}')">✅ Create Task</button>
+        <button class="ol-btn-cal" onclick="olCreateEvent('${safeMid}')">📅 Event</button>
+      </div>`;
+
+  return `<div class="ol-card priority-${priority}" id="olcard-${safeMid}">
+    <div class="ol-card-header" onclick="_olToggleCard('${safeMid}')">
+      <div class="ol-priority-dot ${priority}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="ol-sender">${_esc(e.sender_name||e.sender_email||"Unknown")}</div>
+        <div class="ol-subject">${_esc(e.subject||"(No subject)")}</div>
+      </div>
+      <div class="ol-meta">
+        <div class="ol-time">${timeStr}</div>
+        <span class="ol-status-chip ${status}">${_olStatusLabel(status)}</span>
+        <span style="font-size:12px;color:var(--soft)">▾</span>
+      </div>
+    </div>
+    <div class="ol-card-body" id="olbody-${safeMid}">
+      <div class="ol-tags">
+        <span class="ol-tag intent-${intent}">${intent}</span>
+        <span class="ol-tag type">${etype}</span>
+        ${lang ? `<span class="ol-tag lang">${lang}</span>` : ""}
+        ${e.has_attachments ? '<span class="ol-tag type">📎 attachments</span>' : ""}
+      </div>
+      ${e.summary ? `<div class="ol-section" style="margin-top:10px">
+        <div class="ol-section-label">AI Summary</div>
+        <div class="ol-summary-text">${_esc(e.summary)}</div>
+        ${keyPointsHTML}
+      </div>` : ""}
+      ${replySection}
+      ${actionsSection}
+      ${suggestions ? `<div class="ol-suggestions"><span style="font-size:10px;color:var(--soft)">AI suggests:</span>${suggestions}</div>` : ""}
+    </div>
+  </div>`;
+}
+
+function _olToggleCard(mid) {
+  const body = document.getElementById(`olbody-${mid}`);
+  if (body) body.classList.toggle("expanded");
+}
+
+function _olStatusLabel(status) {
+  return {
+    pending_approval: "⏳ Pending",
+    sent:             "✅ Sent",
+    ignored:          "🚫 Ignored",
+    deleted:          "🗑 Deleted",
+    task_created:     "✅ Task",
+    calendar_created: "📅 Event",
+  }[status] || status;
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+
+function setOutlookFilter(btn, val, type = "status") {
+  _olFilter     = val;
+  _olFilterType = type;
+  document.querySelectorAll(".ol-filter-btn").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  loadOutlookInbox();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+async function olSendReply(mid) {
+  const ta = document.getElementById(`reply-${mid}`);
+  const replyText = ta ? ta.value.trim() : "";
+  if (!replyText) { showToast("Reply text is empty", "error"); return; }
+
+  if (!confirm("Send this reply? This action cannot be undone.")) return;
+
+  try {
+    const d = await fetch("/api/outlook/send-reply", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ message_id: mid, reply_text: replyText }),
+    }).then(r => r.json());
+    if (d.status === "ok") {
+      showToast("Reply sent ✅", "success");
+      await loadOutlookInbox();
+      await loadOutlookStatus();
+    } else {
+      showToast("Send failed: " + (d.error || "unknown"), "error");
+    }
+  } catch(e) { showToast("Send error: " + e.message, "error"); }
+}
+
+async function olDelete(mid) {
+  if (!confirm("Delete this email permanently? This cannot be undone.")) return;
+  try {
+    const d = await fetch(`/api/outlook/delete/${mid}`, { method: "POST" }).then(r => r.json());
+    if (d.status === "ok") { showToast("Email deleted 🗑", "info"); await loadOutlookInbox(); }
+    else showToast("Delete failed: " + (d.error || "unknown"), "error");
+  } catch(e) { showToast("Delete error: " + e.message, "error"); }
+}
+
+async function olIgnore(mid) {
+  try {
+    await fetch(`/api/outlook/ignore/${mid}`, { method: "POST" });
+    showToast("Email ignored 🚫", "info", 1800);
+    await loadOutlookInbox();
+  } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+
+async function olMarkRead(mid) {
+  try {
+    await fetch(`/api/outlook/mark-read/${mid}`, { method: "POST" });
+    showToast("Marked as read 👁", "info", 1500);
+    await loadOutlookInbox();
+    await loadOutlookStatus();
+  } catch(e) { console.warn("olMarkRead:", e); }
+}
+
+async function olCreateTask(mid) {
+  try {
+    const d = await fetch(`/api/outlook/email/${mid}/create-task`, { method: "POST" }).then(r => r.json());
+    if (d.success) {
+      showToast("Task created ✅", "success");
+      await loadOutlookInbox();
+    }
+  } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+
+async function olCreateEvent(mid) {
+  try {
+    const d = await fetch(`/api/outlook/email/${mid}/create-event`, { method: "POST" }).then(r => r.json());
+    if (d.success) {
+      showToast("Calendar event prepared 📅", "success");
+      await loadOutlookInbox();
+    }
+  } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+
+function outlookConnect() {
+  window.location.href = "/auth/microsoft/login";
+}
+
+async function outlookSubscribe() {
+  try {
+    const d = await fetch("/api/outlook/subscribe", { method: "POST" }).then(r => r.json());
+    if (d.status === "ok") {
+      showToast("Webhook subscription active 🔔", "success");
+      await loadOutlookStatus();
+    } else {
+      showToast("Subscription failed", "error");
+    }
+  } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+
+// ── Tab activation hook ───────────────────────────────────────────────────────
+// Called by the main showTab() dispatcher when the outlook tab is activated.
+function _onOutlookTabActivated() {
+  initOutlook();
+}
 </script>
 </body>
 </html>

@@ -1,0 +1,18 @@
+{
+  "workouts": [
+    {
+      "id": "360774770c",
+      "date": "",
+      "logged_at": "2026-04-27T15:21:36.962804",
+      "exercises": [
+        {
+          "name": "Squat",
+          "sets": 4,
+          "reps": 8,
+          "weight_kg": 80
+        }
+      ],
+      "notes": "leg day"
+    }
+  ]
+}

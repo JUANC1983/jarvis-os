@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "id": "4c55b07c2d",
+      "title": "Pagar: La luz",
+      "due": "2026-04-27T09:00:00",
+      "repeat": null,
+      "notes": "",
+      "done": false,
+      "created_at": "2026-04-27T16:08:27.078267"
+    },
+    {
+      "id": "b56649674a",
+      "title": "Reunion viernes",
+      "due": "2026-05-01T09:00:00",
+      "repeat": null,
+      "notes": "recordar reunion viernes",
+      "done": false,
+      "created_at": "2026-04-27T16:08:27.363998"
+    },
+    {
+      "id": "01deda888f",
+      "title": "Pagar tarjeta",
+      "due": "2026-04-28T09:00:00",
+      "repeat": null,
+      "notes": "",
+      "done": false,
+      "created_at": "2026-04-27T16:08:27.386825"
+    }
+  ]
+}

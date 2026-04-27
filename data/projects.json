@@ -35,7 +35,134 @@
       "color": "cyan",
       "status": "active",
       "created_at": "2026-04-27T00:42:55.402492"
+    },
+    {
+      "id": "p_801027aaf7",
+      "user_id": "owner",
+      "name": "Q2 Strategy Plan",
+      "description": "Quarterly business and investment strategy",
+      "color": "cyan",
+      "status": "active",
+      "created_at": "2026-04-27T15:31:42.840295"
+    },
+    {
+      "id": "p_4d6940ad6d",
+      "user_id": "owner",
+      "name": "Personal Fitness Goals",
+      "description": "Training plan for the next 8 weeks",
+      "color": "ok",
+      "status": "active",
+      "created_at": "2026-04-27T15:31:42.935782"
     }
   ],
-  "tasks": []
+  "tasks": [
+    {
+      "id": "tk_8580ed193f",
+      "project_id": "p_801027aaf7",
+      "title": "Competitive analysis",
+      "description": "",
+      "status": "done",
+      "urgency": "high",
+      "priority_color": "orange",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.857303",
+      "completed_at": null
+    },
+    {
+      "id": "tk_4037fb9894",
+      "project_id": "p_801027aaf7",
+      "title": "Revenue projections",
+      "description": "",
+      "status": "done",
+      "urgency": "high",
+      "priority_color": "orange",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.871259",
+      "completed_at": null
+    },
+    {
+      "id": "tk_8185cf79ce",
+      "project_id": "p_801027aaf7",
+      "title": "Resource allocation plan",
+      "description": "",
+      "status": "doing",
+      "urgency": "medium",
+      "priority_color": "yellow",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.885201",
+      "completed_at": null
+    },
+    {
+      "id": "tk_a42909f3b0",
+      "project_id": "p_801027aaf7",
+      "title": "Presentation to board",
+      "description": "",
+      "status": "todo",
+      "urgency": "high",
+      "priority_color": "orange",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.901403",
+      "completed_at": null
+    },
+    {
+      "id": "tk_3979604d12",
+      "project_id": "p_801027aaf7",
+      "title": "KPI dashboard setup",
+      "description": "",
+      "status": "todo",
+      "urgency": "medium",
+      "priority_color": "yellow",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.919751",
+      "completed_at": null
+    },
+    {
+      "id": "tk_e86c77a699",
+      "project_id": "p_4d6940ad6d",
+      "title": "Set weekly mileage target",
+      "description": "",
+      "status": "done",
+      "urgency": "medium",
+      "priority_color": "yellow",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.953785",
+      "completed_at": null
+    },
+    {
+      "id": "tk_bb731a3708",
+      "project_id": "p_4d6940ad6d",
+      "title": "Book golf lesson",
+      "description": "",
+      "status": "doing",
+      "urgency": "low",
+      "priority_color": "green",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.968740",
+      "completed_at": null
+    },
+    {
+      "id": "tk_1a5391bd69",
+      "project_id": "p_4d6940ad6d",
+      "title": "Gym program — Week 1-4",
+      "description": "",
+      "status": "todo",
+      "urgency": "medium",
+      "priority_color": "yellow",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:42.987745",
+      "completed_at": null
+    },
+    {
+      "id": "tk_c1911aebba",
+      "project_id": "p_4d6940ad6d",
+      "title": "Track body metrics",
+      "description": "",
+      "status": "todo",
+      "urgency": "low",
+      "priority_color": "green",
+      "due_date": "",
+      "created_at": "2026-04-27T15:31:43.002740",
+      "completed_at": null
+    }
+  ]
 }

@@ -1,12 +1,27 @@
 {
   "handicap_index": null,
-  "rounds_logged": 0,
-  "recent_scores": [],
-  "best_score": null,
-  "avg_score": null,
+  "rounds_logged": 9,
+  "recent_scores": [
+    88,
+    85,
+    82,
+    88,
+    85,
+    82,
+    88,
+    85,
+    82
+  ],
+  "best_score": 82,
+  "avg_score": 85.0,
   "strengths": [],
   "areas_to_improve": [
     "Track a round to unlock insights"
   ],
-  "last_round": null
+  "last_round": {
+    "date": "2026-04-27T15:37:36.525758",
+    "course": "Highland Course",
+    "score": 82,
+    "notes": "Personal best — driver was on fire"
+  }
 }
