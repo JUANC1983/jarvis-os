@@ -5,6 +5,8 @@ Structured for in-memory-now / DB-later swap.
 """
 from __future__ import annotations
 
+import base64
+import json
 import logging
 import os
 import secrets
@@ -15,6 +17,20 @@ from urllib.parse import urlencode
 import httpx
 
 log = logging.getLogger("jarvis.outlook_auth")
+
+
+def _decode_jwt_payload(token: str) -> Dict:
+    """Decode JWT payload without verifying signature (for debug logging only)."""
+    try:
+        parts = token.split(".")
+        if len(parts) < 2:
+            return {}
+        # Add padding and decode base64url
+        payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+        payload_bytes = base64.urlsafe_b64decode(payload_b64)
+        return json.loads(payload_bytes)
+    except Exception:
+        return {}
 
 # ── Config from environment ───────────────────────────────────────────────────
 # Support multiple env var name conventions with explicit priority order.
@@ -85,7 +101,13 @@ class TokenStore:
         token_data = dict(token_data)
         token_data["saved_at"] = time.time()
         self._tokens[user_id] = token_data
-        log.info("Token saved for user=%s (expires_in=%s)", user_id, token_data.get("expires_in"))
+        access = token_data.get("access_token", "")
+        print(f"[AUTH] Token stored for {user_id} | prefix={access[:20]}... | expires_in={token_data.get('expires_in')}")
+        # Decode scopes from the access token JWT payload
+        payload = _decode_jwt_payload(access)
+        scopes = payload.get("scp", payload.get("roles", "unknown"))
+        print(f"[AUTH] scopes: {scopes}")
+        log.info("Token saved for user=%s (expires_in=%s, scopes=%s)", user_id, token_data.get("expires_in"), scopes)
 
     def get(self, user_id: str) -> Optional[Dict]:
         return self._tokens.get(user_id)
@@ -178,9 +200,11 @@ async def refresh_token(user_id: str) -> bool:
     """
     t = token_store.get(user_id)
     if not t or not t.get("refresh_token"):
+        print(f"[AUTH] No refresh_token stored for user={user_id}")
         log.warning("No refresh token available for user=%s", user_id)
         return False
 
+    print(f"[AUTH] Refreshing token for user={user_id} via {_TOKEN_URL}")
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(_TOKEN_URL, data={
@@ -190,19 +214,22 @@ async def refresh_token(user_id: str) -> bool:
                 "grant_type":    "refresh_token",
                 "scope":         " ".join(_SCOPES),
             })
-            resp.raise_for_status()
-            new_tokens = resp.json()
-            # Preserve refresh_token if the new response doesn't include one
-            if "refresh_token" not in new_tokens:
-                new_tokens["refresh_token"] = t["refresh_token"]
-            token_store.save(user_id, new_tokens)
-            log.info("Token refreshed for user=%s", user_id)
-            return True
-    except httpx.HTTPStatusError as exc:
-        log.error("Token refresh HTTP error %d for user=%s: %s",
-                  exc.response.status_code, user_id, exc.response.text[:200])
-        return False
+        print(f"[AUTH] Refresh STATUS: {resp.status_code}")
+        if resp.status_code != 200:
+            print(f"[AUTH] Refresh FAILED: {resp.text[:400]}")
+            log.error("Token refresh HTTP %d for user=%s: %s",
+                      resp.status_code, user_id, resp.text[:300])
+            return False
+        new_tokens = resp.json()
+        # Preserve refresh_token if the new response doesn't include one
+        if "refresh_token" not in new_tokens:
+            new_tokens["refresh_token"] = t["refresh_token"]
+        token_store.save(user_id, new_tokens)
+        print(f"[AUTH] Token refreshed for user={user_id}")
+        log.info("Token refreshed for user=%s", user_id)
+        return True
     except Exception as exc:
+        print(f"[AUTH] Refresh exception for user={user_id}: {exc}")
         log.error("Token refresh error for user=%s: %s", user_id, exc)
         return False
 
@@ -213,13 +240,19 @@ async def get_valid_token(user_id: str = "owner") -> Optional[str]:
     Returns None if authentication is required.
     """
     if not token_store.is_authenticated(user_id):
-        log.debug("User %s not authenticated", user_id)
+        print(f"[AUTH] No token stored for user={user_id} — re-auth required")
+        log.warning("User %s not authenticated — token store empty", user_id)
         return None
     if token_store.is_expired(user_id):
+        print(f"[AUTH] Token expired for user={user_id} — refreshing")
         log.info("Token expired for user=%s — refreshing", user_id)
         if not await refresh_token(user_id):
+            print(f"[AUTH] Token refresh FAILED for user={user_id}")
             return None
-    return token_store.get_access_token(user_id)
+    token = token_store.get_access_token(user_id)
+    if token:
+        print(f"[GRAPH] Using token: {token[:20]}...")
+    return token
 
 
 def is_configured() -> bool:

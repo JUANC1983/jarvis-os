@@ -30,6 +30,7 @@ async def fetch_email(message_id: str, user_id: str = "owner") -> Optional[Dict]
     if not token:
         log.error("fetch_email: no valid token for user=%s", user_id)
         return None
+    print(f"[GRAPH] fetch_email using token: {token[:20]}...")
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.get(
@@ -37,10 +38,15 @@ async def fetch_email(message_id: str, user_id: str = "owner") -> Optional[Dict]
                 headers={"Authorization": f"Bearer {token}"},
                 params={"$select": _MESSAGE_SELECT},
             )
-            if resp.status_code == 200:
-                return _parse_message(resp.json())
-            log.error("fetch_email %s HTTP %d", message_id, resp.status_code)
-            return None
+        print(f"[GRAPH] fetch_email HTTP {resp.status_code}")
+        if resp.status_code == 200:
+            return _parse_message(resp.json())
+        print(f"[GRAPH RESPONSE] {resp.text[:600]}")
+        if resp.status_code == 401:
+            log.error("fetch_email 401 — token rejected by Graph. Body: %s", resp.text[:400])
+        else:
+            log.error("fetch_email %s HTTP %d: %s", message_id, resp.status_code, resp.text[:200])
+        return None
     except Exception as exc:
         log.error("fetch_email error: %s", exc)
         return None
@@ -54,7 +60,8 @@ async def list_inbox(
     """Return recent inbox messages, newest first."""
     token = await get_valid_token(user_id)
     if not token:
-        return []
+        raise ValueError("Invalid or expired token. Re-auth required.")
+    print(f"[GRAPH] list_inbox using token: {token[:20]}...")
     params: Dict = {
         "$top":     limit,
         "$orderby": "receivedDateTime desc",
@@ -69,10 +76,17 @@ async def list_inbox(
                 headers={"Authorization": f"Bearer {token}"},
                 params=params,
             )
-            if resp.status_code == 200:
-                return [_parse_message(m) for m in resp.json().get("value", [])]
-            log.error("list_inbox HTTP %d", resp.status_code)
-            return []
+        print(f"[GRAPH] list_inbox HTTP {resp.status_code}")
+        if resp.status_code == 200:
+            return [_parse_message(m) for m in resp.json().get("value", [])]
+        print(f"[GRAPH RESPONSE] {resp.text[:600]}")
+        if resp.status_code == 401:
+            log.error("list_inbox 401 — token rejected by Graph. Body: %s", resp.text[:400])
+            raise ValueError("Invalid or expired token. Re-auth required.")
+        log.error("list_inbox HTTP %d: %s", resp.status_code, resp.text[:200])
+        return []
+    except ValueError:
+        raise
     except Exception as exc:
         log.error("list_inbox error: %s", exc)
         return []
@@ -83,6 +97,7 @@ async def count_unread(user_id: str = "owner") -> int:
     token = await get_valid_token(user_id)
     if not token:
         return 0
+    print(f"[GRAPH] count_unread using token: {token[:20]}...")
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(
@@ -90,9 +105,12 @@ async def count_unread(user_id: str = "owner") -> int:
                 headers={"Authorization": f"Bearer {token}"},
                 params={"$select": "unreadItemCount"},
             )
-            if resp.status_code == 200:
-                return resp.json().get("unreadItemCount", 0)
-            return 0
+        print(f"[GRAPH] count_unread HTTP {resp.status_code}")
+        if resp.status_code == 200:
+            return resp.json().get("unreadItemCount", 0)
+        if resp.status_code == 401:
+            print(f"[GRAPH RESPONSE] count_unread 401: {resp.text[:400]}")
+        return 0
     except Exception:
         return 0
 

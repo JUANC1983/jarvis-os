@@ -4355,6 +4355,7 @@ async def ms_callback(code: str = "", state: str = "", error: str = "", error_de
         raise HTTPException(500, f"Token exchange failed: {exc}")
 
     _ms_token_store.save(user_id, tokens)
+    print(f"[AUTH] Callback complete — token stored for user={user_id}, access_token_prefix={tokens.get('access_token','')[:20]}...")
     asyncio.create_task(_ms_create_sub(user_id))
 
     return RedirectResponse("/dashboard?outlook=connected")
@@ -4391,6 +4392,43 @@ async def outlook_status(current_user: dict = Depends(get_optional_user)):
         "unread_count":    unread,
         "pending_emails":  _ms_email_store.pending_count(),
         "config_detail":   cfg,
+    }
+
+
+@app.get("/api/outlook/token-status")
+async def outlook_token_status(current_user: dict = Depends(get_optional_user)):
+    """Debug: show token state for the current user. No secrets exposed."""
+    if not _OUTLOOK_AVAILABLE:
+        return {"available": False}
+    uid   = current_user["user_id"]
+    store = _ms_token_store
+    has_token   = store.is_authenticated(uid)
+    is_expired  = store.is_expired(uid) if has_token else True
+    token_prefix = ""
+    scopes       = ""
+    if has_token:
+        raw = store.get_access_token(uid)
+        if raw:
+            token_prefix = raw[:20] + "..."
+            try:
+                import base64, json as _json
+                parts = raw.split(".")
+                if len(parts) >= 2:
+                    pad = parts[1] + "=" * (4 - len(parts[1]) % 4)
+                    payload = _json.loads(base64.urlsafe_b64decode(pad))
+                    scopes = payload.get("scp", payload.get("roles", ""))
+            except Exception:
+                pass
+    t = store.get(uid) or {}
+    return {
+        "user_id":     uid,
+        "has_token":   has_token,
+        "is_expired":  is_expired,
+        "token_prefix": token_prefix,
+        "scopes":      scopes,
+        "has_refresh": bool(t.get("refresh_token")),
+        "saved_at":    t.get("saved_at"),
+        "expires_in":  t.get("expires_in"),
     }
 
 
@@ -4511,8 +4549,11 @@ async def outlook_live_inbox(
     current_user: dict = Depends(get_optional_user),
 ):
     _outlook_guard()
-    items = await _ms_list_inbox(limit=limit, user_id=current_user["user_id"], unread_only=unread_only)
-    return {"status": "ok", "items": items, "count": len(items)}
+    try:
+        items = await _ms_list_inbox(limit=limit, user_id=current_user["user_id"], unread_only=unread_only)
+        return {"status": "ok", "items": items, "count": len(items)}
+    except ValueError as exc:
+        return JSONResponse({"status": "error", "error": str(exc), "reauth_required": True}, status_code=401)
 
 
 @app.post("/api/outlook/poll")
