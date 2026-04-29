@@ -4810,3 +4810,29 @@ async def _calendar_reminder_scheduler() -> None:
         except Exception as _e:
             _log.debug("Cal scheduler outer error: %s", _e)
         await asyncio.sleep(60)
+# ===== OUTLOOK WEBHOOK =====
+
+from fastapi import Request
+from fastapi.responses import Response
+
+@app.get("/api/outlook/webhook")
+async def outlook_webhook_validation(request: Request):
+    validation_token = request.query_params.get("validationToken")
+
+    if validation_token:
+        return Response(content=validation_token, media_type="text/plain")
+
+    return Response(status_code=200)
+
+
+@app.post("/api/outlook/webhook")
+async def outlook_webhook_events(request: Request):
+    try:
+        data = await request.json()
+        print("📩 OUTLOOK EVENT:", data)
+
+        return {"status": "ok"}
+
+    except Exception as e:
+        print("❌ Webhook error:", str(e))
+        return {"status": "error"}
