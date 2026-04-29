@@ -1,3 +1,4 @@
+import time
 from typing import Any, Dict, List
 
 import yfinance as yf
@@ -5,50 +6,48 @@ import pandas as pd
 
 from core.exceptions import ExternalServiceError
 
+_QUOTE_CACHE: Dict[str, Dict] = {}
+_QUOTE_TTL   = 120   # seconds
+
+
+def _cached_quote(symbol: str) -> Dict[str, Any]:
+    """Return cached quote if fresh, else fetch and cache."""
+    now = time.time()
+    entry = _QUOTE_CACHE.get(symbol)
+    if entry and now - entry["_ts"] < _QUOTE_TTL:
+        return entry
+    try:
+        ticker = yf.Ticker(symbol)
+        info   = ticker.fast_info
+        price          = info.get("lastPrice")
+        previous_close = info.get("previousClose")
+        currency       = info.get("currency")
+        change = (price - previous_close) if (price and previous_close) else None
+        change_pct = (change / previous_close * 100) if (change and previous_close) else None
+        result = {
+            "symbol": symbol, "price": price, "previous_close": previous_close,
+            "change": change, "change_pct": change_pct, "currency": currency, "_ts": now,
+        }
+    except Exception as exc:
+        result = {
+            "symbol": symbol, "price": None, "previous_close": None,
+            "change": None, "change_pct": None, "currency": None, "_ts": now,
+            "error": str(exc),
+        }
+    _QUOTE_CACHE[symbol] = result
+    return result
+
 
 class MarketDataEngine:
     def get_quotes(self, symbols: List[str]) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
-
         for raw_symbol in symbols:
             symbol = raw_symbol.upper().strip()
-            try:
-                ticker = yf.Ticker(symbol)
-                info = ticker.fast_info
-
-                price = info.get("lastPrice")
-                previous_close = info.get("previousClose")
-                currency = info.get("currency")
-
-                change = None
-                change_pct = None
-                if price is not None and previous_close not in (None, 0):
-                    change = price - previous_close
-                    change_pct = (change / previous_close) * 100
-
-                results.append(
-                    {
-                        "symbol": symbol,
-                        "price": price,
-                        "previous_close": previous_close,
-                        "change": change,
-                        "change_pct": change_pct,
-                        "currency": currency,
-                    }
-                )
-            except Exception as exc:
-                results.append(
-                    {
-                        "symbol": symbol,
-                        "price": None,
-                        "previous_close": None,
-                        "change": None,
-                        "change_pct": None,
-                        "currency": None,
-                        "error": str(exc),
-                    }
-                )
-
+            # Normalise crypto symbols for yfinance
+            if symbol in ("BTC", "ETH", "SOL", "XRP", "DOGE"):
+                symbol = symbol + "-USD"
+            entry = _cached_quote(symbol)
+            results.append({k: v for k, v in entry.items() if k != "_ts"})
         return results
 
     def get_history(self, symbol: str, period: str = "1mo", interval: str = "1d") -> Dict[str, Any]:

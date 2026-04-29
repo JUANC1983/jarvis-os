@@ -1,9 +1,13 @@
+import time
 from datetime import datetime
 from typing import Any, Dict, List
 
 import yfinance as yf
 
 from core.agent_schema import build_response, degraded
+
+_SNAPSHOT_CACHE: Dict = {}
+_SNAPSHOT_TTL = 120   # seconds
 
 
 class MarketIntelligenceEngine:
@@ -107,31 +111,40 @@ class MarketIntelligenceEngine:
         )
 
     def snapshot(self) -> Dict[str, Any]:
+        now = time.time()
+        cached = _SNAPSHOT_CACHE.get("snap")
+        if cached and now - cached.get("_ts", 0) < _SNAPSHOT_TTL:
+            return {k: v for k, v in cached.items() if k != "_ts"}
+
         result: Dict[str, Any] = {
             "timestamp": datetime.utcnow().isoformat(),
             "items": [],
         }
 
         for label, ticker in self.core_watchlist.items():
-            ticker_obj = yf.Ticker(ticker)
-            hist = ticker_obj.history(period="2d", interval="1d")
+            try:
+                ticker_obj = yf.Ticker(ticker)
+                hist = ticker_obj.history(period="2d", interval="1d")
 
-            if hist.empty or len(hist) < 1:
+                if hist.empty or len(hist) < 1:
+                    continue
+
+                latest_close   = float(hist["Close"].iloc[-1])
+                previous_close = float(hist["Close"].iloc[-2]) if len(hist) > 1 else latest_close
+                change         = latest_close - previous_close
+                change_pct     = (change / previous_close * 100.0) if previous_close else 0.0
+
+                result["items"].append({
+                    "label":      label,
+                    "ticker":     ticker,
+                    "price":      round(latest_close, 2),
+                    "change":     round(change, 2),
+                    "change_pct": round(change_pct, 2),
+                })
+            except Exception:
                 continue
 
-            latest_close = float(hist["Close"].iloc[-1])
-            previous_close = float(hist["Close"].iloc[-2]) if len(hist) > 1 else latest_close
-            change = latest_close - previous_close
-            change_pct = (change / previous_close * 100.0) if previous_close else 0.0
-
-            result["items"].append({
-                "label": label,
-                "ticker": ticker,
-                "price": round(latest_close, 2),
-                "change": round(change, 2),
-                "change_pct": round(change_pct, 2),
-            })
-
+        _SNAPSHOT_CACHE["snap"] = {**result, "_ts": now}
         return result
 
     def analyze_symbol(self, symbol: str) -> Dict[str, Any]:

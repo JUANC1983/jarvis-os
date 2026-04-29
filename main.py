@@ -1153,6 +1153,80 @@ def health():
     return {"status": "ok", "brain": brain.health()}
 
 
+@app.get("/api/health")
+def system_health():
+    """Comprehensive system health check — all modules, no secrets exposed."""
+    import os
+    report: dict = {"status": "ok", "systems": {}, "timestamp": datetime.utcnow().isoformat()}
+
+    # Markets
+    report["systems"]["markets"] = {
+        "available":   _MKT_AVAILABLE,
+        "engine":      _mkt_engine is not None,
+    }
+    try:
+        if _mkt_engine:
+            snap = _mkt_engine.snapshot()
+            report["systems"]["markets"]["items_count"] = len(snap.get("items", []))
+            report["systems"]["markets"]["status"] = "ok" if snap.get("items") else "no_data"
+        else:
+            report["systems"]["markets"]["status"] = "unavailable"
+    except Exception as e:
+        report["systems"]["markets"]["status"] = f"error: {e}"
+
+    # Outlook
+    report["systems"]["outlook"] = {
+        "module_loaded": _OUTLOOK_AVAILABLE,
+        "client_id_set": bool(os.getenv("OUTLOOK_CLIENT_ID") or os.getenv("OUTLOOK_APPLICATION")),
+        "secret_set":    bool(os.getenv("OUTLOOK_CLIENT_SECRET")),
+    }
+
+    # Graph Memory
+    report["systems"]["graph_memory"] = {
+        "available": _GRAPH_MEM_AVAILABLE,
+        "mode":      _graph_mem.GRAPH_MEMORY_MODE if _GRAPH_MEM_AVAILABLE else "OFF",
+    }
+    if _GRAPH_MEM_AVAILABLE and _graph_mem.get_engine():
+        e = _graph_mem.get_engine()
+        report["systems"]["graph_memory"]["nodes"] = e.node_count()
+        report["systems"]["graph_memory"]["edges"] = e.edge_count()
+
+    # Notifications
+    try:
+        notif = _notif("owner")
+        report["systems"]["notifications"] = {"status": "ok", "unread": notif.unread_count()}
+    except Exception as e:
+        report["systems"]["notifications"] = {"status": f"error: {e}"}
+
+    # Calendar
+    try:
+        cal = _cal("owner")
+        events = cal.get_events(upcoming_days=7)
+        report["systems"]["calendar"] = {"status": "ok", "upcoming_events": len(events)}
+    except Exception as e:
+        report["systems"]["calendar"] = {"status": f"error: {e}"}
+
+    # News
+    try:
+        report["systems"]["news"] = {"status": "ok", "engine": news_engine is not None}
+    except Exception:
+        report["systems"]["news"] = {"status": "error"}
+
+    # Brain
+    try:
+        bh = brain.health()
+        report["systems"]["brain"] = {"status": "ok", "available": bh.get("available", True)}
+    except Exception:
+        report["systems"]["brain"] = {"status": "error"}
+
+    failing = [k for k, v in report["systems"].items() if "error" in str(v.get("status", ""))]
+    if failing:
+        report["status"] = "degraded"
+        report["failing"] = failing
+
+    return report
+
+
 @app.get("/dashboard")
 def dashboard():
     if DASHBOARD_HTML.exists():
@@ -3992,10 +4066,29 @@ async def _reminder_scheduler() -> None:
         await _asyncio.sleep(60)
 
 
+async def _graph_memory_startup_backfill() -> None:
+    """On startup, auto-seed graph memory if ACTIVE and store is empty."""
+    _gm_log = logging.getLogger("jarvis.graph_memory")
+    try:
+        if not _GRAPH_MEM_AVAILABLE or not _graph_mem.is_enabled():
+            return
+        engine = _graph_mem.get_engine()
+        if engine is None or engine.node_count() > 0:
+            _gm_log.info("Graph Memory: %d nodes already in store — skipping backfill", engine.node_count() if engine else 0)
+            return
+        _gm_log.info("Graph Memory: store empty — running startup backfill")
+        from opsx.memory.backfill import run_backfill
+        result = await run_backfill(engine)
+        _gm_log.info("Graph Memory backfill complete: %d nodes from %s", result.get("nodes_upserted", 0), result.get("modules_run", []))
+    except Exception as exc:
+        logging.getLogger("jarvis.graph_memory").warning("Startup backfill failed (non-fatal): %s", exc)
+
+
 @app.on_event("startup")
 async def _start_scheduler() -> None:
     _asyncio.create_task(_reminder_scheduler())
     asyncio.create_task(_calendar_reminder_scheduler())
+    asyncio.create_task(_graph_memory_startup_backfill())
 
 
 @app.on_event("startup")
@@ -4297,6 +4390,30 @@ async def outlook_status(current_user: dict = Depends(get_optional_user)):
         "sub_expires":     sub.get("expirationDateTime") if sub else None,
         "unread_count":    unread,
         "pending_emails":  _ms_email_store.pending_count(),
+        "config_detail":   cfg,
+    }
+
+
+@app.get("/api/outlook/config-check")
+async def outlook_config_check():
+    """Diagnostic: show which env vars are set (no secrets exposed)."""
+    import os
+    def _set(name: str) -> bool:
+        return bool(os.getenv(name, "").strip())
+    checks = {
+        "OUTLOOK_CLIENT_ID":     _set("OUTLOOK_CLIENT_ID") or _set("OUTLOOK_APPLICATION"),
+        "OUTLOOK_CLIENT_SECRET": _set("OUTLOOK_CLIENT_SECRET"),
+        "OUTLOOK_TENANT_ID":     _set("OUTLOOK_TENANT_ID") or _set("OUTLOOK_DIRECTORY"),
+        "OUTLOOK_REDIRECT_URI":  _set("OUTLOOK_REDIRECT_URI") or _set("REDIRECT_URI"),
+        "module_loaded":         _OUTLOOK_AVAILABLE,
+    }
+    missing = [k for k, v in checks.items() if not v and k != "module_loaded"]
+    return {
+        "status":    "ok" if not missing else "missing_config",
+        "checks":    checks,
+        "missing":   missing,
+        "ready":     not missing and _OUTLOOK_AVAILABLE,
+        "setup_url": "https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
     }
 
 
@@ -4651,39 +4768,45 @@ def markets_analyze(body: _MarketAnalyzeReq):
 
 async def _calendar_reminder_scheduler() -> None:
     """
-    Runs every 60 seconds. Checks all calendar events for upcoming reminders.
-    Creates a notification when start_time - reminder_minutes is within the window.
-    Marks events as notified to prevent duplicate alerts.
+    Runs every 60 seconds. Checks calendar events for upcoming reminders.
+    Creates a notification at (start_time - reminder_minutes).
+    Sets notified=True to prevent duplicates.
     """
+    from datetime import timedelta as _td
+    _log = logging.getLogger("jarvis.calendar_scheduler")
+    _log.info("Calendar reminder scheduler started")
     while True:
         try:
-            for user_id in (["owner"] + list(_cal_cache.keys())):
+            users_to_check = list({"owner"} | set(_cal_cache.keys()))
+            for user_id in users_to_check:
                 try:
-                    cal    = _cal(user_id)
-                    notif  = _notif(user_id)
-                    now    = datetime.utcnow()
-                    events = cal.get_events(upcoming_days=1)
-                    for ev in events:
+                    cal   = _cal(user_id)
+                    notif = _notif(user_id)
+                    now   = datetime.utcnow()
+                    for ev in cal.get_events(upcoming_days=1):
                         if ev.get("notified"):
                             continue
-                        reminder_mins = ev.get("reminder_minutes", 30)
                         try:
-                            start_dt = datetime.fromisoformat(ev["start"].replace("Z", ""))
+                            start_dt = datetime.fromisoformat(
+                                ev["start"].replace("Z", "").split("+")[0]
+                            )
                         except Exception:
                             continue
-                        remind_at = start_dt - __import__("datetime").timedelta(minutes=reminder_mins)
+                        reminder_mins = int(ev.get("reminder_minutes", 30))
+                        remind_at = start_dt - _td(minutes=reminder_mins)
                         if now >= remind_at and now < start_dt:
                             mins_left = max(0, int((start_dt - now).total_seconds() / 60))
                             notif.create(
-                                title   = f"📅 {ev['title']}",
-                                message = f"Starts in {mins_left} min",
+                                title      = f"📅 {ev.get('title', 'Event')}",
+                                message    = f"Starts in {mins_left} min",
                                 notif_type = "meeting_alert",
                                 priority   = "high",
                                 action_url = "calendar",
                             )
                             cal.update_event(ev["id"], {"notified": True})
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                            _log.info("Reminder fired: %s for user=%s", ev.get("title"), user_id)
+                except Exception as _eu:
+                    _log.debug("Cal scheduler error for user=%s: %s", user_id, _eu)
+        except Exception as _e:
+            _log.debug("Cal scheduler outer error: %s", _e)
         await asyncio.sleep(60)

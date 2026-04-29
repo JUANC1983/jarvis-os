@@ -1,10 +1,16 @@
 ﻿from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any, List, Optional
 import re
 
 import yfinance as yf
 import numpy as np
+
+# ── Recommendations cache — prevent hammering yfinance ─────────────────────────
+_RECS_CACHE: Dict[str, Any] = {}
+_RECS_TTL = 180   # 3 minutes
 
 
 class ProductBrain:
@@ -544,25 +550,16 @@ class ProductBrain:
     def _enrich_asset_metadata(self, symbol: str) -> dict:
         symbol = (symbol or "").upper()
 
-        ibex = ["SAN", "BBVA", "ITX", "TEF", "IBE"]
-        india = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"]
+        crypto = ["BTC", "ETH", "SOL", "XRP", "BTC-USD", "ETH-USD", "SOL-USD"]
+        etf = ["SPY", "QQQ", "XLE", "GLD", "SHY", "USO", "BITO", "IBIT"]
 
-        crypto = ["BTC", "ETH", "SOL", "XRP"]
-        etf = ["SPY", "QQQ", "XLE", "GLD"]
-
-        if symbol in crypto:
-            return {
-    "asset_type": "crypto",
-    "region": "global",
-     "sector": "crypto"}
+        if symbol in crypto or symbol.endswith("-USD"):
+            return {"asset_type": "crypto", "region": "global", "sector": "crypto"}
 
         if symbol in etf:
             return {"asset_type": "etf", "region": "usa", "sector": "macro"}
 
-        if symbol in ibex:
-            return {"asset_type": "stock", "region": "spain", "sector": "ibex"}
-
-        if symbol in india or ".NS" in symbol:
+        if ".NS" in symbol:
             return {"asset_type": "stock", "region": "india", "sector": "nse"}
 
         tech = ["NVDA", "AAPL", "MSFT", "GOOGL", "META"]
@@ -720,34 +717,43 @@ class ProductBrain:
     # RECOMMENDATIONS
     # =========================
     def recommendations(self) -> Dict[str, Any]:
+        now = time.time()
+        cached = _RECS_CACHE.get("recs")
+        if cached and now - cached.get("_ts", 0) < _RECS_TTL:
+            return {k: v for k, v in cached.items() if k != "_ts"}
+
         symbols = [
+            # USA MEGA-CAP
+            "AAPL", "MSFT", "GOOGL", "AMZN", "META",
             # USA TECH / GROWTH
-            "NVDA", "AMD", "META", "MSFT", "GOOGL",
-            "PLTR", "COIN", "ARM", "MRVL",
-
-            # ENERGY / MACRO
-            "XOM", "CVX", "OXY", "XLE", "USO",
-
-            # CRYPTO
-            "BTC", "ETH",
-
-            # IBEX
-            "SAN", "BBVA", "ITX", "TEF", "IBE",
-
-            # INDIA
-            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
-
-            # IPO / HIGH BETA
-            "ARM", "SMCI", "HOOD", "RIVN"
+            "NVDA", "AMD", "TSLA", "PLTR", "SMCI",
+            # FINANCE / MACRO ETFs
+            "XOM", "CVX", "XLE",
+            # CRYPTO (yfinance format)
+            "BTC-USD", "ETH-USD",
+            # HIGH-BETA
+            "COIN", "HOOD",
         ]
 
-        results = []
+        results: List[Dict[str, Any]] = []
 
-        for s in symbols:
-            r = self.trader(s)
-            if r.get("price") is not None:
-                results.append(r)
+        def _fetch(sym: str):
+            try:
+                r = self.trader(sym)
+                if r.get("price") is not None:
+                    return r
+            except Exception:
+                pass
+            return None
 
-        results = sorted(results, key=lambda x: x["setup_score"], reverse=True)
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futures = {pool.submit(_fetch, s): s for s in symbols}
+            for fut in as_completed(futures, timeout=20):
+                r = fut.result()
+                if r:
+                    results.append(r)
 
-        return {"items": results[:12]}
+        results = sorted(results, key=lambda x: x.get("setup_score", 0), reverse=True)
+        output = {"items": results[:12]}
+        _RECS_CACHE["recs"] = {**output, "_ts": now}
+        return output
