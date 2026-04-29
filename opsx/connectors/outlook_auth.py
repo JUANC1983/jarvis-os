@@ -58,16 +58,11 @@ _AUTH_URL   = f"{_AUTHORITY}/oauth2/v2.0/authorize"
 _TOKEN_URL  = f"{_AUTHORITY}/oauth2/v2.0/token"
 
 _SCOPES: List[str] = [
-    "openid",
-    "profile",
-    "email",
+    "https://graph.microsoft.com/Mail.Read",
+    "https://graph.microsoft.com/Mail.ReadWrite",
+    "https://graph.microsoft.com/Mail.Send",
     "offline_access",
     "User.Read",
-    "Mail.Read",
-    "Mail.Send",
-    "Mail.ReadWrite",
-    "Calendars.ReadWrite",
-    "Tasks.ReadWrite",
 ]
 
 def config_status() -> Dict:
@@ -103,11 +98,19 @@ class TokenStore:
         self._tokens[user_id] = token_data
         access = token_data.get("access_token", "")
         print(f"[AUTH] Token stored for {user_id} | prefix={access[:20]}... | expires_in={token_data.get('expires_in')}")
-        # Decode scopes from the access token JWT payload
+        # Decode JWT payload — validate audience and log scopes
         payload = _decode_jwt_payload(access)
+        aud    = payload.get("aud", "unknown")
         scopes = payload.get("scp", payload.get("roles", "unknown"))
+        print(f"[AUTH] aud: {aud}")
         print(f"[AUTH] scopes: {scopes}")
-        log.info("Token saved for user=%s (expires_in=%s, scopes=%s)", user_id, token_data.get("expires_in"), scopes)
+        if aud and aud != "unknown" and "graph.microsoft.com" not in str(aud):
+            raise Exception(
+                f"Token audience invalid — must be Graph, got: {aud}. "
+                "Re-authenticate to get a Graph-scoped token."
+            )
+        log.info("Token saved for user=%s (expires_in=%s, aud=%s, scopes=%s)",
+                 user_id, token_data.get("expires_in"), aud, scopes)
 
     def get(self, user_id: str) -> Optional[Dict]:
         return self._tokens.get(user_id)
@@ -171,7 +174,7 @@ def get_login_url() -> Tuple[str, str]:
         "scope":         " ".join(_SCOPES),
         "state":         state,
         "response_mode": "query",
-        "prompt":        "select_account",
+        "prompt":        "consent",
     }
     url = f"{_AUTH_URL}?{urlencode(params)}"
     log.info("Login URL generated (state=%s...)", state[:8])
