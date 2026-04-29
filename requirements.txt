@@ -1,8 +1,9 @@
-﻿fastapi
+fastapi
 uvicorn
 python-multipart
 openai
 requests
+httpx
 python-dotenv
 pandas
 numpy

@@ -103,6 +103,15 @@ except Exception as _e:
     _OUTLOOK_AVAILABLE = False
     logging.getLogger("jarvis").warning("Outlook integration unavailable: %s", _e)
 
+# ── Graph Memory System ──────────────────────────────────────────────────────
+try:
+    import opsx.memory as _graph_mem
+    _GRAPH_MEM_AVAILABLE = True
+except Exception as _gme:
+    _graph_mem = None
+    _GRAPH_MEM_AVAILABLE = False
+    logging.getLogger("jarvis").warning("Graph Memory unavailable: %s", _gme)
+
 _analytics = _AnalyticsEngine()
 _wow       = _WowEngine()
 
@@ -2404,6 +2413,156 @@ def memory_stats(current_user: dict = Depends(get_optional_user)):
         return {"status": "error", "error": str(e)}
 
 # ================================================================
+# GRAPH MEMORY  — Phase GM
+# ================================================================
+
+class _GMNodeCreate(BaseModel):
+    id:         str
+    type:       str
+    label:      str
+    module:     str
+    content:    str
+    importance: float = 0.5
+    tags:       List[str] = []
+    metadata:   Dict[str, Any] = {}
+
+class _GMEdgeCreate(BaseModel):
+    source_id: str
+    target_id: str
+    relation:  str
+    weight:    float = 0.5
+    metadata:  Dict[str, Any] = {}
+
+class _GMBackfillReq(BaseModel):
+    modules: List[str] = []
+
+
+@app.get("/api/graph/status")
+def gm_status():
+    if not _GRAPH_MEM_AVAILABLE:
+        return {"available": False, "mode": "unavailable"}
+    try:
+        engine = _graph_mem.get_engine()
+        mode   = _graph_mem.GRAPH_MEMORY_MODE
+        if engine is None:
+            return {"available": True, "mode": mode, "nodes": 0, "edges": 0, "active": False}
+        return {
+            "available": True,
+            "mode":      mode,
+            "active":    _graph_mem.is_active(),
+            "enabled":   _graph_mem.is_enabled(),
+            **engine.health(),
+        }
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+@app.post("/api/graph/nodes")
+def gm_add_node(body: _GMNodeCreate):
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        raise HTTPException(status_code=503, detail="Graph Memory not available")
+    try:
+        node = _graph_mem.get_engine().add_node(
+            node_id=body.id, node_type=body.type, label=body.label,
+            module=body.module, content=body.content, importance=body.importance,
+            tags=body.tags, metadata=body.metadata,
+        )
+        return {"status": "ok", "node": node.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/graph/nodes")
+def gm_list_nodes(module: str = "", node_type: str = "", tag: str = "", limit: int = 50):
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        return {"status": "ok", "nodes": []}
+    try:
+        nodes = _graph_mem.get_engine().list_nodes(
+            module=module or None, node_type=node_type or None,
+            tag=tag or None, limit=limit,
+        )
+        return {"status": "ok", "nodes": [n.to_dict() for n in nodes], "count": len(nodes)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/graph/nodes/{node_id}")
+def gm_delete_node(node_id: str):
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        raise HTTPException(status_code=503, detail="Graph Memory not available")
+    deleted = _graph_mem.get_engine().delete_node(node_id)
+    return {"status": "ok", "deleted": deleted}
+
+
+@app.post("/api/graph/edges")
+def gm_add_edge(body: _GMEdgeCreate):
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        raise HTTPException(status_code=503, detail="Graph Memory not available")
+    try:
+        edge = _graph_mem.get_engine().add_edge(
+            source_id=body.source_id, target_id=body.target_id,
+            relation=body.relation, weight=body.weight, metadata=body.metadata,
+        )
+        if edge is None:
+            return {"status": "error", "error": "One or both nodes not found"}
+        return {"status": "ok", "edge": edge.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/graph/search")
+def gm_search(q: str, module: str = "", limit: int = 10):
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        return {"status": "ok", "results": []}
+    try:
+        nodes = _graph_mem.get_engine().search_nodes(q, module=module or None, limit=limit)
+        return {"status": "ok", "results": [n.to_dict() for n in nodes], "count": len(nodes)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/graph/context")
+def gm_context(module: str = "general", q: str = "", limit: int = 5):
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        return {"status": "ok", "items": [], "text": ""}
+    try:
+        router = _graph_mem.get_router()
+        if not router:
+            return {"status": "ok", "items": [], "text": ""}
+        ctx = router.build_context(module=module, query=q, limit=limit)
+        return {"status": "ok", "items": ctx.items, "text": ctx.text, "tokens": ctx.tokens}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/graph/backfill")
+async def gm_backfill(body: _GMBackfillReq):
+    """
+    Seed graph memory from existing JARVIS data files.
+    Idempotent — upserts on existing node ids.
+    """
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        raise HTTPException(status_code=503, detail="Graph Memory not available")
+    try:
+        from opsx.memory.backfill import run_backfill
+        result = await run_backfill(_graph_mem.get_engine(), modules=body.modules or None)
+        return {"status": "ok", **result}
+    except ImportError:
+        return {"status": "error", "error": "Backfill module not yet available"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/graph/stats")
+def gm_stats():
+    if not _GRAPH_MEM_AVAILABLE or not _graph_mem.get_engine():
+        return {"status": "ok", "available": False}
+    try:
+        return {"status": "ok", "available": True, **_graph_mem.get_engine().stats()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# ================================================================
 # NOTIFICATIONS  — Phase 5E
 # ================================================================
 
@@ -2518,6 +2677,15 @@ def _build_orchestrator_context(uid: str, include_data: bool = True) -> dict:
         ctx["memory_context"] = _memory(uid).get_context(limit=15, min_importance=4).get("context", [])
     except Exception:
         ctx["memory_context"] = []
+
+    # Graph Memory context (ACTIVE mode only — silent fallback)
+    try:
+        if _GRAPH_MEM_AVAILABLE and _graph_mem.is_active():
+            from core.ai_orchestrator import classify_intent as _classify_intent
+            # We don't have a query here yet — provide module-level summary
+            ctx["graph_memory_context"] = None   # will be enriched per-query if needed
+    except Exception:
+        pass
 
     if not include_data:
         return ctx
@@ -2648,6 +2816,22 @@ def orchestrator_chat(
     uid = current_user["user_id"]
     try:
         context = _build_orchestrator_context(uid, include_data=body.include_data)
+
+        # Inject graph memory context if ACTIVE (per-query, silent fallback)
+        try:
+            if _GRAPH_MEM_AVAILABLE and _graph_mem.is_active():
+                from core.ai_orchestrator import classify_intent as _ci
+                _gm_module = _graph_mem.get_router().route_text(body.message)
+                _gm_items  = _graph_mem.get_context(_gm_module, body.message, limit=5)
+                if _gm_items:
+                    context["memory_context"] = context.get("memory_context", []) + [
+                        {"content": it["content"], "type": it["type"],
+                         "importance": int(it["importance"] * 10), "source": "graph"}
+                        for it in _gm_items
+                    ]
+        except Exception:
+            pass
+
         result  = ai_orchestrator.route(body.message, context)
         # Auto-save interaction to Phase 5D memory at low importance
         try:
@@ -3811,6 +3995,7 @@ async def _reminder_scheduler() -> None:
 @app.on_event("startup")
 async def _start_scheduler() -> None:
     _asyncio.create_task(_reminder_scheduler())
+    asyncio.create_task(_calendar_reminder_scheduler())
 
 
 @app.on_event("startup")
@@ -4040,25 +4225,36 @@ def _outlook_guard():
 
 @app.get("/auth/microsoft/login")
 async def ms_login():
-    """Redirect the user to Microsoft login."""
+    """Redirect the user to Microsoft login. Returns JSON error if misconfigured."""
     _outlook_guard()
     from fastapi.responses import RedirectResponse
-    url, _state = _ms_login_url()
+    try:
+        url, _state = _ms_login_url()
+    except ValueError as exc:
+        # Never generate a URL with blank client_id — return actionable error
+        return JSONResponse({"error": str(exc), "configured": False}, status_code=400)
     return RedirectResponse(url)
 
 
 @app.get("/auth/microsoft/callback")
-async def ms_callback(code: str = "", state: str = "", error: str = ""):
+async def ms_callback(code: str = "", state: str = "", error: str = "", error_description: str = ""):
     """Handle the OAuth2 callback from Microsoft."""
     _outlook_guard()
+    from fastapi.responses import RedirectResponse, HTMLResponse
     if error:
-        raise HTTPException(400, f"Microsoft auth error: {error}")
+        msg = error_description or error
+        return HTMLResponse(
+            f'<html><body style="font-family:sans-serif;padding:30px;background:#0f1117;color:#fff">'
+            f'<h2>⚠ Microsoft Auth Error</h2><p>{msg}</p>'
+            f'<a href="/dashboard" style="color:#44f0ff">← Back to JARVIS</a></body></html>',
+            status_code=400,
+        )
     if not code:
         raise HTTPException(400, "Missing authorization code")
 
     user_id = _ms_token_store.consume_state(state)
     if not user_id:
-        raise HTTPException(400, "Invalid or expired state parameter")
+        raise HTTPException(400, "Invalid or expired OAuth state — try connecting again")
 
     try:
         tokens = await _ms_exchange_code(code)
@@ -4068,20 +4264,33 @@ async def ms_callback(code: str = "", state: str = "", error: str = ""):
     _ms_token_store.save(user_id, tokens)
     asyncio.create_task(_ms_create_sub(user_id))
 
-    from fastapi.responses import RedirectResponse
     return RedirectResponse("/dashboard?outlook=connected")
 
 
 @app.get("/api/outlook/status")
 async def outlook_status(current_user: dict = Depends(get_optional_user)):
-    _outlook_guard()
+    """Return Outlook configuration and connection status — never crashes."""
+    if not _OUTLOOK_AVAILABLE:
+        return {"status": "ok", "configured": False, "connected": False,
+                "reason": "Outlook integration module not loaded"}
+    try:
+        from opsx.connectors.outlook_auth import config_status as _ms_cfg_status
+        cfg = _ms_cfg_status()
+    except Exception:
+        cfg = {"configured": False, "reason": "Config check failed"}
     uid   = current_user["user_id"]
     auth  = _ms_token_store.is_authenticated(uid)
     sub   = _ms_sub_store.get(uid)
-    unread = await _ms_count_unread(uid) if auth else 0
+    unread = 0
+    if auth:
+        try:
+            unread = await _ms_count_unread(uid)
+        except Exception:
+            pass
     return {
         "status":          "ok",
-        "configured":      _ms_configured(),
+        "configured":      cfg.get("configured", False),
+        "connected":       auth,
         "authenticated":   auth,
         "subscription":    bool(sub),
         "subscription_id": sub.get("id") if sub else None,
@@ -4315,3 +4524,166 @@ async def outlook_queue_stats(current_user: dict = Depends(get_optional_user)):
         "subscriptions": _ms_sub_store.summary(),
         "email_store":   _ms_email_store.stats(),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MARKETS API  — overview / recommended / news / analyze aliases
+# ══════════════════════════════════════════════════════════════════════
+
+@app.get("/api/markets/overview")
+def markets_overview():
+    """Full market overview: regime + tickers. Alias wraps /api/markets/snapshot."""
+    if not _MKT_AVAILABLE or _mkt_engine is None:
+        return {
+            "status":  "unavailable",
+            "regime":  "unknown",
+            "items":   [],
+            "reason":  "Market engine not available. Check OPENAI_API_KEY / yfinance.",
+            "timestamp": datetime.now().isoformat(),
+        }
+    try:
+        data    = _mkt_engine.snapshot()
+        items   = data.get("items", [])
+        vix_item = next((x for x in items if x["label"] == "VIX"), None)
+        spy_item = next((x for x in items if x["label"] == "SPY"), None)
+        vix      = vix_item["price"] if vix_item else None
+        spy_chg  = spy_item["change_pct"] if spy_item else None
+        if vix is None:
+            regime = "unknown"
+        elif vix > 35:
+            regime = "FEAR"
+        elif vix > 25 and spy_chg is not None and spy_chg < 0:
+            regime = "RISK_OFF"
+        elif vix > 20:
+            regime = "CAUTION"
+        else:
+            regime = "NORMAL"
+        return {
+            "status":    "ok",
+            "regime":    regime,
+            "vix":       vix,
+            "items":     items,
+            "timestamp": data.get("timestamp", datetime.now().isoformat()),
+        }
+    except Exception as exc:
+        return {"status": "error", "regime": "unknown", "items": [], "error": str(exc),
+                "timestamp": datetime.now().isoformat()}
+
+
+@app.get("/api/markets/recommended")
+def markets_recommended():
+    """Return recommended stocks from the brain/product engine."""
+    try:
+        raw = brain.recommendations()
+        items = raw.get("items", []) if isinstance(raw, dict) else []
+        # Normalise format expected by the dashboard
+        normalised = []
+        for item in items[:12]:
+            normalised.append({
+                "symbol":      item.get("symbol") or item.get("ticker") or "",
+                "name":        item.get("name", ""),
+                "signal":      item.get("signal") or item.get("action") or "hold",
+                "price":       item.get("price"),
+                "setup_score": item.get("setup_score") or item.get("score"),
+                "risk":        item.get("risk") or item.get("risk_level") or "medium",
+                "reason":      item.get("reason") or item.get("rationale") or "",
+            })
+        return {"status": "ok", "items": normalised, "count": len(normalised)}
+    except Exception as exc:
+        return {"status": "error", "items": [], "error": str(exc)}
+
+
+@app.get("/api/markets/news")
+def markets_news(limit: int = 12):
+    """Return market-relevant news from the news engine."""
+    try:
+        items = news_engine.fetch_categorized(max_per_category=max(2, limit // 3))
+        flat  = []
+        for cat_items in items.values() if isinstance(items, dict) else [items]:
+            if isinstance(cat_items, list):
+                flat.extend(cat_items)
+        if not flat:
+            flat = items if isinstance(items, list) else []
+        return {"status": "ok", "items": flat[:limit], "count": len(flat[:limit])}
+    except Exception as exc:
+        return {"status": "error", "items": [], "error": str(exc)}
+
+
+class _MarketAnalyzeReq(BaseModel):
+    symbol: str = "AAPL"
+
+
+@app.post("/api/markets/analyze")
+def markets_analyze(body: _MarketAnalyzeReq):
+    """Analyze a single ticker with technical indicators."""
+    sym = (body.symbol or "AAPL").strip().upper()
+    if not _MKT_AVAILABLE or _mkt_engine is None:
+        # Fallback to yfinance directly when engine is missing
+        try:
+            import yfinance as yf
+            from datetime import datetime as _dt
+            t   = yf.Ticker(sym)
+            h   = t.history(period="6mo", interval="1d")
+            if h.empty or len(h) < 2:
+                return {"status": "error", "symbol": sym, "error": "No data returned from yfinance"}
+            price  = round(float(h["Close"].iloc[-1]), 2)
+            ma20   = round(float(h["Close"].rolling(20).mean().iloc[-1]), 2)
+            ma50   = round(float(h["Close"].rolling(50).mean().iloc[-1]), 2)
+            trend  = "bullish" if price > ma50 else "bearish"
+            return {
+                "status": "ok", "symbol": sym, "price": price,
+                "ma20": ma20, "ma50": ma50, "trend": trend,
+                "timestamp": _dt.utcnow().isoformat(),
+            }
+        except Exception as exc:
+            return {"status": "error", "symbol": sym, "error": str(exc)}
+    try:
+        result = _mkt_engine.analyze_symbol(sym)
+        result["status"] = "ok"
+        return result
+    except Exception as exc:
+        return {"status": "error", "symbol": sym, "error": str(exc)}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# CALENDAR EVENT REMINDER BACKGROUND TASK
+# ══════════════════════════════════════════════════════════════════════
+
+async def _calendar_reminder_scheduler() -> None:
+    """
+    Runs every 60 seconds. Checks all calendar events for upcoming reminders.
+    Creates a notification when start_time - reminder_minutes is within the window.
+    Marks events as notified to prevent duplicate alerts.
+    """
+    while True:
+        try:
+            for user_id in (["owner"] + list(_cal_cache.keys())):
+                try:
+                    cal    = _cal(user_id)
+                    notif  = _notif(user_id)
+                    now    = datetime.utcnow()
+                    events = cal.get_events(upcoming_days=1)
+                    for ev in events:
+                        if ev.get("notified"):
+                            continue
+                        reminder_mins = ev.get("reminder_minutes", 30)
+                        try:
+                            start_dt = datetime.fromisoformat(ev["start"].replace("Z", ""))
+                        except Exception:
+                            continue
+                        remind_at = start_dt - __import__("datetime").timedelta(minutes=reminder_mins)
+                        if now >= remind_at and now < start_dt:
+                            mins_left = max(0, int((start_dt - now).total_seconds() / 60))
+                            notif.create(
+                                title   = f"📅 {ev['title']}",
+                                message = f"Starts in {mins_left} min",
+                                notif_type = "meeting_alert",
+                                priority   = "high",
+                                action_url = "calendar",
+                            )
+                            cal.update_event(ev["id"], {"notified": True})
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        await asyncio.sleep(60)

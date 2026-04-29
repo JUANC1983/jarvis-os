@@ -1731,6 +1731,23 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .ol-suggestion-chip:hover{background:rgba(68,240,255,.08)}
 @keyframes olSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .ol-card{animation:olSlideIn .25s ease forwards}
+/* ── Graph Memory ── */
+.gm-input{background:#1a1a2e;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 10px;width:100%;box-sizing:border-box}
+.gm-node-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;animation:olSlideIn .2s ease forwards}
+.gm-node-card:hover{border-color:rgba(68,240,255,.2)}
+.gm-node-id{font-size:10px;color:#475569;font-family:monospace}
+.gm-node-label{font-size:14px;font-weight:600;color:#e2e8f0}
+.gm-node-content{font-size:12px;color:#94a3b8;line-height:1.5}
+.gm-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700}
+.gm-badge.type-person{background:rgba(99,102,241,.15);color:#818cf8}
+.gm-badge.type-preference{background:rgba(245,158,11,.12);color:#f59e0b}
+.gm-badge.type-fact{background:rgba(68,240,255,.1);color:#44f0ff}
+.gm-badge.type-project{background:rgba(34,197,94,.1);color:#22c55e}
+.gm-badge.type-habit{background:rgba(236,72,153,.1);color:#ec4899}
+.gm-badge.type-event{background:rgba(168,85,247,.1);color:#c084fc}
+.gm-badge.type-goal{background:rgba(251,191,36,.1);color:#fbbf24}
+.gm-badge.mod{background:rgba(255,255,255,.07);color:#64748b}
+.gm-mode-off{color:#ef4444}.gm-mode-shadow{color:#f59e0b}.gm-mode-active{color:#22c55e}
 </style>
 </head>
 <body>
@@ -1896,6 +1913,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn" data-tab="office">🏢 Office</button>
     <button class="tab-btn" data-tab="outlook" id="outlook-tab-btn">📧 Outlook <span class="tab-dot" id="outlook-unread-dot" style="display:none;background:#f59e0b"></span></button>
     <button class="tab-btn" data-tab="automations">⚡ Automations</button>
+    <button class="tab-btn" data-tab="memory">🧠 Memory</button>
     <button class="tab-btn" data-tab="system">System</button>
     <button class="tab-btn" data-tab="chat">Chat</button>
   </nav>
@@ -2165,17 +2183,19 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <div class="ch">
         <span class="ct">Recommended Stocks</span>
         <span class="cs">AI daily picks</span>
+        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadRecommendations()">↻</button>
       </div>
-      <div id="recommendations" class="ga"></div>
+      <div id="recommendations" class="ga"><div style="color:var(--soft);font-size:12px;padding:8px">Loading recommendations…</div></div>
     </div>
 
     <!-- Market News -->
     <div class="card">
       <div class="ch">
         <span class="ct">Market News</span>
+        <button class="btn-ol btn-sm" onclick="loadMarketNews()">↻</button>
         <button class="btn-ol btn-sm" onclick="switchTab('intelligence')">Full Feed →</button>
       </div>
-      <div id="mkt-news" class="ga"></div>
+      <div id="mkt-news" class="ga"><div style="color:var(--soft);font-size:12px;padding:8px">Loading news…</div></div>
     </div>
   </div>
 </div>
@@ -2326,14 +2346,36 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
           <button id="sv-lang-en" onclick="svSetLang('en')">EN</button>
         </div>
         <select id="svClubSelect" class="select" style="font-size:11px;padding:4px 8px">
-          <option value="driver">Driver</option>
-          <option value="3-wood">3 Wood</option>
-          <option value="5-iron">5 Iron</option>
-          <option value="7-iron" selected>7 Iron</option>
-          <option value="9-iron">9 Iron</option>
-          <option value="pitching-wedge">PW</option>
-          <option value="sand-wedge">SW</option>
-          <option value="putter">Putter</option>
+          <optgroup label="Woods">
+            <option value="driver">Driver</option>
+            <option value="3-wood">3 Wood</option>
+            <option value="5-wood">5 Wood</option>
+            <option value="7-wood">7 Wood</option>
+          </optgroup>
+          <optgroup label="Hybrids">
+            <option value="2-hybrid">2 Hybrid</option>
+            <option value="3-hybrid">3 Hybrid</option>
+            <option value="4-hybrid">4 Hybrid</option>
+            <option value="5-hybrid">5 Hybrid</option>
+          </optgroup>
+          <optgroup label="Irons">
+            <option value="3-iron">3 Iron</option>
+            <option value="4-iron">4 Iron</option>
+            <option value="5-iron">5 Iron</option>
+            <option value="6-iron">6 Iron</option>
+            <option value="7-iron" selected>7 Iron</option>
+            <option value="8-iron">8 Iron</option>
+            <option value="9-iron">9 Iron</option>
+          </optgroup>
+          <optgroup label="Wedges">
+            <option value="pitching-wedge">Pitching Wedge</option>
+            <option value="gap-wedge">Gap Wedge</option>
+            <option value="sand-wedge">Sand Wedge</option>
+            <option value="lob-wedge">Lob Wedge</option>
+          </optgroup>
+          <optgroup label="Putter">
+            <option value="putter">Putter</option>
+          </optgroup>
         </select>
         <button class="btn-p btn-sm" id="svStartBtn" onclick="toggleSwingCamera()">📷 Start Camera</button>
         <button class="vb-btn"       id="svRecordBtn" onclick="toggleSwingRecording()" disabled>⏺ Record Swing</button>
@@ -3195,6 +3237,96 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   </div>
 </div>
 
+<div id="tab-memory" class="tab-panel">
+  <div class="section-intro">
+    <span class="section-intro-icon">🧠</span>
+    <span class="section-intro-text"><strong>Graph Memory</strong> — Structured knowledge nodes and relationships that enrich AI context across every JARVIS module.</span>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+    <div class="stat-card" id="gm-stat-nodes" style="min-width:120px">
+      <div class="stat-label">Nodes</div>
+      <div class="stat-value" id="gm-node-count">—</div>
+    </div>
+    <div class="stat-card" id="gm-stat-edges" style="min-width:120px">
+      <div class="stat-label">Edges</div>
+      <div class="stat-value" id="gm-edge-count">—</div>
+    </div>
+    <div class="stat-card" style="min-width:140px">
+      <div class="stat-label">Mode</div>
+      <div class="stat-value" id="gm-mode-badge">—</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn-primary" onclick="gmRefresh()">↻ Refresh</button>
+    <button class="btn-secondary" onclick="gmBackfill()" id="gm-backfill-btn">⚡ Backfill from Data</button>
+    <select id="gm-module-filter" onchange="gmLoadNodes()" style="background:#1a1a2e;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 10px">
+      <option value="">All modules</option>
+      <option value="golf">Golf</option>
+      <option value="finance">Finance</option>
+      <option value="productivity">Productivity</option>
+      <option value="health">Health</option>
+      <option value="calendar">Calendar</option>
+      <option value="email">Email</option>
+      <option value="general">General</option>
+    </select>
+    <input id="gm-search-input" type="text" placeholder="Search nodes…"
+           style="background:#1a1a2e;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;flex:1;min-width:160px"
+           onkeydown="if(event.key==='Enter')gmSearch()">
+    <button class="btn-secondary" onclick="gmSearch()">Search</button>
+  </div>
+
+  <div id="gm-nodes-list" style="display:flex;flex-direction:column;gap:8px">
+    <div style="color:#64748b;font-style:italic">Loading memory nodes…</div>
+  </div>
+
+  <div id="gm-add-node-form" style="margin-top:24px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:16px;display:none">
+    <h4 style="color:#94a3b8;margin:0 0 12px">Add Memory Node</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <input id="gm-new-id"      type="text" placeholder="Node ID (e.g. person_juan)" class="gm-input">
+      <input id="gm-new-label"   type="text" placeholder="Label"                        class="gm-input">
+      <select id="gm-new-type" class="gm-input">
+        <option value="person">person</option><option value="preference">preference</option>
+        <option value="fact">fact</option><option value="event">event</option>
+        <option value="project">project</option><option value="habit">habit</option>
+        <option value="goal">goal</option><option value="skill">skill</option>
+      </select>
+      <select id="gm-new-module" class="gm-input">
+        <option value="general">general</option><option value="golf">golf</option>
+        <option value="finance">finance</option><option value="productivity">productivity</option>
+        <option value="health">health</option><option value="calendar">calendar</option>
+        <option value="email">email</option>
+      </select>
+    </div>
+    <textarea id="gm-new-content" placeholder="Content / memory text…" rows="3"
+              style="width:100%;margin-top:10px;background:#1a1a2e;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:8px;box-sizing:border-box"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input id="gm-new-importance" type="number" min="0" max="1" step="0.1" value="0.5" placeholder="Importance 0-1" class="gm-input" style="width:140px">
+      <input id="gm-new-tags"       type="text" placeholder="Tags (comma-separated)"      class="gm-input" style="flex:1">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-primary" onclick="gmAddNode()">Add Node</button>
+      <button class="btn-secondary" onclick="document.getElementById('gm-add-node-form').style.display='none'">Cancel</button>
+    </div>
+  </div>
+  <button class="btn-secondary" style="margin-top:14px" onclick="document.getElementById('gm-add-node-form').style.display='block'">+ Add Node</button>
+
+  <div id="gm-context-panel" style="margin-top:24px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:16px">
+    <h4 style="color:#94a3b8;margin:0 0 10px">Context Preview</h4>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="gm-ctx-query" type="text" placeholder="Query (e.g. golf swing improvement)…"
+             style="flex:1;background:#1a1a2e;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px">
+      <select id="gm-ctx-module" class="gm-input" style="width:130px">
+        <option value="general">general</option><option value="golf">golf</option>
+        <option value="finance">finance</option><option value="productivity">productivity</option>
+        <option value="health">health</option>
+      </select>
+      <button class="btn-primary" onclick="gmPreviewContext()">Preview</button>
+    </div>
+    <pre id="gm-ctx-output" style="background:#020617;color:#94a3b8;padding:12px;border-radius:6px;font-size:12px;white-space:pre-wrap;min-height:60px;margin:0">Run a preview to see what context would be injected into AI calls.</pre>
+  </div>
+</div>
+
 <div id="tab-automations" class="tab-panel">
   <div class="section-intro">
     <span class="section-intro-icon">⚡</span>
@@ -3800,6 +3932,7 @@ function switchTab(name) {
   if (name === "family") loadAllFamily();
   if (name === "office") loadAllOffice();
   if (name === "outlook") _onOutlookTabActivated();
+  if (name === "memory")  gmInit();
   if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
   if (name === "golf") { _loadSwingDrills(); }
 }
@@ -4132,54 +4265,126 @@ function renderResultsEmpty() {
 
 /* ── Trader ─────────────────────────── */
 async function analyzeTrader() {
-  const raw = qs("symbolInput")?.value.trim() || "AAPL";
+  const raw = (qs("symbolInput")?.value || "AAPL").trim().toUpperCase();
+  const analyzeBtn = qs("analyzeBtn");
+  if (analyzeBtn) { analyzeBtn.disabled = true; analyzeBtn.textContent = "Analyzing…"; }
   try {
-    const d = await fetch("/dashboard/trader", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({symbol:raw})}).then(r => r.json());
-    if (qs("traderSymbol"))     qs("traderSymbol").textContent    = d.symbol || raw.toUpperCase();
-    if (qs("setupScore"))       qs("setupScore").textContent      = safe(d.setup_score);
-    if (qs("trafficLightText")) qs("trafficLightText").innerHTML  = trafficTag(d.traffic_light);
-    if (qs("priceNow"))         qs("priceNow").textContent        = safe(d.price_now ?? d.price);
+    // Try full AI trader endpoint first; fall back to lightweight technical analysis
+    let d = null;
+    try {
+      d = await _fetchWithTimeout("/dashboard/trader", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({symbol: raw})
+      }, 20000);
+    } catch(_) {}
+
+    if (!d || d.error || (!d.price_now && !d.price)) {
+      // Fallback to new lightweight endpoint
+      try {
+        d = await _fetchWithTimeout("/api/markets/analyze", {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({symbol: raw})
+        }, 15000);
+      } catch(_) {}
+    }
+
+    if (!d || d.error) {
+      if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML =
+        `<div class="brief-cell" style="color:var(--warn)">Could not analyze ${raw}. ${(d||{}).error||"Try again."} <button class="btn-ol btn-sm" onclick="analyzeTrader()">Retry</button></div>`;
+      return;
+    }
+
+    const sym = d.symbol || raw;
+    if (qs("traderSymbol"))     qs("traderSymbol").textContent   = sym;
+    if (qs("setupScore"))       qs("setupScore").textContent     = safe(d.setup_score ?? d.momentum ?? d.trend);
+    if (qs("trafficLightText")) qs("trafficLightText").innerHTML = trafficTag(d.traffic_light || d.trend);
+    if (qs("priceNow"))         qs("priceNow").textContent       = safe(d.price_now ?? d.price);
     const p = d.trade_plan || {};
     const entry = Array.isArray(p.entry_zone) ? p.entry_zone.join(" – ") : (p.entry_zone ?? "-");
     if (qs("tradePlan")) qs("tradePlan").innerHTML = [
-      `<div class="brief-cell"><strong>Action:</strong> ${p.action||"-"}</div>`,
-      `<div class="brief-cell"><strong>Entry zone:</strong> ${entry}</div>`,
-      `<div class="brief-cell"><strong>Stop loss:</strong> ${safe(p.stop_loss)}</div>`,
-      `<div class="brief-cell"><strong>Target 1:</strong> ${safe(p.target_1)}</div>`,
-      `<div class="brief-cell"><strong>Target 2:</strong> ${safe(p.target_2)}</div>`,
-      `<div class="brief-cell"><strong>Risk/Reward:</strong> ${safe(p.risk_reward_estimate)}</div>`,
-    ].join("");
-    const lines = d.insight_lines || [d.summary || "No insight available."];
-    if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief-cell">${x}</div>`).join("");
-  } catch(e) { console.warn("analyzeTrader:", e); }
+      `<div class="brief-cell"><strong>Action:</strong> ${_esc(p.action || d.trend || "-")}</div>`,
+      entry !== "-" ? `<div class="brief-cell"><strong>Entry zone:</strong> ${entry}</div>` : "",
+      p.stop_loss  ? `<div class="brief-cell"><strong>Stop loss:</strong> ${safe(p.stop_loss)}</div>` : "",
+      p.target_1   ? `<div class="brief-cell"><strong>Target 1:</strong> ${safe(p.target_1)}</div>` : "",
+      d.ma20 != null ? `<div class="brief-cell"><strong>MA20:</strong> ${d.ma20}</div>` : "",
+      d.ma50 != null ? `<div class="brief-cell"><strong>MA50:</strong> ${d.ma50}</div>` : "",
+    ].filter(Boolean).join("");
+    const lines = d.insight_lines || [d.summary || `${sym}: ${d.trend || "—"} · MA20 ${d.ma20||"—"} · MA50 ${d.ma50||"—"}`];
+    if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML = lines.map(x => `<div class="brief-cell">${_esc(x)}</div>`).join("");
+  } catch(e) {
+    console.warn("analyzeTrader:", e);
+    if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML =
+      `<div class="brief-cell" style="color:var(--warn)">Analysis error: ${_esc(e.message)} <button class="btn-ol btn-sm" onclick="analyzeTrader()">Retry</button></div>`;
+  } finally {
+    if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = "Analyze"; }
+  }
 }
 
 /* ── Recommendations ────────────────── */
 async function loadRecommendations() {
+  const box = qs("recommendations"); if (!box) return;
   try {
-    const d = await fetch("/dashboard/recommendations").then(r => r.json());
-    const box = qs("recommendations"); if (!box) return;
+    // Try new structured endpoint first, fall back to legacy
+    let items = [];
+    try {
+      const d = await _fetchWithTimeout("/api/markets/recommended", {}, 8000);
+      items = (d.items || []).filter(i => i.symbol);
+    } catch(_) {}
+    if (!items.length) {
+      const d2 = await _fetchWithTimeout("/dashboard/recommendations", {}, 8000);
+      items = d2.items || [];
+    }
     box.innerHTML = "";
-    const items = d.items || [];
-    if (!items.length) { box.innerHTML = `<div class="result-empty">No recommendations available.</div>`; return; }
+    if (!items.length) {
+      box.innerHTML = `<div class="result-empty">No recommendations available. Market engine may be initializing.</div>`;
+      return;
+    }
     items.forEach(item => {
+      const sym = item.symbol || item.ticker || "";
       const c = document.createElement("div");
       c.className = "result-card clickable";
       c.title = "Click to open detailed analysis";
+      const signal = item.signal || item.traffic_light || "";
+      const price  = item.price  || item.price_now || null;
+      const score  = item.setup_score || item.score || null;
       c.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-          <strong style="font-size:18px">${item.symbol}</strong>${trafficTag(item.traffic_light)}
+          <strong style="font-size:18px">${_esc(sym)}</strong>${signal ? trafficTag(signal) : ""}
         </div>
         <div class="pill-row">
-          <span class="tag-warn">Price: ${safe(item.price_now??item.price)}</span>
-          <span class="tag-warn">Score: ${safe(item.setup_score)}</span>
+          ${price != null ? `<span class="tag-warn">Price: ${safe(price)}</span>` : ""}
+          ${score != null ? `<span class="tag-warn">Score: ${safe(score)}</span>` : ""}
+          ${item.risk ? `<span class="tag-warn">Risk: ${_esc(item.risk)}</span>` : ""}
         </div>
-        <div style="margin-top:8px;font-size:13px;line-height:1.55">${item.friendly_recommendation||item.summary||""}</div>
+        <div style="margin-top:8px;font-size:13px;line-height:1.55">${_esc(item.friendly_recommendation||item.reason||item.summary||"")}</div>
         <div style="margin-top:10px;font-size:11px;color:var(--cyan)">Click for full analysis →</div>`;
-      c.onclick = () => openStockModal(item.symbol, item);
+      c.onclick = () => sym ? openStockModal(sym, item) : null;
       box.appendChild(c);
     });
-  } catch(e) { console.warn("loadRecommendations:", e); }
+  } catch(e) {
+    console.warn("loadRecommendations:", e);
+    if (box) box.innerHTML = `<div class="result-empty">Could not load recommendations. <button class="btn-ol btn-sm" onclick="loadRecommendations()">Retry</button></div>`;
+  }
+}
+
+async function loadMarketNews() {
+  const box = qs("mkt-news"); if (!box) return;
+  try {
+    const d = await _fetchWithTimeout("/api/markets/news?limit=6", {}, 8000);
+    const items = d.items || [];
+    if (!items.length) {
+      box.innerHTML = `<div style="color:var(--soft);font-size:12px;padding:8px">No market news available. Check news engine configuration.</div>`;
+      return;
+    }
+    box.innerHTML = items.slice(0, 6).map(n => `
+      <div class="news-card" style="padding:8px 10px;cursor:pointer" onclick="openNewsModal && openNewsModal(${JSON.stringify({title:n.title||'',url:n.url||'',source:n.source||''})})">
+        <div style="font-size:12px;font-weight:600;color:var(--white);line-height:1.4">${_esc(n.title||"")}</div>
+        <div style="font-size:10px;color:var(--soft);margin-top:3px">${_esc(n.source_label||n.source||"")}${n.published ? " · " + new Date(n.published).toLocaleDateString() : ""}</div>
+      </div>`).join("");
+  } catch(e) {
+    console.warn("loadMarketNews:", e);
+    if (box) box.innerHTML = `<div style="color:var(--soft);font-size:12px;padding:8px">News unavailable. <button class="btn-ol btn-sm" onclick="loadMarketNews()">Retry</button></div>`;
+  }
 }
 
 let _currentStockSymbol = "";
@@ -4247,35 +4452,56 @@ async function reAnalyzeStock() {
 }
 
 /* ── Market snapshot + regime ───────── */
-async function loadMarketSnapshot() {
+/* ── Global fetch with timeout + error fallback ─────────────────────────────── */
+async function _fetchWithTimeout(url, options = {}, ms = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
-    const d = await fetch("/api/markets/snapshot").then(r => r.json());
+    const r = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === "AbortError") throw new Error("Request timed out after " + ms + "ms");
+    throw e;
+  }
+}
+
+async function loadMarketSnapshot() {
+  const indicesEl  = qs("mkt-indices");
+  const regimeBadge = qs("mkt-regime-badge");
+  const timeEl      = qs("mkt-snapshot-time");
+  try {
+    const d = await _fetchWithTimeout("/api/markets/snapshot", {}, 12000);
     const items = d.items || [];
-    const regimeBadge = qs("mkt-regime-badge");
-    const indicesEl = qs("mkt-indices");
-    const timeEl = qs("mkt-snapshot-time");
 
     if (timeEl && d.timestamp) {
       const t = new Date(d.timestamp);
       timeEl.textContent = t.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}) + " UTC";
     }
-
     if (regimeBadge) {
       const regime = d.regime || "unknown";
       const regimeClass = regime==="FEAR"?"b-bad":regime==="RISK_OFF"?"b-bad":regime==="CAUTION"?"b-warn":regime==="NORMAL"?"b-ok":"b-idle";
       regimeBadge.textContent = "REGIME: " + regime;
       regimeBadge.className = "badge " + regimeClass;
     }
-
-    if (indicesEl && items.length) {
-      indicesEl.innerHTML = items.map(item => {
-        const chg = item.change_pct ?? 0;
-        const color = chg >= 0 ? "var(--ok)" : "var(--bad)";
-        const sign = chg >= 0 ? "+" : "";
-        return `<span style="font-size:13px"><strong style="color:var(--white)">${item.label}</strong> <span style="color:var(--soft)">${item.price}</span> <span style="color:${color}">${sign}${chg.toFixed(2)}%</span></span>`;
-      }).join("");
+    if (indicesEl) {
+      if (items.length) {
+        indicesEl.innerHTML = items.map(item => {
+          const chg = item.change_pct ?? 0;
+          const color = chg >= 0 ? "var(--ok)" : "var(--bad)";
+          const sign  = chg >= 0 ? "+" : "";
+          return `<span style="font-size:13px"><strong style="color:var(--white)">${_esc(item.label)}</strong> <span style="color:var(--soft)">${item.price}</span> <span style="color:${color}">${sign}${chg.toFixed(2)}%</span></span>`;
+        }).join("");
+      } else if (d.status === "unavailable") {
+        indicesEl.innerHTML = `<span style="color:var(--soft);font-size:12px">Market data unavailable — check yfinance/API key. <button class="btn-ol btn-sm" onclick="loadMarketSnapshot()">Retry</button></span>`;
+      }
     }
-  } catch(e) { console.warn("loadMarketSnapshot:", e); }
+  } catch(e) {
+    console.warn("loadMarketSnapshot:", e);
+    if (indicesEl) indicesEl.innerHTML = `<span style="color:var(--soft);font-size:12px">Could not load market data. <button class="btn-ol btn-sm" onclick="loadMarketSnapshot()">Retry</button></span>`;
+  }
 }
 
 /* ── News ───────────────────────────── */
@@ -7019,7 +7245,7 @@ async function boot() {
   updateModeBadge();
   await checkAndSeedDemo();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
-  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day'), loadAnalytics(), loadWow()]);
+  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadMarketNews(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day'), loadAnalytics(), loadWow()]);
   loadNotifications();
   loadSwingHistory();
   setInterval(loadMarketSnapshot,  30000);
@@ -8375,37 +8601,58 @@ function _olStartPolling() {
 // ── Status ────────────────────────────────────────────────────────────────────
 
 async function loadOutlookStatus() {
+  const authEl    = qs("ol-auth-status");
+  const unreadEl  = qs("ol-unread-badge");
+  const pendingEl = qs("ol-pending-badge");
+  const dotEl     = document.getElementById("outlook-unread-dot");
+  const inboxEl   = qs("ol-inbox");
+  const connectBtn = qs("ol-connect-btn");
+  const subBtn     = qs("ol-sub-btn");
+
   try {
-    const d = await fetch("/api/outlook/status").then(r => r.json());
-    if (d.status !== "ok") return;
+    const d = await _fetchWithTimeout("/api/outlook/status", {}, 6000);
 
-    const authEl    = qs("ol-auth-status");
-    const unreadEl  = qs("ol-unread-badge");
-    const pendingEl = qs("ol-pending-badge");
-    const dotEl     = document.getElementById("outlook-unread-dot");
+    // Not configured at all (missing env vars)
+    if (!d.configured) {
+      if (authEl) { authEl.textContent = "⚙ Not configured"; authEl.className = "ol-auth-chip ol-chip-warn"; }
+      if (connectBtn) connectBtn.style.display = "none";
+      if (subBtn)     subBtn.style.display     = "none";
+      if (inboxEl)    inboxEl.innerHTML = `<div class="ol-empty-state">
+        <div style="font-size:28px;margin-bottom:10px">⚙</div>
+        <div><strong>Outlook integration not configured.</strong></div>
+        <div style="font-size:12px;color:var(--soft);margin-top:6px">Set OUTLOOK_CLIENT_ID, OUTLOOK_TENANT_ID, and OUTLOOK_CLIENT_SECRET in Railway environment variables.</div>
+        <div style="font-size:12px;color:var(--soft);margin-top:4px">Then redeploy and click Connect Outlook.</div>
+      </div>`;
+      return;
+    }
 
+    // Configured but not connected
     if (authEl) {
-      if (d.authenticated) {
+      if (d.connected || d.authenticated) {
         authEl.textContent = "✓ Connected" + (d.subscription ? " · Live" : " · No webhook");
         authEl.className   = "ol-auth-chip " + (d.subscription ? "ol-chip-ok" : "ol-chip-warn");
-        qs("ol-connect-btn").style.display = "none";
-        qs("ol-sub-btn").style.display     = d.subscription ? "none" : "";
+        if (connectBtn) connectBtn.style.display = "none";
+        if (subBtn)     subBtn.style.display     = d.subscription ? "none" : "";
       } else {
         authEl.textContent = "⚠ Not connected";
         authEl.className   = "ol-auth-chip ol-chip-warn";
-        qs("ol-connect-btn").style.display = "";
+        if (connectBtn) connectBtn.style.display = "";
+        if (subBtn)     subBtn.style.display     = "none";
       }
     }
     if (unreadEl) {
-      unreadEl.textContent = d.unread_count + " unread";
-      unreadEl.style.display = d.unread_count > 0 ? "" : "none";
-      if (dotEl) dotEl.style.display = d.unread_count > 0 ? "block" : "none";
+      unreadEl.textContent = (d.unread_count || 0) + " unread";
+      unreadEl.style.display = (d.unread_count || 0) > 0 ? "" : "none";
+      if (dotEl) dotEl.style.display = (d.unread_count || 0) > 0 ? "block" : "none";
     }
     if (pendingEl) {
-      pendingEl.textContent = d.pending_emails + " pending approval";
-      pendingEl.style.display = d.pending_emails > 0 ? "" : "none";
+      pendingEl.textContent = (d.pending_emails || 0) + " pending approval";
+      pendingEl.style.display = (d.pending_emails || 0) > 0 ? "" : "none";
     }
-  } catch(e) { console.warn("loadOutlookStatus:", e); }
+  } catch(e) {
+    console.warn("loadOutlookStatus:", e);
+    if (authEl) { authEl.textContent = "⚠ Status unavailable"; authEl.className = "ol-auth-chip ol-chip-warn"; }
+  }
 }
 
 // ── Inbox loading ─────────────────────────────────────────────────────────────
@@ -8645,6 +8892,184 @@ async function outlookSubscribe() {
 // Called by the main showTab() dispatcher when the outlook tab is activated.
 function _onOutlookTabActivated() {
   initOutlook();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GRAPH MEMORY PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _gmInitialized = false;
+
+async function gmInit() {
+  if (_gmInitialized) return;
+  _gmInitialized = true;
+  await gmRefresh();
+}
+
+async function gmRefresh() {
+  try {
+    const s = await _fetchWithTimeout("/api/graph/status", {}, 8000);
+    const modeEl = document.getElementById("gm-mode-badge");
+    if (modeEl) {
+      const cls = s.mode === "ACTIVE" ? "gm-mode-active" : s.mode === "SHADOW" ? "gm-mode-shadow" : "gm-mode-off";
+      modeEl.innerHTML = `<span class="${cls}">${s.mode || "OFF"}</span>`;
+    }
+    document.getElementById("gm-node-count").textContent = s.node_count ?? "—";
+    document.getElementById("gm-edge-count").textContent = s.edge_count ?? "—";
+    await gmLoadNodes();
+  } catch(e) {
+    document.getElementById("gm-nodes-list").innerHTML = `<div style="color:#64748b">Graph Memory status unavailable: ${e.message}</div>`;
+  }
+}
+
+async function gmLoadNodes() {
+  const list = document.getElementById("gm-nodes-list");
+  if (!list) return;
+  const mod = document.getElementById("gm-module-filter")?.value || "";
+  list.innerHTML = `<div style="color:#64748b;font-style:italic">Loading…</div>`;
+  try {
+    const params = new URLSearchParams({ limit: 30 });
+    if (mod) params.set("module", mod);
+    const d = await _fetchWithTimeout("/api/graph/nodes?" + params.toString(), {}, 8000);
+    if (!d.nodes || d.nodes.length === 0) {
+      list.innerHTML = `<div style="color:#64748b;font-style:italic">No nodes found. Click "⚡ Backfill from Data" to seed memory from your JARVIS data.</div>`;
+      return;
+    }
+    list.innerHTML = d.nodes.map(n => _renderGmNode(n)).join("");
+    document.getElementById("gm-node-count").textContent = d.count ?? d.nodes.length;
+  } catch(e) {
+    list.innerHTML = `<div style="color:#ef4444">Error: ${e.message}</div>`;
+  }
+}
+
+async function gmSearch() {
+  const q = document.getElementById("gm-search-input")?.value?.trim();
+  if (!q) return gmLoadNodes();
+  const list = document.getElementById("gm-nodes-list");
+  list.innerHTML = `<div style="color:#64748b;font-style:italic">Searching…</div>`;
+  try {
+    const params = new URLSearchParams({ q, limit: 20 });
+    const mod = document.getElementById("gm-module-filter")?.value || "";
+    if (mod) params.set("module", mod);
+    const d = await _fetchWithTimeout("/api/graph/search?" + params.toString(), {}, 8000);
+    if (!d.results || d.results.length === 0) {
+      list.innerHTML = `<div style="color:#64748b">No results for "${q}"</div>`;
+      return;
+    }
+    list.innerHTML = d.results.map(n => _renderGmNode(n)).join("");
+  } catch(e) {
+    list.innerHTML = `<div style="color:#ef4444">Search error: ${e.message}</div>`;
+  }
+}
+
+async function gmBackfill() {
+  const btn = document.getElementById("gm-backfill-btn");
+  if (btn) btn.disabled = true;
+  showToast("Running backfill from JARVIS data…", "info");
+  try {
+    const d = await _fetchWithTimeout("/api/graph/backfill", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ modules: [] })
+    }, 30000);
+    if (d.status === "ok") {
+      showToast(`Backfill complete: ${d.nodes_upserted} nodes from ${(d.modules_run||[]).join(", ")}`, "success");
+      _gmInitialized = false;
+      await gmRefresh();
+    } else {
+      showToast("Backfill error: " + (d.error || "unknown"), "error");
+    }
+  } catch(e) {
+    showToast("Backfill failed: " + e.message, "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function gmAddNode() {
+  const node = {
+    id:         document.getElementById("gm-new-id").value.trim(),
+    label:      document.getElementById("gm-new-label").value.trim(),
+    type:       document.getElementById("gm-new-type").value,
+    module:     document.getElementById("gm-new-module").value,
+    content:    document.getElementById("gm-new-content").value.trim(),
+    importance: parseFloat(document.getElementById("gm-new-importance").value) || 0.5,
+    tags:       document.getElementById("gm-new-tags").value.split(",").map(t=>t.trim()).filter(Boolean),
+    metadata:   {},
+  };
+  if (!node.id || !node.label || !node.content) {
+    showToast("ID, label, and content are required", "error"); return;
+  }
+  try {
+    const d = await _fetchWithTimeout("/api/graph/nodes", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(node),
+    }, 8000);
+    if (d.status === "ok") {
+      showToast("Node added: " + node.label, "success");
+      document.getElementById("gm-add-node-form").style.display = "none";
+      await gmRefresh();
+    } else {
+      showToast("Error: " + (d.error || "unknown"), "error");
+    }
+  } catch(e) {
+    showToast("Error: " + e.message, "error");
+  }
+}
+
+async function gmDeleteNode(nodeId) {
+  if (!confirm(`Delete node "${nodeId}"?`)) return;
+  try {
+    const d = await _fetchWithTimeout("/api/graph/nodes/" + encodeURIComponent(nodeId), {
+      method: "DELETE"
+    }, 8000);
+    if (d.deleted) {
+      showToast("Node deleted", "success");
+      await gmLoadNodes();
+    } else {
+      showToast("Node not found", "error");
+    }
+  } catch(e) {
+    showToast("Error: " + e.message, "error");
+  }
+}
+
+async function gmPreviewContext() {
+  const q   = document.getElementById("gm-ctx-query")?.value?.trim() || "";
+  const mod = document.getElementById("gm-ctx-module")?.value || "general";
+  const out = document.getElementById("gm-ctx-output");
+  out.textContent = "Loading…";
+  try {
+    const params = new URLSearchParams({ q, module: mod, limit: 5 });
+    const d = await _fetchWithTimeout("/api/graph/context?" + params.toString(), {}, 8000);
+    if (!d.text) {
+      out.textContent = "(No relevant context found for this query)";
+    } else {
+      out.textContent = d.text + `\n\n[~${d.tokens || 0} tokens, ${(d.items||[]).length} items]`;
+    }
+  } catch(e) {
+    out.textContent = "Error: " + e.message;
+  }
+}
+
+function _renderGmNode(n) {
+  const typeBadge = `<span class="gm-badge type-${n.type||'fact'}">${n.type||'fact'}</span>`;
+  const modBadge  = `<span class="gm-badge mod">${n.module||'general'}</span>`;
+  const imp       = n.importance != null ? Math.round(n.importance * 100) : "?";
+  const tags      = (n.tags||[]).map(t => `<span style="font-size:10px;color:#475569;background:rgba(255,255,255,.05);border-radius:4px;padding:1px 6px">${t}</span>`).join(" ");
+  return `
+  <div class="gm-node-card">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      ${typeBadge} ${modBadge}
+      <span style="font-size:11px;color:#64748b;margin-left:auto">⭐ ${imp}%</span>
+      <button onclick="gmDeleteNode('${n.id.replace(/'/g,"\\'")}')"\n             style="background:rgba(239,68,68,.12);color:#ef4444;border:none;border-radius:5px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>
+    </div>
+    <div class="gm-node-label">${n.label}</div>
+    <div class="gm-node-id">${n.id}</div>
+    <div class="gm-node-content">${(n.content||"").slice(0,200)}${n.content?.length>200?"…":""}</div>
+    ${tags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${tags}</div>` : ""}
+  </div>`;
 }
 </script>
 </body>

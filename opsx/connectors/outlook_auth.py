@@ -17,13 +17,24 @@ import httpx
 log = logging.getLogger("jarvis.outlook_auth")
 
 # ── Config from environment ───────────────────────────────────────────────────
+# Support multiple env var name conventions with explicit priority order.
 
-_CLIENT_ID     = os.getenv("OUTLOOK_CLIENT_ID", "")
-_TENANT_ID     = os.getenv("OUTLOOK_TENANT_ID", "common")
-_CLIENT_SECRET = os.getenv("OUTLOOK_CLIENT_SECRET", "")
-_REDIRECT_URI  = os.getenv(
+def _env_first(*names: str, default: str = "") -> str:
+    """Return first non-empty env var from the provided names."""
+    for name in names:
+        val = os.getenv(name, "").strip()
+        if val:
+            return val
+    return default
+
+
+_CLIENT_ID     = _env_first("OUTLOOK_CLIENT_ID", "OUTLOOK_APPLICATION")
+_TENANT_ID     = _env_first("OUTLOOK_TENANT_ID", "OUTLOOK_DIRECTORY", default="common")
+_CLIENT_SECRET = _env_first("OUTLOOK_CLIENT_SECRET")
+_REDIRECT_URI  = _env_first(
+    "OUTLOOK_REDIRECT_URI",
     "REDIRECT_URI",
-    "https://jarvis-os-production.up.railway.app/auth/microsoft/callback",
+    default="https://jarvis-os-production.up.railway.app/auth/microsoft/callback",
 )
 
 _AUTHORITY  = f"https://login.microsoftonline.com/{_TENANT_ID}"
@@ -35,12 +46,25 @@ _SCOPES: List[str] = [
     "profile",
     "email",
     "offline_access",
+    "User.Read",
     "Mail.Read",
     "Mail.Send",
     "Mail.ReadWrite",
     "Calendars.ReadWrite",
     "Tasks.ReadWrite",
 ]
+
+def config_status() -> Dict:
+    """Return a safe config status dict (no secrets exposed)."""
+    return {
+        "configured":    bool(_CLIENT_ID and _CLIENT_SECRET),
+        "client_id_set": bool(_CLIENT_ID),
+        "secret_set":    bool(_CLIENT_SECRET),
+        "tenant_id":     _TENANT_ID,
+        "redirect_uri":  _REDIRECT_URI,
+        "reason":        None if (_CLIENT_ID and _CLIENT_SECRET)
+                         else "OUTLOOK_CLIENT_ID or OUTLOOK_CLIENT_SECRET not set",
+    }
 
 
 # ── Token store ───────────────────────────────────────────────────────────────
@@ -110,7 +134,12 @@ def get_login_url() -> Tuple[str, str]:
     """
     Build the Microsoft OAuth2 login URL.
     Returns (url, state) — store the state to validate on callback.
+    Raises ValueError if client_id is not configured.
     """
+    if not _CLIENT_ID:
+        raise ValueError(
+            "OUTLOOK_CLIENT_ID is not set. Configure the environment variable before connecting."
+        )
     state = secrets.token_urlsafe(32)
     token_store.register_state(state)
     params = {
