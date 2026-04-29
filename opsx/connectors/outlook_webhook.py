@@ -21,11 +21,11 @@ _GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
 _NOTIFICATION_URL = os.getenv(
     "WEBHOOK_NOTIFICATION_URL",
-    "https://jarvis-os-production.up.railway.app/webhook/outlook",
+    "https://jarvis-os-production.up.railway.app/api/outlook/webhook",
 )
 
 # clientState secret — used to validate incoming notifications
-_CLIENT_STATE = os.getenv("WEBHOOK_CLIENT_STATE", "jarvis-outlook-secret-v1")
+_CLIENT_STATE = os.getenv("WEBHOOK_CLIENT_STATE", "jarvis-secure-token")
 
 # Microsoft limits mail subscription to max 4230 minutes (~3 days)
 _SUBSCRIPTION_TTL_MINUTES = 4000
@@ -95,44 +95,64 @@ async def create_subscription(user_id: str = "owner") -> Optional[Dict]:
     """
     Register a new Microsoft Graph webhook subscription for the user's inbox.
     Stores the subscription for future renewal.
+    Raises ValueError with full Graph error detail on failure (caller shows it to user).
     """
     token = await get_valid_token(user_id)
     if not token:
-        log.error("Cannot create subscription — no valid token for user=%s", user_id)
-        return None
+        raise ValueError(f"No valid token for user={user_id} — authenticate first")
 
     payload = {
-        "changeType":         "created",
-        "notificationUrl":    _NOTIFICATION_URL,
-        "resource":           "/me/mailFolders('Inbox')/messages",
-        "expirationDateTime": _expiry_str(),
-        "clientState":        _CLIENT_STATE,
+        "changeType":               "created",
+        "notificationUrl":          _NOTIFICATION_URL,
+        "lifecycleNotificationUrl": _NOTIFICATION_URL,
+        "resource":                 "me/mailFolders('Inbox')/messages",
+        "expirationDateTime":       _expiry_str(),
+        "clientState":              _CLIENT_STATE,
     }
 
+    print(f"[SUBSCRIBE] Creating subscription for user={user_id}")
+    print(f"[SUBSCRIBE] notificationUrl={_NOTIFICATION_URL}")
+    print(f"[SUBSCRIBE] payload={payload}")
+
     try:
-        async with httpx.AsyncClient(timeout=20) as client:
+        async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 f"{_GRAPH_BASE}/subscriptions",
                 headers={
-                    "Authorization":  f"Bearer {token}",
-                    "Content-Type":   "application/json",
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type":  "application/json",
                 },
                 json=payload,
             )
-            if resp.status_code == 201:
-                sub = resp.json()
-                subscription_store.save(user_id, sub)
-                log.info("Subscription CREATED id=%s user=%s", sub.get("id"), user_id)
-                return sub
-            else:
-                log.error(
-                    "Subscription creation failed %d for user=%s: %s",
-                    resp.status_code, user_id, resp.text[:400],
-                )
-                return None
+
+        print(f"[SUBSCRIBE] SUB STATUS: {resp.status_code}")
+        print(f"[SUBSCRIBE] SUB RESPONSE: {resp.text[:600]}")
+
+        if resp.status_code == 201:
+            sub = resp.json()
+            subscription_store.save(user_id, sub)
+            log.info("Subscription CREATED id=%s user=%s expires=%s",
+                     sub.get("id"), user_id, sub.get("expirationDateTime"))
+            return sub
+
+        # Surface the exact Graph error to the caller
+        try:
+            err_body = resp.json()
+            err_msg  = err_body.get("error", {}).get("message", resp.text[:300])
+            err_code = err_body.get("error", {}).get("code", str(resp.status_code))
+        except Exception:
+            err_msg  = resp.text[:300]
+            err_code = str(resp.status_code)
+
+        log.error("Subscription creation FAILED %d user=%s: %s — %s",
+                  resp.status_code, user_id, err_code, err_msg)
+        raise ValueError(f"Graph API error {resp.status_code} ({err_code}): {err_msg}")
+
+    except ValueError:
+        raise
     except Exception as exc:
-        log.error("create_subscription error for user=%s: %s", user_id, exc)
-        return None
+        log.error("create_subscription exception for user=%s: %s", user_id, exc)
+        raise ValueError(f"Subscription request failed: {exc}")
 
 
 async def renew_subscription(user_id: str = "owner") -> bool:
@@ -143,7 +163,11 @@ async def renew_subscription(user_id: str = "owner") -> bool:
     sub = subscription_store.get(user_id)
     if not sub:
         log.warning("No stored subscription for user=%s — creating fresh", user_id)
-        return (await create_subscription(user_id)) is not None
+        try:
+            sub = await create_subscription(user_id)
+            return sub is not None
+        except ValueError:
+            return False
 
     token = await get_valid_token(user_id)
     if not token:
@@ -168,7 +192,11 @@ async def renew_subscription(user_id: str = "owner") -> bool:
             elif resp.status_code == 404:
                 log.warning("Subscription %s not found — recreating for user=%s", sub_id, user_id)
                 subscription_store.remove(user_id)
-                return (await create_subscription(user_id)) is not None
+                try:
+                    sub = await create_subscription(user_id)
+                    return sub is not None
+                except ValueError:
+                    return False
             else:
                 log.error(
                     "Subscription renewal failed %d for sub=%s: %s",

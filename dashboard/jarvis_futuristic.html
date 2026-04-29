@@ -8591,11 +8591,28 @@ async function initOutlook() {
 
 function _olStartPolling() {
   if (_olPollTimer) clearInterval(_olPollTimer);
+  // Badge refresh: runs every 30s regardless of active tab
   _olPollTimer = setInterval(async () => {
-    if (document.querySelector('[data-tab="outlook"]')?.classList.contains("active")) return;
-    await loadOutlookStatus();
-    await loadOutlookInbox();
-  }, 30000);  // poll every 30 seconds when tab not active
+    try { await loadOutlookStatus(); } catch(_) {}
+  }, 30000);
+
+  // Fallback inbox poll every 60s when tab is active (in case webhook is down)
+  if (!window._olInboxPollTimer) {
+    window._olInboxPollTimer = setInterval(async () => {
+      const tabActive = document.querySelector('[data-tab="outlook"]')?.classList.contains("active");
+      if (!tabActive) return;
+      // Trigger backend poll (fetches from Graph directly, bypasses webhook)
+      try {
+        const p = await fetch("/api/outlook/poll", { method: "POST" });
+        const pd = await p.json();
+        if (pd.new > 0) {
+          console.log("[Outlook poll] New emails:", pd.new);
+          await loadOutlookInbox();
+        }
+      } catch(_) {}
+      try { await loadOutlookInbox(); } catch(_) {}
+    }, 60000);
+  }
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
@@ -8877,15 +8894,26 @@ function outlookConnect() {
 }
 
 async function outlookSubscribe() {
+  const btn = document.getElementById("ol-sub-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Subscribing…"; }
   try {
-    const d = await fetch("/api/outlook/subscribe", { method: "POST" }).then(r => r.json());
+    const r = await fetch("/api/outlook/subscribe", { method: "POST" });
+    const d = await r.json();
+    console.log("[outlookSubscribe] response:", d);
     if (d.status === "ok") {
       showToast("Webhook subscription active 🔔", "success");
       await loadOutlookStatus();
     } else {
-      showToast("Subscription failed", "error");
+      const reason = d.error || d.detail || "Unknown error — check Railway logs";
+      showToast("Subscription failed: " + reason, "error");
+      console.error("[outlookSubscribe] error:", reason);
     }
-  } catch(e) { showToast("Error: " + e.message, "error"); }
+  } catch(e) {
+    showToast("Subscription error: " + e.message, "error");
+    console.error("[outlookSubscribe] exception:", e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "🔔 Subscribe"; }
+  }
 }
 
 // ── Tab activation hook ───────────────────────────────────────────────────────

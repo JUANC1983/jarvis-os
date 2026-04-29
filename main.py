@@ -4421,13 +4421,23 @@ async def outlook_config_check():
 async def outlook_subscribe(current_user: dict = Depends(get_optional_user)):
     _outlook_guard()
     uid = current_user["user_id"]
+    print(f"[SUBSCRIBE] Triggered for user={uid}")
     existing = _ms_sub_store.get(uid)
     if existing and not _ms_sub_store.is_near_expiry(uid):
+        print(f"[SUBSCRIBE] Already active sub_id={existing.get('id')}")
         return {"status": "ok", "message": "Subscription already active", "subscription": existing}
-    sub = await _ms_create_sub(uid)
-    if sub:
-        return {"status": "ok", "subscription": sub}
-    raise HTTPException(500, "Failed to create subscription")
+    try:
+        sub = await _ms_create_sub(uid)
+        if sub:
+            print(f"[SUBSCRIBE] Created sub_id={sub.get('id')}")
+            return {"status": "ok", "subscription": sub}
+        return {"status": "error", "error": "Subscription returned None — check server logs"}
+    except ValueError as exc:
+        print(f"[SUBSCRIBE] FAILED: {exc}")
+        return JSONResponse({"status": "error", "error": str(exc)}, status_code=400)
+    except Exception as exc:
+        print(f"[SUBSCRIBE] EXCEPTION: {exc}")
+        return JSONResponse({"status": "error", "error": str(exc)}, status_code=500)
 
 
 @app.post("/api/outlook/unsubscribe")
@@ -4440,58 +4450,9 @@ async def outlook_unsubscribe(current_user: dict = Depends(get_optional_user)):
 # ── Webhook endpoint ──────────────────────────────────────────────────
 
 @app.api_route("/webhook/outlook", methods=["GET", "POST"])
-async def outlook_webhook(request: Request, validationToken: str = ""):
-    """
-    Microsoft Graph webhook endpoint.
-    GET/POST with validationToken -> return as text/plain (handshake).
-    POST JSON body -> enqueue events, return 202 immediately.
-    """
-    from fastapi.responses import PlainTextResponse
-
-    if validationToken:
-        return PlainTextResponse(content=validationToken, status_code=200)
-
-    _outlook_guard()
-
-    try:
-        body = await request.json()
-    except Exception:
-        return JSONResponse({"error": "invalid body"}, status_code=400)
-
-    notifications = body.get("value", [])
-    queued = 0
-    _log   = logging.getLogger("jarvis.webhook")
-
-    for note in notifications:
-        received_state = note.get("clientState", "")
-        if not _ms_validate_state(received_state):
-            _log.warning("Invalid clientState in webhook notification — skipping")
-            continue
-
-        resource = note.get("resourceData", {})
-        msg_id   = resource.get("id")
-        change   = note.get("changeType", "")
-        sub_id   = note.get("subscriptionId", "")
-
-        _log.info("Webhook: changeType=%s messageId=%s sub=%s", change, msg_id, sub_id)
-
-        if change == "created" and msg_id:
-            user_id = "owner"
-            for uid in _ms_sub_store.all_users():
-                s = _ms_sub_store.get(uid)
-                if s and s.get("id") == sub_id:
-                    user_id = uid
-                    break
-
-            ok = await _ms_event_queue.enqueue("new_email", {
-                "message_id": msg_id,
-                "user_id":    user_id,
-                "sub_id":     sub_id,
-            })
-            if ok:
-                queued += 1
-
-    return JSONResponse({"queued": queued}, status_code=202)
+async def outlook_webhook_legacy(request: Request, validationToken: str = ""):
+    """Legacy alias — delegates to the canonical /api/outlook/webhook handler."""
+    return await outlook_webhook_canonical(request, validationToken=validationToken)
 
 
 # ── Inbox / email store ───────────────────────────────────────────────
@@ -4552,6 +4513,41 @@ async def outlook_live_inbox(
     _outlook_guard()
     items = await _ms_list_inbox(limit=limit, user_id=current_user["user_id"], unread_only=unread_only)
     return {"status": "ok", "items": items, "count": len(items)}
+
+
+@app.post("/api/outlook/poll")
+async def outlook_poll(current_user: dict = Depends(get_optional_user)):
+    """
+    Fallback polling: fetch latest unread messages from Graph and enqueue any
+    not already stored. Called every 60s from dashboard when webhook is unreliable.
+    """
+    _outlook_guard()
+    uid   = current_user["user_id"]
+    _plog = logging.getLogger("jarvis.outlook.poll")
+    try:
+        messages = await _ms_list_inbox(limit=10, user_id=uid, unread_only=True)
+    except Exception as exc:
+        _plog.warning("Poll inbox failed: %s", exc)
+        return {"status": "error", "error": str(exc), "new": 0}
+
+    new_count = 0
+    for msg in messages:
+        msg_id = msg.get("id") or msg.get("message_id")
+        if not msg_id:
+            continue
+        if _ms_email_store.get(msg_id):
+            continue   # already in store
+        try:
+            full = await _ms_fetch_email(msg_id, uid)
+            if full:
+                result = await _ms_process_email(full)
+                await _ms_store_email(result)
+                new_count += 1
+                _plog.info("Poll: new email ingested id=%s", msg_id)
+        except Exception as exc:
+            _plog.warning("Poll: error processing msg=%s: %s", msg_id, exc)
+
+    return {"status": "ok", "new": new_count, "checked": len(messages)}
 
 
 # ── Actions ───────────────────────────────────────────────────────────
@@ -4815,24 +4811,81 @@ async def _calendar_reminder_scheduler() -> None:
 from fastapi import Request
 from fastapi.responses import Response
 
-@app.get("/api/outlook/webhook")
-async def outlook_webhook_validation(request: Request):
-    validation_token = request.query_params.get("validationToken")
+@app.api_route("/api/outlook/webhook", methods=["GET", "POST"])
+async def outlook_webhook_canonical(request: Request, validationToken: str = ""):
+    """
+    Canonical Microsoft Graph webhook endpoint.
 
-    if validation_token:
-        return Response(content=validation_token, media_type="text/plain")
+    GET or POST with ?validationToken=... → return token as text/plain (Graph handshake).
+    POST JSON body                         → enqueue email events, return 202 immediately.
 
-    return Response(status_code=200)
+    NOTE: Must respond to the validation request within 10 seconds or Graph rejects the sub.
+    """
+    from fastapi.responses import PlainTextResponse
 
+    # ── Validation handshake (always unauthenticated) ──────────────────
+    vtoken = validationToken or request.query_params.get("validationToken", "")
+    if vtoken:
+        print(f"[WEBHOOK] Validation handshake received token={vtoken[:20]}...")
+        return PlainTextResponse(content=vtoken, status_code=200)
 
-@app.post("/api/outlook/webhook")
-async def outlook_webhook_events(request: Request):
+    # ── Lifecycle notifications (keep-alive pings from Graph) ──────────
+    # These arrive as POST with no value array — just ack them.
+    body_bytes = await request.body()
+    print(f"[WEBHOOK] HIT: method={request.method} body={body_bytes[:400]}")
+
+    if not body_bytes:
+        return JSONResponse({"queued": 0}, status_code=202)
+
     try:
-        data = await request.json()
-        print("📩 OUTLOOK EVENT:", data)
+        body = await request.json()
+    except Exception:
+        # Return 202 regardless — never let Graph think the endpoint is down
+        return JSONResponse({"queued": 0}, status_code=202)
 
-        return {"status": "ok"}
+    # Lifecycle ping (lifecycleEvent field present, no value)
+    if "lifecycleEvent" in body:
+        print(f"[WEBHOOK] Lifecycle event: {body.get('lifecycleEvent')}")
+        return JSONResponse({"status": "lifecycle_ack"}, status_code=202)
 
-    except Exception as e:
-        print("❌ Webhook error:", str(e))
-        return {"status": "error"}
+    notifications = body.get("value", [])
+    queued = 0
+    _wlog  = logging.getLogger("jarvis.webhook")
+
+    if not _OUTLOOK_AVAILABLE:
+        _wlog.warning("Webhook received but Outlook module not available — dropping %d events", len(notifications))
+        return JSONResponse({"queued": 0}, status_code=202)
+
+    for note in notifications:
+        received_state = note.get("clientState", "")
+        if not _ms_validate_state(received_state):
+            _wlog.warning("Webhook: invalid clientState=%r — skipping", received_state)
+            continue
+
+        resource   = note.get("resourceData", {})
+        msg_id     = resource.get("id")
+        change     = note.get("changeType", "")
+        sub_id     = note.get("subscriptionId", "")
+
+        print(f"[WEBHOOK] changeType={change} messageId={msg_id} sub={sub_id}")
+        _wlog.info("Webhook event: changeType=%s messageId=%s sub=%s", change, msg_id, sub_id)
+
+        if change == "created" and msg_id:
+            # Resolve subscription → user_id
+            user_id = "owner"
+            for uid in _ms_sub_store.all_users():
+                s = _ms_sub_store.get(uid)
+                if s and s.get("id") == sub_id:
+                    user_id = uid
+                    break
+
+            ok = await _ms_event_queue.enqueue("new_email", {
+                "message_id": msg_id,
+                "user_id":    user_id,
+                "sub_id":     sub_id,
+            })
+            if ok:
+                queued += 1
+                _wlog.info("Enqueued new_email message_id=%s user=%s", msg_id, user_id)
+
+    return JSONResponse({"queued": queued}, status_code=202)
