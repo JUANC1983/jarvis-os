@@ -112,6 +112,20 @@ class LiveNewsEngine:
             except Exception:
                 continue
 
+        # Sort newest-first using published_at
+        def _ts(item: Dict[str, Any]) -> float:
+            val = item.get("published_at", "")
+            try:
+                from email.utils import parsedate_to_datetime
+                return parsedate_to_datetime(val).timestamp()
+            except Exception:
+                pass
+            try:
+                return datetime.fromisoformat(val[:19]).timestamp()
+            except Exception:
+                return 0.0
+
+        items.sort(key=_ts, reverse=True)
         return items
 
     # ------------------------------------------------------------------

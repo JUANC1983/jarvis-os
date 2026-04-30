@@ -3848,20 +3848,6 @@ _COMMAND_ROUTES = {
     ], [
         "sistema", "salud del sistema", "estado", "agentes",
     ]),
-    "family": ("family", [
-        "family", "birthday", "anniversary", "kids", "children", "school",
-        "family event", "family member",
-    ], [
-        "familia", "cumpleanos", "cumpleaños", "aniversario", "hijo", "hija",
-        "esposa", "esposo", "colegio", "evento familiar", "ninos",
-    ]),
-    "office": ("office", [
-        "office", "colleague", "coworker", "expense", "work task", "department",
-        "reimbursement",
-    ], [
-        "oficina", "colega", "companero", "gasto", "tarea laboral", "departamento",
-        "reembolso", "equipo trabajo",
-    ]),
 }
 
 

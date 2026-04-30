@@ -1908,8 +1908,6 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn module-tab" data-tab="gym" data-module="gym" style="display:none">🏋️ Gym</button>
     <button class="tab-btn module-tab" data-tab="tennis" data-module="tennis" style="display:none">🎾 Tennis</button>
     <button class="tab-btn" data-tab="life">🏠 Life</button>
-    <button class="tab-btn" data-tab="family">👨‍👩‍👧 Family</button>
-    <button class="tab-btn" data-tab="office">🏢 Office</button>
     <button class="tab-btn" data-tab="outlook" id="outlook-tab-btn">📧 Outlook <span class="tab-dot" id="outlook-unread-dot" style="display:none;background:#f59e0b"></span></button>
     <button class="tab-btn" data-tab="automations">⚡ Automations</button>
     <button class="tab-btn" data-tab="memory">🧠 Memory</button>
@@ -1959,7 +1957,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <button class="example-cmd-chip" onclick="tryExampleCmd('Analyze AAPL')"><span class="ec-icon">📈</span>Analyze AAPL</button>
       <button class="example-cmd-chip" onclick="tryExampleCmd('tengo que pagar la factura de electricidad mañana')"><span class="ec-icon">💡</span>Pay electricity bill</button>
       <button class="example-cmd-chip" onclick="tryExampleCmd('What golf courses are near me?')"><span class="ec-icon">⛳</span>Find golf courses</button>
-      <button class="example-cmd-chip" onclick="tryExampleCmd('Show my office tasks')"><span class="ec-icon">🏢</span>Office tasks</button>
+      <button class="example-cmd-chip" onclick="tryExampleCmd('Cómo voy con mis finanzas?')"><span class="ec-icon">💰</span>Finanzas</button>
     </div>
   </div>
 
@@ -3043,155 +3041,6 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   </div>
 </div>
 
-<!-- ═══════════════════════════════ FAMILY TAB ═══════════════════════════════ -->
-<div id="tab-family" class="tab-panel">
-  <div class="section-intro">
-    <span class="section-intro-icon">👨‍👩‍👧</span>
-    <span class="section-intro-text"><strong>Family</strong> — Track members, birthdays, events, and notes.</span>
-  </div>
-
-  <div id="family-summary-strip" style="display:none;background:rgba(255,200,100,.07);border:1px solid rgba(255,200,100,.2);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px;color:var(--soft)"></div>
-
-  <div class="g2">
-
-    <!-- Members -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">👥 Members</span>
-        <span class="life-count-badge" id="fam-mem-count">0</span>
-        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadFamilyMembers()">↻</button>
-      </div>
-      <div class="life-add-row">
-        <input id="fam-mem-name"     class="input" type="text" placeholder="Name"       style="font-size:12px;flex:2"/>
-        <select id="fam-mem-rel"     class="select" style="font-size:12px;flex:1">
-          <option value="spouse">Spouse</option><option value="child">Child</option>
-          <option value="parent">Parent</option><option value="sibling">Sibling</option>
-          <option value="friend">Friend</option><option value="other">Other</option>
-        </select>
-        <input id="fam-mem-bday"     class="input" type="date" placeholder="Birthday"   style="font-size:12px;flex:1"/>
-        <button class="btn-g btn-sm" onclick="familyAddMember()">+</button>
-      </div>
-      <div id="fam-mem-list" class="life-list">
-        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Events -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">📅 Upcoming Events</span>
-        <span class="life-count-badge" id="fam-ev-count">0</span>
-        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadFamilyEvents()">↻</button>
-      </div>
-      <div class="life-add-row">
-        <input id="fam-ev-title"  class="input" type="text" placeholder="Event title" style="font-size:12px;flex:2"/>
-        <input id="fam-ev-date"   class="input" type="date"                           style="font-size:12px;flex:1"/>
-        <select id="fam-ev-type"  class="select" style="font-size:12px;flex:1">
-          <option value="birthday">Birthday</option><option value="anniversary">Anniversary</option>
-          <option value="school">School</option><option value="appointment">Appointment</option>
-          <option value="family">Family</option><option value="other">Other</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--soft);white-space:nowrap">
-          <input type="checkbox" id="fam-ev-repeat"/> Yearly
-        </label>
-        <button class="btn-g btn-sm" onclick="familyAddEvent()">+</button>
-      </div>
-      <div id="fam-ev-list" class="life-list">
-        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Notes -->
-    <div class="card" style="grid-column:1/-1">
-      <div class="ch"><span class="ct">📝 Family Notes</span></div>
-      <div class="life-add-row">
-        <input id="fam-note-content" class="input" type="text" placeholder="Quick note…"
-          style="font-size:12px;flex:3" onkeydown="if(event.key==='Enter')familyAddNote()"/>
-        <button class="btn-g btn-sm" onclick="familyAddNote()">+ Note</button>
-      </div>
-      <div id="fam-note-list" class="life-list" style="max-height:180px">
-        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ═══════════════════════════════ OFFICE TAB ═══════════════════════════════ -->
-<div id="tab-office" class="tab-panel">
-  <div class="section-intro">
-    <span class="section-intro-icon">🏢</span>
-    <span class="section-intro-text"><strong>Office</strong> — Colleagues, work tasks, and expense tracking.</span>
-  </div>
-
-  <div id="office-summary-strip" style="display:none;background:rgba(100,200,255,.07);border:1px solid rgba(100,200,255,.2);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px;color:var(--soft)"></div>
-
-  <div class="g2">
-
-    <!-- Work Tasks -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">✅ Work Tasks</span>
-        <span class="life-count-badge" id="off-task-count">0</span>
-        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadOfficeTasks()">↻</button>
-      </div>
-      <div class="life-add-row">
-        <input id="off-task-title"    class="input" type="text" placeholder="Task title" style="font-size:12px;flex:2"/>
-        <select id="off-task-priority" class="select" style="font-size:12px;flex:1">
-          <option value="medium">Medium</option><option value="high">High</option>
-          <option value="critical">Critical</option><option value="low">Low</option>
-        </select>
-        <input id="off-task-due"      class="input" type="date" style="font-size:12px;flex:1"/>
-        <button class="btn-g btn-sm"  onclick="officeAddTask()">+</button>
-      </div>
-      <div id="off-task-list" class="life-list">
-        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Colleagues -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">👤 Colleagues</span>
-        <span class="life-count-badge" id="off-col-count">0</span>
-        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadOfficeColleagues()">↻</button>
-      </div>
-      <div class="life-add-row">
-        <input id="off-col-name"  class="input" type="text" placeholder="Name"       style="font-size:12px;flex:2"/>
-        <input id="off-col-role"  class="input" type="text" placeholder="Role"       style="font-size:12px;flex:1"/>
-        <input id="off-col-dept"  class="input" type="text" placeholder="Department" style="font-size:12px;flex:1"/>
-        <button class="btn-g btn-sm" onclick="officeAddColleague()">+</button>
-      </div>
-      <div id="off-col-list" class="life-list">
-        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Expenses -->
-    <div class="card" style="grid-column:1/-1">
-      <div class="ch">
-        <span class="ct">💰 Expenses</span>
-        <span class="life-count-badge" id="off-exp-count">0</span>
-        <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadOfficeExpenses()">↻</button>
-      </div>
-      <div class="life-add-row">
-        <input id="off-exp-title"  class="input" type="text"   placeholder="Description"   style="font-size:12px;flex:2"/>
-        <input id="off-exp-amount" class="input" type="number" placeholder="Amount"         style="font-size:12px;flex:1"/>
-        <select id="off-exp-cat"   class="select" style="font-size:12px;flex:1">
-          <option value="other">Other</option><option value="travel">Travel</option>
-          <option value="meals">Meals</option><option value="supplies">Supplies</option>
-          <option value="software">Software</option><option value="equipment">Equipment</option>
-        </select>
-        <button class="btn-g btn-sm" onclick="officeAddExpense()">+</button>
-      </div>
-      <div id="off-exp-list" class="life-list" style="max-height:200px">
-        <div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Loading…</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
 <!-- ═══════════════════════════════ OUTLOOK TAB ═══════════════════════════════ -->
 <div id="tab-outlook" class="tab-panel">
   <div class="section-intro">
@@ -3928,8 +3777,6 @@ function switchTab(name) {
   // Lazy-load tab-specific data
   if (name === "automations") loadAutomationsUpgraded();
   if (name === "life")   loadAllLife();
-  if (name === "family") loadAllFamily();
-  if (name === "office") loadAllOffice();
   if (name === "outlook") _onOutlookTabActivated();
   if (name === "memory")  gmInit();
   if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
@@ -3973,7 +3820,12 @@ async function loadHome() {
     if (d.key_risk           && qs("eb-risk"))   qs("eb-risk").textContent   = d.key_risk;
     if (d.opportunity        && qs("eb-opp"))    qs("eb-opp").textContent    = d.opportunity;
     if (d.strategic_insight  && qs("eb-intel"))  qs("eb-intel").textContent  = d.strategic_insight;
-  } catch(e) { console.warn("loadHome:", e); }
+  } catch(e) {
+    console.warn("loadHome:", e);
+    if (qs("topPriority") && qs("topPriority").textContent === "Loading…") qs("topPriority").textContent = "Sin datos";
+    if (qs("nextMeeting") && qs("nextMeeting").textContent === "Loading…")  qs("nextMeeting").textContent  = "Calendario no conectado";
+    if (qs("ov-pipe-lbl") && qs("ov-pipe-lbl").textContent === "Loading…")  qs("ov-pipe-lbl").textContent  = "No disponible";
+  }
 }
 
 /* ── Render tasks ───────────────────── */
@@ -4172,7 +4024,7 @@ async function runAutoJarvis() {
     if (data.actions?.length)    { const a = qs("eb-action"); if(a) a.textContent = data.actions[0]; }
     if (data.summary) { const i = qs("eb-intel"); if(i) i.textContent = data.summary.slice(0,120); }
     await loadRecommendations();
-  } catch(e) { console.warn("runAutoJarvis:", e); }
+  } catch(e) { console.warn("runAutoJarvis:", e); showToast("Auto JARVIS falló — intenta de nuevo", "error"); }
   finally { btn.disabled = false; btn.textContent = "⚡ Auto JARVIS"; }
 }
 
@@ -4516,7 +4368,11 @@ async function loadNews() {
       _newsItems = d2.items || [];
     }
     _renderNewsItems(_newsItems);
-  } catch(e) { console.warn("loadNews:", e); }
+  } catch(e) {
+    console.warn("loadNews:", e);
+    const mkt = qs("mkt-news");
+    if (mkt && mkt.innerHTML.includes("Loading")) mkt.innerHTML = `<div style="color:var(--soft);font-size:12px;padding:8px">Noticias no disponibles. <button class="btn-ol btn-sm" onclick="loadNews()">↻ Reintentar</button></div>`;
+  }
 }
 
 function _renderNewsItems(items) {
@@ -6916,10 +6772,14 @@ async function loadCalendarEvents(range = "day") {
     const url = range ? `/api/calendar/events?range=${range}` : "/api/calendar/events";
     const r = await fetch(url);
     const data = await r.json();
+    if (data.status === "error") {
+      if (wrap) wrap.innerHTML = '<div class="cal-empty">Calendario no conectado.<br><span style="font-size:12px;color:var(--soft)">Conecta Google Calendar o Outlook en Ajustes.</span></div>';
+      return;
+    }
     _cal.events = data.events || [];
     renderEventList(_cal.events);
   } catch(e) {
-    if (wrap) wrap.innerHTML = '<div class="cal-empty">Failed to load events.</div>';
+    if (wrap) wrap.innerHTML = '<div class="cal-empty">Calendario no conectado.<br><span style="font-size:12px;color:var(--soft)">Conecta Google Calendar o Outlook en Ajustes.</span></div>';
     console.warn("loadCalendarEvents:", e);
   }
 }
@@ -8120,7 +7980,7 @@ async function loadLifeReminders() {
           <button class="life-btn del-btn"  onclick="lifeRemDel('${item.id}')"  title="Eliminar">✕</button>
         </div>
       </div>`).join("");
-  } catch(e) { console.warn("loadLifeReminders:", e); }
+  } catch(e) { const el = qs("life-rem-list"); if (el) el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin conexión</div>`; }
 }
 
 async function lifeAddReminder() {
@@ -8178,7 +8038,7 @@ async function loadLifeShopping() {
           <button class="life-btn del-btn" onclick="lifeShopDel('${item.id}')" title="Eliminar">✕</button>
         </div>
       </div>`).join("");
-  } catch(e) { console.warn("loadLifeShopping:", e); }
+  } catch(e) { const el = qs("life-shop-list"); if (el) el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin conexión</div>`; }
 }
 
 async function lifeAddShopping() {
@@ -8240,7 +8100,7 @@ async function loadLifeCalls() {
           <button class="life-btn del-btn"  onclick="lifeCallDel('${item.id}')"  title="Eliminar">✕</button>
         </div>
       </div>`).join("");
-  } catch(e) { console.warn("loadLifeCalls:", e); }
+  } catch(e) { const el = qs("life-call-list"); if (el) el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin conexión</div>`; }
 }
 
 async function lifeAddCall() {
@@ -8295,7 +8155,7 @@ async function loadLifePayments() {
           <button class="life-btn del-btn"  onclick="lifePayDel('${item.id}')"  title="Eliminar">✕</button>
         </div>
       </div>`).join("");
-  } catch(e) { console.warn("loadLifePayments:", e); }
+  } catch(e) { const el = qs("life-pay-list"); if (el) el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">Sin conexión</div>`; }
 }
 
 async function lifeAddPayment() {
@@ -8334,238 +8194,6 @@ function loadAllLife() {
   loadLifeCalls();
   loadLifePayments();
 }
-
-/* ── Family Agent ─────────────────────────────────────────── */
-
-function loadAllFamily() {
-  loadFamilyMembers();
-  loadFamilyEvents();
-  loadFamilyNotes();
-  loadFamilySummary();
-}
-
-async function loadFamilySummary() {
-  try {
-    const d = await fetch("/api/family/summary").then(r => r.json());
-    const el = qs("family-summary-strip"); if (!el) return;
-    const parts = [];
-    if (d.member_count)        parts.push(`${d.member_count} members`);
-    if (d.upcoming_events)     parts.push(`${d.upcoming_events} upcoming event(s)`);
-    if (d.upcoming_birthdays)  parts.push(`🎂 ${d.upcoming_birthdays} birthday(s) within 30 days`);
-    if (d.next_event)          parts.push(`Next: "${d.next_event}" in ${d.next_event_days} day(s)`);
-    if (parts.length) { el.textContent = parts.join(" · "); el.style.display = "block"; }
-  } catch(e) {}
-}
-
-async function loadFamilyMembers() {
-  const el = qs("fam-mem-list"); if (!el) return;
-  try {
-    const d = await fetch("/api/family/members").then(r => r.json());
-    qs("fam-mem-count").textContent = d.count || 0;
-    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No members yet</div>`; return; }
-    el.innerHTML = d.items.map(m => {
-      const rel  = m.relation !== "other" ? `<span style="color:var(--soft2);font-size:11px"> · ${m.relation}</span>` : "";
-      const bday = m.birthday_in_days != null ? `<span style="color:var(--warn);font-size:11px;margin-left:6px">🎂 ${m.birthday_in_days}d</span>` : "";
-      return `<div class="life-item">
-        <span style="flex:1">👤 ${m.name}${rel}${bday}</span>
-        ${m.phone ? `<span style="font-size:11px;color:var(--soft)">${m.phone}</span>` : ""}
-        <button class="life-del-btn" onclick="familyDelMember('${m.id}')">✕</button>
-      </div>`;
-    }).join("");
-  } catch(e) { el.innerHTML = `<div style="color:var(--bad);font-size:12px;padding:8px">Error loading members</div>`; }
-}
-
-async function loadFamilyEvents() {
-  const el = qs("fam-ev-list"); if (!el) return;
-  try {
-    const d = await fetch("/api/family/events?upcoming_days=90").then(r => r.json());
-    qs("fam-ev-count").textContent = d.count || 0;
-    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No upcoming events</div>`; return; }
-    el.innerHTML = d.items.map(ev => {
-      const color = ev.days_away <= 3 ? "var(--bad)" : ev.days_away <= 7 ? "var(--warn)" : "var(--soft)";
-      const rep   = ev.repeat_yearly ? " 🔁" : "";
-      return `<div class="life-item">
-        <span style="flex:1">${ev.title}${rep} <span style="color:${color};font-size:11px">${ev.days_away}d away</span></span>
-        <span style="font-size:11px;color:var(--soft2)">${ev.type}</span>
-        <button class="life-del-btn" onclick="familyDelEvent('${ev.id}')">✕</button>
-      </div>`;
-    }).join("");
-  } catch(e) { el.innerHTML = `<div style="color:var(--bad);font-size:12px;padding:8px">Error loading events</div>`; }
-}
-
-async function loadFamilyNotes() {
-  const el = qs("fam-note-list"); if (!el) return;
-  try {
-    const d = await fetch("/api/family/notes").then(r => r.json());
-    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No notes yet</div>`; return; }
-    el.innerHTML = d.items.map(n => `<div class="life-item">
-      <span style="flex:1;font-size:12px">${n.content}</span>
-      <span style="font-size:10px;color:var(--soft2)">${n.created_at?.slice(0,10) || ""}</span>
-      <button class="life-del-btn" onclick="familyDelNote('${n.id}')">✕</button>
-    </div>`).join("");
-  } catch(e) {}
-}
-
-async function familyAddMember() {
-  const name = qs("fam-mem-name")?.value.trim(); if (!name) return;
-  const rel  = qs("fam-mem-rel")?.value  || "other";
-  const bday = qs("fam-mem-bday")?.value || "";
-  await fetch("/api/family/members", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ name, relation: rel, birthday: bday }) });
-  qs("fam-mem-name").value = "";
-  qs("fam-mem-bday").value = "";
-  loadFamilyMembers(); loadFamilySummary();
-  showToast(`${name} added 👨‍👩‍👧`, "success", 2000);
-}
-
-async function familyAddEvent() {
-  const title = qs("fam-ev-title")?.value.trim(); if (!title) return;
-  const date  = qs("fam-ev-date")?.value;         if (!date)  { showToast("Pick a date", "warn", 2000); return; }
-  const type  = qs("fam-ev-type")?.value  || "family";
-  const repeat= qs("fam-ev-repeat")?.checked || false;
-  await fetch("/api/family/events", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ title, date, event_type: type, repeat_yearly: repeat }) });
-  qs("fam-ev-title").value = ""; qs("fam-ev-date").value = "";
-  loadFamilyEvents(); loadFamilySummary();
-  showToast("Event added 📅", "success", 2000);
-}
-
-async function familyAddNote() {
-  const content = qs("fam-note-content")?.value.trim(); if (!content) return;
-  await fetch("/api/family/notes", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ content }) });
-  qs("fam-note-content").value = "";
-  loadFamilyNotes();
-}
-
-async function familyDelMember(id) {
-  await fetch(`/api/family/members/${id}`, { method:"DELETE" });
-  loadFamilyMembers(); loadFamilySummary();
-}
-async function familyDelEvent(id) {
-  await fetch(`/api/family/events/${id}`, { method:"DELETE" });
-  loadFamilyEvents(); loadFamilySummary();
-}
-async function familyDelNote(id) {
-  await fetch(`/api/family/notes/${id}`, { method:"DELETE" });
-  loadFamilyNotes();
-}
-
-/* ── Office Agent ─────────────────────────────────────────── */
-
-function loadAllOffice() {
-  loadOfficeTasks();
-  loadOfficeColleagues();
-  loadOfficeExpenses();
-  loadOfficeSummary();
-}
-
-async function loadOfficeSummary() {
-  try {
-    const d = await fetch("/api/office/summary").then(r => r.json());
-    const el = qs("office-summary-strip"); if (!el) return;
-    const parts = [];
-    if (d.tasks_todo || d.tasks_doing) parts.push(`${d.tasks_todo} todo · ${d.tasks_doing} in-progress`);
-    if (d.tasks_critical)  parts.push(`⚠️ ${d.tasks_critical} critical`);
-    if (d.expenses_pending) parts.push(`${d.expenses_pending} expense(s) pending · ${d.currency} ${(d.expense_pending_amt||0).toLocaleString()}`);
-    if (parts.length) { el.textContent = parts.join(" · "); el.style.display = "block"; }
-  } catch(e) {}
-}
-
-async function loadOfficeTasks() {
-  const el = qs("off-task-list"); if (!el) return;
-  try {
-    const d = await fetch("/api/office/tasks").then(r => r.json());
-    qs("off-task-count").textContent = d.count || 0;
-    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No tasks yet</div>`; return; }
-    const pColor = { critical:"var(--bad)", high:"var(--warn)", medium:"var(--cyan)", low:"var(--soft)" };
-    el.innerHTML = d.items.map(t => {
-      const pc = pColor[t.priority] || "var(--soft)";
-      const statuses = ["todo","doing","done"];
-      const next = statuses[statuses.indexOf(t.status) + 1];
-      return `<div class="life-item">
-        <span style="width:8px;height:8px;border-radius:50%;background:${pc};flex-shrink:0;margin-top:4px"></span>
-        <span style="flex:1;font-size:12px">${t.title}</span>
-        ${t.due ? `<span style="font-size:11px;color:var(--soft2)">${t.due}</span>` : ""}
-        <span style="font-size:11px;color:var(--soft);padding:2px 6px;border:1px solid rgba(255,255,255,.1);border-radius:4px">${t.status}</span>
-        ${next ? `<button class="btn-g btn-sm" style="padding:2px 6px;font-size:10px" onclick="officeTaskStatus('${t.id}','${next}')">→${next}</button>` : ""}
-        <button class="life-del-btn" onclick="officeDelTask('${t.id}')">✕</button>
-      </div>`;
-    }).join("");
-  } catch(e) { el.innerHTML = `<div style="color:var(--bad);font-size:12px;padding:8px">Error</div>`; }
-}
-
-async function loadOfficeColleagues() {
-  const el = qs("off-col-list"); if (!el) return;
-  try {
-    const d = await fetch("/api/office/colleagues").then(r => r.json());
-    qs("off-col-count").textContent = d.count || 0;
-    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No colleagues yet</div>`; return; }
-    el.innerHTML = d.items.map(c => `<div class="life-item">
-      <span style="flex:1">👤 ${c.name}${c.role ? ` <span style="color:var(--soft2);font-size:11px">· ${c.role}</span>` : ""}${c.department ? ` <span style="color:var(--soft2);font-size:11px">· ${c.department}</span>` : ""}</span>
-      ${c.email ? `<span style="font-size:11px;color:var(--soft)">${c.email}</span>` : ""}
-      <button class="life-del-btn" onclick="officeDelColleague('${c.id}')">✕</button>
-    </div>`).join("");
-  } catch(e) {}
-}
-
-async function loadOfficeExpenses() {
-  const el = qs("off-exp-list"); if (!el) return;
-  try {
-    const d = await fetch("/api/office/expenses").then(r => r.json());
-    qs("off-exp-count").textContent = d.count || 0;
-    if (!d.items?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:12px;text-align:center;padding:14px">No expenses yet</div>`; return; }
-    const sc = { pending:"var(--warn)", approved:"var(--ok)", rejected:"var(--bad)", paid:"var(--soft)" };
-    el.innerHTML = d.items.map(e => `<div class="life-item">
-      <span style="flex:1;font-size:12px">${e.title} <span style="font-size:11px;color:var(--soft2)">· ${e.category}</span></span>
-      <span style="font-weight:600;color:var(--white)">${e.currency} ${(e.amount||0).toLocaleString()}</span>
-      <span style="font-size:11px;color:${sc[e.status]||"var(--soft)"}">${e.status}</span>
-      <button class="life-del-btn" onclick="officeDelExpense('${e.id}')">✕</button>
-    </div>`).join("");
-  } catch(e) {}
-}
-
-async function officeAddTask() {
-  const title = qs("off-task-title")?.value.trim(); if (!title) return;
-  const priority = qs("off-task-priority")?.value || "medium";
-  const due      = qs("off-task-due")?.value || "";
-  await fetch("/api/office/tasks", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ title, priority, due }) });
-  qs("off-task-title").value = ""; qs("off-task-due").value = "";
-  loadOfficeTasks(); loadOfficeSummary();
-  showToast("Work task added ✅", "success", 2000);
-}
-
-async function officeTaskStatus(id, status) {
-  await fetch(`/api/office/tasks/${id}/status?status=${status}`, { method:"POST" });
-  loadOfficeTasks(); loadOfficeSummary();
-}
-
-async function officeAddColleague() {
-  const name = qs("off-col-name")?.value.trim(); if (!name) return;
-  const role = qs("off-col-role")?.value.trim() || "";
-  const dept = qs("off-col-dept")?.value.trim() || "";
-  await fetch("/api/office/colleagues", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ name, role, department: dept }) });
-  qs("off-col-name").value = ""; qs("off-col-role").value = ""; qs("off-col-dept").value = "";
-  loadOfficeColleagues();
-  showToast(`${name} added 👤`, "success", 2000);
-}
-
-async function officeAddExpense() {
-  const title  = qs("off-exp-title")?.value.trim(); if (!title) return;
-  const amount = parseFloat(qs("off-exp-amount")?.value || 0); if (!amount) { showToast("Enter amount", "warn", 2000); return; }
-  const cat    = qs("off-exp-cat")?.value || "other";
-  await fetch("/api/office/expenses", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ title, amount, category: cat }) });
-  qs("off-exp-title").value = ""; qs("off-exp-amount").value = "";
-  loadOfficeExpenses(); loadOfficeSummary();
-  showToast("Expense logged 💰", "success", 2000);
-}
-
-async function officeDelTask(id)      { await fetch(`/api/office/tasks/${id}`,      { method:"DELETE" }); loadOfficeTasks();      loadOfficeSummary(); }
-async function officeDelColleague(id) { await fetch(`/api/office/colleagues/${id}`, { method:"DELETE" }); loadOfficeColleagues(); }
-async function officeDelExpense(id)   { await fetch(`/api/office/expenses/${id}`,   { method:"DELETE" }); loadOfficeExpenses();   loadOfficeSummary(); }
 
 /* ═══════════════════════════════════════════════════════════════
    OUTLOOK INBOX AGENT
