@@ -1899,6 +1899,60 @@ def voice_history(
     return {"status": "ok", **_voice_engine(uid).get_history(limit, offset, domain, source)}
 
 
+@app.get("/api/voice/qa")
+def voice_qa(current_user: dict = Depends(get_optional_user)):
+    """
+    Full voice system health check.
+    Probes ElevenLabs TTS with a short phrase to verify end-to-end connectivity.
+    Returns structured result — never exposes secrets.
+    """
+    import os as _os
+    svc = get_voice_service()
+
+    result: dict = {
+        "configured":            svc.configured,
+        "elevenlabs_key_present": bool(_os.getenv("ELEVENLABS_API_KEY", "").strip()),
+        "voice_id_present":       bool(_os.getenv("ELEVENLABS_VOICE_ID", "").strip()),
+        "voice_id_in_use":        svc.voice_id,
+        "model_in_use":           svc.model_id,
+        "status_endpoint_ok":     True,
+        "settings_endpoint_ok":   True,
+        "tts_test_ok":            False,
+        "tts_bytes":              0,
+        "last_error":             None,
+    }
+
+    print(f"[VOICE QA] configured={result['configured']} key_present={result['elevenlabs_key_present']}")
+
+    if not svc.configured:
+        result["last_error"] = (
+            "ELEVENLABS_API_KEY not set. "
+            "Add it to Railway environment variables to enable voice."
+        )
+        print(f"[VOICE QA] FAIL: {result['last_error']}")
+        return result
+
+    probe = "JARVIS voice system online."
+    print(f"[VOICE TTS] Probe: {probe!r}")
+    try:
+        audio = svc.speak(probe)
+        if audio and len(audio) > 100:
+            result["tts_test_ok"] = True
+            result["tts_bytes"]   = len(audio)
+            print(f"[VOICE TTS] OK — {len(audio)} bytes returned")
+        else:
+            result["last_error"] = (
+                "TTS returned empty or unusable audio. "
+                "Verify API key is valid and account has quota."
+            )
+            print(f"[VOICE ERROR] TTS empty: {audio!r}")
+    except Exception as e:
+        result["last_error"] = f"TTS probe exception: {e}"
+        print(f"[VOICE ERROR] {e}")
+
+    return result
+
+
 # ================================================================
 # QUERY API  (normalised chat endpoint for external integrations)
 # ================================================================
@@ -4453,6 +4507,157 @@ async def outlook_config_check():
         "ready":     not missing and _OUTLOOK_AVAILABLE,
         "setup_url": "https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
     }
+
+
+@app.get("/api/outlook/graph-qa")
+async def outlook_graph_qa(current_user: dict = Depends(get_optional_user)):
+    """
+    End-to-end Graph API health check.
+    Probes /me, /me/messages, /me/mailFolders/Inbox, and /subscriptions.
+    Returns decoded token info + real HTTP status for each call.
+    Never swallows errors.
+    """
+    _outlook_guard()
+    import base64 as _b64, json as _j, httpx as _httpx
+
+    uid = current_user["user_id"]
+    out: dict = {
+        "user_id": uid,
+        "token_present": False,
+        "aud": None,
+        "scopes": None,
+        "me_status": None,    "me_error": None,
+        "messages_status": None, "messages_error": None,
+        "inbox_status": None,    "inbox_error": None,
+        "raw_errors": [],
+    }
+
+    token = await _ms_get_token(uid)
+    if not token:
+        out["raw_errors"].append("No valid token — user must re-authenticate")
+        print("[GRAPH QA] FAIL: no token")
+        return out
+    out["token_present"] = True
+
+    try:
+        parts = token.split(".")
+        if len(parts) >= 2:
+            pad = parts[1] + "=" * (4 - len(parts[1]) % 4)
+            payload = _j.loads(_b64.urlsafe_b64decode(pad))
+            out["aud"]    = payload.get("aud")
+            out["scopes"] = payload.get("scp", payload.get("roles", ""))
+            print(f"[GRAPH QA] aud={out['aud']}  scopes={out['scopes']}")
+    except Exception as e:
+        out["raw_errors"].append(f"JWT decode failed: {e}")
+
+    _BASE = "https://graph.microsoft.com/v1.0"
+    hdrs  = {"Authorization": f"Bearer {token}"}
+
+    async with _httpx.AsyncClient(timeout=20) as client:
+        for label, url, params in [
+            ("me",       f"{_BASE}/me",             {}),
+            ("messages", f"{_BASE}/me/messages",    {"$top": "1"}),
+            ("inbox",    f"{_BASE}/me/mailFolders('Inbox')/messages", {"$top": "1"}),
+        ]:
+            try:
+                r = await client.get(url, headers=hdrs, params=params)
+                out[f"{label}_status"] = r.status_code
+                print(f"[GRAPH QA] GET /{label} → {r.status_code}")
+                if r.status_code != 200:
+                    err = r.text[:600]
+                    out[f"{label}_error"] = err
+                    out["raw_errors"].append(f"GET /{label} {r.status_code}: {err[:200]}")
+            except Exception as e:
+                out[f"{label}_error"] = str(e)
+                out["raw_errors"].append(f"GET /{label} exception: {e}")
+
+    return out
+
+
+@app.get("/api/outlook/subscription-debug")
+async def outlook_subscription_debug(current_user: dict = Depends(get_optional_user)):
+    """
+    Attempt subscription creation in debug mode.
+    Tries both resource paths (mailFolders/Inbox and me/messages) and two TTLs.
+    Returns the full raw Graph response for every attempt.
+    Cleans up any successfully created test subscriptions.
+    """
+    _outlook_guard()
+    import base64 as _b64, json as _j, httpx as _httpx
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+
+    uid = current_user["user_id"]
+    out: dict = {"user_id": uid, "token_present": False,
+                 "aud": None, "scopes": None, "attempts": [], "success": False}
+
+    token = await _ms_get_token(uid)
+    if not token:
+        out["error"] = "No valid token — authenticate first"
+        return out
+    out["token_present"] = True
+
+    try:
+        parts = token.split(".")
+        if len(parts) >= 2:
+            pad = parts[1] + "=" * (4 - len(parts[1]) % 4)
+            pl = _j.loads(_b64.urlsafe_b64decode(pad))
+            out["aud"]    = pl.get("aud")
+            out["scopes"] = pl.get("scp", pl.get("roles", ""))
+    except Exception as e:
+        out["aud_decode_error"] = str(e)
+
+    from opsx.connectors.outlook_webhook import _NOTIFICATION_URL, _CLIENT_STATE
+    out["notification_url"] = _NOTIFICATION_URL
+    out["client_state"]     = _CLIENT_STATE
+
+    def _exp(minutes: int) -> str:
+        dt = _dt.now(_tz.utc) + _td(minutes=minutes)
+        return dt.strftime("%Y-%m-%dT%H:%M:%S.0000000Z")
+
+    hdrs = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    async with _httpx.AsyncClient(timeout=30) as client:
+        for resource in ["me/mailFolders('Inbox')/messages", "me/messages"]:
+            for ttl in [4000, 60]:
+                payload = {
+                    "changeType":               "created",
+                    "notificationUrl":          _NOTIFICATION_URL,
+                    "lifecycleNotificationUrl": _NOTIFICATION_URL,
+                    "resource":                 resource,
+                    "expirationDateTime":       _exp(ttl),
+                    "clientState":              _CLIENT_STATE,
+                }
+                print(f"[SUB DEBUG] resource={resource!r} ttl={ttl}")
+                try:
+                    r = await client.post(
+                        "https://graph.microsoft.com/v1.0/subscriptions",
+                        headers=hdrs, json=payload,
+                    )
+                    attempt = {
+                        "resource": resource, "ttl_minutes": ttl,
+                        "status_code": r.status_code,
+                        "response_text": r.text[:800],
+                        "payload_sent": {k: v for k, v in payload.items() if k != "clientState"},
+                    }
+                    print(f"[SUB DEBUG] → {r.status_code}: {r.text[:300]}")
+                    out["attempts"].append(attempt)
+                    if r.status_code == 201:
+                        out["success"] = True
+                        out["working_resource"] = resource
+                        out["working_ttl_minutes"] = ttl
+                        # Clean up the test subscription
+                        sub_id = r.json().get("id")
+                        if sub_id:
+                            await client.delete(
+                                f"https://graph.microsoft.com/v1.0/subscriptions/{sub_id}",
+                                headers={"Authorization": f"Bearer {token}"},
+                            )
+                            out["test_sub_cleaned"] = True
+                        return out
+                except Exception as e:
+                    out["attempts"].append({"resource": resource, "ttl_minutes": ttl, "exception": str(e)})
+
+    return out
 
 
 @app.post("/api/outlook/subscribe")

@@ -40,16 +40,20 @@ class VoiceService:
         return bool(self.api_key)
 
     def status(self) -> dict:
-        return {
+        s = {
             "status":                  "ok" if self.configured else "degraded",
             "elevenlabs_configured":   self.configured,
             "voice_id_configured":     bool(os.getenv("ELEVENLABS_VOICE_ID")),
             "model":                   self.model_id,
+            "reason":                  None if self.configured else "ELEVENLABS_API_KEY not set",
         }
+        print(f"[VOICE STATUS] configured={s['elevenlabs_configured']} model={s['model']}")
+        return s
 
     def speak(self, text: str) -> Optional[bytes]:
         """Return MP3 bytes for text, or None on any failure."""
         if not self.configured:
+            print("[VOICE ERROR] ELEVENLABS_API_KEY not set — TTS skipped")
             logger.debug("VoiceService: ELEVENLABS_API_KEY not set — skipping TTS")
             return None
 
@@ -57,21 +61,27 @@ class VoiceService:
         if not clean:
             return None
 
+        print(f"[VOICE TTS] Sending {len(clean)} chars to ElevenLabs voice={self.voice_id} model={self.model_id}")
         for attempt in range(self._MAX_RETRIES + 1):
             try:
-                t0    = time.monotonic()
-                data  = self._call_api(clean)
+                t0      = time.monotonic()
+                data    = self._call_api(clean)
                 elapsed = time.monotonic() - t0
+                print(f"[VOICE TTS] OK — {len(data)} bytes in {elapsed:.2f}s")
                 logger.info("ElevenLabs TTS: %d chars → %d bytes in %.2fs",
                             len(clean), len(data), elapsed)
                 return data
             except urllib.error.HTTPError as exc:
-                logger.warning("ElevenLabs HTTP %s on attempt %d", exc.code, attempt + 1)
+                body = exc.read().decode("utf-8", errors="replace")[:300] if hasattr(exc, "read") else ""
+                print(f"[VOICE ERROR] ElevenLabs HTTP {exc.code} attempt={attempt+1}: {body}")
+                logger.warning("ElevenLabs HTTP %s on attempt %d: %s", exc.code, attempt + 1, body)
                 if exc.code in (401, 403):
                     break   # bad key — no point retrying
             except urllib.error.URLError as exc:
+                print(f"[VOICE ERROR] Network error attempt={attempt+1}: {exc}")
                 logger.warning("ElevenLabs network error on attempt %d: %s", attempt + 1, exc)
             except Exception as exc:
+                print(f"[VOICE ERROR] TTS exception attempt={attempt+1}: {exc}")
                 logger.warning("ElevenLabs TTS failed on attempt %d: %s", attempt + 1, exc)
         return None
 

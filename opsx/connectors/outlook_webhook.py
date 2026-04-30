@@ -94,59 +94,80 @@ def _expiry_str() -> str:
 async def create_subscription(user_id: str = "owner") -> Optional[Dict]:
     """
     Register a new Microsoft Graph webhook subscription for the user's inbox.
-    Stores the subscription for future renewal.
-    Raises ValueError with full Graph error detail on failure (caller shows it to user).
+    Tries me/mailFolders('Inbox')/messages first; falls back to me/messages
+    for personal Microsoft accounts (MSA) that reject the folder-scoped resource.
+    Raises ValueError with exact Graph error detail on total failure.
     """
     token = await get_valid_token(user_id)
     if not token:
         raise ValueError(f"No valid token for user={user_id} — authenticate first")
 
-    payload = {
-        "changeType":               "created",
-        "notificationUrl":          _NOTIFICATION_URL,
-        "lifecycleNotificationUrl": _NOTIFICATION_URL,
-        "resource":                 "me/mailFolders('Inbox')/messages",
-        "expirationDateTime":       _expiry_str(),
-        "clientState":              _CLIENT_STATE,
-    }
-
     print(f"[SUBSCRIBE] Creating subscription for user={user_id}")
     print(f"[SUBSCRIBE] notificationUrl={_NOTIFICATION_URL}")
-    print(f"[SUBSCRIBE] payload={payload}")
+
+    # Try primary resource first; fall back to me/messages for personal accounts
+    _resources_to_try = [
+        "me/mailFolders('Inbox')/messages",
+        "me/messages",
+    ]
+    last_error_msg  = ""
+    last_error_code = ""
+    last_status     = 0
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                f"{_GRAPH_BASE}/subscriptions",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type":  "application/json",
-                },
-                json=payload,
-            )
+            for resource in _resources_to_try:
+                payload = {
+                    "changeType":               "created",
+                    "notificationUrl":          _NOTIFICATION_URL,
+                    "lifecycleNotificationUrl": _NOTIFICATION_URL,
+                    "resource":                 resource,
+                    "expirationDateTime":       _expiry_str(),
+                    "clientState":              _CLIENT_STATE,
+                }
+                print(f"[SUBSCRIBE] Trying resource={resource!r}")
+                print(f"[SUBSCRIBE] payload={payload}")
 
-        print(f"[SUBSCRIBE] SUB STATUS: {resp.status_code}")
-        print(f"[SUBSCRIBE] SUB RESPONSE: {resp.text[:600]}")
+                resp = await client.post(
+                    f"{_GRAPH_BASE}/subscriptions",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type":  "application/json",
+                    },
+                    json=payload,
+                )
 
-        if resp.status_code == 201:
-            sub = resp.json()
-            subscription_store.save(user_id, sub)
-            log.info("Subscription CREATED id=%s user=%s expires=%s",
-                     sub.get("id"), user_id, sub.get("expirationDateTime"))
-            return sub
+                print(f"[SUBSCRIBE] SUB STATUS: {resp.status_code}")
+                print(f"[SUBSCRIBE] SUB RESPONSE: {resp.text[:600]}")
 
-        # Surface the exact Graph error to the caller
-        try:
-            err_body = resp.json()
-            err_msg  = err_body.get("error", {}).get("message", resp.text[:300])
-            err_code = err_body.get("error", {}).get("code", str(resp.status_code))
-        except Exception:
-            err_msg  = resp.text[:300]
-            err_code = str(resp.status_code)
+                if resp.status_code == 201:
+                    sub = resp.json()
+                    sub["_resource"] = resource   # remember which resource worked
+                    subscription_store.save(user_id, sub)
+                    log.info("Subscription CREATED id=%s resource=%s user=%s expires=%s",
+                             sub.get("id"), resource, user_id, sub.get("expirationDateTime"))
+                    return sub
 
-        log.error("Subscription creation FAILED %d user=%s: %s — %s",
-                  resp.status_code, user_id, err_code, err_msg)
-        raise ValueError(f"Graph API error {resp.status_code} ({err_code}): {err_msg}")
+                # Parse Graph error
+                try:
+                    err_body = resp.json()
+                    last_error_msg  = err_body.get("error", {}).get("message", resp.text[:400])
+                    last_error_code = err_body.get("error", {}).get("code", str(resp.status_code))
+                except Exception:
+                    last_error_msg  = resp.text[:400]
+                    last_error_code = str(resp.status_code)
+                last_status = resp.status_code
+
+                log.error("Subscription attempt FAILED %d resource=%s user=%s: %s — %s",
+                          resp.status_code, resource, user_id, last_error_code, last_error_msg)
+
+                # Only retry on 400 — other errors (401, 403, 5xx) won't change with a different resource
+                if resp.status_code != 400:
+                    break
+
+        raise ValueError(
+            f"Graph API error {last_status} ({last_error_code}): {last_error_msg}"
+        )
 
     except ValueError:
         raise
