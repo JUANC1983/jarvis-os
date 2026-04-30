@@ -1835,38 +1835,121 @@ def voice_command(
     req: _VoiceCommandRequest,
     current_user: dict = Depends(get_optional_user),
 ):
-    """Route a voice transcript through the AI orchestrator, log it, optionally TTS."""
+    """
+    Route a voice transcript through the central command router (same as chat).
+    Executes backend actions (shopping, reminders, tasks) directly.
+    Optionally speaks the response via ElevenLabs TTS.
+    """
     uid = current_user["user_id"]
     ve  = _voice_engine(uid)
+    print(f"[VOICE COMMAND] transcript={req.transcript!r} source={req.source}")
 
-    # Route through orchestrator
-    ctx  = _build_orchestrator_context(uid)
-    result = ai_orchestrator.route(req.transcript, ctx)
-    response_text = result.get("response", "")
-    domain        = result.get("domain", "general")
+    # Run through central command router — same path as chat
+    cmd_body = _CommandRequest(command=req.transcript)
+    # Reuse the command_route logic inline (avoids duplicate HTTP call)
+    raw = req.transcript
+    cmd = _normalize_cmd(raw)
+    matched_tab    = "chat"
+    matched_intent = "general"
+    confidence     = 0.5
+    for intent, (tab, en_kws, es_kws) in _COMMAND_ROUTES.items():
+        for kw in en_kws + es_kws:
+            if kw in cmd:
+                matched_tab    = tab
+                matched_intent = intent
+                confidence     = 0.85
+                break
+        if confidence > 0.5:
+            break
 
-    # Log to voice history
+    action_result: Optional[dict] = None
+    if matched_intent == "shopping_list":
+        try:
+            parsed = _parse_life_text(raw)
+            item_name = parsed.get("title") or raw
+            import re as _re2
+            item_name = _re2.sub(r"\s+(a la lista.*|al mercado.*|a la compra.*)$", "",
+                                 item_name, flags=_re2.IGNORECASE).strip()
+            created = _life(uid).add_shopping(name=item_name or raw)
+            action_result = {"module": "shopping", "item": created}
+        except Exception as _e:
+            action_result = {"module": "shopping", "error": str(_e)}
+    elif matched_intent == "reminder":
+        try:
+            parsed = _parse_life_text(raw)
+            title = parsed.get("title") or raw
+            due   = parsed.get("due") or ""
+            if not due:
+                from datetime import datetime as _dt3, timedelta as _td3
+                due = (_dt3.utcnow() + _td3(hours=1)).isoformat()
+            created = _life(uid).add_reminder(title, due)
+            action_result = {"module": "reminder", "item": created}
+        except Exception as _e:
+            action_result = {"module": "reminder", "error": str(_e)}
+    elif matched_intent == "task":
+        try:
+            from core.dashboard_workspace_engine import DashboardWorkspaceEngine as _DWE2
+            ws  = _DWE2()
+            parsed = _parse_life_text(raw)
+            title = parsed.get("title") or raw
+            t = ws.add_task(title, priority="medium", day="today", category="general")
+            action_result = {"module": "task", "item": t}
+        except Exception as _e:
+            action_result = {"module": "task", "error": str(_e)}
+
+    # Also route through AI orchestrator for a human reply
+    ctx  = _build_orchestrator_context(uid, include_data=False)
+    ctx["action_executed"] = action_result
+    result = ai_orchestrator.route(raw, ctx)
+    response_text = result.get("response", "") or result.get("reply", "")
+
+    # Build confirmation if orchestrator gave nothing
+    if not response_text and action_result and not action_result.get("error"):
+        mod = action_result.get("module", "")
+        if mod == "shopping":
+            response_text = f"Listo, '{(action_result.get('item') or {}).get('name', 'elemento')}' agregado a la lista."
+        elif mod == "reminder":
+            response_text = f"Recordatorio creado: '{(action_result.get('item') or {}).get('title', '')}'"
+        elif mod == "task":
+            response_text = f"Tarea creada: '{(action_result.get('item') or {}).get('text', '')}'"
+
+    domain = result.get("domain", matched_intent)
+    print(f"[VOICE COMMAND] intent={matched_intent} action={action_result} response={response_text[:80]!r}")
+
     ve.log_command(
-        transcript = req.transcript,
+        transcript = raw,
         response   = response_text,
         domain     = domain,
         source     = req.source,
     )
 
-    # Optionally return TTS audio
     if req.speak_response:
         svc = get_voice_service()
         if svc.configured:
             audio = svc.speak(response_text)
             if audio:
                 return Response(content=audio, media_type="audio/mpeg")
+        # TTS not configured — fall through to JSON with text
+        return {
+            "status":        "ok",
+            "domain":        domain,
+            "response":      response_text,
+            "tts_available": False,
+            "tts_reason":    "ELEVENLABS_API_KEY not configured",
+            "tab":           matched_tab,
+            "intent":        matched_intent,
+            "action_result": action_result,
+        }
 
     return {
-        "status":   "ok",
-        "domain":   domain,
-        "response": response_text,
-        "agent":    result.get("agent", ""),
-        "data":     result.get("data", {}),
+        "status":        "ok",
+        "domain":        domain,
+        "response":      response_text,
+        "agent":         result.get("agent", ""),
+        "tab":           matched_tab,
+        "intent":        matched_intent,
+        "action_result": action_result,
+        "data":          result.get("data", {}),
     }
 
 
@@ -3668,25 +3751,47 @@ class _CommandRequest(BaseModel):
 
 # Each entry: intent → (tab, [english keywords], [spanish keywords])
 _COMMAND_ROUTES = {
-    "task": ("productivity", [
-        "add task", "create task", "new task", "remind", "todo", "to-do",
+    "shopping_list": ("life", [
+        "add to shopping", "shopping list", "buy milk", "buy eggs", "grocery",
+        "add to groceries",
     ], [
-        "agregar tarea", "crear tarea", "nueva tarea", "tengo que", "debo hacer",
-        "hay que", "apuntar", "anotar", "recordar", "pendiente", "necesito",
-        "me falta", "debo", "tarea", "hacer",
+        "agrega", "agregar", "lista del mercado", "lista de compras", "mercado",
+        "comprar", "comida", "supermercado", "necesito comprar", "anade",
+        "pon en la lista", "al mercado",
     ]),
-    "meeting": ("productivity", [
-        "meeting", "schedule", "calendar", "appointment",
+    "reminder": ("life", [
+        "remind me", "reminder", "set reminder", "dont forget", "alert me",
+    ], [
+        "recuerdame", "recuerda que", "recuerdame que", "no olvides",
+        "avisame", "avísame", "recordatorio", "pon recordatorio",
+    ]),
+    "task": ("productivity", [
+        "add task", "create task", "new task", "todo", "to-do",
+        "plan my day", "plan day", "my tasks", "pending tasks",
+    ], [
+        "crear tarea", "nueva tarea", "tengo que", "debo hacer",
+        "hay que", "apuntar", "anotar", "pendiente", "necesito",
+        "me falta", "debo", "tarea",
+    ]),
+    "meeting": ("calendar", [
+        "meeting", "schedule", "appointment",
     ], [
         "reunion", "cita", "agenda", "agendar", "programar", "llamada",
         "videollamada", "junta",
     ]),
+    "email": ("outlook", [
+        "email", "inbox", "check mail", "unread", "messages",
+    ], [
+        "correo", "correos", "email", "bandeja", "mensajes", "revisa correos",
+        "lee correos", "tengo correos", "mail",
+    ]),
     "market": ("markets", [
         "stock", "market", "price", "trade", "buy", "sell", "analyse", "analyze",
-        "chart", "signal",
+        "chart", "signal", "ticker", "analyse market", "analyze market",
     ], [
-        "accion", "bolsa", "mercado", "precio", "comprar", "vender", "analizar",
-        "cotizacion", "invertir", "inversion", "portafolio",
+        "accion", "bolsa", "precio", "comprar", "vender", "analizar",
+        "cotizacion", "invertir", "inversion", "portafolio", "analiza",
+        "que hace", "como va",
     ]),
     "golf": ("golf", [
         "golf", "swing", "round", "handicap", "birdie", "par", "course", "putt",
@@ -3763,9 +3868,15 @@ _COMMAND_ROUTES = {
 @app.post("/api/command/route")
 def command_route(body: _CommandRequest,
                   current_user: dict = Depends(get_optional_user)):
-    """Classify a natural-language command and route it to the correct tab/action."""
+    """
+    Central command router.
+    Classifies intent, executes backend action when possible, returns human reply.
+    Spanish-first. Voice and chat both call this endpoint.
+    """
     raw  = body.command
-    cmd  = _normalize_cmd(raw)  # accent-stripped, lowercased
+    cmd  = _normalize_cmd(raw)
+    uid  = current_user["user_id"]
+
     matched_tab    = "chat"
     matched_intent = "general"
     confidence     = 0.5
@@ -3780,21 +3891,81 @@ def command_route(body: _CommandRequest,
         if confidence > 0.5:
             break
 
-    # Try orchestrator for a real reply
+    # ── Execute action based on classified intent ─────────────────────
+    action_result: Optional[dict] = None
+
+    if matched_intent == "shopping_list":
+        try:
+            parsed = _parse_life_text(raw)
+            item_name = parsed.get("title") or raw
+            # Strip command words to get the item name
+            for prefix in ["agrega ", "agregar ", "pon ", "añade ", "add "]:
+                if item_name.lower().startswith(prefix):
+                    item_name = item_name[len(prefix):]
+            # Remove trailing "a la lista" / "al mercado" etc.
+            import re as _re
+            item_name = _re.sub(r"\s+(a la lista.*|al mercado.*|a la compra.*)$", "",
+                                item_name, flags=_re.IGNORECASE).strip()
+            item_name = item_name or raw
+            created = _life(uid).add_shopping(name=item_name)
+            action_result = {"module": "shopping", "item": created}
+        except Exception as _e:
+            action_result = {"module": "shopping", "error": str(_e)}
+
+    elif matched_intent == "reminder":
+        try:
+            parsed = _parse_life_text(raw)
+            title  = parsed.get("title") or raw
+            due    = parsed.get("due") or ""
+            if not due:
+                from datetime import datetime as _dt2, timedelta as _td2
+                due = (_dt2.utcnow() + _td2(hours=1)).isoformat()
+            created = _life(uid).add_reminder(title, due)
+            action_result = {"module": "reminder", "item": created}
+        except Exception as _e:
+            action_result = {"module": "reminder", "error": str(_e)}
+
+    elif matched_intent == "task":
+        try:
+            from core.dashboard_workspace_engine import DashboardWorkspaceEngine as _DWE
+            ws  = _DWE()
+            parsed = _parse_life_text(raw)
+            title = parsed.get("title") or raw
+            t = ws.add_task(title, priority="medium", day="today", category="general")
+            action_result = {"module": "task", "item": t}
+        except Exception as _e:
+            action_result = {"module": "task", "error": str(_e)}
+
+    # ── Get AI reply (with action context) ───────────────────────────
     reply = ""
     try:
-        result = ai_orchestrator.route(raw, {"user_id": current_user["user_id"]})
+        ctx = {"user_id": uid, "action_executed": action_result}
+        result = ai_orchestrator.route(raw, ctx)
         reply = result.get("reply") or result.get("response") or result.get("answer") or ""
     except Exception:
         pass
 
+    # ── Build human confirmation when we executed an action ──────────
+    if action_result and not action_result.get("error") and not reply:
+        mod = action_result.get("module", "")
+        if mod == "shopping":
+            item_name = (action_result.get("item") or {}).get("name", "elemento")
+            reply = f"Listo, agregué '{item_name}' a la lista del mercado. ✓"
+        elif mod == "reminder":
+            title = (action_result.get("item") or {}).get("title", "recordatorio")
+            reply = f"Recordatorio creado: '{title}'. ✓"
+        elif mod == "task":
+            title = (action_result.get("item") or {}).get("text", "tarea")
+            reply = f"Tarea creada: '{title}'. ✓"
+
     return {
-        "status":     "ok",
-        "tab":        matched_tab,
-        "intent":     matched_intent,
-        "confidence": confidence,
-        "reply":      reply or f"Entendido — abriendo {matched_tab}…",
-        "command":    raw,
+        "status":        "ok",
+        "tab":           matched_tab,
+        "intent":        matched_intent,
+        "confidence":    confidence,
+        "reply":         reply or f"Entendido — abriendo {matched_tab}…",
+        "command":       raw,
+        "action_result": action_result,
     }
 
 
@@ -4145,6 +4316,53 @@ async def _start_scheduler() -> None:
     asyncio.create_task(_graph_memory_startup_backfill())
 
 
+_OUTLOOK_POLL_INTERVAL = int(os.getenv("OUTLOOK_POLL_INTERVAL", "90"))  # seconds
+
+async def _outlook_smart_poll_loop() -> None:
+    """
+    Smart polling loop — primary email delivery for personal MSA accounts.
+    - Runs every OUTLOOK_POLL_INTERVAL seconds (default 90s).
+    - Only fetches unread, skips already-processed message IDs (zero token waste).
+    - Does NOT run AI twice on the same message.
+    - Only activates when a valid token exists.
+    """
+    _plog = logging.getLogger("jarvis.outlook.poll_loop")
+    _plog.info("Smart polling loop started — interval=%ds", _OUTLOOK_POLL_INTERVAL)
+    while True:
+        try:
+            await asyncio.sleep(_OUTLOOK_POLL_INTERVAL)
+            if not _OUTLOOK_AVAILABLE:
+                continue
+            # Only poll if someone is authenticated
+            uid = "owner"
+            if not _ms_token_store.is_authenticated(uid):
+                continue
+            try:
+                messages = await _ms_list_inbox(limit=10, user_id=uid, unread_only=True)
+            except Exception as exc:
+                _plog.debug("Poll failed (will retry): %s", exc)
+                continue
+            new_count = 0
+            for msg in messages:
+                msg_id = msg.get("id") or msg.get("message_id")
+                if not msg_id or _ms_email_store.get(msg_id):
+                    continue   # already processed — zero AI calls
+                try:
+                    full = await _ms_fetch_email(msg_id, uid)
+                    if full:
+                        result = await _ms_process_email(full)
+                        await _ms_store_email(result)
+                        new_count += 1
+                except Exception as exc:
+                    _plog.debug("Poll: error processing msg=%s: %s", msg_id, exc)
+            if new_count:
+                _plog.info("Smart poll: %d new email(s) ingested", new_count)
+        except asyncio.CancelledError:
+            break
+        except Exception as exc:
+            _plog.warning("Poll loop error (non-fatal): %s", exc)
+
+
 @app.on_event("startup")
 async def _start_outlook_services() -> None:
     if not _OUTLOOK_AVAILABLE:
@@ -4169,6 +4387,8 @@ async def _start_outlook_services() -> None:
     _ms_event_queue.start()
     _ms_start_renewal()
     logging.getLogger("jarvis").info("Outlook event queue + renewal loop started")
+    # Start smart polling loop (primary email delivery for personal MSA accounts)
+    asyncio.create_task(_outlook_smart_poll_loop())
 
 
 @app.on_event("shutdown")

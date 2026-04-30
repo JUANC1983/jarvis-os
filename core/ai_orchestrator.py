@@ -412,37 +412,111 @@ def _office_suggestions(tasks: List[Dict], expenses: List[Dict]) -> List[str]:
 
 def _handle_general(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
     mem_ctx = context.get("memory_context", [])
-    lines   = ["I'm JARVIS, your AI operating system."]
+    is_es   = _is_spanish(message)
+    action  = context.get("action_executed")
 
-    if mem_ctx:
-        top = mem_ctx[0]
-        lines.append(f"Recent context: {top['content'][:120]}")
-
-    lines.append("I can help with productivity, golf, projects, and system management. What do you need?")
+    # If an action was already executed, acknowledge it
+    if action and not action.get("error"):
+        mod = action.get("module", "")
+        if is_es:
+            if mod == "shopping":
+                resp = f"Listo, '{(action.get('item') or {}).get('name', 'elemento')}' agregado a tu lista. ¿Necesitas algo más?"
+            elif mod == "reminder":
+                resp = f"Recordatorio guardado: '{(action.get('item') or {}).get('title', '')}'. Te aviso cuando llegue el momento."
+            elif mod == "task":
+                resp = f"Tarea creada: '{(action.get('item') or {}).get('text', '')}'. ¿Hay algo más que quieras agregar?"
+            else:
+                resp = "Hecho. ¿En qué más te puedo ayudar?"
+        else:
+            resp = f"Done — {mod} updated. What else do you need?"
+    elif is_es:
+        lines = ["Soy JARVIS, tu sistema operativo personal con IA."]
+        if mem_ctx:
+            lines.append(f"Contexto reciente: {mem_ctx[0]['content'][:120]}")
+        lines.append("Puedo ayudarte con tareas, recordatorios, lista del mercado, correos, mercados y golf.")
+        resp = " ".join(lines)
+    else:
+        lines = ["I'm JARVIS, your AI operating system."]
+        if mem_ctx:
+            lines.append(f"Recent context: {mem_ctx[0]['content'][:120]}")
+        lines.append("I can help with tasks, reminders, shopping, email, markets, and golf.")
+        resp = " ".join(lines)
 
     return {
         "agent":    "general_agent",
         "domain":   "general",
-        "response": " ".join(lines),
+        "response": resp,
         "data":     {},
-        "suggestions": [
-            "Show me today's tasks",
-            "What projects am I working on?",
-            "How is my golf game progressing?",
-        ],
+        "suggestions": (
+            ["Muéstrame mis tareas de hoy", "¿Qué proyectos tengo activos?", "Analiza NVDA"]
+            if is_es else
+            ["Show me today's tasks", "What projects am I working on?", "Analyse NVDA"]
+        ),
     }
+
+
+def _handle_shopping(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle shopping list commands — action already executed by command_route."""
+    is_es  = _is_spanish(message)
+    action = context.get("action_executed")
+    if action and not action.get("error"):
+        name = (action.get("item") or {}).get("name", "elemento")
+        resp = f"'{name}' agregado a tu lista del mercado." if is_es else f"'{name}' added to your shopping list."
+    else:
+        resp = "Abre la pestaña Vida para ver tu lista del mercado." if is_es else "Open the Life tab to manage your shopping list."
+    return {"agent": "shopping_agent", "domain": "shopping_list", "response": resp, "data": {}, "suggestions": []}
+
+
+def _handle_reminder(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle reminder commands — action already executed by command_route."""
+    is_es  = _is_spanish(message)
+    action = context.get("action_executed")
+    if action and not action.get("error"):
+        title = (action.get("item") or {}).get("title", "recordatorio")
+        resp = f"Recordatorio creado: '{title}'." if is_es else f"Reminder created: '{title}'."
+    else:
+        resp = "Abre la pestaña Vida para ver tus recordatorios." if is_es else "Open the Life tab to see your reminders."
+    return {"agent": "reminder_agent", "domain": "reminder", "response": resp, "data": {}, "suggestions": []}
+
+
+def _handle_email(message: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle email commands — routes to Outlook tab."""
+    is_es = _is_spanish(message)
+    resp  = (
+        "Revisando tu bandeja de entrada. Ve a la pestaña Outlook para ver tus correos y gestionar respuestas."
+        if is_es else
+        "Checking your inbox. Open the Outlook tab to read and manage your emails."
+    )
+    return {"agent": "email_agent", "domain": "email", "response": resp, "data": {}, "suggestions": []}
+
+
+def _is_spanish(text: str) -> bool:
+    """Heuristic: detect if the message is primarily Spanish."""
+    es_markers = [
+        "agrega", "agregar", "recordar", "recordatorio", "tarea", "tareas",
+        "reunion", "reunión", "agendar", "agenda", "correo", "correos",
+        "mercado", "lista", "mañana", "hoy", "qué", "que", "cómo", "como",
+        "tengo", "necesito", "quiero", "debo", "puedo", "analiza", "revisa",
+        "cuánto", "cuanto", "dónde", "donde", "pagar", "pago", "precio",
+        "pendiente", "pendientes", "avísame", "avisame", "hazme",
+    ]
+    lower = text.lower()
+    return any(m in lower for m in es_markers)
 
 
 # ── main orchestrator class ──────────────────────────────────────────
 
 _AGENT_HANDLERS = {
-    "productivity": _handle_productivity,
-    "golf":         _handle_golf,
-    "project":      _handle_project,
-    "system":       _handle_system,
-    "family":       _handle_family,
-    "office":       _handle_office,
-    "general":      _handle_general,
+    "productivity":  _handle_productivity,
+    "golf":          _handle_golf,
+    "project":       _handle_project,
+    "system":        _handle_system,
+    "family":        _handle_family,
+    "office":        _handle_office,
+    "shopping_list": _handle_shopping,
+    "reminder":      _handle_reminder,
+    "email":         _handle_email,
+    "general":       _handle_general,
 }
 
 

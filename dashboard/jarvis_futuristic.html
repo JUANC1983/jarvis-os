@@ -1807,11 +1807,11 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 <!-- ── Guided Steps Overlay ── -->
 <div id="guided-overlay" style="display:none">
   <button class="guided-close" onclick="dismissGuided()">✕</button>
-  <div class="guided-title">🤖 You're live in Demo Mode</div>
+  <div class="guided-title">🤖 JARVIS está listo</div>
   <ul class="guided-steps">
-    <li class="guided-step"><span class="guided-step-num">1</span><span>Your workspace is pre-loaded with demo data — explore freely</span></li>
-    <li class="guided-step"><span class="guided-step-num">2</span><span>Try an example command below or use the action bar</span></li>
-    <li class="guided-step"><span class="guided-step-num">3</span><span>When ready, click <strong style="color:var(--white)">DEMO</strong> in the header to switch to Real Mode</span></li>
+    <li class="guided-step"><span class="guided-step-num">1</span><span>Escribe un comando en la barra central o usa los botones de acción rápida</span></li>
+    <li class="guided-step"><span class="guided-step-num">2</span><span>Conecta tus APIs en Configuración para activar email, voz y mercados en tiempo real</span></li>
+    <li class="guided-step"><span class="guided-step-num">3</span><span>Usa la voz o el chat para gestionar tareas, recordatorios, correos y más</span></li>
   </ul>
   <div class="guided-actions">
     <button class="guided-try-btn" onclick="tryExampleCmd('Plan my day');dismissGuided()">▶ Try it now</button>
@@ -1873,7 +1873,6 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     </div>
 
     <div class="hero-right">
-      <span id="mode-badge" class="mode-badge demo" onclick="toggleDemoMode()" data-tip="Click to switch DEMO / REAL mode">DEMO</span>
       <button id="autoBtn" class="btn-p">⚡ Auto JARVIS</button>
       <button class="btn-g btn-sm" onclick="switchTab('chat')">💬 Chat</button>
       <div class="notif-wrap">
@@ -7241,8 +7240,6 @@ function _applyWeatherToUI(data) {
 async function boot() {
   initEvents(); initVoice(); initUpload(); initVoiceStatus();
   initWeather();  // async geolocation — non-blocking
-  // Phase 6Y: seed demo data on first launch + set mode badge
-  updateModeBadge();
   await checkAndSeedDemo();
   await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
   await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadMarketNews(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day'), loadAnalytics(), loadWow()]);
@@ -7453,9 +7450,6 @@ async function toggleDemoMode() {
 async function checkAndSeedDemo() {
   try {
     const status = await fetch("/api/demo/status").then(r => r.json());
-    _currentMode = status.mode || "demo";
-    localStorage.setItem("jarvis_mode", _currentMode);
-    updateModeBadge();
     if (!status.seeded) {
       tickerShow("JARVIS is loading demo data…");
       await fetch("/api/demo/seed", {

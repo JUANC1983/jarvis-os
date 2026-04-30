@@ -2,6 +2,7 @@
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from typing import Dict, Any, List, Optional
 import re
 
@@ -664,52 +665,86 @@ class ProductBrain:
             ]
 
             if score >= 80:
-                friendly = "Setup fuerte. Solo entrar si confirma y con riesgo controlado."
+                friendly     = "Setup fuerte. Solo entrar si confirma y con riesgo controlado."
+                thesis_short = (
+                    f"{symbol} por encima de SMA20 y SMA50 con momentum positivo "
+                    f"({round(momentum_20, 1)}% en 20d). Precio mostrando fortaleza relativa."
+                )
+                catalyst     = (
+                    "Momentum técnico positivo confirmado. "
+                    "Verificar earnings próximos o catalizadores de sector antes de entrar."
+                )
             elif score >= 60:
-                friendly = "Setup aceptable. Mejor esperar una entrada mas limpia."
+                friendly     = "Setup aceptable. Mejor esperar una entrada mas limpia."
+                thesis_short = (
+                    f"{symbol} con señales mixtas. Momentum {round(momentum_20, 1)}% en 20d. "
+                    "Precio cerca de medias clave — esperar confirmación."
+                )
+                catalyst     = "Sin catalizador técnico claro. Posición de espera recomendada."
             else:
-                friendly = "Ahora no es una entrada limpia. Riesgo alto frente al beneficio esperado."
+                friendly     = "Ahora no es una entrada limpia. Riesgo alto frente al beneficio esperado."
+                thesis_short = (
+                    f"{symbol} por debajo de medias clave. Momentum {round(momentum_20, 1)}% en 20d. "
+                    "Setup débil — evitar nueva posición."
+                )
+                catalyst     = "No hay catalizador verificado. Sin datos de noticias recientes disponibles."
+
+            # Risk sizing based on score and volatility
+            if score >= 80 and vol < 10:
+                risk = f"Riesgo moderado. Stop sugerido: {round(stop_pct*100,1)}% por debajo de entrada."
+            elif score >= 60:
+                risk = f"Riesgo medio-alto. Volatilidad reciente: {round(vol,1)}. No arriesgar más del 1-2% de cartera."
+            else:
+                risk = f"Riesgo elevado. Volatilidad: {round(vol,1)}. Evitar o reducir exposición existente."
 
             return {
-                "symbol": symbol,
-                "price": round(price, 2),
-                "price_now": round(price, 2),
-                "setup_score": score,
-                "traffic_light": light,
+                "symbol":               symbol,
+                "price":                round(price, 2),
+                "price_now":            round(price, 2),
+                "setup_score":          score,
+                "traffic_light":        light,
+                "thesis_short":         thesis_short,
+                "catalyst":             catalyst,
+                "risk":                 risk,
+                "last_updated":         datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
                 "trade_plan": {
-                    "action": action,
-                    "entry_zone": [entry_low, entry_high],
-                    "stop_loss": stop_loss,
-                    "target_1": target_1,
-                    "target_2": target_2,
+                    "action":               action,
+                    "entry_zone":           [entry_low, entry_high],
+                    "stop_loss":            stop_loss,
+                    "target_1":             target_1,
+                    "target_2":             target_2,
                     "risk_reward_estimate": 1.2,
                 },
-                "insight_lines": insight_lines,
-                "summary": f"{symbol} | precio {round(price, 2)} | score {score} | accion {action}",
+                "insight_lines":        insight_lines,
+                "summary":              f"{symbol} | precio {round(price, 2)} | score {score} | accion {action}",
                 "friendly_recommendation": friendly,
-                                **self._enrich_asset_metadata(symbol),
+                **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }
 
         except Exception:
             return {
-                "symbol": symbol,
-                "price": None,
-                "price_now": None,
-                "setup_score": 0,
-                "traffic_light": "red",
+                "symbol":       symbol,
+                "price":        None,
+                "price_now":    None,
+                "setup_score":  0,
+                "traffic_light":"red",
+                "thesis_short": "Sin datos disponibles para análisis.",
+                "catalyst":     "No hay catalizador verificado. Sin datos de noticias recientes disponibles.",
+                "risk":         "No se puede calcular riesgo — datos insuficientes.",
+                "last_updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
                 "trade_plan": {
-                    "action": "AVOID",
-                    "entry_zone": [],
-                    "stop_loss": "-",
-                    "target_1": "-",
-                    "target_2": "-",
+                    "action":               "AVOID",
+                    "entry_zone":           [],
+                    "stop_loss":            "-",
+                    "target_1":             "-",
+                    "target_2":             "-",
                     "risk_reward_estimate": "-"
                 },
-                "insight_lines": ["No hay datos suficientes."],
-                "summary": f"{symbol} sin datos",
-                "friendly_recommendation": "No operar.",
-                                **self._enrich_asset_metadata(symbol),
+                "insight_lines":            ["No hay datos suficientes."],
+                "summary":                  f"{symbol} sin datos",
+                "friendly_recommendation":  "No operar.",
+                **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }
 
