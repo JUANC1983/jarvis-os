@@ -599,6 +599,10 @@ class ProductBrain:
                            close.iloc[-20] * 100 if len(close) >= 20 else 0.0
             vol = float(np.std(close.tail(min(10, len(close)))))
 
+            # Convert vol to percentage so high-priced symbols (NVDA $900+, BTC $60k+)
+            # aren't unfairly penalised by dollar-denominated std deviation
+            vol_pct = round(vol / max(price, 1.0) * 100, 2)
+
             score = 50
 
             if price > sma20:
@@ -629,22 +633,32 @@ class ProductBrain:
             elif momentum_5 < 0:
                 score -= 4
 
-            if vol < 5:
+            # Wide neutral band (1.2–5%) avoids inflating scores for all normal-vol stocks
+            if vol_pct < 1.2:
                 score += 4
-            elif vol > 15:
-                score -= 6
+            elif vol_pct > 10.0:
+                score -= 8
+            elif vol_pct > 5.0:
+                score -= 4
 
             score = max(0, min(100, int(score)))
 
-            if score >= 80:
-                action = "GO"
-                light = "green"
+            # Buy: score >= 90 AND positive 20d momentum (declining stocks never Buy)
+            # Watch: score >= 60 (setup exists but not confirmed)
+            # Avoid: score < 60
+            # Calibrated for ~33% Buy / ~42% Watch / ~25% Avoid in neutral-to-bull markets
+            if score >= 90 and momentum_20 >= 0:
+                signal = "Buy"
+                action = "BUY"
+                light  = "green"
             elif score >= 60:
-                action = "WAIT"
-                light = "yellow"
+                signal = "Watch"
+                action = "WATCH"
+                light  = "yellow"
             else:
+                signal = "Avoid"
                 action = "AVOID"
-                light = "red"
+                light  = "red"
 
             band = max(0.015, min(0.08, vol / max(price, 1.0)))
             stop_pct = max(0.025, min(0.10, band * 1.8))
@@ -664,48 +678,101 @@ class ProductBrain:
                 f"Momentum 20d: {round(momentum_20, 2)}%",
             ]
 
-            if score >= 80:
-                friendly     = "Setup fuerte. Solo entrar si confirma y con riesgo controlado."
-                thesis_short = (
-                    f"{symbol} por encima de SMA20 y SMA50 con momentum positivo "
-                    f"({round(momentum_20, 1)}% en 20d). Precio mostrando fortaleza relativa."
-                )
-                catalyst     = (
-                    "Momentum técnico positivo confirmado. "
-                    "Verificar earnings próximos o catalizadores de sector antes de entrar."
-                )
-            elif score >= 60:
-                friendly     = "Setup aceptable. Mejor esperar una entrada mas limpia."
-                thesis_short = (
-                    f"{symbol} con señales mixtas. Momentum {round(momentum_20, 1)}% en 20d. "
-                    "Precio cerca de medias clave — esperar confirmación."
-                )
-                catalyst     = "Sin catalizador técnico claro. Posición de espera recomendada."
-            else:
-                friendly     = "Ahora no es una entrada limpia. Riesgo alto frente al beneficio esperado."
-                thesis_short = (
-                    f"{symbol} por debajo de medias clave. Momentum {round(momentum_20, 1)}% en 20d. "
-                    "Setup débil — evitar nueva posición."
-                )
-                catalyst     = "No hay catalizador verificado. Sin datos de noticias recientes disponibles."
+            # Sector context reuses metadata already computed above
+            _sector_meta = self._enrich_asset_metadata(symbol)
+            _sector = _sector_meta.get("sector", "general")
+            _sector_context = {
+                "tech":    "Sector tech impulsado por IA y resultados de mega-cap.",
+                "energy":  "Sector energia afectado por dinamica petroleo y geopolitica.",
+                "crypto":  "Cripto con volatilidad estructural alta por liquidez macro.",
+                "macro":   "ETF de referencia con correlacion al regimen macro.",
+                "general": "Catalizadores mixtos segun condiciones generales del mercado.",
+            }.get(_sector, "Condiciones de mercado estandar.")
 
-            # Risk sizing based on score and volatility
-            if score >= 80 and vol < 10:
-                risk = f"Riesgo moderado. Stop sugerido: {round(stop_pct*100,1)}% por debajo de entrada."
-            elif score >= 60:
-                risk = f"Riesgo medio-alto. Volatilidad reciente: {round(vol,1)}. No arriesgar más del 1-2% de cartera."
+            m20_str = f"{round(momentum_20, 1)}%"
+            sma20_str = str(round(sma20, 2))
+            sma50_str = str(round(sma50, 2))
+            vol_str = f"{vol_pct}%"
+
+            if signal == "Buy":
+                friendly = (
+                    f"Setup solido - score {score}/100. "
+                    f"Momentum {m20_str} en 20d. Precio sobre SMA20 y SMA50. "
+                    "Entrada con riesgo controlado."
+                )
+                thesis_short = (
+                    f"{symbol} sobre SMA20 ({sma20_str}) y SMA50 ({sma50_str}) "
+                    f"con momentum positivo ({m20_str} en 20d). Fortaleza relativa confirmada."
+                )
+                catalyst = (
+                    "Momentum tecnico confirmado. "
+                    "Verificar earnings proximos o catalizadores de sector antes de entrar."
+                )
+                analysis = (
+                    f"{symbol} muestra momentum fuerte ({m20_str} en 20d) "
+                    f"con precio sobre SMA20 ({sma20_str}) y SMA50 ({sma50_str}). "
+                    f"Volatilidad {vol_str}/dia - controlada. "
+                    f"{_sector_context}"
+                )
+                risk = (
+                    f"Riesgo moderado. Volatilidad {vol_str}. "
+                    f"Stop sugerido: {round(stop_pct * 100, 1)}% bajo entrada. "
+                    "Exposicion max: 1-2% del portafolio."
+                )
+            elif signal == "Watch":
+                friendly = (
+                    f"Setup aceptable - score {score}/100. "
+                    "Senales mixtas - esperar confirmacion antes de entrar."
+                )
+                thesis_short = (
+                    f"{symbol} con senales mixtas. Momentum {m20_str} en 20d. "
+                    f"Precio cerca de SMA20 ({sma20_str}) - esperar ruptura confirmada."
+                )
+                catalyst = "Sin catalizador tecnico decisivo. Posicion de espera recomendada."
+                analysis = (
+                    f"{symbol} con momentum {m20_str} en 20d. "
+                    f"Senales mixtas - precio cerca de SMA20 ({sma20_str}). "
+                    f"Volatilidad {vol_str}/dia. "
+                    f"{_sector_context}"
+                )
+                risk = (
+                    f"Riesgo medio-alto. Volatilidad {vol_str}. "
+                    "Confirmar tendencia antes de entrar. "
+                    "No arriesgar mas del 1% del portafolio."
+                )
             else:
-                risk = f"Riesgo elevado. Volatilidad: {round(vol,1)}. Evitar o reducir exposición existente."
+                friendly = (
+                    f"Setup debil - score {score}/100. "
+                    "Riesgo elevado frente al beneficio esperado. No operar ahora."
+                )
+                thesis_short = (
+                    f"{symbol} bajo medias clave. Momentum debil ({m20_str} en 20d). "
+                    "Evitar nueva posicion."
+                )
+                catalyst = "Sin catalizador tecnico verificado. Evitar entrada."
+                analysis = (
+                    f"{symbol} muestra momentum debil ({m20_str} en 20d) "
+                    f"con precio bajo medias clave (SMA20: {sma20_str}). "
+                    f"Volatilidad {vol_str}/dia - riesgo elevado. "
+                    f"{_sector_context}"
+                )
+                risk = (
+                    f"Riesgo elevado. Volatilidad {vol_str}. "
+                    f"Stop: no aplicable - evitar posicion nueva. "
+                    "Reducir exposicion existente si la hay."
+                )
 
             return {
                 "symbol":               symbol,
                 "price":                round(price, 2),
                 "price_now":            round(price, 2),
                 "setup_score":          score,
+                "signal":               signal,
                 "traffic_light":        light,
                 "thesis_short":         thesis_short,
                 "catalyst":             catalyst,
                 "risk":                 risk,
+                "analysis":             analysis,
                 "last_updated":         datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
                 "trade_plan": {
                     "action":               action,
@@ -716,23 +783,25 @@ class ProductBrain:
                     "risk_reward_estimate": 1.2,
                 },
                 "insight_lines":        insight_lines,
-                "summary":              f"{symbol} | precio {round(price, 2)} | score {score} | accion {action}",
+                "summary":              f"{symbol} | precio {round(price, 2)} | score {score} | {signal}",
                 "friendly_recommendation": friendly,
-                **self._enrich_asset_metadata(symbol),
+                **_sector_meta,
                 "source": "product_brain"
             }
 
         except Exception:
             return {
-                "symbol":       symbol,
-                "price":        None,
-                "price_now":    None,
-                "setup_score":  0,
-                "traffic_light":"red",
-                "thesis_short": "Sin datos disponibles para análisis.",
-                "catalyst":     "No hay catalizador verificado. Sin datos de noticias recientes disponibles.",
-                "risk":         "No se puede calcular riesgo — datos insuficientes.",
-                "last_updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+                "symbol":                  symbol,
+                "price":                   None,
+                "price_now":               None,
+                "setup_score":             0,
+                "signal":                  "Avoid",
+                "traffic_light":           "red",
+                "thesis_short":            "Sin datos disponibles para análisis.",
+                "catalyst":                "No hay catalizador verificado. Sin datos de noticias recientes disponibles.",
+                "risk":                    "No se puede calcular riesgo — datos insuficientes.",
+                "analysis":                "Datos insuficientes para análisis. Intentar con otro símbolo o verificar conectividad.",
+                "last_updated":            datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
                 "trade_plan": {
                     "action":               "AVOID",
                     "entry_zone":           [],
@@ -741,9 +810,9 @@ class ProductBrain:
                     "target_2":             "-",
                     "risk_reward_estimate": "-"
                 },
-                "insight_lines":            ["No hay datos suficientes."],
-                "summary":                  f"{symbol} sin datos",
-                "friendly_recommendation":  "No operar.",
+                "insight_lines":           ["No hay datos suficientes."],
+                "summary":                 f"{symbol} sin datos",
+                "friendly_recommendation": "No operar.",
                 **self._enrich_asset_metadata(symbol),
                 "source": "product_brain"
             }

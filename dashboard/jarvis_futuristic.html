@@ -2011,6 +2011,31 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div class="wow-chips" id="wowChips"></div>
   </div>
 
+  <!-- ── Commander Daily Brief ──────────────────────────── -->
+  <div class="card" style="border-color:rgba(68,240,255,.28);margin-bottom:18px">
+    <div class="ch" style="margin-bottom:10px">
+      <span class="ct" style="font-size:13px">🎖 Daily Commander Brief</span>
+      <span id="commander-brief-date" style="font-size:11px;color:var(--soft)"></span>
+      <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadCommanderBrief()">↻</button>
+      <button class="btn-ol btn-sm" onclick="sendChat('dame mi briefing')">🎙 Voice</button>
+    </div>
+    <div id="commander-brief-body" style="min-height:36px">
+      <div class="skel" style="height:13px;width:70%;margin-bottom:6px"></div>
+      <div class="skel" style="height:13px;width:50%"></div>
+    </div>
+  </div>
+
+  <!-- ── Command History ────────────────────────────────── -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="ch" style="margin-bottom:10px">
+      <span class="ct" style="font-size:13px">📋 Historial de Comandos</span>
+      <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadCommandHistory()">↻</button>
+    </div>
+    <div id="cmd-history-list" style="min-height:32px">
+      <div style="color:var(--soft);font-size:12px">Cargando...</div>
+    </div>
+  </div>
+
   <div class="g2">
     <div class="col">
       <!-- Auto JARVIS result -->
@@ -3795,8 +3820,9 @@ document.querySelectorAll(".tab-btn,.mob-btn").forEach(b =>
 /* ── Traffic tag ────────────────────── */
 function trafficTag(level) {
   const v = (level || "").toLowerCase();
-  if (v === "green")  return `<span class="tag-ok">✅ Go</span>`;
-  if (v === "yellow") return `<span class="tag-warn">⚠ Wait</span>`;
+  if (v === "green"  || v === "buy")   return `<span class="tag-ok">✅ Buy</span>`;
+  if (v === "yellow" || v === "watch") return `<span class="tag-warn">⚠ Watch</span>`;
+  if (v === "avoid"  || v === "red")   return `<span class="tag-bad">🚫 Avoid</span>`;
   return `<span class="tag-bad">🚫 Avoid</span>`;
 }
 
@@ -4203,11 +4229,11 @@ async function loadRecommendations() {
           <strong style="font-size:18px">${_esc(sym)}</strong>${signal ? trafficTag(signal) : ""}
         </div>
         <div class="pill-row">
-          ${price != null ? `<span class="tag-warn">Price: ${safe(price)}</span>` : ""}
-          ${score != null ? `<span class="tag-warn">Score: ${safe(score)}</span>` : ""}
-          ${item.risk ? `<span class="tag-warn">Risk: ${_esc(item.risk)}</span>` : ""}
+          ${price != null ? `<span class="tag-warn">$${safe(price)}</span>` : ""}
+          ${score != null ? `<span class="tag-warn">Score: ${safe(score)}/100</span>` : ""}
         </div>
-        <div style="margin-top:8px;font-size:13px;line-height:1.55">${_esc(item.friendly_recommendation||item.reason||item.summary||"")}</div>
+        <div style="margin-top:8px;font-size:13px;line-height:1.55;color:var(--text)">${_esc(item.analysis||item.friendly_recommendation||item.reason||"")}</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--soft)">${_esc(item.risk||"")}</div>
         <div style="margin-top:10px;font-size:11px;color:var(--cyan)">Click for full analysis →</div>`;
       c.onclick = () => sym ? openStockModal(sym, item) : null;
       box.appendChild(c);
@@ -5761,14 +5787,48 @@ function initVoice() {
     }
     const transcript = best;
     const chatEl = qs("chatInput");
-    if (chatEl) chatEl.value = transcript;
-    // Log to voice engine before routing
-    await fetch("/api/voice/command", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ transcript, source: "mic", speak_response: false, lang: _voiceLang }),
-    }).catch(()=>{});
-    await sendChat();
+    if (chatEl) chatEl.value = "";
+    // Route through central brain via voice command (action + AI reply in one call)
+    addBubble(transcript, "user");
+    const voiceTyping = addBubble("JARVIS is thinking…", "jarvis typing");
+    try {
+      const vd = await fetch("/api/voice/command", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ transcript, source: "mic", speak_response: false }),
+      }).then(r => r.json());
+      voiceTyping.remove();
+      const vReply = vd.response || vd.reply || "Entendido.";
+      addBubble(vReply, "jarvis");
+      if (qs("lastReply")) qs("lastReply").textContent = vReply.slice(0,230);
+      voiceState.lastReply = vReply;
+
+      // Action chips
+      if (vd.action_result && !vd.action_result.error) {
+        const mod = (vd.action_result.module || "");
+        const chips = [];
+        if (vd.undo_available && vd.action_id)
+          chips.push(`<button class="cmd-res-act" style="background:rgba(255,80,80,.12);color:#ff6b6b" onclick="undoAction('${vd.action_id}')">&#8629; Deshacer</button>`);
+        const tabMap = {task:"productivity",shopping:"life",reminder:"life",meeting:"calendar"};
+        if (tabMap[mod]) chips.push(`<button class="cmd-res-act" onclick="switchTab('${tabMap[mod]}')">Ver &rarr;</button>`);
+        if (chips.length) {
+          const ce = document.createElement("div");
+          ce.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:6px";
+          ce.innerHTML = chips.join("");
+          const bs = document.querySelectorAll(".chat-msg.jarvis:not(.typing)");
+          if (bs.length) bs[bs.length-1].appendChild(ce);
+        }
+        if (mod === "task" || mod === "meeting") setTimeout(loadHome, 300);
+        setTimeout(refreshCommandHistory, 500);
+      }
+
+      if (voiceState.autoSpeak) speakText(vReply);
+      _checkBriefingTrigger(transcript);
+    } catch(e) {
+      voiceTyping.remove();
+      addBubble("Error procesando comando de voz.", "jarvis");
+      console.warn("voice command error:", e);
+    }
   };
 
   const startMic = () => { switchTab("chat"); if (state.recognition) { try { state.recognition.start(); } catch(e) {} } };
@@ -5796,12 +5856,57 @@ async function sendChat(override = null) {
     if (qs("lastReply")) qs("lastReply").textContent = reply.slice(0, 230) + (reply.length > 230 ? "…" : "");
     voiceState.lastReply = reply;
     renderChatAction(d);
+
+    // ── Action chips: undo + tab navigation ──────────────────────
+    if (d.action_result && !d.action_result.error) {
+      const mod     = d.action_result.module || "";
+      const chips   = [];
+      if (d.undo_available && d.action_id) {
+        chips.push(`<button class="cmd-res-act" style="background:rgba(255,80,80,.12);color:#ff6b6b"
+          onclick="undoAction('${d.action_id}')">&#8629; Deshacer</button>`);
+      }
+      const tabMap = {
+        task:"productivity", shopping:"life", reminder:"life",
+        meeting:"calendar",  market:"markets", email:"outlook",
+        calendar:"calendar",
+      };
+      if (tabMap[mod]) chips.push(`<button class="cmd-res-act"
+        onclick="switchTab('${tabMap[mod]}')">Ver en ${tabMap[mod]} &rarr;</button>`);
+      if (chips.length) {
+        const chipsEl = document.createElement("div");
+        chipsEl.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:6px";
+        chipsEl.innerHTML = chips.join("");
+        const bubbles = document.querySelectorAll(".chat-msg.jarvis:not(.typing)");
+        if (bubbles.length) bubbles[bubbles.length - 1].appendChild(chipsEl);
+      }
+      // Refresh relevant panel
+      if (mod === "task")     setTimeout(loadHome, 300);
+      if (mod === "shopping") setTimeout(() => { try { loadShoppingList(); } catch(_){} }, 300);
+      if (mod === "reminder") setTimeout(() => { try { loadRemindersList(); } catch(_){} }, 300);
+      if (mod === "meeting" || mod === "calendar") setTimeout(() => loadCalendarEvents(_cal.range || "day"), 300);
+      if (mod === "email")    setTimeout(() => { try { loadOutlookInbox(); } catch(_){} }, 400);
+      setTimeout(refreshCommandHistory, 600);
+    }
+
     if (voiceState.autoSpeak) speakText(reply);
   } catch(e) {
     typing.remove();
-    addBubble("Error connecting to JARVIS. Check backend.", "jarvis");
+    addBubble("Error conectando con JARVIS. Verifica el backend.", "jarvis");
     console.warn("sendChat:", e);
   }
+}
+
+async function undoAction(actionId) {
+  try {
+    const d = await fetch(`/api/command/undo/${actionId}`, {method:"POST"}).then(r=>r.json());
+    if (d.status === "ok") {
+      showToast(d.message || "Accion deshecha.", "success");
+      setTimeout(loadHome, 300);
+      setTimeout(refreshCommandHistory, 500);
+    } else {
+      showToast(d.error || "No se pudo deshacer.", "error");
+    }
+  } catch(e) { showToast("Error al deshacer.", "error"); }
 }
 
 /* ═══════════════════════════════════════
@@ -6772,11 +6877,12 @@ async function loadCalendarEvents(range = "day") {
     const url = range ? `/api/calendar/events?range=${range}` : "/api/calendar/events";
     const r = await fetch(url);
     const data = await r.json();
-    if (data.status === "error") {
+    if (data.status === "error" || data.status === "disconnected") {
       if (wrap) wrap.innerHTML = '<div class="cal-empty">Calendario no conectado.<br><span style="font-size:12px;color:var(--soft)">Conecta Google Calendar o Outlook en Ajustes.</span></div>';
       return;
     }
     _cal.events = data.events || [];
+    _cal.provider = data.provider || "local";
     renderEventList(_cal.events);
   } catch(e) {
     if (wrap) wrap.innerHTML = '<div class="cal-empty">Calendario no conectado.<br><span style="font-size:12px;color:var(--soft)">Conecta Google Calendar o Outlook en Ajustes.</span></div>';
@@ -7096,6 +7202,63 @@ function _applyWeatherToUI(data) {
   }
 }
 
+/* ── Command History ─────────────────── */
+async function loadCommandHistory() {
+  const el = document.getElementById("cmd-history-list");
+  if (!el) return;
+  try {
+    const d = await fetch("/api/command/history?limit=10").then(r=>r.json());
+    const items = d.items || [];
+    if (!items.length) {
+      el.innerHTML = '<div style="color:var(--soft);font-size:12px;padding:4px 0">No hay comandos recientes.</div>';
+      return;
+    }
+    el.innerHTML = items.map(i => {
+      const ico = i.status === "executed" ? "✅" : i.status === "error" ? "❌" : "→";
+      const ts  = i.timestamp ? new Date(i.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : "";
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <span style="font-size:14px">${ico}</span>
+        <span style="flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(i.command)}</span>
+        <span style="font-size:10px;color:var(--soft);flex-shrink:0">${ts}</span>
+      </div>`;
+    }).join("");
+  } catch(e) { console.warn("loadCommandHistory:", e); }
+}
+function refreshCommandHistory() { loadCommandHistory(); }
+
+/* ── Commander Brief ─────────────────── */
+async function loadCommanderBrief() {
+  const el = document.getElementById("commander-brief-body");
+  if (!el) return;
+  try {
+    const d = await fetch("/api/commander/brief").then(r=>r.json());
+    if (d.status !== "ok") return;
+    const s = d.summary || {};
+    const lines = [];
+    if (s.priority_message) lines.push(`<div style="font-size:14px;font-weight:700;color:var(--cyan);margin-bottom:8px">${_esc(s.priority_message)}</div>`);
+    if (s.tasks_open > 0)   lines.push(`<div style="font-size:12px;color:var(--text);margin-bottom:4px">✅ ${s.tasks_open} tarea${s.tasks_open>1?"s":""} pendiente${s.tasks_open>1?"s":""}</div>`);
+    if (s.reminders?.length)  lines.push(`<div style="font-size:12px;color:var(--text);margin-bottom:4px">🔔 ${s.reminders.length} recordatorio${s.reminders.length>1?"s":""}</div>`);
+    if (s.payments?.length)   lines.push(`<div style="font-size:12px;color:var(--text);margin-bottom:4px">💳 ${s.payments.length} pago${s.payments.length>1?"s":""} pendiente${s.payments.length>1?"s":""}</div>`);
+    if (s.events?.length)     lines.push(`<div style="font-size:12px;color:var(--text);margin-bottom:4px">📅 ${s.events.length} evento${s.events.length>1?"s":""} hoy</div>`);
+    if (s.market_signal?.symbol) lines.push(`<div style="font-size:12px;color:var(--cyan);margin-bottom:4px">📈 ${s.market_signal.symbol}: ${s.market_signal.signal||""}</div>`);
+    if (!lines.length) lines.push('<div style="font-size:12px;color:var(--soft)">Todo en orden — no hay alertas.</div>');
+    el.innerHTML = lines.join("");
+    const dateEl = document.getElementById("commander-brief-date");
+    if (dateEl) dateEl.textContent = d.date || "";
+  } catch(e) { console.warn("loadCommanderBrief:", e); }
+}
+
+/* ── Voice briefing trigger ──────────── */
+function _checkBriefingTrigger(message) {
+  const m = message.toLowerCase();
+  if (m.includes("briefing") || m.includes("dame mi brief") || m.includes("resumen del dia") || m.includes("jarvis brief")) {
+    loadCommanderBrief();
+    switchTab("home");
+    return true;
+  }
+  return false;
+}
+
 /* ── Boot ───────────────────────────── */
 async function boot() {
   initEvents(); initVoice(); initUpload(); initVoiceStatus();
@@ -7112,6 +7275,10 @@ async function boot() {
   setInterval(loadWow, 300000);
   // Onboarding check — skip if already configured
   checkOnboarding();
+  // Commander brief + command history
+  loadCommanderBrief();
+  loadCommandHistory();
+  setInterval(loadCommandHistory, 60000);
 }
 boot();
 
@@ -7156,36 +7323,59 @@ async function cmdSend() {
     const tabIcons = {
       productivity: "✅", markets: "📈", golf: "⛳", chat: "💬",
       analytics: "📊", projects: "📋", calendar: "📅",
-      intelligence: "📰", system: "⚙️",
+      intelligence: "📰", system: "⚙️", outlook: "📧",
       fitness: "💪", running: "🏃", cycling: "🚴", gym: "🏋️", tennis: "🎾",
+      life: "🏠", shopping_list: "🛒", reminder: "🔔", task: "✅", meeting: "📅",
+      email: "📧", calendar_query: "📅", calendar_delete: "📅",
     };
     const icon = tabIcons[d.intent] || tabIcons[d.tab] || "🤖";
     qs("cmd-res-icon").textContent = icon;
-    qs("cmd-res-agent").textContent = `JARVIS · ${d.intent?.toUpperCase() || "GENERAL"} · ${Math.round((d.confidence||0)*100)}% confidence`;
+    qs("cmd-res-agent").textContent = `JARVIS · ${d.intent?.toUpperCase() || "GENERAL"} · ${Math.round((d.confidence||0)*100)}%`;
     qs("cmd-res-text").textContent = d.reply || "Done.";
 
     // Build action chips
     const acts = qs("cmd-res-actions");
     acts.innerHTML = "";
+
+    // Undo chip if available
+    if (d.undo_available && d.action_id) {
+      const undoChip = document.createElement("button");
+      undoChip.className = "cmd-res-act";
+      undoChip.style.cssText = "background:rgba(255,80,80,.12);color:#ff6b6b";
+      undoChip.textContent = "↩ Deshacer";
+      undoChip.onclick = () => undoAction(d.action_id);
+      acts.appendChild(undoChip);
+    }
+
     if (d.tab && d.tab !== "chat") {
       const chip = document.createElement("button");
       chip.className = "cmd-res-act";
-      chip.textContent = `Go to ${d.tab} →`;
+      chip.textContent = `Ver en ${d.tab} →`;
       chip.onclick = () => { switchTab(d.tab); cmdDismiss(); };
       acts.appendChild(chip);
     }
     const chatChip = document.createElement("button");
     chatChip.className = "cmd-res-act";
-    chatChip.textContent = "Ask in Chat";
+    chatChip.textContent = "Preguntar en Chat";
     chatChip.onclick = () => {
       switchTab("chat");
-      const msgInput = qs("messageInput");
-      if (msgInput) { msgInput.value = cmd; msgInput.focus(); }
+      const ci = qs("chatInput");
+      if (ci) { ci.value = cmd; ci.focus(); }
       cmdDismiss();
     };
     acts.appendChild(chatChip);
 
-    tickerShow("Done", 2000);
+    // Refresh home history after action
+    if (d.action_result && !d.action_result.error) {
+      const mod = d.action_result.module || "";
+      if (mod === "task" || mod === "meeting") setTimeout(loadHome, 300);
+      setTimeout(refreshCommandHistory, 500);
+    }
+
+    // Briefing trigger
+    _checkBriefingTrigger(cmd);
+
+    tickerShow("Listo", 2000);
     input.value = "";
   } catch(e) {
     qs("cmd-res-icon").textContent = "⚠️";
@@ -8305,6 +8495,13 @@ async function loadOutlookInbox() {
     if (_olFilterType === "priority" && _olFilter) params.set("priority", _olFilter);
 
     const d = await fetch(`/api/outlook/inbox?${params}`).then(r => r.json());
+    if (d.status === "disconnected") {
+      container.innerHTML = `<div class="ol-empty-state">
+        <div style="font-size:28px;margin-bottom:8px">🔌</div>
+        <div>Outlook not connected.<br><span style="font-size:12px;opacity:.7">Click "Connect Outlook" to authenticate with Microsoft.</span></div>
+      </div>`;
+      return;
+    }
     if (d.status !== "ok") return;
 
     const statsEl = qs("ol-stats-line");
@@ -8316,16 +8513,41 @@ async function loadOutlookInbox() {
     if (!d.items || d.items.length === 0) {
       container.innerHTML = `<div class="ol-empty-state">
         <div style="font-size:28px;margin-bottom:8px">📭</div>
-        <div>${_olFilter ? "No emails with this filter." : "No emails yet. Connect and emails will appear here in real time."}</div>
+        <div>${_olFilter ? "No emails match this filter." : "No recent emails in the last 7 days."}</div>
       </div>`;
       return;
     }
     container.innerHTML = d.items.map(e => _renderOlCard(e)).join("");
+    if (!container._draftListenerAttached) {
+      _attachDraftAutoSave(container);
+      container._draftListenerAttached = true;
+    }
   } catch(e) {
     console.warn("loadOutlookInbox:", e);
     const el = qs("ol-inbox");
     if (el) el.innerHTML = '<div class="ol-empty-state" style="color:#ef4444">Error loading emails. Check connection.</div>';
   }
+}
+
+// Debounced auto-save for reply draft textareas (persists edits via PATCH)
+let _draftSaveTimers = {};
+function _attachDraftAutoSave(container) {
+  container.addEventListener("input", e => {
+    const ta = e.target;
+    if (!ta.matches(".ol-reply-textarea")) return;
+    const mid = ta.id.replace("reply-", "");
+    if (!mid) return;
+    clearTimeout(_draftSaveTimers[mid]);
+    _draftSaveTimers[mid] = setTimeout(async () => {
+      try {
+        await fetch(`/api/outlook/email/${mid}/draft`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ new_draft: ta.value }),
+        });
+      } catch(_) {}
+    }, 1200);
+  });
 }
 
 // ── Card renderer ─────────────────────────────────────────────────────────────
@@ -8355,18 +8577,21 @@ function _renderOlCard(e) {
     ? `<ul class="ol-key-points">${(e.key_points||[]).map(p=>`<li>${_esc(p)}</li>`).join("")}</ul>`
     : "";
 
-  const replySection = (e.final_reply || e.draft_reply) && status === "pending_approval"
+  const existingDraft = e.final_reply || e.draft_reply || e.reply_draft || "";
+  const replySection = status === "pending_approval"
     ? `<div class="ol-section">
         <div class="ol-reply-label">
-          <span>🤖 AI Suggested Reply ${e.stage2_applied ? "(humanized)" : "(draft)"}</span>
+          <span>🤖 ${existingDraft ? `AI Suggested Reply ${e.stage2_applied ? "(humanized)" : "(draft)"}` : "Draft Reply"}</span>
           ${conf !== null ? `<span class="ol-reply-confidence">Confidence: ${conf}% · Tone: ${_esc(e.tone_used||"professional")}</span>` : ""}
+          ${!existingDraft ? `<button class="ol-btn-secondary" style="margin-left:8px;font-size:11px;padding:2px 8px" onclick="olGenerateReply('${safeMid}')">✨ Generate AI Reply</button>` : ""}
         </div>
-        <textarea class="ol-reply-textarea" id="reply-${safeMid}">${_esc(e.final_reply || e.draft_reply || "")}</textarea>
+        <textarea class="ol-reply-textarea" id="reply-${safeMid}" placeholder="Write or generate a reply…">${_esc(existingDraft)}</textarea>
       </div>` : "";
 
   const actionsSection = status === "pending_approval"
     ? `<div class="ol-actions">
         <button class="ol-btn-send" onclick="olSendReply('${safeMid}')">✅ SEND APPROVED REPLY</button>
+        <button class="ol-btn-secondary" onclick="olGenerateReply('${safeMid}')">✨ AI Reply</button>
         <button class="ol-btn-delete" onclick="olDelete('${safeMid}')">🗑 Delete</button>
         <button class="ol-btn-secondary" onclick="olIgnore('${safeMid}')">🚫 Ignore</button>
         <button class="ol-btn-secondary" onclick="olMarkRead('${safeMid}')">👁 Mark Read</button>
@@ -8463,20 +8688,46 @@ async function olSendReply(mid) {
   } catch(e) { showToast("Send error: " + e.message, "error"); }
 }
 
+async function olGenerateReply(mid) {
+  const btn = document.querySelector(`#olcard-${mid} .ol-btn-secondary[onclick*="olGenerateReply"]`);
+  if (btn) { btn.textContent = "⏳ Generating…"; btn.disabled = true; }
+  try {
+    const d = await fetch(`/api/outlook/email/${mid}/generate-reply`, { method: "POST" }).then(r => r.json());
+    if (d.status === "ok" && d.draft) {
+      const ta = document.getElementById(`reply-${mid}`);
+      if (ta) { ta.value = d.draft; ta.focus(); }
+      showToast("AI reply generated ✨", "success");
+    } else {
+      showToast("Could not generate reply", "error");
+    }
+  } catch(e) { showToast("Error: " + e.message, "error"); }
+  finally {
+    if (btn) { btn.textContent = "✨ AI Reply"; btn.disabled = false; }
+  }
+}
+
 async function olDelete(mid) {
   if (!confirm("Delete this email permanently? This cannot be undone.")) return;
   try {
     const d = await fetch(`/api/outlook/delete/${mid}`, { method: "POST" }).then(r => r.json());
-    if (d.status === "ok") { showToast("Email deleted 🗑", "info"); await loadOutlookInbox(); }
-    else showToast("Delete failed: " + (d.error || "unknown"), "error");
+    if (d.status === "ok") {
+      showToast("Email deleted 🗑", "info");
+      await loadOutlookInbox();
+      await loadOutlookStatus();
+    } else showToast("Delete failed: " + (d.error || "unknown"), "error");
   } catch(e) { showToast("Delete error: " + e.message, "error"); }
 }
 
 async function olIgnore(mid) {
   try {
-    await fetch(`/api/outlook/ignore/${mid}`, { method: "POST" });
-    showToast("Email ignored 🚫", "info", 1800);
-    await loadOutlookInbox();
+    const d = await fetch(`/api/outlook/ignore/${mid}`, { method: "POST" }).then(r => r.json());
+    if (d.status === "ok" || d.success) {
+      showToast("Email ignored 🚫", "info", 1800);
+      await loadOutlookInbox();
+      await loadOutlookStatus();
+    } else {
+      showToast("Ignore failed: " + (d.error || "unknown"), "error");
+    }
   } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 

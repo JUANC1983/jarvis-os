@@ -8,6 +8,7 @@ import os
 import shutil
 import threading
 import time
+import uuid as _uuid_mod
 
 try:
     from dotenv import load_dotenv
@@ -1263,27 +1264,46 @@ def dashboard_home(current_user: dict = Depends(get_optional_user)):
 # Tier 3: brain.chat() (deterministic ProductBrain, no LLM)
 # =========================
 @app.post("/chat")
-def chat(req: ChatRequest):
+def chat(req: ChatRequest, current_user: dict = Depends(get_optional_user)):
     try:
-        result = _agent_chat(req.message)
+        uid = current_user["user_id"]
 
+        # ── Side effect: execute any detected action through central brain
+        cmd_result = _execute_command_action(req.message, uid)
+
+        # ── AI reply (3-tier fallback) ────────────────────────────────
+        result = _agent_chat(req.message)
         if result is None:
             result = _llm_chat(req.message)
-
         if result is None:
             result = brain.chat(req.message)
 
+        # ── Pure-action intents: prefer action reply, skip noisy AI ─────
+        _PURE_ACTION_INTENTS = {"shopping_list", "reminder", "task", "meeting",
+                                "calendar_query", "calendar_delete", "email"}
+        action_reply = cmd_result.get("reply", "")
+        if cmd_result["action_result"] and not cmd_result["action_result"].get("error") \
+                and cmd_result["intent"] in _PURE_ACTION_INTENTS and action_reply:
+            final_reply = action_reply
+        else:
+            final_reply = (result or {}).get("reply", "") or (result or {}).get("summary", "") \
+                          or action_reply
+
         return JSONResponse(
             content={
-                "status":     "ok",
-                "response":   result,
-                "reply":      result.get("reply", ""),
-                "summary":    result.get("summary", ""),
-                "type":       result.get("type", "chat"),
-                "details":    result.get("details", {}),
-                "action":     result.get("action", ""),
-                "confidence": result.get("confidence", 0.0),
-                "source":     result.get("source", "brain"),
+                "status":        "ok",
+                "response":      result,
+                "reply":         final_reply,
+                "summary":       (result or {}).get("summary", ""),
+                "type":          (result or {}).get("type", "chat"),
+                "details":       (result or {}).get("details", {}),
+                "action":        (result or {}).get("action", ""),
+                "confidence":    (result or {}).get("confidence", 0.0),
+                "source":        (result or {}).get("source", "brain"),
+                "action_result": cmd_result.get("action_result"),
+                "action_id":     cmd_result.get("action_id"),
+                "undo_available": cmd_result.get("undo_available", False),
+                "intent":        cmd_result.get("intent", "general"),
             },
             media_type="application/json; charset=utf-8",
         )
@@ -1842,76 +1862,27 @@ def voice_command(
     """
     uid = current_user["user_id"]
     ve  = _voice_engine(uid)
-    print(f"[VOICE COMMAND] transcript={req.transcript!r} source={req.source}")
-
-    # Run through central command router — same path as chat
-    cmd_body = _CommandRequest(command=req.transcript)
-    # Reuse the command_route logic inline (avoids duplicate HTTP call)
     raw = req.transcript
-    cmd = _normalize_cmd(raw)
-    matched_tab    = "chat"
-    matched_intent = "general"
-    confidence     = 0.5
-    for intent, (tab, en_kws, es_kws) in _COMMAND_ROUTES.items():
-        for kw in en_kws + es_kws:
-            if kw in cmd:
-                matched_tab    = tab
-                matched_intent = intent
-                confidence     = 0.85
-                break
-        if confidence > 0.5:
-            break
+    print(f"[VOICE COMMAND] transcript={raw!r} source={req.source}")
 
-    action_result: Optional[dict] = None
-    if matched_intent == "shopping_list":
-        try:
-            parsed = _parse_life_text(raw)
-            item_name = parsed.get("title") or raw
-            import re as _re2
-            item_name = _re2.sub(r"\s+(a la lista.*|al mercado.*|a la compra.*)$", "",
-                                 item_name, flags=_re2.IGNORECASE).strip()
-            created = _life(uid).add_shopping(name=item_name or raw)
-            action_result = {"module": "shopping", "item": created}
-        except Exception as _e:
-            action_result = {"module": "shopping", "error": str(_e)}
-    elif matched_intent == "reminder":
-        try:
-            parsed = _parse_life_text(raw)
-            title = parsed.get("title") or raw
-            due   = parsed.get("due") or ""
-            if not due:
-                from datetime import datetime as _dt3, timedelta as _td3
-                due = (_dt3.utcnow() + _td3(hours=1)).isoformat()
-            created = _life(uid).add_reminder(title, due)
-            action_result = {"module": "reminder", "item": created}
-        except Exception as _e:
-            action_result = {"module": "reminder", "error": str(_e)}
-    elif matched_intent == "task":
-        try:
-            from core.dashboard_workspace_engine import DashboardWorkspaceEngine as _DWE2
-            ws  = _DWE2()
-            parsed = _parse_life_text(raw)
-            title = parsed.get("title") or raw
-            t = ws.add_task(title, priority="medium", day="today", category="general")
-            action_result = {"module": "task", "item": t}
-        except Exception as _e:
-            action_result = {"module": "task", "error": str(_e)}
+    # ── Route through central brain (same as command_route) ───────────
+    exec_result   = _execute_command_action(raw, uid)
+    matched_tab   = exec_result["tab"]
+    matched_intent = exec_result["intent"]
+    action_result = exec_result["action_result"]
+    response_text = exec_result["reply"]
 
-    # Also route through AI orchestrator for a human reply
-    ctx  = _build_orchestrator_context(uid, include_data=False)
-    ctx["action_executed"] = action_result
-    result = ai_orchestrator.route(raw, ctx)
-    response_text = result.get("response", "") or result.get("reply", "")
-
-    # Build confirmation if orchestrator gave nothing
-    if not response_text and action_result and not action_result.get("error"):
-        mod = action_result.get("module", "")
-        if mod == "shopping":
-            response_text = f"Listo, '{(action_result.get('item') or {}).get('name', 'elemento')}' agregado a la lista."
-        elif mod == "reminder":
-            response_text = f"Recordatorio creado: '{(action_result.get('item') or {}).get('title', '')}'"
-        elif mod == "task":
-            response_text = f"Tarea creada: '{(action_result.get('item') or {}).get('text', '')}'"
+    # ── AI reply if no action-specific reply ──────────────────────────
+    if not response_text:
+        try:
+            ctx = _build_orchestrator_context(uid, include_data=False)
+            ctx["action_executed"] = action_result
+            result        = ai_orchestrator.route(raw, ctx)
+            response_text = result.get("response", "") or result.get("reply", "")
+        except Exception:
+            result = {}
+    else:
+        result = {}
 
     domain = result.get("domain", matched_intent)
     print(f"[VOICE COMMAND] intent={matched_intent} action={action_result} response={response_text[:80]!r}")
@@ -1929,7 +1900,6 @@ def voice_command(
             audio = svc.speak(response_text)
             if audio:
                 return Response(content=audio, media_type="audio/mpeg")
-        # TTS not configured — fall through to JSON with text
         return {
             "status":        "ok",
             "domain":        domain,
@@ -1939,16 +1909,21 @@ def voice_command(
             "tab":           matched_tab,
             "intent":        matched_intent,
             "action_result": action_result,
+            "action_id":     exec_result.get("action_id", ""),
+            "undo_available": exec_result.get("undo_available", False),
         }
 
     return {
         "status":        "ok",
         "domain":        domain,
         "response":      response_text,
+        "reply":         response_text,
         "agent":         result.get("agent", ""),
         "tab":           matched_tab,
         "intent":        matched_intent,
         "action_result": action_result,
+        "action_id":     exec_result.get("action_id", ""),
+        "undo_available": exec_result.get("undo_available", False),
         "data":          result.get("data", {}),
     }
 
@@ -2468,6 +2443,28 @@ class _EventUpdate(BaseModel):
     linked_task_id:    str | None = None
     reminder_minutes:  int | None = None
 
+@app.get("/api/calendar/status")
+def cal_status(current_user: dict = Depends(get_optional_user)):
+    """Return calendar connection status. Always returns connected since local calendar is always available."""
+    uid = current_user["user_id"]
+    try:
+        events = _cal(uid).list_events(range_name="day")
+        return {
+            "status":   "connected",
+            "provider": "local",
+            "source":   "local",
+            "message":  "Calendar connected",
+            "events_today": len(events),
+        }
+    except Exception as e:
+        return {
+            "status":   "disconnected",
+            "provider": None,
+            "source":   None,
+            "message":  f"Calendar error: {e}",
+        }
+
+
 @app.get("/api/calendar/events")
 def cal_list(
     range: str = "",
@@ -2482,9 +2479,18 @@ def cal_list(
             from_date=from_date,
             to_date=to_date,
         )
-        return {"status": "ok", "events": events, "count": len(events)}
+        for ev in events:
+            ev.setdefault("provider", "local")
+            ev.setdefault("source", "local")
+        return {
+            "status":   "connected",
+            "provider": "local",
+            "source":   "local",
+            "events":   events,
+            "count":    len(events),
+        }
     except Exception as e:
-        return {"status": "error", "events": [], "error": str(e)}
+        return {"status": "error", "provider": None, "events": [], "error": str(e)}
 
 @app.post("/api/calendar/events")
 def cal_create(body: _EventCreate, current_user: dict = Depends(get_optional_user)):
@@ -3779,6 +3785,21 @@ _COMMAND_ROUTES = {
         "reunion", "cita", "agenda", "agendar", "programar", "llamada",
         "videollamada", "junta",
     ]),
+    "calendar_query": ("calendar", [
+        "what do i have today", "what is on my calendar", "my schedule",
+        "show calendar", "today events", "upcoming events",
+    ], [
+        "que tengo hoy", "que hay hoy", "mi agenda", "mi calendario",
+        "eventos de hoy", "que tengo mañana", "que hay mañana",
+        "ver calendario", "muestra calendario",
+    ]),
+    "calendar_delete": ("calendar", [
+        "delete event", "remove event", "cancel event",
+    ], [
+        "borra el evento", "borra ese evento", "elimina el evento",
+        "elimina esa reunion", "cancela la reunion", "borra la reunion",
+        "borra esa cita",
+    ]),
     "email": ("outlook", [
         "email", "inbox", "check mail", "unread", "messages",
     ], [
@@ -3850,23 +3871,68 @@ _COMMAND_ROUTES = {
     ]),
 }
 
+# ══════════════════════════════════════════════════════════════════════
+# CENTRAL BRAIN — Context Memory + Shared Executor + Command History
+# ══════════════════════════════════════════════════════════════════════
 
-@app.post("/api/command/route")
-def command_route(body: _CommandRequest,
-                  current_user: dict = Depends(get_optional_user)):
-    """
-    Central command router.
-    Classifies intent, executes backend action when possible, returns human reply.
-    Spanish-first. Voice and chat both call this endpoint.
-    """
-    raw  = body.command
-    cmd  = _normalize_cmd(raw)
-    uid  = current_user["user_id"]
+_user_ctx:        dict = {}   # uid → {last_task, last_reminder, ...}
+_cmd_history:     dict = {}   # uid → [{id, command, intent, ...}]
+_pending_actions: dict = {}   # token → {uid, intent, payload, preview}
+_undo_registry:   dict = {}   # action_id → callable
 
+_FOLLOWUP_WORDS = [
+    "cambialo", "cambia", "editalo", "edita", "borralo", "borra",
+    "eliminalo", "elimina", "modifica", "ponle", "agregale",
+    "change it", "edit it", "delete it", "update it",
+]
+
+def _get_ctx(uid: str) -> dict:
+    if uid not in _user_ctx:
+        _user_ctx[uid] = {}
+    return _user_ctx[uid]
+
+def _update_ctx(uid: str, module: str, entity: dict) -> None:
+    ctx = _get_ctx(uid)
+    ctx[f"last_{module}"] = entity
+    ctx["last_module"]    = module
+
+def _log_cmd(uid: str, command: str, intent: str, action_type: str,
+             status: str, result: Optional[dict] = None,
+             error: Optional[str] = None) -> str:
+    cmd_id = _uuid_mod.uuid4().hex[:12]
+    if uid not in _cmd_history:
+        _cmd_history[uid] = []
+    _cmd_history[uid].insert(0, {
+        "id":          cmd_id,
+        "command":     command,
+        "intent":      intent,
+        "action_type": action_type,
+        "status":      status,
+        "timestamp":   datetime.utcnow().isoformat(),
+        "result":      result,
+        "error":       error,
+    })
+    _cmd_history[uid] = _cmd_history[uid][:50]
+    return cmd_id
+
+def _register_undo(action_id: str, fn) -> None:
+    _undo_registry[action_id] = fn
+
+
+def _execute_command_action(raw: str, uid: str) -> dict:
+    """
+    Shared command executor used by command_route, voice_command, and /chat.
+    Normalises → detects intent → handles follow-ups → executes → logs history.
+    Returns enriched dict with action_id, preview, undo_available, reply.
+    """
+    import re as _re_cmd
+    from datetime import timedelta as _td_cmd
+    cmd = _normalize_cmd(raw)
+
+    # ── Intent detection ─────────────────────────────────────────────
     matched_tab    = "chat"
     matched_intent = "general"
     confidence     = 0.5
-
     for intent, (tab, en_kws, es_kws) in _COMMAND_ROUTES.items():
         for kw in en_kws + es_kws:
             if kw in cmd:
@@ -3877,82 +3943,380 @@ def command_route(body: _CommandRequest,
         if confidence > 0.5:
             break
 
-    # ── Execute action based on classified intent ─────────────────────
-    action_result: Optional[dict] = None
+    # ── Follow-up check ──────────────────────────────────────────────
+    ctx = _get_ctx(uid)
+    is_followup = any(w in cmd for w in _FOLLOWUP_WORDS)
 
+    action_result:  Optional[dict] = None
+    action_id      = ""
+    preview        = ""
+    undo_available = False
+    reply          = ""
+
+    # ── Execute action ────────────────────────────────────────────────
     if matched_intent == "shopping_list":
         try:
-            parsed = _parse_life_text(raw)
+            parsed    = _parse_life_text(raw)
             item_name = parsed.get("title") or raw
-            # Strip command words to get the item name
-            for prefix in ["agrega ", "agregar ", "pon ", "añade ", "add "]:
-                if item_name.lower().startswith(prefix):
-                    item_name = item_name[len(prefix):]
-            # Remove trailing "a la lista" / "al mercado" etc.
-            import re as _re
-            item_name = _re.sub(r"\s+(a la lista.*|al mercado.*|a la compra.*)$", "",
-                                item_name, flags=_re.IGNORECASE).strip()
-            item_name = item_name or raw
-            created = _life(uid).add_shopping(name=item_name)
-            action_result = {"module": "shopping", "item": created}
+            item_name = _re_cmd.sub(
+                r"\s+(a la lista.*|al mercado.*|a la compra.*)$",
+                "", item_name, flags=_re_cmd.IGNORECASE
+            ).strip() or raw
+            # Strip shopping command prefixes
+            for _pfx in ["agrega ", "agregar ", "pon ", "add ", "buy ", "comprar ",
+                         "necesito ", "falta ", "ponle ", "quiero "]:
+                if item_name.lower().startswith(_pfx):
+                    item_name = item_name[len(_pfx):].strip(); break
+            created   = _life(uid).add_shopping(name=item_name)
+            action_id = _uuid_mod.uuid4().hex[:10]
+            preview   = f"Agregar '{item_name}' a la lista del mercado"
+            item_id   = (created or {}).get("id", "")
+            _register_undo(action_id, lambda _id=item_id: _life(uid).delete_shopping(_id))
+            action_result  = {"module": "shopping", "item": created}
+            undo_available = True
+            _update_ctx(uid, "shopping", created or {})
+            reply = f"Listo, '{item_name}' agregado a la lista. Deshacer disponible."
         except Exception as _e:
             action_result = {"module": "shopping", "error": str(_e)}
+            reply = f"No pude agregar a la lista: {_e}"
 
     elif matched_intent == "reminder":
         try:
             parsed = _parse_life_text(raw)
             title  = parsed.get("title") or raw
+            # Strip reminder command words
+            for _pfx in ["recuerdame ", "recordatorio: ", "recuerda que ", "remind me ",
+                         "set reminder ", "avisame ", "no olvides ", "recuerdame que "]:
+                if title.lower().startswith(_pfx):
+                    title = title[len(_pfx):].strip(); break
             due    = parsed.get("due") or ""
             if not due:
-                from datetime import datetime as _dt2, timedelta as _td2
-                due = (_dt2.utcnow() + _td2(hours=1)).isoformat()
-            created = _life(uid).add_reminder(title, due)
-            action_result = {"module": "reminder", "item": created}
+                due = (datetime.utcnow() + _td_cmd(hours=1)).isoformat()
+            created   = _life(uid).add_reminder(title, due)
+            action_id = _uuid_mod.uuid4().hex[:10]
+            preview   = f"Crear recordatorio: '{title}'"
+            item_id   = (created or {}).get("id", "")
+            _register_undo(action_id, lambda _id=item_id: _life(uid).delete_reminder(_id))
+            action_result  = {"module": "reminder", "item": created}
+            undo_available = True
+            _update_ctx(uid, "reminder", created or {})
+            reply = f"Recordatorio creado: '{title}'. Listo."
         except Exception as _e:
             action_result = {"module": "reminder", "error": str(_e)}
+            reply = f"No pude crear el recordatorio: {_e}"
 
     elif matched_intent == "task":
         try:
-            from core.dashboard_workspace_engine import DashboardWorkspaceEngine as _DWE
-            ws  = _DWE()
             parsed = _parse_life_text(raw)
-            title = parsed.get("title") or raw
-            t = ws.add_task(title, priority="medium", day="today", category="general")
-            action_result = {"module": "task", "item": t}
+            title  = parsed.get("title") or raw
+            # Strip command words from title
+            for _pfx in ["crea una tarea ", "crear tarea ", "nueva tarea ", "add task ",
+                         "create task ", "tarea: ", "new task ", "debo hacer ",
+                         "tengo que ", "hay que ", "apuntar ", "anotar "]:
+                if title.lower().startswith(_pfx):
+                    title = title[len(_pfx):].strip(); break
+            t      = _ws(uid).add_task(title, priority="medium", day="today", category="general")
+            action_id = _uuid_mod.uuid4().hex[:10]
+            preview   = f"Crear tarea: '{title}'"
+            task_id   = (t or {}).get("id", "")
+            _register_undo(action_id, lambda _id=task_id: _ws(uid).delete_task(_id))
+            action_result  = {"module": "task", "item": t}
+            undo_available = True
+            _update_ctx(uid, "task", t or {})
+            reply = f"Tarea creada: '{title}'. Esta en tu lista de hoy."
         except Exception as _e:
             action_result = {"module": "task", "error": str(_e)}
+            reply = f"No pude crear la tarea: {_e}"
 
-    # ── Get AI reply (with action context) ───────────────────────────
-    reply = ""
-    try:
-        ctx = {"user_id": uid, "action_executed": action_result}
-        result = ai_orchestrator.route(raw, ctx)
-        reply = result.get("reply") or result.get("response") or result.get("answer") or ""
-    except Exception:
-        pass
+    elif matched_intent == "meeting":
+        try:
+            parsed  = _parse_life_text(raw)
+            title   = parsed.get("title") or raw
+            for _pfx in ["agenda una reunion ", "agenda reunion ", "agendar reunion ",
+                         "programa reunion ", "crea reunion ", "nueva reunion ",
+                         "schedule meeting ", "add meeting ", "meeting: ",
+                         "reunion con ", "reunion sobre "]:
+                if title.lower().startswith(_pfx):
+                    title = title[len(_pfx):].strip(); break
+            dt_val  = parsed.get("due") or (datetime.utcnow() + _td_cmd(hours=1)).isoformat()
+            created = _me(uid).add_meeting_datetime(title=title, datetime_value=dt_val)
+            action_id     = _uuid_mod.uuid4().hex[:10]
+            preview       = f"Agendar: '{title}'"
+            action_result = {"module": "meeting", "item": created}
+            _update_ctx(uid, "meeting", created or {})
+            reply = f"Reunion agendada: '{title}'."
+        except Exception as _e:
+            action_result = {"module": "meeting", "error": str(_e)}
+            reply = f"No pude agendar la reunion: {_e}"
 
-    # ── Build human confirmation when we executed an action ──────────
-    if action_result and not action_result.get("error") and not reply:
-        mod = action_result.get("module", "")
-        if mod == "shopping":
-            item_name = (action_result.get("item") or {}).get("name", "elemento")
-            reply = f"Listo, agregué '{item_name}' a la lista del mercado. ✓"
-        elif mod == "reminder":
-            title = (action_result.get("item") or {}).get("title", "recordatorio")
-            reply = f"Recordatorio creado: '{title}'. ✓"
-        elif mod == "task":
-            title = (action_result.get("item") or {}).get("text", "tarea")
-            reply = f"Tarea creada: '{title}'. ✓"
+    elif matched_intent == "calendar_query":
+        try:
+            events = _cal(uid).list_events(range_name="day")
+            count  = len(events)
+            if count == 0:
+                reply = "No tienes eventos hoy en tu calendario."
+            elif count == 1:
+                ev = events[0]
+                reply = f"Tienes 1 evento hoy: '{ev.get('title','?')}' a las {ev.get('start','?')[:16]}."
+            else:
+                titles = ", ".join(f"'{e.get('title','?')}'" for e in events[:3])
+                more   = f" y {count-3} más" if count > 3 else ""
+                reply  = f"Tienes {count} eventos hoy: {titles}{more}. Ver en Calendario."
+            action_result = {"module": "calendar", "action": "query", "count": count}
+        except Exception as _e:
+            reply = f"No pude consultar el calendario: {_e}"
+            action_result = {"module": "calendar", "error": str(_e)}
+
+    elif matched_intent == "calendar_delete":
+        ctx_meeting = ctx.get("last_meeting", {})
+        last_title  = ctx_meeting.get("title", "")
+        reply = (
+            f"Para borrar '{last_title}', ve a Calendario, selecciona el evento y presiona Delete."
+            if last_title else
+            "Ve a Calendario, selecciona el evento que deseas borrar y presiona Delete. Pedirá confirmación."
+        )
+        action_result = {"module": "calendar", "action": "delete_prompt"}
+
+    elif matched_intent == "email":
+        cmd_l = cmd.lower()
+        if any(w in cmd_l for w in ["muestra", "ver", "show", "inbox", "bandeja", "revisa", "lee"]):
+            action_result = {"module": "email", "action": "show_inbox"}
+            reply = "Abriendo tu bandeja de entrada de Outlook."
+        elif any(w in cmd_l for w in ["ignora", "ignore"]):
+            ctx_email = ctx.get("last_email", {})
+            mid = ctx_email.get("message_id", "")
+            reply = f"Para ignorar un correo específico, selecciónalo en la bandeja de Outlook."
+            action_result = {"module": "email", "action": "ignore_prompt", "last_email_id": mid}
+        elif any(w in cmd_l for w in ["responde", "responder", "reply", "contesta"]):
+            ctx_email = ctx.get("last_email", {})
+            mid = ctx_email.get("message_id", "")
+            reply = "Para responder, selecciona el correo en la bandeja y usa el botón 'AI Reply'."
+            action_result = {"module": "email", "action": "reply_prompt", "last_email_id": mid}
+        else:
+            action_result = {"module": "email", "action": "show_inbox"}
+            reply = "Abriendo Outlook — tus correos más recientes."
+
+    elif matched_intent in ("market", "analyze"):
+        sym = _extract_symbol(raw)
+        if sym:
+            try:
+                data          = brain.trader(sym)
+                action_result = {"module": "market", "data": data, "symbol": sym}
+                matched_tab   = "markets"
+                _update_ctx(uid, "analysis", {"symbol": sym, **(data or {})})
+                sig = (data or {}).get("signal", (data or {}).get("trend", ""))
+                prc = (data or {}).get("price", "")
+                reply = f"{sym}: {sig} — ${prc}. Ver analisis en Markets."
+            except Exception as _e:
+                action_result = {"module": "market", "error": str(_e)}
+
+    # ── Log ──────────────────────────────────────────────────────────
+    err_msg = (action_result or {}).get("error")
+    status  = "error" if err_msg else ("executed" if action_result else "routed")
+    cmd_id  = _log_cmd(uid, raw, matched_intent,
+                       (action_result or {}).get("module", matched_intent),
+                       status, action_result, err_msg)
+
+    return {
+        "intent":        matched_intent,
+        "tab":           matched_tab,
+        "confidence":    confidence,
+        "action_result": action_result,
+        "action_id":     action_id,
+        "action_type":   (action_result or {}).get("module", matched_intent),
+        "preview":       preview,
+        "status":        status,
+        "undo_available": undo_available,
+        "reply":         reply,
+        "cmd_id":        cmd_id,
+        "command":       raw,
+    }
+
+
+@app.post("/api/command/route")
+def command_route(body: _CommandRequest,
+                  current_user: dict = Depends(get_optional_user)):
+    """
+    Central command router — single source of truth for all action commands.
+    Used by global command bar, voice, and chat.
+    """
+    raw = body.command
+    uid = current_user["user_id"]
+
+    exec_result = _execute_command_action(raw, uid)
+
+    # ── AI reply (enrich with human language if no action reply) ─────
+    reply = exec_result["reply"]
+    if not reply:
+        try:
+            ctx    = {"user_id": uid, "action_executed": exec_result["action_result"]}
+            ai_res = ai_orchestrator.route(raw, ctx)
+            reply  = ai_res.get("reply") or ai_res.get("response") or ai_res.get("answer") or ""
+        except Exception:
+            pass
+    if not reply:
+        reply = f"Entendido — abriendo {exec_result['tab']}…"
 
     return {
         "status":        "ok",
-        "tab":           matched_tab,
-        "intent":        matched_intent,
-        "confidence":    confidence,
-        "reply":         reply or f"Entendido — abriendo {matched_tab}…",
+        "tab":           exec_result["tab"],
+        "intent":        exec_result["intent"],
+        "confidence":    exec_result["confidence"],
+        "reply":         reply,
         "command":       raw,
-        "action_result": action_result,
+        "action_result": exec_result["action_result"],
+        "action_id":     exec_result["action_id"],
+        "action_type":   exec_result["action_type"],
+        "preview":       exec_result["preview"],
+        "undo_available": exec_result["undo_available"],
+        "cmd_id":        exec_result["cmd_id"],
     }
+
+
+# ── Command history ───────────────────────────────────────────────────
+@app.get("/api/command/history")
+def command_history(limit: int = 20,
+                    current_user: dict = Depends(get_optional_user)):
+    uid = current_user["user_id"]
+    items = (_cmd_history.get(uid) or [])[:limit]
+    return {"status": "ok", "items": items, "count": len(items)}
+
+
+# ── Undo last action ──────────────────────────────────────────────────
+@app.post("/api/command/undo/{action_id}")
+def command_undo(action_id: str,
+                 current_user: dict = Depends(get_optional_user)):
+    fn = _undo_registry.pop(action_id, None)
+    if fn is None:
+        return JSONResponse({"status": "error", "error": "Action not found or already undone"},
+                            status_code=404)
+    try:
+        fn()
+        return {"status": "ok", "message": "Accion deshecha correctamente."}
+    except Exception as exc:
+        return JSONResponse({"status": "error", "error": str(exc)}, status_code=500)
+
+
+# ── Commander Brief (Daily Executive Summary) ─────────────────────────
+@app.get("/api/commander/brief")
+async def commander_brief(current_user: dict = Depends(get_optional_user)):
+    """Aggregate daily executive brief from all modules."""
+    uid   = current_user["user_id"]
+    today = datetime.now().strftime("%A %d %B %Y")
+
+    tasks_open: list = []
+    reminders:  list = []
+    events:     list = []
+    payments:   list = []
+    news_items: list = []
+    market_sig: dict = {}
+
+    try:
+        home       = _ws(uid).home(_user_name(uid))
+        all_tasks  = home.get("tasks", [])
+        tasks_open = [t for t in all_tasks if not t.get("done")][:4]
+    except Exception:
+        pass
+
+    try:
+        life_data  = _life(uid).get_reminders(only_pending=True)
+        reminders  = (life_data or [])[:3]
+    except Exception:
+        pass
+
+    try:
+        pay_data = _life(uid).get_payments(only_pending=True)
+        payments = (pay_data or [])[:3]
+    except Exception:
+        pass
+
+    try:
+        cal_data = CalendarEngine(uid).events_for_today()
+        events   = (cal_data or [])[:4]
+    except Exception:
+        pass
+
+    try:
+        raw_news   = news_engine.fetch_categorized(max_per_category=2)
+        news_items = (raw_news or [])[:5] if isinstance(raw_news, list) else []
+    except Exception:
+        pass
+
+    try:
+        ctx_analysis = _get_ctx(uid).get("last_analysis", {})
+        if ctx_analysis.get("symbol"):
+            market_sig = {
+                "symbol": ctx_analysis.get("symbol"),
+                "signal": ctx_analysis.get("signal"),
+                "price":  ctx_analysis.get("price"),
+            }
+    except Exception:
+        pass
+
+    priority_msg = ""
+    if tasks_open:
+        priority_msg = tasks_open[0].get("text", "")
+    elif reminders:
+        priority_msg = f"Recordatorio: {(reminders[0] or {}).get('title', '')}"
+
+    return {
+        "status": "ok",
+        "date":   today,
+        "summary": {
+            "tasks_open":      len(tasks_open),
+            "top_tasks":       tasks_open,
+            "reminders":       reminders,
+            "payments":        payments,
+            "events":          events,
+            "news":            news_items,
+            "market_signal":   market_sig,
+            "priority_message": priority_msg,
+        },
+    }
+
+
+# ── Global Command Search ─────────────────────────────────────────────
+@app.get("/api/command/search")
+def command_search(q: str = "",
+                   current_user: dict = Depends(get_optional_user)):
+    """Search across tasks, reminders, shopping, news. q = query string."""
+    uid = current_user["user_id"]
+    if not q.strip():
+        return {"status": "ok", "results": [], "query": q}
+
+    ql = q.lower()
+    results: list = []
+
+    try:
+        home   = _ws(uid).home(_user_name(uid))
+        tasks  = [t for t in home.get("tasks", []) if ql in (t.get("text") or "").lower()]
+        results += [{"type": "task", "label": t.get("text"), "id": t.get("id")} for t in tasks[:3]]
+    except Exception:
+        pass
+
+    try:
+        rems = _life(uid).get_reminders()
+        results += [{"type": "reminder", "label": r.get("title"), "id": r.get("id")}
+                    for r in (rems or []) if ql in (r.get("title") or "").lower()][:3]
+    except Exception:
+        pass
+
+    try:
+        shop = _life(uid).get_shopping()
+        results += [{"type": "shopping", "label": s.get("name"), "id": s.get("id")}
+                    for s in (shop or []) if ql in (s.get("name") or "").lower()][:3]
+    except Exception:
+        pass
+
+    try:
+        raw_news   = news_engine.fetch_categorized(max_per_category=6)
+        news_items = raw_news if isinstance(raw_news, list) else []
+        results   += [{"type": "news", "label": n.get("title"), "url": n.get("url")}
+                      for n in news_items if ql in (n.get("title") or "").lower()][:3]
+    except Exception:
+        pass
+
+    return {"status": "ok", "results": results[:12], "query": q}
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -4911,14 +5275,37 @@ async def outlook_inbox(
     limit: int = 20,
     status: str = "",
     priority: str = "",
+    days: int = 7,
     current_user: dict = Depends(get_optional_user),
 ):
     _outlook_guard()
-    items = _ms_email_store.list(
+    uid = current_user["user_id"]
+    if not _ms_token_store.is_authenticated(uid):
+        return {
+            "status":  "disconnected",
+            "message": "Outlook not connected. Visit /api/outlook/auth-url to authenticate.",
+            "items":   [],
+            "count":   0,
+            "pending": 0,
+        }
+    from datetime import timedelta
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    raw_items = _ms_email_store.list(
         status   = status   or None,
-        limit    = limit,
+        limit    = limit * 3,  # over-fetch before date filter
         priority = priority or None,
     )
+    items = []
+    for em in raw_items:
+        received = em.get("received_at") or em.get("created_at", "")
+        if received < cutoff:
+            continue
+        em.setdefault("is_read",        em.get("read", False))
+        em.setdefault("has_attachments", bool(em.get("attachments")))
+        em.setdefault("action_status",  em.get("status", "pending_approval"))
+        items.append(em)
+        if len(items) >= limit:
+            break
     return {
         "status":  "ok",
         "items":   items,
@@ -4935,6 +5322,40 @@ async def outlook_get_email(message_id: str, current_user: dict = Depends(get_op
     if not rec:
         raise HTTPException(404, "Email not found")
     return {"status": "ok", "email": rec}
+
+
+@app.post("/api/outlook/email/{message_id}/generate-reply")
+async def outlook_generate_reply(message_id: str, current_user: dict = Depends(get_optional_user)):
+    """Generate an AI draft reply for a given email. Never sends — preview only."""
+    _outlook_guard()
+    rec = _ms_email_store.get(message_id)
+    if not rec:
+        raise HTTPException(404, "Email not found")
+    subject = rec.get("subject", "")
+    body    = rec.get("body") or rec.get("summary") or ""
+    sender  = rec.get("sender_name") or rec.get("sender_email", "")
+    existing_draft = rec.get("reply_draft", "")
+    if existing_draft:
+        return {"status": "ok", "draft": existing_draft, "source": "existing_draft"}
+    prompt = (
+        f"You are a professional assistant drafting a reply to an email.\n"
+        f"From: {sender}\nSubject: {subject}\n\nEmail body:\n{body}\n\n"
+        f"Write a concise, professional reply in the same language as the email. "
+        f"Max 3 paragraphs. Do not start with 'Dear' if the email is casual."
+    )
+    draft = ""
+    try:
+        ai_res = ai_orchestrator.route(prompt, user_id=current_user["user_id"])
+        draft = (
+            ai_res.get("reply") or ai_res.get("response") or
+            ai_res.get("answer") or ai_res.get("text") or ""
+        )
+    except Exception:
+        pass
+    if not draft:
+        draft = f"Hi {sender},\n\nThank you for your email regarding '{subject}'. I will get back to you shortly.\n\nBest regards"
+    _ms_email_store.update(message_id, reply_draft=draft)
+    return {"status": "ok", "draft": draft, "source": "ai_generated"}
 
 
 class _FetchEmailReq(BaseModel):
@@ -5145,13 +5566,22 @@ def markets_recommended():
         normalised = []
         for item in items[:12]:
             normalised.append({
-                "symbol":      item.get("symbol") or item.get("ticker") or "",
-                "name":        item.get("name", ""),
-                "signal":      item.get("signal") or item.get("action") or "hold",
-                "price":       item.get("price"),
-                "setup_score": item.get("setup_score") or item.get("score"),
-                "risk":        item.get("risk") or item.get("risk_level") or "medium",
-                "reason":      item.get("reason") or item.get("rationale") or "",
+                "symbol":                  item.get("symbol") or item.get("ticker") or "",
+                "name":                    item.get("name", ""),
+                "signal":                  (item.get("signal")
+                                            or item.get("trade_plan", {}).get("action")
+                                            or "Watch"),
+                "price":                   item.get("price"),
+                "setup_score":             item.get("setup_score") or item.get("score"),
+                "traffic_light":           item.get("traffic_light", "yellow"),
+                "risk":                    item.get("risk") or item.get("risk_level") or "medium",
+                "reason":                  item.get("reason") or item.get("rationale") or "",
+                "friendly_recommendation": (item.get("friendly_recommendation")
+                                            or item.get("reason") or ""),
+                "analysis":                (item.get("analysis")
+                                            or item.get("friendly_recommendation") or ""),
+                "thesis_short":            item.get("thesis_short", ""),
+                "catalyst":                item.get("catalyst", ""),
             })
         return {"status": "ok", "items": normalised, "count": len(normalised)}
     except Exception as exc:

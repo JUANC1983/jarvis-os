@@ -12,6 +12,8 @@ export interface Config {
   cursorApiKey: string | null;
   cursorAvailable: boolean;
   dryRun: boolean;
+  localUrl: string;
+  realityMode: boolean;
 }
 
 function resolveMode(raw: string | undefined): AgentMode {
@@ -30,14 +32,19 @@ export function loadConfig(): Config {
     process.exit(1);
   }
 
+  const localUrl    = (process.env.JARVIS_LOCAL_URL || "http://localhost:8000").replace(/\/+$/, "");
+  const realityMode = (process.env.JARVIS_REALITY_MODE || "false").toLowerCase() === "true";
+
   const config: Config = {
     mode,
     repoPath,
     cursorApiKey,
     cursorAvailable: !!cursorApiKey,
     dryRun: mode === "DRY_RUN",
+    localUrl,
+    realityMode,
   };
 
-  console.log(`[CONFIG] mode=${config.mode} repo=${config.repoPath} cursor=${config.cursorAvailable}`);
+  console.log(`[CONFIG] mode=${config.mode} repo=${config.repoPath} cursor=${config.cursorAvailable} localUrl=${config.localUrl} reality=${config.realityMode}`);
   return config;
 }

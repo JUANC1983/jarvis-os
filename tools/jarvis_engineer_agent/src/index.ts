@@ -22,11 +22,13 @@ import { QARunner } from "./qa_runner";
 import { IssueDetector } from "./issue_detector";
 import { PatchPlanner } from "./patch_planner";
 import { AgentRunner } from "./agent_runner";
+import { RuntimeQA, mergeIssues } from "./runtime_qa";
 import {
   writeScanReport,
   writeQAReport,
   writeIssuesReport,
   writePatchPlan,
+  writeRuntimeQAReport,
   printSummary,
 } from "./reports";
 
@@ -36,6 +38,10 @@ function getMode(): string {
     if (arg.startsWith("--mode=")) return arg.replace("--mode=", "").toLowerCase();
   }
   return "scan";
+}
+
+function getModes(): string[] {
+  return ["scan", "qa", "audit", "plan", "safe-patch", "runtime"];
 }
 
 async function main(): Promise<void> {
@@ -70,13 +76,40 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (mode === "runtime") {
+    const rtQA   = new RuntimeQA(config);
+    const result = await rtQA.run();
+    writeRuntimeQAReport(result);
+    const icon =
+      result.overallStatus === "OFFLINE" ? "⚪" :
+      result.overallStatus === "PASS"    ? "✅" :
+      result.overallStatus === "WARN"    ? "⚠️ " : "❌";
+    console.log(`\n${icon} Runtime QA: ${result.overallStatus}`);
+    if (!result.serverReachable) {
+      console.log(`   Server offline at ${result.baseUrl}`);
+    } else {
+      console.log(`   ${result.passed} clean / ${result.failed} failed / ${result.warnings} warnings`);
+      console.log(`   ${result.runtimeIssues.length} issue(s) found`);
+    }
+    return;
+  }
+
   if (mode === "audit" || mode === "plan" || mode === "safe-patch") {
-    // Full pipeline: scan → qa → detect → plan
+    // Full pipeline: scan → qa → detect → (optional runtime qa) → plan
     const repoMap  = scanner.scan();
     const qaRunner = new QARunner(config, guard);
     const qa       = qaRunner.run();
     const detector = new IssueDetector(config, repoMap);
-    const issues   = detector.detect();
+    let   issues   = detector.detect();
+
+    // Runtime QA: always run, merge results when realityMode is on
+    const rtQA       = new RuntimeQA(config);
+    const runtimeResult = await rtQA.run();
+    writeRuntimeQAReport(runtimeResult);
+    if (runtimeResult.serverReachable) {
+      issues = mergeIssues(issues, runtimeResult.runtimeIssues, config.realityMode);
+    }
+
     const planner  = new PatchPlanner(config, guard);
     const plan     = planner.plan(issues);
     const markdown = planner.formatMarkdown(plan);
@@ -105,12 +138,12 @@ async function main(): Promise<void> {
       }
     }
 
-    printSummary(qa, issues, plan);
+    printSummary(qa, issues, plan, runtimeResult);
     return;
   }
 
   console.error(`Unknown mode: ${mode}`);
-  console.error("Valid modes: scan | qa | audit | plan | safe-patch");
+  console.error("Valid modes: scan | qa | runtime | audit | plan | safe-patch");
   process.exit(1);
 }
 
