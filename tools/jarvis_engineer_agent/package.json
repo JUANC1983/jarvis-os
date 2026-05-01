@@ -1,0 +1,27 @@
+{
+  "name": "jarvis-engineer-agent",
+  "version": "1.0.0",
+  "description": "Safe internal engineering agent for JARVIS — audit, QA, patch planning, self-improvement.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "scan":       "npx ts-node src/index.ts --mode=scan",
+    "qa":         "npx ts-node src/index.ts --mode=qa",
+    "audit":      "npx ts-node src/index.ts --mode=audit",
+    "plan":       "npx ts-node src/index.ts --mode=plan",
+    "safe-patch": "npx ts-node src/index.ts --mode=safe-patch"
+  },
+  "keywords": ["jarvis","engineering","agent","qa","audit"],
+  "author": "JARVIS Engineering",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "glob": "^10.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
