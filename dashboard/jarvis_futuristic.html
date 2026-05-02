@@ -2016,7 +2016,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div class="ch" style="margin-bottom:10px">
       <span class="ct" style="font-size:13px">🎖 Daily Commander Brief</span>
       <span id="commander-brief-date" style="font-size:11px;color:var(--soft)"></span>
-      <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadCommanderBrief()">↻</button>
+      <button class="btn-ol btn-sm" style="margin-left:auto" onclick="briefRefresh(this)">↻</button>
       <button class="btn-ol btn-sm" onclick="sendChat('dame mi briefing')">🎙 Voice</button>
     </div>
     <div id="commander-brief-body" style="min-height:36px">
@@ -2311,21 +2311,21 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <span class="cs">workspace connectors</span>
       </div>
       <div class="col" style="gap:10px">
-        <div class="conn-card">
+        <div class="conn-card" style="cursor:pointer" onclick="switchTab('calendar')">
           <div class="conn-icon">📅</div>
           <div style="flex:1">
-            <div class="conn-name">Outlook Calendar</div>
-            <div class="conn-status">Sync meetings and events automatically</div>
+            <div class="conn-name">Calendar</div>
+            <div class="conn-status">Events, reminders, and meeting scheduler</div>
           </div>
-          <span class="badge b-idle">Coming soon</span>
+          <span class="badge b-ok" id="int-cal-badge">Connected</span>
         </div>
-        <div class="conn-card">
+        <div class="conn-card" style="cursor:pointer" onclick="switchTab('outlook')">
           <div class="conn-icon">📧</div>
           <div style="flex:1">
-            <div class="conn-name">Email</div>
-            <div class="conn-status">AI-powered inbox triage and summaries</div>
+            <div class="conn-name">Outlook Mail</div>
+            <div class="conn-status">AI-powered inbox triage and reply drafts</div>
           </div>
-          <span class="badge b-idle">Coming soon</span>
+          <span class="badge b-warn" id="int-ol-badge">Connect →</span>
         </div>
         <div class="conn-card">
           <div class="conn-icon">💬</div>
@@ -2333,7 +2333,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
             <div class="conn-name">WhatsApp</div>
             <div class="conn-status">Send JARVIS alerts and briefings</div>
           </div>
-          <span class="badge b-idle">Coming soon</span>
+          <span class="badge b-idle">In development</span>
         </div>
         <div class="conn-card">
           <div class="conn-icon">📊</div>
@@ -2341,7 +2341,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
             <div class="conn-name">Google Drive</div>
             <div class="conn-status">File sync and document analysis</div>
           </div>
-          <span class="badge b-idle">Coming soon</span>
+          <span class="badge b-idle">In development</span>
         </div>
       </div>
     </div>
@@ -3083,7 +3083,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div id="ol-pending-badge" class="ol-pending-badge" style="display:none">0 pending approval</div>
     <div style="margin-left:auto;display:flex;gap:8px">
       <button class="btn-ol btn-sm" onclick="outlookConnect()" id="ol-connect-btn">🔗 Connect Outlook</button>
-      <button class="btn-ol btn-sm" onclick="loadOutlookInbox()" id="ol-refresh-btn">↻ Refresh</button>
+      <button class="btn-ol btn-sm" onclick="olRefreshInbox(this)" id="ol-refresh-btn">↻ Refresh</button>
       <button class="btn-sm" onclick="outlookSubscribe()" id="ol-sub-btn" style="font-size:11px;padding:4px 10px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);border-radius:6px">🔔 Subscribe</button>
     </div>
   </div>
@@ -3793,19 +3793,27 @@ const AGENT_META = {
 };
 
 /* ── Tab switching ──────────────────── */
+let _tabSwitchTimer = null;
 function switchTab(name) {
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".tab-btn,.mob-btn").forEach(b => b.classList.remove("active"));
   const panel = qs("tab-" + name);
   if (panel) panel.classList.add("active");
   document.querySelectorAll(`[data-tab="${name}"]`).forEach(b => b.classList.add("active"));
-  // Lazy-load tab-specific data
-  if (name === "automations") loadAutomationsUpgraded();
-  if (name === "life")   loadAllLife();
-  if (name === "outlook") _onOutlookTabActivated();
-  if (name === "memory")  gmInit();
-  if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
-  if (name === "golf") { _loadSwingDrills(); }
+  // Debounce lazy-loads to prevent race conditions on rapid tab switching
+  clearTimeout(_tabSwitchTimer);
+  _tabSwitchTimer = setTimeout(() => {
+    if (name === "automations")  loadAutomationsUpgraded();
+    if (name === "life")         loadAllLife();
+    if (name === "outlook")      _onOutlookTabActivated();
+    if (name === "memory")       gmInit();
+    if (name === "calendar")     loadCalendarEvents(_cal.range || "day");
+    if (name === "projects")     loadProjects();
+    if (name === "home" || name === "productivity") loadHome();
+    if (name === "intelligence") { try { loadNews(); loadAgents(); } catch(_) {} }
+    if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
+    if (name === "golf") { _loadSwingDrills(); }
+  }, 120);
 }
 document.querySelectorAll(".tab-btn,.mob-btn").forEach(b =>
   b.addEventListener("click", () => switchTab(b.dataset.tab)));
@@ -3848,9 +3856,10 @@ async function loadHome() {
     if (d.strategic_insight  && qs("eb-intel"))  qs("eb-intel").textContent  = d.strategic_insight;
   } catch(e) {
     console.warn("loadHome:", e);
+    if (qs("greeting")    && qs("greeting").textContent    === "Loading…") qs("greeting").textContent    = "JARVIS";
     if (qs("topPriority") && qs("topPriority").textContent === "Loading…") qs("topPriority").textContent = "Sin datos";
-    if (qs("nextMeeting") && qs("nextMeeting").textContent === "Loading…")  qs("nextMeeting").textContent  = "Calendario no conectado";
-    if (qs("ov-pipe-lbl") && qs("ov-pipe-lbl").textContent === "Loading…")  qs("ov-pipe-lbl").textContent  = "No disponible";
+    if (qs("nextMeeting") && qs("nextMeeting").textContent === "Loading…")  qs("nextMeeting").textContent = "Sin reuniones";
+    if (qs("ov-pipe-lbl") && qs("ov-pipe-lbl").textContent === "Loading…")  qs("ov-pipe-lbl").textContent = "No disponible";
   }
 }
 
@@ -3884,6 +3893,7 @@ function renderTasks(items) {
       catch(e) { showToast("Could not toggle task", "error"); }
     };
     btns[1].onclick = async () => {
+      if (!confirm(`Delete task "${item.title}"?`)) return;
       try { await fetch("/dashboard/tasks/" + item.id, {method:"DELETE"}); await loadHome(); showToast("Task deleted", "info"); }
       catch(e) { showToast("Could not delete task", "error"); }
     };
@@ -6453,6 +6463,7 @@ async function saveTask() {
 
 async function deleteTask(taskId) {
   if (!_proj.currentId) return;
+  if (!confirm("Delete this task?")) return;
   try {
     await fetch("/api/projects/" + _proj.currentId + "/task/" + taskId, {method:"DELETE"});
     await loadBoardTasks(_proj.currentId);
@@ -7067,14 +7078,19 @@ async function saveEvent() {
   };
 
   try {
+    let resp;
     if (id) {
-      await fetch(`/api/calendar/events/${id}`, {
+      resp = await fetch(`/api/calendar/events/${id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-      });
+      }).then(r => r.json());
     } else {
-      await fetch("/api/calendar/events", {
+      resp = await fetch("/api/calendar/events", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-      });
+      }).then(r => r.json());
+    }
+    if (resp.status === "error" || resp.detail) {
+      showToast("Save failed: " + (resp.error || resp.detail || "unknown"), "error");
+      return;
     }
     closeModal("eventModal");
     loadCalendarEvents(_cal.range);
@@ -7085,11 +7101,15 @@ async function saveEvent() {
 }
 
 async function deleteCalEvent(id) {
-  if (!confirm("Delete this event?")) return;
+  if (!confirm("Delete this event? This cannot be undone.")) return;
   try {
-    await fetch(`/api/calendar/events/${id}`, { method: "DELETE" });
-    loadCalendarEvents(_cal.range);
-    showToast("Event deleted", "info");
+    const resp = await fetch(`/api/calendar/events/${id}`, { method: "DELETE" }).then(r => r.json());
+    if (resp.status === "ok") {
+      loadCalendarEvents(_cal.range);
+      showToast("Event deleted", "info");
+    } else {
+      showToast("Delete failed: " + (resp.error || resp.detail || "unknown"), "error");
+    }
   } catch(e) {
     showToast("Could not delete event", "error");
   }
@@ -7227,12 +7247,21 @@ async function loadCommandHistory() {
 function refreshCommandHistory() { loadCommandHistory(); }
 
 /* ── Commander Brief ─────────────────── */
+async function briefRefresh(btn) {
+  if (btn) { btn.textContent = "⏳"; btn.disabled = true; }
+  try { await loadCommanderBrief(); }
+  finally { if (btn) { btn.textContent = "↻"; btn.disabled = false; } }
+}
+
 async function loadCommanderBrief() {
   const el = document.getElementById("commander-brief-body");
   if (!el) return;
   try {
     const d = await fetch("/api/commander/brief").then(r=>r.json());
-    if (d.status !== "ok") return;
+    if (d.status !== "ok") {
+      el.innerHTML = '<div style="font-size:12px;color:var(--soft)">Brief no disponible — verifica conexión.</div>';
+      return;
+    }
     const s = d.summary || {};
     const lines = [];
     if (s.priority_message) lines.push(`<div style="font-size:14px;font-weight:700;color:var(--cyan);margin-bottom:8px">${_esc(s.priority_message)}</div>`);
@@ -7245,7 +7274,10 @@ async function loadCommanderBrief() {
     el.innerHTML = lines.join("");
     const dateEl = document.getElementById("commander-brief-date");
     if (dateEl) dateEl.textContent = d.date || "";
-  } catch(e) { console.warn("loadCommanderBrief:", e); }
+  } catch(e) {
+    console.warn("loadCommanderBrief:", e);
+    if (el) el.innerHTML = '<div style="font-size:12px;color:var(--soft)">Brief no disponible — verifica conexión.</div>';
+  }
 }
 
 /* ── Voice briefing trigger ──────────── */
@@ -7279,6 +7311,13 @@ async function boot() {
   loadCommanderBrief();
   loadCommandHistory();
   setInterval(loadCommandHistory, 60000);
+  // Auto-switch to Outlook tab after OAuth callback
+  const _urlParams = new URLSearchParams(window.location.search);
+  if (_urlParams.get("outlook") === "connected") {
+    switchTab("outlook");
+    showToast("Outlook connected successfully!", "success");
+    history.replaceState(null, "", window.location.pathname);
+  }
 }
 boot();
 
@@ -8197,8 +8236,12 @@ async function lifeRemDone(id) {
 }
 
 async function lifeRemDel(id) {
-  await fetch(`/api/life/reminder/${id}`, { method: "DELETE" });
-  loadLifeReminders();
+  if (!confirm("¿Eliminar este recordatorio?")) return;
+  try {
+    await fetch(`/api/life/reminder/${id}`, { method: "DELETE" });
+    showToast("Recordatorio eliminado", "info");
+    loadLifeReminders();
+  } catch(e) { showToast("Error al eliminar", "error"); }
 }
 
 // ── Shopping ─────────────────────────────────────────────────────────
@@ -8255,8 +8298,12 @@ async function lifeShopToggle(id, el) {
 }
 
 async function lifeShopDel(id) {
-  await fetch(`/api/life/shopping/${id}`, { method: "DELETE" });
-  loadLifeShopping();
+  if (!confirm("¿Eliminar este artículo?")) return;
+  try {
+    await fetch(`/api/life/shopping/${id}`, { method: "DELETE" });
+    showToast("Artículo eliminado", "info");
+    loadLifeShopping();
+  } catch(e) { showToast("Error al eliminar", "error"); }
 }
 
 async function lifeShopClearChecked() {
@@ -8315,8 +8362,12 @@ async function lifeCallDone(id) {
 }
 
 async function lifeCallDel(id) {
-  await fetch(`/api/life/call/${id}`, { method: "DELETE" });
-  loadLifeCalls();
+  if (!confirm("¿Eliminar esta llamada pendiente?")) return;
+  try {
+    await fetch(`/api/life/call/${id}`, { method: "DELETE" });
+    showToast("Llamada eliminada", "info");
+    loadLifeCalls();
+  } catch(e) { showToast("Error al eliminar", "error"); }
 }
 
 // ── Payments ──────────────────────────────────────────────────────────
@@ -8417,6 +8468,12 @@ function _olStartPolling() {
       try {
         const p = await fetch("/api/outlook/poll", { method: "POST" });
         const pd = await p.json();
+        if (pd.status === "expired" || pd.requires_reauth) {
+          // Token expired — stop polling, update UI
+          console.warn("[Outlook poll] Token expired — stopping poll");
+          await loadOutlookStatus();
+          return;
+        }
         if (pd.new > 0) {
           console.log("[Outlook poll] New emails:", pd.new);
           await loadOutlookInbox();
@@ -8428,6 +8485,12 @@ function _olStartPolling() {
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
+
+async function olRefreshInbox(btn) {
+  if (btn) { btn.textContent = "⏳"; btn.disabled = true; }
+  try { await loadOutlookInbox(); await loadOutlookStatus(); }
+  finally { if (btn) { btn.textContent = "↻ Refresh"; btn.disabled = false; } }
+}
 
 async function loadOutlookStatus() {
   const authEl    = qs("ol-auth-status");
@@ -8455,13 +8518,24 @@ async function loadOutlookStatus() {
       return;
     }
 
-    // Configured but not connected
+    // Derive connection state from new status field + legacy fields
+    const isConnected   = d.status === "connected_polling" || (d.connected || d.authenticated);
+    const isExpired     = d.status === "expired" || d.token_rejected;
+    const isDisconnected = d.status === "disconnected" || (!isConnected && !isExpired);
+    const graphVerified = d.graph_verified === true;
+
     if (authEl) {
-      if (d.connected || d.authenticated) {
-        authEl.textContent = "✓ Connected" + (d.subscription ? " · Live" : " · No webhook");
-        authEl.className   = "ol-auth-chip " + (d.subscription ? "ol-chip-ok" : "ol-chip-warn");
+      if (isExpired) {
+        authEl.textContent = "⚠ Session expired — reconnect";
+        authEl.className   = "ol-auth-chip ol-chip-warn";
+        if (connectBtn) connectBtn.style.display = "";
+        if (subBtn)     subBtn.style.display     = "none";
+      } else if (isConnected) {
+        const verifiedLabel = graphVerified ? " · Graph OK" : "";
+        authEl.textContent = "✓ Connected · Polling" + verifiedLabel;
+        authEl.className   = "ol-auth-chip ol-chip-ok";
         if (connectBtn) connectBtn.style.display = "none";
-        if (subBtn)     subBtn.style.display     = d.subscription ? "none" : "";
+        if (subBtn)     subBtn.style.display     = "none";
       } else {
         authEl.textContent = "⚠ Not connected";
         authEl.className   = "ol-auth-chip ol-chip-warn";
@@ -8477,6 +8551,20 @@ async function loadOutlookStatus() {
     if (pendingEl) {
       pendingEl.textContent = (d.pending_emails || 0) + " pending approval";
       pendingEl.style.display = (d.pending_emails || 0) > 0 ? "" : "none";
+    }
+    // Sync integration card badge
+    const intBadge = document.getElementById("int-ol-badge");
+    if (intBadge) {
+      if (isExpired) {
+        intBadge.textContent = "⚠ Session expired";
+        intBadge.className   = "badge b-warn";
+      } else if (isConnected) {
+        intBadge.textContent = graphVerified ? "✓ Connected" : "✓ Polling";
+        intBadge.className   = "badge b-ok";
+      } else {
+        intBadge.textContent = "Connect →";
+        intBadge.className   = "badge b-warn";
+      }
     }
   } catch(e) {
     console.warn("loadOutlookStatus:", e);
@@ -8495,6 +8583,13 @@ async function loadOutlookInbox() {
     if (_olFilterType === "priority" && _olFilter) params.set("priority", _olFilter);
 
     const d = await fetch(`/api/outlook/inbox?${params}`).then(r => r.json());
+    if (d.status === "expired" || d.requires_reauth) {
+      container.innerHTML = `<div class="ol-empty-state">
+        <div style="font-size:28px;margin-bottom:8px">🔑</div>
+        <div><strong>Session expired.</strong><br><span style="font-size:12px;opacity:.7">Click "Connect Outlook" to re-authenticate with Microsoft.</span></div>
+      </div>`;
+      return;
+    }
     if (d.status === "disconnected") {
       container.innerHTML = `<div class="ol-empty-state">
         <div style="font-size:28px;margin-bottom:8px">🔌</div>
@@ -8669,9 +8764,10 @@ async function olSendReply(mid) {
   const ta = document.getElementById(`reply-${mid}`);
   const replyText = ta ? ta.value.trim() : "";
   if (!replyText) { showToast("Reply text is empty", "error"); return; }
-
   if (!confirm("Send this reply? This action cannot be undone.")) return;
 
+  const sendBtn = document.querySelector(`#olcard-${mid} .ol-btn-send`);
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "⏳ Sending…"; }
   try {
     const d = await fetch("/api/outlook/send-reply", {
       method:  "POST",
@@ -8682,10 +8778,18 @@ async function olSendReply(mid) {
       showToast("Reply sent ✅", "success");
       await loadOutlookInbox();
       await loadOutlookStatus();
+    } else if (d.status === "expired" || d.requires_reauth) {
+      showToast("Session expired — reconnect Outlook to send replies", "error");
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "✅ SEND APPROVED REPLY"; }
+      await loadOutlookStatus();
     } else {
       showToast("Send failed: " + (d.error || "unknown"), "error");
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "✅ SEND APPROVED REPLY"; }
     }
-  } catch(e) { showToast("Send error: " + e.message, "error"); }
+  } catch(e) {
+    showToast("Send error: " + e.message, "error");
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "✅ SEND APPROVED REPLY"; }
+  }
 }
 
 async function olGenerateReply(mid) {
@@ -8708,14 +8812,26 @@ async function olGenerateReply(mid) {
 
 async function olDelete(mid) {
   if (!confirm("Delete this email permanently? This cannot be undone.")) return;
+  const delBtn = document.querySelector(`#olcard-${mid} .ol-btn-delete`);
+  if (delBtn) { delBtn.disabled = true; delBtn.textContent = "⏳"; }
   try {
     const d = await fetch(`/api/outlook/delete/${mid}`, { method: "POST" }).then(r => r.json());
     if (d.status === "ok") {
-      showToast("Email deleted 🗑", "info");
+      showToast("Email deleted", "info");
       await loadOutlookInbox();
       await loadOutlookStatus();
-    } else showToast("Delete failed: " + (d.error || "unknown"), "error");
-  } catch(e) { showToast("Delete error: " + e.message, "error"); }
+    } else if (d.status === "expired" || d.requires_reauth) {
+      showToast("Session expired — reconnect Outlook", "error");
+      if (delBtn) { delBtn.disabled = false; delBtn.textContent = "Delete"; }
+      await loadOutlookStatus();
+    } else {
+      showToast("Delete failed: " + (d.error || "unknown"), "error");
+      if (delBtn) { delBtn.disabled = false; delBtn.textContent = "Delete"; }
+    }
+  } catch(e) {
+    showToast("Delete error: " + e.message, "error");
+    if (delBtn) { delBtn.disabled = false; delBtn.textContent = "Delete"; }
+  }
 }
 
 async function olIgnore(mid) {

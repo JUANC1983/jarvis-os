@@ -1,6 +1,6 @@
 """
 Microsoft Graph API email operations.
-Fetch, parse, send, delete, and mark-read via /me/messages.
+All Graph calls route through safe_graph_call() for automatic token refresh on 401.
 """
 from __future__ import annotations
 
@@ -8,9 +8,10 @@ import logging
 import re
 from typing import Dict, List, Optional
 
-import httpx
-
-from opsx.connectors.outlook_auth import get_valid_token
+from opsx.connectors.outlook_auth import (
+    TokenExpiredError,
+    safe_graph_call,
+)
 
 log = logging.getLogger("jarvis.outlook_email")
 
@@ -25,28 +26,20 @@ _MESSAGE_SELECT = (
 # ── Read operations ───────────────────────────────────────────────────────────
 
 async def fetch_email(message_id: str, user_id: str = "owner") -> Optional[Dict]:
-    """Fetch a single message by ID and return normalised dict."""
-    token = await get_valid_token(user_id)
-    if not token:
-        log.error("fetch_email: no valid token for user=%s", user_id)
-        return None
-    print(f"[GRAPH] fetch_email using token: {token[:20]}...")
+    """Fetch a single message by ID. Returns None on network error; raises TokenExpiredError on auth failure."""
     try:
-        async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.get(
-                f"{_GRAPH_BASE}/me/messages/{message_id}",
-                headers={"Authorization": f"Bearer {token}"},
-                params={"$select": _MESSAGE_SELECT},
-            )
-        print(f"[GRAPH] fetch_email HTTP {resp.status_code}")
+        resp = await safe_graph_call(
+            "get",
+            f"{_GRAPH_BASE}/me/messages/{message_id}",
+            user_id,
+            params={"$select": _MESSAGE_SELECT},
+        )
         if resp.status_code == 200:
             return _parse_message(resp.json())
-        print(f"[GRAPH RESPONSE] {resp.text[:600]}")
-        if resp.status_code == 401:
-            log.error("fetch_email 401 — token rejected by Graph. Body: %s", resp.text[:400])
-        else:
-            log.error("fetch_email %s HTTP %d: %s", message_id, resp.status_code, resp.text[:200])
+        log.error("fetch_email %s HTTP %d: %s", message_id, resp.status_code, resp.text[:200])
         return None
+    except TokenExpiredError:
+        raise
     except Exception as exc:
         log.error("fetch_email error: %s", exc)
         return None
@@ -57,11 +50,7 @@ async def list_inbox(
     user_id: str = "owner",
     unread_only: bool = False,
 ) -> List[Dict]:
-    """Return recent inbox messages, newest first."""
-    token = await get_valid_token(user_id)
-    if not token:
-        raise ValueError("Invalid or expired token. Re-auth required.")
-    print(f"[GRAPH] list_inbox using token: {token[:20]}...")
+    """Return recent inbox messages, newest first. Raises TokenExpiredError on auth failure."""
     params: Dict = {
         "$top":     limit,
         "$orderby": "receivedDateTime desc",
@@ -70,22 +59,17 @@ async def list_inbox(
     if unread_only:
         params["$filter"] = "isRead eq false"
     try:
-        async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.get(
-                f"{_GRAPH_BASE}/me/mailFolders/Inbox/messages",
-                headers={"Authorization": f"Bearer {token}"},
-                params=params,
-            )
-        print(f"[GRAPH] list_inbox HTTP {resp.status_code}")
+        resp = await safe_graph_call(
+            "get",
+            f"{_GRAPH_BASE}/me/mailFolders/Inbox/messages",
+            user_id,
+            params=params,
+        )
         if resp.status_code == 200:
             return [_parse_message(m) for m in resp.json().get("value", [])]
-        print(f"[GRAPH RESPONSE] {resp.text[:600]}")
-        if resp.status_code == 401:
-            log.error("list_inbox 401 — token rejected by Graph. Body: %s", resp.text[:400])
-            raise ValueError("Invalid or expired token. Re-auth required.")
         log.error("list_inbox HTTP %d: %s", resp.status_code, resp.text[:200])
         return []
-    except ValueError:
+    except TokenExpiredError:
         raise
     except Exception as exc:
         log.error("list_inbox error: %s", exc)
@@ -93,25 +77,23 @@ async def list_inbox(
 
 
 async def count_unread(user_id: str = "owner") -> int:
-    """Return unread message count for the inbox."""
-    token = await get_valid_token(user_id)
-    if not token:
-        return 0
-    print(f"[GRAPH] count_unread using token: {token[:20]}...")
+    """Return unread message count. Raises TokenExpiredError on auth failure; returns 0 on network error."""
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(
-                f"{_GRAPH_BASE}/me/mailFolders/Inbox",
-                headers={"Authorization": f"Bearer {token}"},
-                params={"$select": "unreadItemCount"},
-            )
-        print(f"[GRAPH] count_unread HTTP {resp.status_code}")
+        resp = await safe_graph_call(
+            "get",
+            f"{_GRAPH_BASE}/me/mailFolders/Inbox",
+            user_id,
+            params={"$select": "unreadItemCount"},
+            timeout=15.0,
+        )
         if resp.status_code == 200:
             return resp.json().get("unreadItemCount", 0)
-        if resp.status_code == 401:
-            print(f"[GRAPH RESPONSE] count_unread 401: {resp.text[:400]}")
+        log.error("count_unread HTTP %d: %s", resp.status_code, resp.text[:200])
         return 0
-    except Exception:
+    except TokenExpiredError:
+        raise
+    except Exception as exc:
+        log.error("count_unread error: %s", exc)
         return 0
 
 
@@ -122,14 +104,7 @@ async def send_reply(
     reply_body: str,
     user_id: str = "owner",
 ) -> bool:
-    """
-    Send a reply to an email thread.
-    reply_body is sent as plain text.
-    """
-    token = await get_valid_token(user_id)
-    if not token:
-        log.error("send_reply: no valid token for user=%s", user_id)
-        return False
+    """Send a reply. Returns True on 202. Raises TokenExpiredError on auth failure."""
     payload = {
         "message": {
             "body": {"contentType": "Text", "content": reply_body}
@@ -137,58 +112,57 @@ async def send_reply(
         "comment": reply_body,
     }
     try:
-        async with httpx.AsyncClient(timeout=25) as client:
-            resp = await client.post(
-                f"{_GRAPH_BASE}/me/messages/{message_id}/reply",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type":  "application/json",
-                },
-                json=payload,
-            )
-            if resp.status_code == 202:
-                log.info("Reply sent for message=%s user=%s", message_id, user_id)
-                return True
-            log.error("send_reply HTTP %d: %s", resp.status_code, resp.text[:200])
-            return False
+        resp = await safe_graph_call(
+            "post",
+            f"{_GRAPH_BASE}/me/messages/{message_id}/reply",
+            user_id,
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=25.0,
+        )
+        if resp.status_code == 202:
+            log.info("Reply sent for message=%s user=%s", message_id, user_id)
+            return True
+        log.error("send_reply HTTP %d: %s", resp.status_code, resp.text[:200])
+        return False
+    except TokenExpiredError:
+        raise
     except Exception as exc:
         log.error("send_reply error: %s", exc)
         return False
 
 
 async def delete_email(message_id: str, user_id: str = "owner") -> bool:
-    """Move message to Deleted Items (soft delete via Graph DELETE)."""
-    token = await get_valid_token(user_id)
-    if not token:
-        return False
+    """Move message to Deleted Items. Raises TokenExpiredError on auth failure."""
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.delete(
-                f"{_GRAPH_BASE}/me/messages/{message_id}",
-                headers={"Authorization": f"Bearer {token}"},
-            )
-            return resp.status_code == 204
+        resp = await safe_graph_call(
+            "delete",
+            f"{_GRAPH_BASE}/me/messages/{message_id}",
+            user_id,
+            timeout=15.0,
+        )
+        return resp.status_code == 204
+    except TokenExpiredError:
+        raise
     except Exception as exc:
         log.error("delete_email error: %s", exc)
         return False
 
 
 async def mark_as_read(message_id: str, user_id: str = "owner") -> bool:
-    """Mark a message as read."""
-    token = await get_valid_token(user_id)
-    if not token:
-        return False
+    """Mark a message as read. Raises TokenExpiredError on auth failure."""
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.patch(
-                f"{_GRAPH_BASE}/me/messages/{message_id}",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type":  "application/json",
-                },
-                json={"isRead": True},
-            )
-            return resp.status_code == 200
+        resp = await safe_graph_call(
+            "patch",
+            f"{_GRAPH_BASE}/me/messages/{message_id}",
+            user_id,
+            headers={"Content-Type": "application/json"},
+            json={"isRead": True},
+            timeout=15.0,
+        )
+        return resp.status_code == 200
+    except TokenExpiredError:
+        raise
     except Exception as exc:
         log.error("mark_as_read error: %s", exc)
         return False
@@ -214,7 +188,7 @@ def _parse_message(raw: Dict) -> Dict:
         "sender_name":     sender.get("name", ""),
         "sender_email":    sender.get("address", ""),
         "recipients":      recipients,
-        "body_text":       body_text[:8000],   # cap for AI token safety
+        "body_text":       body_text[:8000],
         "body_preview":    raw.get("bodyPreview", "")[:400],
         "received_at":     raw.get("receivedDateTime"),
         "importance":      raw.get("importance", "normal"),

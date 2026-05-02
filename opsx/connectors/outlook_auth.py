@@ -19,6 +19,16 @@ import httpx
 log = logging.getLogger("jarvis.outlook_auth")
 
 
+# ── Typed auth exception ──────────────────────────────────────────────────────
+
+class TokenExpiredError(Exception):
+    """Raised when a Graph API call receives a permanent 401 that cannot be recovered."""
+    def __init__(self, user_id: str = "owner", reason: str = "Token expired or revoked"):
+        self.user_id = user_id
+        self.reason  = reason
+        super().__init__(f"TokenExpiredError[{user_id}]: {reason}")
+
+
 def _decode_jwt_payload(token: str) -> Dict:
     """Decode JWT payload without verifying signature (for debug logging only)."""
     try:
@@ -261,3 +271,103 @@ async def get_valid_token(user_id: str = "owner") -> Optional[str]:
 def is_configured() -> bool:
     """Returns True if environment variables are set for Microsoft auth."""
     return bool(_CLIENT_ID and _CLIENT_SECRET)
+
+
+async def verify_graph_token(user_id: str = "owner") -> Dict:
+    """
+    Probe Graph /me to confirm the token is genuinely valid.
+    Returns {"valid": True, "display_name": ..., "email": ...} on 200.
+    Returns {"valid": False, "reason": "no_token"} when no token stored.
+    Raises TokenExpiredError when token cannot be recovered after refresh.
+    """
+    if not token_store.is_authenticated(user_id):
+        return {"valid": False, "reason": "no_token"}
+    try:
+        resp = await safe_graph_call(
+            "get",
+            "https://graph.microsoft.com/v1.0/me",
+            user_id,
+            params={"$select": "displayName,mail,userPrincipalName"},
+            timeout=10.0,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            return {
+                "valid":        True,
+                "display_name": data.get("displayName", ""),
+                "email":        data.get("mail") or data.get("userPrincipalName", ""),
+            }
+        log.error("verify_graph_token HTTP %d for user=%s", resp.status_code, user_id)
+        return {"valid": False, "reason": f"graph_http_{resp.status_code}"}
+    except TokenExpiredError:
+        raise
+    except Exception as exc:
+        log.error("verify_graph_token error for user=%s: %s", user_id, exc)
+        return {"valid": False, "reason": "network_error"}
+
+
+# ── Safe Graph call with auto-retry ──────────────────────────────────────────
+
+async def safe_graph_call(
+    method:   str,
+    url:      str,
+    user_id:  str = "owner",
+    *,
+    headers:  Optional[Dict] = None,
+    params:   Optional[Dict] = None,
+    json:     Optional[Dict] = None,
+    data:     Optional[Dict] = None,
+    timeout:  float = 20.0,
+) -> "httpx.Response":
+    """
+    Execute a Microsoft Graph API call with transparent token refresh on 401.
+
+    Flow:
+    1. Get valid token (auto-refreshes if time-expired)
+    2. Execute request
+    3. If 401 received → force refresh_token() → retry ONCE
+    4. If still 401 → raise TokenExpiredError (requires re-auth)
+
+    Raises:
+        TokenExpiredError: when auth cannot be recovered
+    """
+    token = await get_valid_token(user_id)
+    if not token:
+        raise TokenExpiredError(user_id, "No token stored — user must authenticate")
+
+    async def _request(tok: str) -> "httpx.Response":
+        _h = {"Authorization": f"Bearer {tok}", **(headers or {})}
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            fn = getattr(client, method.lower())
+            kwargs: Dict = {"headers": _h}
+            if params is not None:  kwargs["params"] = params
+            if json   is not None:  kwargs["json"]   = json
+            if data   is not None:  kwargs["data"]   = data
+            return await fn(url, **kwargs)
+
+    resp = await _request(token)
+
+    if resp.status_code != 401:
+        return resp
+
+    # ── 401 received — force refresh and retry once ──────────────────────
+    log.warning("[safe_graph_call] 401 for user=%s url=%s — forcing token refresh", user_id, url)
+    print(f"[GRAPH] 401 received for user={user_id} — refreshing token…")
+
+    refreshed = await refresh_token(user_id)
+    if not refreshed:
+        log.error("[safe_graph_call] Refresh failed for user=%s — raising TokenExpiredError", user_id)
+        raise TokenExpiredError(user_id, "Token refresh failed after 401 — re-auth required")
+
+    new_token = token_store.get_access_token(user_id)
+    if not new_token:
+        raise TokenExpiredError(user_id, "Token store empty after refresh")
+
+    print(f"[GRAPH] Retry after refresh for user={user_id}…")
+    resp = await _request(new_token)
+
+    if resp.status_code == 401:
+        log.error("[safe_graph_call] Still 401 after refresh for user=%s — raising TokenExpiredError", user_id)
+        raise TokenExpiredError(user_id, "Token rejected by Graph even after refresh")
+
+    return resp

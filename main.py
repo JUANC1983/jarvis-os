@@ -70,6 +70,8 @@ try:
         exchange_code as _ms_exchange_code,
         get_valid_token as _ms_get_token,
         is_configured as _ms_configured,
+        TokenExpiredError as _ms_TokenExpiredError,
+        verify_graph_token as _ms_verify_token,
     )
     from opsx.connectors.outlook_webhook import (
         subscription_store as _ms_sub_store,
@@ -4987,29 +4989,84 @@ async def ms_callback(code: str = "", state: str = "", error: str = "", error_de
 
 @app.get("/api/outlook/status")
 async def outlook_status(current_user: dict = Depends(get_optional_user)):
-    """Return Outlook configuration and connection status — never crashes."""
+    """
+    Return Outlook configuration and connection status — never crashes.
+
+    Status values:
+      "disconnected"      — no token stored, user must authenticate
+      "expired"           — token present but rejected by Graph after refresh
+      "connected_polling" — Graph /me returned 200, real connection confirmed
+    """
     if not _OUTLOOK_AVAILABLE:
-        return {"status": "ok", "configured": False, "connected": False,
+        return {"status": "disconnected", "configured": False, "connected": False,
                 "reason": "Outlook integration module not loaded"}
     try:
         from opsx.connectors.outlook_auth import config_status as _ms_cfg_status
         cfg = _ms_cfg_status()
     except Exception:
         cfg = {"configured": False, "reason": "Config check failed"}
-    uid   = current_user["user_id"]
-    auth  = _ms_token_store.is_authenticated(uid)
-    sub   = _ms_sub_store.get(uid)
+
+    uid = current_user["user_id"]
+    sub = _ms_sub_store.get(uid)
+
+    # ── No token at all ─────────────────────────────────────────────────
+    if not _ms_token_store.is_authenticated(uid):
+        return {
+            "status":         "disconnected",
+            "configured":     cfg.get("configured", False),
+            "connected":      False,
+            "authenticated":  False,
+            "token_rejected": False,
+            "graph_verified": False,
+            "subscription":   bool(sub),
+            "unread_count":   0,
+            "pending_emails": _ms_email_store.pending_count(),
+            "config_detail":  cfg,
+        }
+
+    # ── Token present — probe Graph /me ─────────────────────────────────
+    graph_info     = {}
+    token_rejected = False
+    try:
+        result = await _ms_verify_token(uid)
+        if result.get("valid"):
+            graph_info = result
+        else:
+            # verify returned False without raising — treat as network hiccup,
+            # keep "connected" but don't claim graph_verified
+            graph_info = result
+    except _ms_TokenExpiredError:
+        token_rejected = True
+
+    # ── Unread count (best-effort — don't flip auth on network error) ───
     unread = 0
-    if auth:
+    if not token_rejected:
         try:
             unread = await _ms_count_unread(uid)
+        except (_ms_TokenExpiredError, ValueError):
+            token_rejected = True
         except Exception:
             pass
+
+    graph_ok = graph_info.get("valid", False) and not token_rejected
+
+    if token_rejected:
+        conn_status = "expired"
+    elif graph_ok:
+        conn_status = "connected_polling"
+    else:
+        # token present locally but Graph is unreachable — optimistic
+        conn_status = "connected_polling"
+
     return {
-        "status":          "ok",
+        "status":          conn_status,
         "configured":      cfg.get("configured", False),
-        "connected":       auth,
-        "authenticated":   auth,
+        "connected":       not token_rejected,
+        "authenticated":   not token_rejected,
+        "token_rejected":  token_rejected,
+        "graph_verified":  graph_ok,
+        "graph_user":      graph_info.get("display_name", ""),
+        "graph_email":     graph_info.get("email", ""),
         "subscription":    bool(sub),
         "subscription_id": sub.get("id") if sub else None,
         "sub_expires":     sub.get("expirationDateTime") if sub else None,
@@ -5280,7 +5337,10 @@ async def outlook_inbox(
 ):
     _outlook_guard()
     uid = current_user["user_id"]
-    if not _ms_token_store.is_authenticated(uid):
+    _has_token  = _ms_token_store.is_authenticated(uid)
+    _is_expired = _ms_token_store.is_expired(uid) if _has_token else True
+    _token_data = _ms_token_store.get(uid) or {}
+    if not _has_token or (_is_expired and not _token_data.get("refresh_token")):
         return {
             "status":  "disconnected",
             "message": "Outlook not connected. Visit /api/outlook/auth-url to authenticate.",
@@ -5365,8 +5425,15 @@ class _FetchEmailReq(BaseModel):
 @app.post("/api/outlook/fetch")
 async def outlook_fetch_now(body: _FetchEmailReq, current_user: dict = Depends(get_optional_user)):
     _outlook_guard()
-    uid   = current_user["user_id"]
-    email = await _ms_fetch_email(body.message_id, uid)
+    uid = current_user["user_id"]
+    try:
+        email = await _ms_fetch_email(body.message_id, uid)
+    except _ms_TokenExpiredError:
+        return JSONResponse(
+            {"status": "expired", "requires_reauth": True,
+             "message": "Session expired — reconnect Outlook"},
+            status_code=401,
+        )
     if not email:
         raise HTTPException(404, "Message not found in Microsoft Graph")
     result = await _ms_process_email(email)
@@ -5384,6 +5451,12 @@ async def outlook_live_inbox(
     try:
         items = await _ms_list_inbox(limit=limit, user_id=current_user["user_id"], unread_only=unread_only)
         return {"status": "ok", "items": items, "count": len(items)}
+    except _ms_TokenExpiredError as exc:
+        return JSONResponse(
+            {"status": "expired", "requires_reauth": True,
+             "message": "Session expired — reconnect Outlook"},
+            status_code=401,
+        )
     except ValueError as exc:
         return JSONResponse({"status": "error", "error": str(exc), "reauth_required": True}, status_code=401)
 
@@ -5399,6 +5472,10 @@ async def outlook_poll(current_user: dict = Depends(get_optional_user)):
     _plog = logging.getLogger("jarvis.outlook.poll")
     try:
         messages = await _ms_list_inbox(limit=10, user_id=uid, unread_only=True)
+    except _ms_TokenExpiredError:
+        _plog.warning("Poll skipped: token expired for user=%s — re-auth required", uid)
+        return {"status": "expired", "requires_reauth": True,
+                "message": "Session expired — reconnect Outlook", "new": 0}
     except Exception as exc:
         _plog.warning("Poll inbox failed: %s", exc)
         return {"status": "error", "error": str(exc), "new": 0}
@@ -5417,6 +5494,9 @@ async def outlook_poll(current_user: dict = Depends(get_optional_user)):
                 await _ms_store_email(result)
                 new_count += 1
                 _plog.info("Poll: new email ingested id=%s", msg_id)
+        except _ms_TokenExpiredError:
+            _plog.warning("Poll: token expired while fetching msg=%s — stopping", msg_id)
+            break
         except Exception as exc:
             _plog.warning("Poll: error processing msg=%s: %s", msg_id, exc)
 
@@ -5434,7 +5514,14 @@ class _SendReplyReq(BaseModel):
 async def outlook_send_reply(body: _SendReplyReq, current_user: dict = Depends(get_optional_user)):
     """Send a reply — ONLY called after explicit user approval."""
     _outlook_guard()
-    result = await _ms_send_reply(body.message_id, body.reply_text, current_user["user_id"])
+    try:
+        result = await _ms_send_reply(body.message_id, body.reply_text, current_user["user_id"])
+    except _ms_TokenExpiredError:
+        return JSONResponse(
+            {"status": "expired", "requires_reauth": True,
+             "message": "Session expired — reconnect Outlook"},
+            status_code=401,
+        )
     if not result["success"]:
         raise HTTPException(500, result.get("error", "Send failed"))
     return {"status": "ok", **result}
@@ -5444,7 +5531,14 @@ async def outlook_send_reply(body: _SendReplyReq, current_user: dict = Depends(g
 async def outlook_delete_email(message_id: str, current_user: dict = Depends(get_optional_user)):
     """Delete email — ONLY called after explicit user approval."""
     _outlook_guard()
-    result = await _ms_delete_email(message_id, current_user["user_id"])
+    try:
+        result = await _ms_delete_email(message_id, current_user["user_id"])
+    except _ms_TokenExpiredError:
+        return JSONResponse(
+            {"status": "expired", "requires_reauth": True,
+             "message": "Session expired — reconnect Outlook"},
+            status_code=401,
+        )
     if not result["success"]:
         raise HTTPException(500, result.get("error", "Delete failed"))
     return {"status": "ok", **result}
@@ -5453,13 +5547,27 @@ async def outlook_delete_email(message_id: str, current_user: dict = Depends(get
 @app.post("/api/outlook/ignore/{message_id}")
 async def outlook_ignore(message_id: str, current_user: dict = Depends(get_optional_user)):
     _outlook_guard()
-    return {"status": "ok", **(await _ms_ignore_email(message_id))}
+    try:
+        return {"status": "ok", **(await _ms_ignore_email(message_id))}
+    except _ms_TokenExpiredError:
+        return JSONResponse(
+            {"status": "expired", "requires_reauth": True,
+             "message": "Session expired — reconnect Outlook"},
+            status_code=401,
+        )
 
 
 @app.post("/api/outlook/mark-read/{message_id}")
 async def outlook_mark_read(message_id: str, current_user: dict = Depends(get_optional_user)):
     _outlook_guard()
-    return {"status": "ok", **(await _ms_mark_email_read(message_id, current_user["user_id"]))}
+    try:
+        return {"status": "ok", **(await _ms_mark_email_read(message_id, current_user["user_id"]))}
+    except _ms_TokenExpiredError:
+        return JSONResponse(
+            {"status": "expired", "requires_reauth": True,
+             "message": "Session expired — reconnect Outlook"},
+            status_code=401,
+        )
 
 
 class _UpdateDraftReq(BaseModel):
