@@ -1,0 +1,56 @@
+[
+  {
+    "date": "2026-05-06",
+    "win_rate": 100.0,
+    "total": 1,
+    "quality_score": 50
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 50.0,
+    "total": 2,
+    "quality_score": 50
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 33.3,
+    "total": 3,
+    "quality_score": 20
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 50.0,
+    "total": 4,
+    "quality_score": 50
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 60.0,
+    "total": 5,
+    "quality_score": 68
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 66.7,
+    "total": 6,
+    "quality_score": 75
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 71.4,
+    "total": 7,
+    "quality_score": 75
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 75.0,
+    "total": 8,
+    "quality_score": 75
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 77.8,
+    "total": 9,
+    "quality_score": 68
+  }
+]

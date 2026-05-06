@@ -1282,7 +1282,8 @@ def chat(req: ChatRequest, current_user: dict = Depends(get_optional_user)):
 
         # ── Pure-action intents: prefer action reply, skip noisy AI ─────
         _PURE_ACTION_INTENTS = {"shopping_list", "reminder", "task", "meeting",
-                                "calendar_query", "calendar_delete", "email"}
+                                "calendar_query", "calendar_delete", "email",
+                                "portfolio_query"}
         action_reply = cmd_result.get("reply", "")
         if cmd_result["action_result"] and not cmd_result["action_result"].get("error") \
                 and cmd_result["intent"] in _PURE_ACTION_INTENTS and action_reply:
@@ -3813,8 +3814,20 @@ _COMMAND_ROUTES = {
         "chart", "signal", "ticker", "analyse market", "analyze market",
     ], [
         "accion", "bolsa", "precio", "comprar", "vender", "analizar",
-        "cotizacion", "invertir", "inversion", "portafolio", "analiza",
-        "que hace", "como va",
+        "cotizacion", "invertir", "inversion", "analiza", "que hace",
+    ]),
+    "portfolio_query": ("markets", [
+        "my portfolio", "portfolio summary", "how am i doing", "my investments",
+        "daily pnl", "how much did i make", "how much did i lose",
+        "portfolio risk", "biggest risk", "broker exposure", "my positions",
+        "sector exposure", "paper trade", "paper trading",
+    ], [
+        "mi portafolio", "como voy hoy", "cuanto llevo", "cuanto perdi",
+        "cuanto gane", "mi exposicion", "cual es mi riesgo", "mayor riesgo",
+        "que broker", "que porcentaje tecnologia", "estoy concentrado",
+        "como esta mi riesgo", "que harias en paper", "simula comprar",
+        "simula reducir", "parte debil del portafolio", "analiza mi portafolio",
+        "resumen del portafolio", "estado del portafolio",
     ]),
     "golf": ("golf", [
         "golf", "swing", "round", "handicap", "birdie", "par", "course", "putt",
@@ -4097,6 +4110,32 @@ def _execute_command_action(raw: str, uid: str) -> dict:
         else:
             action_result = {"module": "email", "action": "show_inbox"}
             reply = "Abriendo Outlook — tus correos más recientes."
+
+    elif matched_intent == "portfolio_query":
+        try:
+            matched_tab = "markets"
+            if _PORTFOLIO_AVAILABLE and _unified_portfolio and _portfolio_intel:
+                snapshot = _build_unified_snapshot()
+                intel    = _portfolio_intel.analyze(snapshot)
+                total    = snapshot.get("total_portfolio_value", 0)
+                daily    = snapshot.get("total_daily_pnl", 0)
+                score    = intel.get("portfolio_score", 0)
+                risk     = intel.get("risk_level", "unknown")
+                summary  = intel.get("summary", "")
+                top_risk = intel.get("top_risks", [""])
+                action_result = {"module": "portfolio", "snapshot": snapshot, "analysis": intel}
+                reply = (
+                    f"Portafolio: ${total:,.0f} | P&L hoy: ${daily:+,.0f} | "
+                    f"Score: {score}/100 ({risk.upper()}). {summary[:120]}"
+                )
+                if top_risk and top_risk[0]:
+                    reply += f" — {top_risk[0]}"
+            else:
+                reply = "Módulo de portafolio no disponible. Verifica los conectores IBKR y Hapi."
+                action_result = {"module": "portfolio", "error": "modules_unavailable"}
+        except Exception as _e:
+            action_result = {"module": "portfolio", "error": str(_e)}
+            reply = f"No pude consultar el portafolio: {_e}"
 
     elif matched_intent in ("market", "analyze"):
         sym = _extract_symbol(raw)
@@ -5746,6 +5785,633 @@ def markets_analyze(body: _MarketAnalyzeReq):
         return result
     except Exception as exc:
         return {"status": "error", "symbol": sym, "error": str(exc)}
+
+
+class _TraderAnalyzeReq(BaseModel):
+    symbol: str = "AAPL"
+    with_portfolio_context: bool = True
+
+
+@app.post("/api/trader/analyze")
+def trader_analyze(body: _TraderAnalyzeReq):
+    """
+    Full institutional-grade trade analysis with regime, portfolio context,
+    learning history, and structured explainability.
+    """
+    from core.trader_alpha_engine import TraderAlphaEngine
+    sym = (body.symbol or "AAPL").strip().upper()
+    engine = TraderAlphaEngine()
+    portfolio_snapshot = None
+    if body.with_portfolio_context and _PORTFOLIO_AVAILABLE:
+        try:
+            portfolio_snapshot = _build_unified_snapshot()
+        except Exception:
+            portfolio_snapshot = None
+    try:
+        result = engine.run_with_context(sym, portfolio_snapshot=portfolio_snapshot)
+        result["status"] = "ok"
+        result["real_trade"] = False
+        return result
+    except Exception as exc:
+        return {"status": "error", "symbol": sym, "error": str(exc), "real_trade": False}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PORTFOLIO INTELLIGENCE — READ-ONLY — IBKR + HAPI + UNIFIED + PAPER
+# ══════════════════════════════════════════════════════════════════════
+
+try:
+    from opsx.connectors.ibkr_readonly import ibkr as _ibkr, TradingBlockedError as _TradingBlockedError
+    from opsx.connectors.hapi_readonly import hapi as _hapi
+    from core.unified_portfolio_engine import unified_portfolio as _unified_portfolio
+    from core.portfolio_intelligence_engine import portfolio_intelligence as _portfolio_intel
+    from core.paper_trading_engine import paper_trading as _paper_trading
+    from core.trader_learning_engine import trader_learning as _trader_learning
+    _PORTFOLIO_AVAILABLE = True
+except Exception as _pe:
+    _PORTFOLIO_AVAILABLE = False
+    _ibkr = None
+    _hapi = None
+    _trader_learning = None
+    _unified_portfolio = None
+    _portfolio_intel = None
+    _paper_trading = None
+    logging.getLogger("jarvis").warning("Portfolio modules unavailable: %s", _pe)
+
+
+def _portfolio_guard():
+    if not _PORTFOLIO_AVAILABLE:
+        raise HTTPException(503, "Portfolio integration modules not loaded")
+
+
+def _build_unified_snapshot(force_refresh: bool = False) -> Dict:
+    """Fetch from brokers and return unified snapshot. Falls back to cache on error."""
+    ibkr_data = None
+    hapi_data = None
+    try:
+        if _ibkr:
+            ibkr_data = _ibkr.get_full_portfolio()
+    except Exception:
+        pass
+    try:
+        if _hapi:
+            hapi_data = _hapi.get_full_portfolio()
+    except Exception:
+        pass
+    if ibkr_data or hapi_data:
+        return _unified_portfolio.build_snapshot(ibkr_data, hapi_data)
+    cached = _unified_portfolio.get_cached_snapshot()
+    if cached:
+        cached["_from_cache"] = True
+        return cached
+    return _unified_portfolio.empty_snapshot("no_broker_data")
+
+
+# ── Portfolio Status ───────────────────────────────────────────────────
+
+@app.get("/api/portfolio/status")
+def portfolio_status(current_user: dict = Depends(get_optional_user)):
+    """Read-only portfolio connection status for both brokers."""
+    if not _PORTFOLIO_AVAILABLE:
+        return {"status": "modules_unavailable", "ibkr": "unavailable", "hapi": "unavailable",
+                "real_trade": False}
+    ibkr_status = _ibkr.health_check() if _ibkr else {"status": "unavailable"}
+    hapi_status = _hapi.health_check() if _hapi else {"status": "unavailable"}
+    return {
+        "status":     "ok",
+        "ibkr":       ibkr_status,
+        "hapi":       hapi_status,
+        "real_trade": False,
+    }
+
+
+# ── Unified Portfolio ──────────────────────────────────────────────────
+
+@app.get("/api/portfolio/unified")
+def portfolio_unified(current_user: dict = Depends(get_optional_user)):
+    """Aggregated view across all connected brokers."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        snapshot["real_trade"] = False
+        return snapshot
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/portfolio/summary")
+def portfolio_summary(current_user: dict = Depends(get_optional_user)):
+    """High-level portfolio summary — total capital, P&L, risk."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return {
+            "status":               "ok",
+            "total_market_value":   snapshot.get("total_market_value", 0),
+            "total_cash":           snapshot.get("total_cash", 0),
+            "total_portfolio_value": snapshot.get("total_portfolio_value", 0),
+            "total_daily_pnl":      snapshot.get("total_daily_pnl", 0),
+            "total_daily_pnl_pct":  snapshot.get("total_daily_pnl_pct", 0),
+            "total_unrealized_pnl": snapshot.get("total_unrealized_pnl", 0),
+            "position_count":       snapshot.get("position_count", 0),
+            "broker_exposure":      snapshot.get("broker_exposure", []),
+            "concentration_warnings": snapshot.get("concentration_warnings", []),
+            "generated_at":         snapshot.get("generated_at", ""),
+            "_from_cache":          snapshot.get("_from_cache", False),
+            "real_trade":           False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/portfolio/positions")
+def portfolio_positions(current_user: dict = Depends(get_optional_user)):
+    """All positions across all connected brokers."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return {
+            "status":     "ok",
+            "positions":  snapshot.get("all_positions", []),
+            "count":      snapshot.get("position_count", 0),
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"status": "error", "positions": [], "real_trade": False, "error": str(exc)}
+
+
+@app.get("/api/portfolio/brokers")
+def portfolio_brokers(current_user: dict = Depends(get_optional_user)):
+    """Per-broker breakdown with positions and P&L."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return {
+            "status":     "ok",
+            "brokers":    snapshot.get("brokers", {}),
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"status": "error", "brokers": {}, "real_trade": False, "error": str(exc)}
+
+
+@app.get("/api/portfolio/exposure")
+def portfolio_exposure(current_user: dict = Depends(get_optional_user)):
+    """Sector, theme, and asset class exposure breakdown."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return {
+            "status":                "ok",
+            "sector_exposure":       snapshot.get("sector_exposure", []),
+            "theme_exposure":        snapshot.get("theme_exposure", []),
+            "asset_class_exposure":  snapshot.get("asset_class_exposure", []),
+            "broker_exposure":       snapshot.get("broker_exposure", []),
+            "real_trade":            False,
+        }
+    except Exception as exc:
+        return {"status": "error", "real_trade": False, "error": str(exc)}
+
+
+@app.get("/api/portfolio/pnl")
+def portfolio_pnl(current_user: dict = Depends(get_optional_user)):
+    """Aggregated P&L view — daily and unrealized."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return {
+            "status":               "ok",
+            "total_daily_pnl":      snapshot.get("total_daily_pnl", 0),
+            "total_daily_pnl_pct":  snapshot.get("total_daily_pnl_pct", 0),
+            "total_unrealized_pnl": snapshot.get("total_unrealized_pnl", 0),
+            "by_broker":            {
+                name: {
+                    "daily_pnl":      b.get("daily_pnl", 0),
+                    "unrealized_pnl": b.get("unrealized_pnl", 0),
+                }
+                for name, b in snapshot.get("brokers", {}).items()
+            },
+            "real_trade":           False,
+        }
+    except Exception as exc:
+        return {"status": "error", "real_trade": False, "error": str(exc)}
+
+
+@app.get("/api/portfolio/risk")
+def portfolio_risk(current_user: dict = Depends(get_optional_user)):
+    """Portfolio risk assessment and concentration warnings."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        intel    = _portfolio_intel.analyze(snapshot)
+        return {
+            "status":                  "ok",
+            "portfolio_score":         intel.get("portfolio_score", 0),
+            "risk_level":              intel.get("risk_level", "unknown"),
+            "top_risks":               intel.get("top_risks", []),
+            "concentration_warnings":  snapshot.get("concentration_warnings", []),
+            "sector_warnings":         intel.get("sector_warnings", []),
+            "do_not_touch":            intel.get("do_not_touch", []),
+            "limitations":             intel.get("limitations", []),
+            "real_trade":              False,
+        }
+    except Exception as exc:
+        return {"status": "error", "real_trade": False, "error": str(exc)}
+
+
+@app.get("/api/portfolio/analysis")
+def portfolio_analysis(current_user: dict = Depends(get_optional_user)):
+    """Full AI intelligence analysis of the portfolio."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        intel    = _portfolio_intel.analyze(snapshot)
+        intel["real_trade"] = False
+        intel["portfolio_value"] = snapshot.get("total_portfolio_value", 0)
+        return intel
+    except Exception as exc:
+        return {"status": "error", "real_trade": False, "error": str(exc)}
+
+
+@app.get("/api/proactive/alerts")
+def proactive_alerts(current_user: dict = Depends(get_optional_user)):
+    """Proactive intelligence alerts — stale tasks, follow-ups, portfolio risk shifts."""
+    try:
+        from core.proactive_intelligence_engine import proactive_intelligence
+        context: Dict = {}
+        # Inject portfolio snapshot if available
+        if _PORTFOLIO_AVAILABLE:
+            try:
+                context["portfolio_snapshot"] = _build_unified_snapshot()
+            except Exception:
+                pass
+        return proactive_intelligence.scan(context)
+    except Exception as exc:
+        return {"alerts": [], "alert_count": 0, "real_trade": False, "error": str(exc)}
+
+
+@app.post("/api/portfolio/refresh")
+def portfolio_refresh(current_user: dict = Depends(get_optional_user)):
+    """Force-refresh data from all connected brokers."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot(force_refresh=True)
+        return {
+            "status":       "ok",
+            "message":      "Portfolio data refreshed",
+            "position_count": snapshot.get("position_count", 0),
+            "total_value":  snapshot.get("total_portfolio_value", 0),
+            "generated_at": snapshot.get("generated_at", ""),
+            "real_trade":   False,
+        }
+    except Exception as exc:
+        return {"status": "error", "real_trade": False, "error": str(exc)}
+
+
+# ── Paper Trading ──────────────────────────────────────────────────────
+
+@app.get("/api/paper/status")
+def paper_status(current_user: dict = Depends(get_optional_user)):
+    """Paper trading account status."""
+    _portfolio_guard()
+    return _paper_trading.get_status()
+
+
+@app.post("/api/paper/import-from-real")
+def paper_import_real(current_user: dict = Depends(get_optional_user)):
+    """Import real portfolio into paper trading account."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return _paper_trading.import_from_real(snapshot)
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/paper/positions")
+def paper_positions(current_user: dict = Depends(get_optional_user)):
+    """Current paper trading positions."""
+    _portfolio_guard()
+    return _paper_trading.get_positions()
+
+
+class _PaperTradeReq(BaseModel):
+    symbol:   str
+    action:   str = "buy"        # buy | sell | trim | add
+    quantity: float = 1.0
+    price:    float = 0.0
+    thesis:   str = ""
+
+
+@app.post("/api/paper/simulate-trade")
+def paper_simulate_trade(body: _PaperTradeReq, current_user: dict = Depends(get_optional_user)):
+    """
+    Simulate a paper trade. NO live order placed.
+    Returns real_trade: false always.
+    """
+    _portfolio_guard()
+    if body.price <= 0:
+        # Try to get live price from yfinance
+        try:
+            import yfinance as yf
+            t = yf.Ticker(body.symbol.upper())
+            hist = t.history(period="1d", interval="1m")
+            if not hist.empty:
+                body = _PaperTradeReq(
+                    symbol=body.symbol,
+                    action=body.action,
+                    quantity=body.quantity,
+                    price=round(float(hist["Close"].iloc[-1]), 4),
+                    thesis=body.thesis,
+                )
+        except Exception:
+            return {"status": "error", "message": "price required (could not fetch live price)", "real_trade": False}
+    return _paper_trading.simulate_trade(body.symbol, body.action, body.quantity, body.price, body.thesis)
+
+
+class _RebalanceReq(BaseModel):
+    target_weights: Dict[str, float]   # {"AAPL": 20.0, "MSFT": 15.0}
+    current_prices: Dict[str, float]   # {"AAPL": 185.0}
+
+
+@app.post("/api/paper/rebalance")
+def paper_rebalance(body: _RebalanceReq, current_user: dict = Depends(get_optional_user)):
+    """Simulate a portfolio rebalance. No trades executed."""
+    _portfolio_guard()
+    return _paper_trading.rebalance(body.target_weights, body.current_prices)
+
+
+@app.get("/api/paper/performance")
+def paper_performance(current_user: dict = Depends(get_optional_user)):
+    """Paper trading performance metrics."""
+    _portfolio_guard()
+    return _paper_trading.get_performance()
+
+
+@app.get("/api/paper/history")
+def paper_history(current_user: dict = Depends(get_optional_user)):
+    """Full paper trade history."""
+    _portfolio_guard()
+    return _paper_trading.get_history()
+
+
+@app.get("/api/paper/compare-real")
+def paper_compare_real(current_user: dict = Depends(get_optional_user)):
+    """Compare paper portfolio vs real portfolio."""
+    _portfolio_guard()
+    try:
+        snapshot = _build_unified_snapshot()
+        return _paper_trading.compare_with_real(snapshot)
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.post("/api/paper/reset")
+def paper_reset(current_user: dict = Depends(get_optional_user)):
+    """Reset paper trading account to initial state."""
+    _portfolio_guard()
+    return _paper_trading.reset()
+
+
+# ── Trader Audit ───────────────────────────────────────────────────────
+
+@app.get("/api/trader/audit")
+def trader_audit(current_user: dict = Depends(get_optional_user)):
+    """
+    Trader agent reliability score — audits signal quality, risk logic,
+    data quality, portfolio awareness, and explanation quality.
+    """
+    try:
+        import yfinance as yf
+        from core.trader_alpha_engine import TraderAlphaEngine
+        engine = TraderAlphaEngine()
+
+        test_symbols  = ["AAPL", "MSFT", "NVDA", "META", "TSLA", "AMD", "XOM", "PLTR"]
+        results       = []
+        buy_count     = 0
+        watch_count   = 0
+        avoid_count   = 0
+        data_errors   = 0
+        score_variance = []
+        explanations_present = 0
+
+        for sym in test_symbols:
+            try:
+                r = engine._analyze_impl(sym)
+                if "error" in r:
+                    data_errors += 1
+                    continue
+                action = r.get("action", "NEUTRAL")
+                score  = r.get("setup_score", 50)
+                sigs   = r.get("signals", [])
+                buy_count   += (action == "BUY")
+                watch_count += (action == "WATCH")
+                avoid_count += (action in ("AVOID", "NEUTRAL"))
+                score_variance.append(score)
+                if sigs and len(sigs) >= 2:
+                    explanations_present += 1
+                results.append({"symbol": sym, "action": action, "score": score, "signals": len(sigs)})
+            except Exception:
+                data_errors += 1
+
+        n = len(results)
+        if n == 0:
+            return {"status": "error", "message": "No analysis results available", "real_trade": False}
+
+        buy_rate          = buy_count / n
+        always_buy_flag   = buy_rate > 0.85
+        signal_diversity  = 1 - (max(buy_count, watch_count, avoid_count) / n)
+        expl_quality      = explanations_present / n
+        import statistics
+        score_std         = statistics.stdev(score_variance) if len(score_variance) > 1 else 0
+        score_diversity   = min(score_std / 20, 1.0)  # 20pt std = good
+
+        data_quality_score         = max(0, round((1 - data_errors / len(test_symbols)) * 100))
+        signal_consistency_score   = round(min(signal_diversity * 100 + score_diversity * 50, 100))
+        risk_quality_score         = round((1 - buy_rate) * 50 + 50) if not always_buy_flag else 30
+        # Portfolio awareness — dynamic when brokers are connected
+        if _PORTFOLIO_AVAILABLE:
+            try:
+                snap = _build_unified_snapshot()
+                n_pos = snap.get("position_count", 0)
+                has_warnings = len(snap.get("concentration_warnings", [])) > 0
+                # Score: having connected portfolio data = +20, no warnings = +20
+                portfolio_awareness_score = 40
+                if n_pos > 0:
+                    portfolio_awareness_score += 30
+                if not has_warnings and n_pos > 0:
+                    portfolio_awareness_score += 15
+                if snap.get("total_market_value", 0) > 0:
+                    portfolio_awareness_score += 15
+            except Exception:
+                portfolio_awareness_score = 55
+        else:
+            portfolio_awareness_score = 40
+
+        # Learning engine bonus — if outcomes tracked, elevate quality score
+        learning_bonus = 0
+        if _PORTFOLIO_AVAILABLE and _trader_learning:
+            try:
+                lm = _trader_learning.get_metrics()
+                total_outcomes = lm.get("total_outcomes", 0)
+                win_rate = lm.get("overall_win_rate", 0)
+                if total_outcomes >= 20:
+                    learning_bonus = min(10, int(total_outcomes / 10))
+                if win_rate >= 55:
+                    learning_bonus += 5
+            except Exception:
+                pass
+
+        explanation_quality_score  = round(expl_quality * 100)
+        overall_score = round(min(100,
+            data_quality_score * 0.25 +
+            signal_consistency_score * 0.25 +
+            risk_quality_score * 0.20 +
+            portfolio_awareness_score * 0.15 +
+            explanation_quality_score * 0.15 +
+            learning_bonus
+        ))
+
+        known_limitations = [
+            "Solo usa datos técnicos (OHLCV) — sin análisis fundamental",
+            "No tiene acceso al portafolio real sin conexión de broker",
+            "Datos de yfinance pueden tener retraso de 15-20 min",
+            "No detecta eventos intraday ni noticias en tiempo real",
+        ]
+        if always_buy_flag:
+            known_limitations.append("ALERTA: tasa de compra > 85% — posible sesgo alcista")
+
+        recs = []
+        if data_quality_score < 80:
+            recs.append("Mejorar manejo de datos faltantes y símbolos inválidos")
+        if signal_consistency_score < 70:
+            recs.append("Aumentar variedad de señales: añadir análisis fundamental básico")
+        if risk_quality_score < 70:
+            recs.append("Mejorar evaluación de riesgo: incluir VIX y contexto macro")
+        if explanation_quality_score < 80:
+            recs.append("Mejorar calidad de explicaciones: añadir contexto de catalizador")
+
+        return {
+            "status":                        "ok",
+            "data_quality_score":            data_quality_score,
+            "signal_consistency_score":      signal_consistency_score,
+            "risk_quality_score":            risk_quality_score,
+            "portfolio_awareness_score":     portfolio_awareness_score,
+            "explanation_quality_score":     explanation_quality_score,
+            "overall_reliability_score":     overall_score,
+            "symbols_tested":                len(test_symbols),
+            "data_errors":                   data_errors,
+            "buy_rate_pct":                  round(buy_rate * 100, 1),
+            "always_buy_flag":               always_buy_flag,
+            "results_summary":               results,
+            "known_limitations":             known_limitations,
+            "recommendations_to_improve":    recs,
+            "real_trade":                    False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+# ── Trader Learning Engine ──────────────────────────────────────────────
+
+@app.get("/api/trader/learning")
+def trader_learning_metrics(current_user: dict = Depends(get_optional_user)):
+    """Adaptive learning metrics — win rate, calibration, signal performance."""
+    if not _PORTFOLIO_AVAILABLE or not _trader_learning:
+        return {
+            "status":          "unavailable",
+            "message":         "Learning engine not loaded",
+            "total_outcomes":  0,
+            "real_trade":      False,
+        }
+    try:
+        metrics = _trader_learning.get_metrics()
+        signal_perf = _trader_learning.get_signal_performance()
+        return {
+            "status":      "ok",
+            "metrics":     metrics,
+            "by_signal":   signal_perf.get("by_signal", {}),
+            "real_trade":  False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/trader/learning/calibration")
+def trader_calibration(current_user: dict = Depends(get_optional_user)):
+    """Confidence calibration curve — expected vs actual accuracy by bucket."""
+    if not _PORTFOLIO_AVAILABLE or not _trader_learning:
+        return {"status": "unavailable", "real_trade": False}
+    try:
+        return _trader_learning.get_confidence_calibration()
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/trader/learning/accuracy")
+def trader_recommendation_accuracy(current_user: dict = Depends(get_optional_user)):
+    """Per-symbol recommendation accuracy history."""
+    if not _PORTFOLIO_AVAILABLE or not _trader_learning:
+        return {"status": "unavailable", "real_trade": False}
+    try:
+        return _trader_learning.get_recommendation_accuracy()
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+class _OutcomeRecordReq(BaseModel):
+    symbol:              str
+    signal_type:         str = "BUY"
+    confidence:          float = 0.6
+    predicted_direction: str = "up"
+    actual_return_pct:   float = 0.0
+    holding_days:        int = 1
+    source:              str = "paper"
+    notes:               str = ""
+
+
+@app.post("/api/trader/learning/record-outcome")
+def trader_record_outcome(
+    body: _OutcomeRecordReq,
+    current_user: dict = Depends(get_optional_user),
+):
+    """
+    Record a trading outcome for adaptive learning.
+    Call when a paper trade is closed or a recommendation is evaluated.
+    """
+    if not _PORTFOLIO_AVAILABLE or not _trader_learning:
+        return {"status": "unavailable", "real_trade": False}
+    try:
+        return _trader_learning.record_outcome(
+            symbol=body.symbol.upper(),
+            signal_type=body.signal_type.upper(),
+            confidence=body.confidence,
+            predicted_direction=body.predicted_direction,
+            actual_return_pct=body.actual_return_pct,
+            holding_days=body.holding_days,
+            source=body.source,
+            context={"notes": body.notes},
+        )
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/trader/learning/score-adjustment/{symbol}")
+def trader_score_adjustment(
+    symbol: str,
+    base_score: float = 50.0,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Get learning-adjusted score for a symbol based on historical outcomes."""
+    if not _PORTFOLIO_AVAILABLE or not _trader_learning:
+        return {"adjusted_score": base_score, "adjustment": 0, "real_trade": False}
+    try:
+        return {
+            **_trader_learning.get_adapted_score_adjustment(symbol.upper(), base_score),
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
 
 
 # ══════════════════════════════════════════════════════════════════════

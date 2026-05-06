@@ -1,0 +1,129 @@
+{
+  "status": "ok",
+  "real_trade": false,
+  "computed_at": "2026-05-06T21:30:25.854189",
+  "total_market_value": 1820.0,
+  "total_cash": 5000.0,
+  "total_portfolio": 6820.0,
+  "total_daily_pnl": 12.0,
+  "total_daily_pnl_pct": 0.176,
+  "total_unrealized_pnl": 70.0,
+  "total_unrealized_pct": 4.0,
+  "cost_basis": 1750.0,
+  "cash_pct": 73.31,
+  "position_count": 1,
+  "positions": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "avg_cost": 175.0,
+      "market_price": 182.0,
+      "market_value": 1820.0,
+      "daily_pnl": 12.0,
+      "sector": "Technology",
+      "asset_class": "equity",
+      "weight_pct": 100.0,
+      "cost_basis": 1750.0,
+      "unrealized_pnl": 70.0,
+      "unrealized_pct": 4.0,
+      "daily_pnl_pct": 0.664,
+      "real_trade": false
+    }
+  ],
+  "top_winners": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "avg_cost": 175.0,
+      "market_price": 182.0,
+      "market_value": 1820.0,
+      "daily_pnl": 12.0,
+      "sector": "Technology",
+      "asset_class": "equity",
+      "weight_pct": 100.0,
+      "cost_basis": 1750.0,
+      "unrealized_pnl": 70.0,
+      "unrealized_pct": 4.0,
+      "daily_pnl_pct": 0.664,
+      "real_trade": false
+    }
+  ],
+  "top_losers": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "avg_cost": 175.0,
+      "market_price": 182.0,
+      "market_value": 1820.0,
+      "daily_pnl": 12.0,
+      "sector": "Technology",
+      "asset_class": "equity",
+      "weight_pct": 100.0,
+      "cost_basis": 1750.0,
+      "unrealized_pnl": 70.0,
+      "unrealized_pct": 4.0,
+      "daily_pnl_pct": 0.664,
+      "real_trade": false
+    }
+  ],
+  "top_movers_up": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "avg_cost": 175.0,
+      "market_price": 182.0,
+      "market_value": 1820.0,
+      "daily_pnl": 12.0,
+      "sector": "Technology",
+      "asset_class": "equity",
+      "weight_pct": 100.0,
+      "cost_basis": 1750.0,
+      "unrealized_pnl": 70.0,
+      "unrealized_pct": 4.0,
+      "daily_pnl_pct": 0.664,
+      "real_trade": false
+    }
+  ],
+  "top_movers_down": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "avg_cost": 175.0,
+      "market_price": 182.0,
+      "market_value": 1820.0,
+      "daily_pnl": 12.0,
+      "sector": "Technology",
+      "asset_class": "equity",
+      "weight_pct": 100.0,
+      "cost_basis": 1750.0,
+      "unrealized_pnl": 70.0,
+      "unrealized_pct": 4.0,
+      "daily_pnl_pct": 0.664,
+      "real_trade": false
+    }
+  ],
+  "portfolio_score": 46,
+  "risk_level": "medium",
+  "risk_factors": [
+    {
+      "category": "diversification",
+      "severity": "high",
+      "message": "Portafolio muy concentrado: 1 posiciones",
+      "delta": -12
+    },
+    {
+      "category": "liquidity",
+      "severity": "info",
+      "message": "Efectivo elevado: 73.3% — liquidez buena",
+      "delta": 3
+    }
+  ],
+  "drawdown_estimate": {
+    "max_loss_est": 0,
+    "max_loss_pct": 0.0,
+    "underwater_count": 0,
+    "method": "unrealized_pnl_proxy"
+  },
+  "ai_summary": "Portafolio de $6,820 — ? posiciones activas. P&L diario positivo: $+12 (+0.18%). P&L no realizado: $+70 (+4.00%). Score: 46/100 (MEDIUM). Efectivo elevado (73.3%) — considerar deployment gradual en activos de calidad. Mayor exposición sectorial: Technology (100.0% del portafolio). Mejor posición: AAPL con P&L no realizado de $+70 (+4.0%). Alertas activas: Portafolio muy concentrado: 1 posiciones.",
+  "ai_generated_at": "2026-05-06T21:30:25.854189"
+}
