@@ -2011,7 +2011,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <button class="btn-ol btn-sm" style="font-size:10px" onclick="loadUnifiedPriorities(true)">↻ Refresh</button>
     </div>
     <div id="upc-loading" style="color:var(--soft);font-size:12px;padding:4px 0">Loading priorities…</div>
-    <div id="upc-grid" style="display:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"></div>
+    <div id="upc-grid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"></div>
   </div>
 
   <!-- 1-CLICK ACTION BAR (Phase 6Y) -->
@@ -2110,7 +2110,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
       <span class="ct" style="font-size:13px">🎖 Daily Commander Brief</span>
       <span id="commander-brief-date" style="font-size:11px;color:var(--soft)"></span>
       <button class="btn-ol btn-sm" style="margin-left:auto" onclick="briefRefresh(this)">↻</button>
-      <button class="btn-ol btn-sm" onclick="sendChat('dame mi briefing')">🎙 Voice</button>
+      <button class="btn-ol btn-sm" onclick="sendChat('dame mi briefing')">💬 Ask</button>
     </div>
     <div id="commander-brief-body" style="min-height:36px">
       <div class="skel" style="height:13px;width:70%;margin-bottom:6px"></div>
@@ -4319,12 +4319,12 @@ function switchTab(name) {
     if (name === "memory")       gmInit();
     if (name === "calendar")     loadCalendarEvents(_cal.range || "day");
     if (name === "projects")     loadProjects();
-    if (name === "home" || name === "productivity") loadHome();
+    if (name === "overview" || name === "productivity") loadHome();
+    if (name === "overview") { try { loadUnifiedPriorities(); } catch(_) {} }
     if (name === "intelligence") { try { loadNews(); loadAgents(); } catch(_) {} }
     if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
     if (name === "golf") { _loadSwingDrills(); }
     if (name === "markets")  { try { _initMarketsTab(); } catch(_) { try { loadPortfolioSummary(null); } catch(__) {} } }
-    if (name === "overview") { try { loadUnifiedPriorities(); } catch(_) {} }
   }, 120);
 }
 document.querySelectorAll(".tab-btn,.mob-btn").forEach(b =>
@@ -4349,7 +4349,7 @@ function trafficTag(level) {
 /* ── Load home ──────────────────────── */
 async function loadHome() {
   try {
-    const d = await fetch("/dashboard/home").then(r => r.json());
+    const d = await _fetchWithTimeout("/dashboard/home", {}, 10000);
     window._lastHomeData = d; // cache for Command Center
     if (qs("greeting"))    qs("greeting").textContent    = d.greeting      || "JARVIS ready";
     if (qs("todayDate"))   qs("todayDate").textContent   = d.date          || "--";
@@ -4371,7 +4371,6 @@ async function loadHome() {
     if (qs("greeting")    && qs("greeting").textContent    === "Loading…") qs("greeting").textContent    = "JARVIS";
     if (qs("topPriority") && qs("topPriority").textContent === "Loading…") qs("topPriority").textContent = "Sin datos";
     if (qs("nextMeeting") && qs("nextMeeting").textContent === "Loading…")  qs("nextMeeting").textContent = "Sin reuniones";
-    if (qs("ov-pipe-lbl") && qs("ov-pipe-lbl").textContent === "Loading…")  qs("ov-pipe-lbl").textContent = "No disponible";
   }
 }
 
@@ -4937,6 +4936,12 @@ async function _fetchWithTimeout(url, options = {}, ms = 8000) {
   }
 }
 
+/* safeFetch — timeout + fallback; never throws, returns fallback on failure */
+async function safeFetch(url, options = {}, ms = 8000, fallback = null) {
+  try { return await _fetchWithTimeout(url, options, ms); }
+  catch(e) { console.warn("[safeFetch]", url, e.message); return fallback; }
+}
+
 async function loadMarketSnapshot() {
   const indicesEl  = qs("mkt-indices");
   const regimeBadge = qs("mkt-regime-badge");
@@ -4995,8 +5000,8 @@ async function loadPortfolioSummary(btn) {
   if (chipEl) chipEl.textContent = "Refreshing…";
   try {
     const [summary, analysis] = await Promise.all([
-      fetch("/api/portfolio/summary").then(r => r.json()),
-      fetch("/api/portfolio/analysis").then(r => r.json()),
+      _fetchWithTimeout("/api/portfolio/summary", {}, 12000),
+      _fetchWithTimeout("/api/portfolio/analysis", {}, 12000),
     ]);
 
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
@@ -5095,7 +5100,7 @@ async function loadPortfolioSummary(btn) {
 
 async function loadBrokerBreakdown() {
   try {
-    const d = await fetch("/api/portfolio/brokers").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/portfolio/brokers", {}, 10000);
     const brokers = d.brokers || {};
 
     const renderBroker = (id, name, bdata) => {
@@ -5122,7 +5127,7 @@ async function loadBrokerBreakdown() {
     renderBroker("broker-hapi", "hapi", brokers.hapi || {});
 
     // Sector exposure bars
-    const d2 = await fetch("/api/portfolio/exposure").then(r => r.json());
+    const d2 = await _fetchWithTimeout("/api/portfolio/exposure", {}, 10000);
     const sectors = d2.sector_exposure || [];
     const barsEl  = document.getElementById("port-sector-bars");
     if (barsEl) {
@@ -5147,7 +5152,7 @@ async function loadBrokerBreakdown() {
 
 async function loadTopHoldings() {
   try {
-    const d = await fetch("/api/portfolio/positions").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/portfolio/positions", {}, 10000);
     const positions = (d.positions || []).slice(0, 10);
     const tableEl   = document.getElementById("port-holdings-table");
     if (!tableEl) return;
@@ -6134,11 +6139,10 @@ let _newsItems = [];
 
 async function loadNews() {
   try {
-    const d = await fetch("/api/news/feed?limit=48").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/news/feed?limit=48", {}, 12000);
     _newsItems = d.items || [];
     if (!_newsItems.length) {
-      // fallback to legacy endpoint
-      const d2 = await fetch("/dashboard/news").then(r => r.json());
+      const d2 = await _fetchWithTimeout("/dashboard/news", {}, 8000);
       _newsItems = d2.items || [];
     }
     _renderNewsItems(_newsItems);
@@ -6218,7 +6222,7 @@ async function analyzeNews() {
 /* ── Agents ─────────────────────────── */
 async function loadAgents() {
   try {
-    const d = await fetch("/dashboard/agents").then(r => r.json());
+    const d = await _fetchWithTimeout("/dashboard/agents", {}, 8000);
     const items = d.items || [];
 
     // Full agents tab
@@ -6295,7 +6299,7 @@ function quickAsk(name) {
 /* ── Pipeline ───────────────────────── */
 async function loadPipeline() {
   try {
-    const d = await fetch("/dashboard/pipeline").then(r => r.json());
+    const d = await _fetchWithTimeout("/dashboard/pipeline", {}, 8000);
     const stage = (d.stage||"SCAN").toUpperCase();
     const prog  = d.progress || 0;
     const msg   = d.message  || "";
@@ -6319,7 +6323,7 @@ async function loadPipeline() {
 /* ── System metrics ─────────────────── */
 async function loadSystemMetrics() {
   try {
-    const d = await fetch("/dashboard/system").then(r => r.json());
+    const d = await _fetchWithTimeout("/dashboard/system", {}, 8000);
 
     /* legacy tiles */
     if (qs("signalsCount")) qs("signalsCount").textContent = safe(d.signals);
@@ -6393,7 +6397,7 @@ async function loadSystemMetrics() {
 /* ── Assets ─────────────────────────── */
 async function loadAssets() {
   try {
-    const d = await fetch("/dashboard/assets").then(r => r.json());
+    const d = await _fetchWithTimeout("/dashboard/assets", {}, 8000);
     const items = d.assets || [];
     if (qs("assetsCount"))    qs("assetsCount").textContent    = items.length;
     if (qs("assetCountLabel"))qs("assetCountLabel").textContent = `${items.length} file${items.length!==1?"s":""}`;
@@ -7090,7 +7094,7 @@ function _renderEliteResult(d) {
 // ── history & drills ─────────────────────────────────────────────────
 async function loadSwingHistory() {
   try {
-    const d = await fetch("/api/golf/vision/history?limit=6").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/golf/vision/history?limit=6", {}, 8000);
     const el = qs("svHistoryList");
     if (!el) return;
     if (!d.items || d.items.length === 0) {
@@ -7594,10 +7598,10 @@ async function sendChat(override = null) {
   input.value = "";
   const typing = addBubble("JARVIS is thinking…", "jarvis typing");
   try {
-    const d = await fetch("/chat", {
+    const d = await _fetchWithTimeout("/chat", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({message, domain:"general"})
-    }).then(r => r.json());
+    }, 45000);
     const reply = d.reply || d.summary || d.response?.reply || d.response?.summary || "No reply.";
     typing.remove();
     addBubble(reply, "jarvis");
@@ -7665,7 +7669,7 @@ let _groupedCourses = {};
 
 async function loadCoursesLibrary() {
   try {
-    const d = await fetch("/api/golf/courses/all").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/golf/courses/all", {}, 10000);
     _allCourses    = d.all     || [];
     _groupedCourses = d.grouped || {};
     const countEl = qs("courseLibCount");
@@ -7867,7 +7871,7 @@ let _editingClub = null;
 
 async function loadGolfBag() {
   try {
-    const d = await fetch("/api/golf/bag").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/golf/bag", {}, 8000);
     _bag = d.bag || [];
     renderBagTable(_bag);
   } catch(e) {
@@ -7977,10 +7981,14 @@ const PROJ_COLORS = {
 
 async function loadProjects() {
   try {
-    const d = await fetch("/api/projects").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/projects", {}, 8000);
     _proj.projects = d.projects || [];
     renderProjectList(_proj.projects);
-  } catch(e) { console.warn("loadProjects:", e); }
+  } catch(e) {
+    console.warn("loadProjects:", e);
+    const el = qs("projectListEl");
+    if (el && !el.textContent.trim()) el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Projects unavailable</div><div class="empty-state-sub">Could not load projects. <button class="btn-ol btn-sm" onclick="loadProjects()">Retry</button></div></div>`;
+  }
 }
 
 function renderProjectList(projects) {
@@ -8245,11 +8253,16 @@ async function runAITasks() {
 /* ── Analytics ──────────────────────── */
 async function loadAnalytics() {
   try {
-    const r = await fetch("/api/analytics/summary");
-    const d = await r.json();
+    const d = await _fetchWithTimeout("/api/analytics/summary", {}, 10000);
     if (d.status !== "ok") return;
     _renderAnalytics(d);
-  } catch(e) { console.warn("loadAnalytics:", e); }
+  } catch(e) {
+    console.warn("loadAnalytics:", e);
+    const healthEl = qs("an-health-num");
+    if (healthEl && healthEl.textContent === "") healthEl.textContent = "—";
+    const insEl = qs("an-health-insights");
+    if (insEl && !insEl.textContent.trim()) insEl.textContent = "Analytics unavailable. Retry in a moment.";
+  }
 }
 
 function _renderAnalytics(d) {
@@ -8522,8 +8535,7 @@ const _NOTIF_ICONS = {
 
 async function loadNotifications() {
   try {
-    const r = await fetch("/api/notifications?limit=30");
-    const d = await r.json();
+    const d = await _fetchWithTimeout("/api/notifications?limit=30", {}, 8000);
     const items = d.notifications || [];
     const unread = d.unread || 0;
 
@@ -8571,6 +8583,8 @@ async function loadNotifications() {
     }).join("");
   } catch(e) {
     console.warn("loadNotifications:", e);
+    const errList = qs("notifList");
+    if (errList && errList.innerHTML.includes("Loading")) errList.innerHTML = '<div class="notif-empty">Notifications unavailable</div>';
   }
 }
 
@@ -8624,8 +8638,7 @@ async function loadCalendarEvents(range = "day") {
   if (wrap) wrap.innerHTML = '<div class="cal-empty">Loading…</div>';
   try {
     const url = range ? `/api/calendar/events?range=${range}` : "/api/calendar/events";
-    const r = await fetch(url);
-    const data = await r.json();
+    const data = await _fetchWithTimeout(url, {}, 10000);
     if (data.status === "error" || data.status === "disconnected") {
       if (wrap) wrap.innerHTML = '<div class="cal-empty">Calendario no conectado.<br><span style="font-size:12px;color:var(--soft)">Conecta Google Calendar o Outlook en Ajustes.</span></div>';
       return;
@@ -8965,7 +8978,7 @@ async function loadCommandHistory() {
   const el = document.getElementById("cmd-history-list");
   if (!el) return;
   try {
-    const d = await fetch("/api/command/history?limit=10").then(r=>r.json());
+    const d = await _fetchWithTimeout("/api/command/history?limit=10", {}, 6000);
     const items = d.items || [];
     if (!items.length) {
       el.innerHTML = '<div style="color:var(--soft);font-size:12px;padding:4px 0">No hay comandos recientes.</div>';
@@ -8995,7 +9008,7 @@ async function loadCommanderBrief() {
   const el = document.getElementById("commander-brief-body");
   if (!el) return;
   try {
-    const d = await fetch("/api/commander/brief").then(r=>r.json());
+    const d = await _fetchWithTimeout("/api/commander/brief", {}, 10000);
     if (d.status !== "ok") {
       el.innerHTML = '<div style="font-size:12px;color:var(--soft)">Brief no disponible — verifica conexión.</div>';
       return;
@@ -9023,7 +9036,7 @@ function _checkBriefingTrigger(message) {
   const m = message.toLowerCase();
   if (m.includes("briefing") || m.includes("dame mi brief") || m.includes("resumen del dia") || m.includes("jarvis brief")) {
     loadCommanderBrief();
-    switchTab("home");
+    switchTab("overview");
     return true;
   }
   return false;
@@ -9956,11 +9969,14 @@ async function loadAutomationsUpgraded() {
   const logEl   = qs("auto-log-list");
 
   try {
-    const [statsD, listD, logD] = await Promise.all([
-      fetch("/api/automations/stats").then(r => r.json()),
-      fetch("/api/automations").then(r => r.json()),
-      fetch("/api/automations/log?limit=10").then(r => r.json()),
+    const results = await Promise.allSettled([
+      _fetchWithTimeout("/api/automations/stats", {}, 8000),
+      _fetchWithTimeout("/api/automations", {}, 8000),
+      _fetchWithTimeout("/api/automations/log?limit=10", {}, 8000),
     ]);
+    const statsD = results[0].status === "fulfilled" ? results[0].value : {};
+    const listD  = results[1].status === "fulfilled" ? results[1].value : {};
+    const logD   = results[2].status === "fulfilled" ? results[2].value : {};
 
     // Stats
     if (statsEl) {
@@ -10097,7 +10113,7 @@ function lifeNlpMic() {
 
 async function loadLifeReminders() {
   try {
-    const d = await fetch("/api/life/reminders").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/life/reminders", {}, 8000);
     const el = qs("life-rem-list");
     const countEl = qs("life-rem-count");
     if (countEl) countEl.textContent = d.count;
@@ -10156,7 +10172,7 @@ async function lifeRemDel(id) {
 
 async function loadLifeShopping() {
   try {
-    const d = await fetch("/api/life/shopping").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/life/shopping", {}, 8000);
     const el = qs("life-shop-list");
     const countEl = qs("life-shop-count");
     const unchecked = d.items.filter(i => !i.checked).length;
@@ -10224,7 +10240,7 @@ async function lifeShopClearChecked() {
 
 async function loadLifeCalls() {
   try {
-    const d = await fetch("/api/life/calls").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/life/calls", {}, 8000);
     const el = qs("life-call-list");
     const countEl = qs("life-call-count");
     if (countEl) countEl.textContent = d.count;
@@ -10282,7 +10298,7 @@ async function lifeCallDel(id) {
 
 async function loadLifePayments() {
   try {
-    const d = await fetch("/api/life/payments").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/life/payments", {}, 8000);
     const el = qs("life-pay-list");
     const countEl = qs("life-pay-count");
     if (countEl) countEl.textContent = d.count;
@@ -10490,7 +10506,7 @@ async function loadOutlookInbox() {
     if (_olFilterType === "status" && _olFilter)   params.set("status",   _olFilter);
     if (_olFilterType === "priority" && _olFilter) params.set("priority", _olFilter);
 
-    const d = await fetch(`/api/outlook/inbox?${params}`).then(r => r.json());
+    const d = await _fetchWithTimeout(`/api/outlook/inbox?${params}`, {}, 12000);
     if (d.status === "expired" || d.requires_reauth) {
       container.innerHTML = `<div class="ol-empty-state">
         <div style="font-size:28px;margin-bottom:8px">🔑</div>
