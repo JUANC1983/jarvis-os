@@ -25,7 +25,23 @@
       "Bash(powershell.exe -Command \"\\(Get-Content 'C:\\\\Users\\\\juanc\\\\JARVIS\\\\dashboard\\\\jarvis_futuristic.html'\\).Count\")",
       "Bash(node --check \"c:/Users/juanc/JARVIS/tmp_check.js\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('opsx/bridge/production_guard.py'\\).read\\(\\)\\); print\\('production_guard.py: OK'\\)\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\('opsx/bridge/watchdog.py'\\).read\\(\\)\\); print\\('watchdog.py: OK'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\('opsx/bridge/watchdog.py'\\).read\\(\\)\\); print\\('watchdog.py: OK'\\)\")",
+      "Bash(python scripts/deployment_guard.py)",
+      "Bash(python opsx/stability/frontend_qa.py)",
+      "Bash(python -c \"import sys; data=sys.stdin.read\\(\\); print\\(data[:3000]\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('RESULT:', d['result']\\); print\\('FAIL:', d['fail']\\); print\\('WARN:', d['warn']\\); print\\(f'Pass: {d[\\\\\"summary\\\\\"][\\\\\"pass_count\\\\\"]}  Warn: {d[\\\\\"summary\\\\\"][\\\\\"warn_count\\\\\"]}  Fail: {d[\\\\\"summary\\\\\"][\\\\\"fail_count\\\\\"]}'\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('RESULT:', d['result']\\); print\\('FAIL:', d['fail']\\); print\\('WARN:', d['warn']\\); print\\(f'Summary: Pass={d[\\\\\"summary\\\\\"][\\\\\"pass_count\\\\\"]} Warn={d[\\\\\"summary\\\\\"][\\\\\"warn_count\\\\\"]} Fail={d[\\\\\"summary\\\\\"][\\\\\"fail_count\\\\\"]}'\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('RESULT:', d['result']\\); [print\\('FAIL:', f\\) for f in d['fail']]; [print\\('WARN:', w\\) for w in d['warn']]; print\\(f'Summary: Pass={d[\\\\\"summary\\\\\"][\\\\\"pass_count\\\\\"]} Warn={d[\\\\\"summary\\\\\"][\\\\\"warn_count\\\\\"]} Fail={d[\\\\\"summary\\\\\"][\\\\\"fail_count\\\\\"]}'\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('RESULT:', d['result']\\); [print\\('FAIL:', f\\) for f in d['fail']]; print\\(f'Summary: Pass={d[\\\\\"summary\\\\\"][\\\\\"pass_count\\\\\"]} Warn={d[\\\\\"summary\\\\\"][\\\\\"warn_count\\\\\"]} Fail={d[\\\\\"summary\\\\\"][\\\\\"fail_count\\\\\"]}'\\)\")",
+      "Bash(python -c \"import opsx.stability; print\\('opsx.stability import ok'\\)\")",
+      "Bash(git ls-files *)",
+      "Bash(git rm *)",
+      "Bash(python -m py_compile main.py)",
+      "Bash(python -m py_compile opsx/bridge/secure_bridge.py)",
+      "Bash(python -m py_compile main.py opsx/bridge/secure_bridge.py opsx/stability/frontend_qa.py opsx/stability/api_contract_lock.py opsx/stability/production_rules.py opsx/stability/startup_validator.py opsx/stability/patch_engine.py scripts/deployment_guard.py)",
+      "Bash(python -m py_compile scripts/deployment_guard.py opsx/stability/api_contract_lock.py)",
+      "PowerShell(cd \"c:\\\\Users\\\\juanc\\\\JARVIS\"; $env:PYTHONIOENCODING=\"utf-8\"; python scripts/deployment_guard.py 2>&1)",
+      "Bash(PYTHONIOENCODING=utf-8 python scripts/deployment_guard.py)"
     ],
     "additionalDirectories": [
       "\\dev"

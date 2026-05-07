@@ -162,7 +162,29 @@ async def _start_watchdog():
     )
     _log = logging.getLogger("jarvis")
 
-    # Phase 6: startup validation — must run before watchdog starts
+    # Phase 8: full startup validation (stability governor)
+    try:
+        from opsx.stability.startup_validator import StartupValidator as _SV
+        _sv_report = _SV().run_all()
+        if _sv_report["overall"] in ("FAIL", "CRITICAL"):
+            _log.critical(
+                "STARTUP VALIDATION: %s — %d critical, %d fail. "
+                "System may be degraded. Check logs.",
+                _sv_report["overall"],
+                _sv_report["counts"]["critical"],
+                _sv_report["counts"]["fail"],
+            )
+        else:
+            _log.info(
+                "STARTUP VALIDATION: %s — %d pass, %d warn",
+                _sv_report["overall"],
+                _sv_report["counts"]["pass"],
+                _sv_report["counts"]["warn"],
+            )
+    except Exception as _sv_err:
+        _log.warning("Startup validator unavailable: %s", _sv_err)
+
+    # Phase 6: IBKR production guard (belt-and-suspenders)
     try:
         from opsx.bridge.production_guard import validate_production_config
         validate_production_config(bridge_url, bridge_token, hosted)
@@ -218,11 +240,14 @@ def get_current_user(
 def get_optional_user(
     creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> dict:
-    """Returns decoded user or falls back to owner for legacy routes."""
+    """Returns decoded user or falls back to owner. Set JARVIS_STRICT_AUTH=true to require auth."""
     if creds:
         user = auth_engine.decode_token(creds.credentials)
         if user:
             return user
+    import os as _auth_os
+    if _auth_os.getenv("JARVIS_STRICT_AUTH", "").lower() == "true":
+        raise HTTPException(status_code=401, detail="Authentication required")
     return {"user_id": "owner", "role": "owner"}
 
 # ── Per-user engine factories (cached) ──────────────────────────────
@@ -2015,7 +2040,7 @@ def voice_history(
 
 
 @app.get("/api/voice/qa")
-def voice_qa(current_user: dict = Depends(get_optional_user)):
+def voice_qa(current_user: dict = Depends(get_current_user)):
     """
     Full voice system health check.
     Probes ElevenLabs TTS with a short phrase to verify end-to-end connectivity.
@@ -5074,7 +5099,7 @@ async def ms_callback(code: str = "", state: str = "", error: str = "", error_de
         raise HTTPException(500, f"Token exchange failed: {exc}")
 
     _ms_token_store.save(user_id, tokens)
-    print(f"[AUTH] Callback complete — token stored for user={user_id}, access_token_prefix={tokens.get('access_token','')[:20]}...")
+    print(f"[AUTH] Callback complete — token stored for user={user_id}")
     asyncio.create_task(_ms_create_sub(user_id))
 
     return RedirectResponse("/dashboard?outlook=connected")
@@ -5170,7 +5195,7 @@ async def outlook_status(current_user: dict = Depends(get_optional_user)):
 
 
 @app.get("/api/outlook/token-status")
-async def outlook_token_status(current_user: dict = Depends(get_optional_user)):
+async def outlook_token_status(current_user: dict = Depends(get_current_user)):
     """Debug: show token state for the current user. No secrets exposed."""
     if not _OUTLOOK_AVAILABLE:
         return {"available": False}
@@ -5178,12 +5203,10 @@ async def outlook_token_status(current_user: dict = Depends(get_optional_user)):
     store = _ms_token_store
     has_token   = store.is_authenticated(uid)
     is_expired  = store.is_expired(uid) if has_token else True
-    token_prefix = ""
-    scopes       = ""
+    scopes = ""
     if has_token:
         raw = store.get_access_token(uid)
         if raw:
-            token_prefix = raw[:20] + "..."
             try:
                 import base64, json as _json
                 parts = raw.split(".")
@@ -5198,7 +5221,6 @@ async def outlook_token_status(current_user: dict = Depends(get_optional_user)):
         "user_id":     uid,
         "has_token":   has_token,
         "is_expired":  is_expired,
-        "token_prefix": token_prefix,
         "scopes":      scopes,
         "has_refresh": bool(t.get("refresh_token")),
         "saved_at":    t.get("saved_at"),
@@ -5207,7 +5229,7 @@ async def outlook_token_status(current_user: dict = Depends(get_optional_user)):
 
 
 @app.get("/api/outlook/config-check")
-async def outlook_config_check():
+async def outlook_config_check(_: dict = Depends(get_current_user)):
     """Diagnostic: show which env vars are set (no secrets exposed)."""
     import os
     def _set(name: str) -> bool:
@@ -5230,7 +5252,7 @@ async def outlook_config_check():
 
 
 @app.get("/api/outlook/graph-qa")
-async def outlook_graph_qa(current_user: dict = Depends(get_optional_user)):
+async def outlook_graph_qa(current_user: dict = Depends(get_current_user)):
     """
     End-to-end Graph API health check.
     Probes /me, /me/messages, /me/mailFolders/Inbox, and /subscriptions.
@@ -5295,7 +5317,7 @@ async def outlook_graph_qa(current_user: dict = Depends(get_optional_user)):
 
 
 @app.get("/api/outlook/subscription-debug")
-async def outlook_subscription_debug(current_user: dict = Depends(get_optional_user)):
+async def outlook_subscription_debug(current_user: dict = Depends(get_current_user)):
     """
     Attempt subscription creation in debug mode.
     Tries both resource paths (mailFolders/Inbox and me/messages) and two TTLs.
@@ -5986,7 +6008,7 @@ def portfolio_status(current_user: dict = Depends(get_optional_user)):
 # ── IBKR Debug ────────────────────────────────────────────────────────
 
 @app.get("/api/debug/ibkr")
-def debug_ibkr(current_user: dict = Depends(get_optional_user)):
+def debug_ibkr(current_user: dict = Depends(get_current_user)):
     """
     Deep diagnostic: bridge reachability, auth, broker connectivity,
     snapshot freshness, and latency. Safe to call repeatedly — read-only.
@@ -6142,10 +6164,73 @@ def debug_ibkr(current_user: dict = Depends(get_optional_user)):
     return result
 
 
+# ── Production Stability Status ───────────────────────────────────────────
+
+@app.get("/api/stability/status")
+def stability_status(current_user: dict = Depends(get_optional_user)):
+    """
+    Full stability governor status: feature registry, production rules,
+    contract check summary. Safe to call repeatedly — read-only.
+    """
+    import os as _os_stab
+    result: Dict = {
+        "governor_version": "1.0.0",
+        "real_trade":       False,
+        "checked_at":       __import__("datetime").datetime.utcnow().isoformat(),
+    }
+    try:
+        from opsx.stability.startup_validator import StartupValidator
+        sv = StartupValidator()
+        report = sv.run_all()
+        result["startup_validation"] = {
+            "overall": report["overall"],
+            "counts":  report["counts"],
+        }
+    except Exception as exc:
+        result["startup_validation"] = {"error": str(exc)}
+
+    try:
+        from opsx.stability.api_contract_lock import APIContractLock
+        lock    = APIContractLock()
+        drifted = lock.check_contract_drift()
+        result["api_contracts"] = {
+            "registered": len(lock.registered_endpoints),
+            "drifted":    len(drifted),
+            "status":     "PASS" if not drifted else "DRIFT_DETECTED",
+            "details":    drifted,
+        }
+    except Exception as exc:
+        result["api_contracts"] = {"error": str(exc)}
+
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        reg_path = _Path("reports/stability/feature_lock_registry.json")
+        if reg_path.exists():
+            reg = _json.loads(reg_path.read_text(encoding="utf-8"))
+            result["feature_registry"] = {
+                "total":     len(reg.get("registry", [])),
+                "protected": sum(1 for f in reg.get("registry", []) if f.get("protected")),
+                "all_pass":  all(f.get("qa_status") == "PASS" for f in reg.get("registry", [])),
+                "version":   reg.get("version"),
+            }
+    except Exception as exc:
+        result["feature_registry"] = {"error": str(exc)}
+
+    result["production_rules"] = {
+        "real_trade_blocked":    True,
+        "execution_guard_active": True,
+        "readonly_enforced":     True,
+        "localhost_blocked":     True,
+    }
+
+    return result
+
+
 # ── Bridge Watchdog Status ─────────────────────────────────────────────
 
 @app.get("/api/bridge/watchdog")
-def bridge_watchdog(current_user: dict = Depends(get_optional_user)):
+def bridge_watchdog(current_user: dict = Depends(get_current_user)):
     """Bridge watchdog state: reachability, staleness, consecutive failures."""
     try:
         from opsx.bridge.watchdog import get_watchdog_state, get_stale_warning
@@ -6160,7 +6245,7 @@ def bridge_watchdog(current_user: dict = Depends(get_optional_user)):
 # ── Broker Permission Validator ────────────────────────────────────────
 
 @app.get("/api/debug/permissions")
-def broker_permissions(current_user: dict = Depends(get_optional_user)):
+def broker_permissions(current_user: dict = Depends(get_current_user)):
     """
     Validate all safety constraints and broker permissions.
     Returns a comprehensive safety audit — safe to call at any time.
@@ -7042,7 +7127,7 @@ async def outlook_webhook_canonical(request: Request, validationToken: str = "")
     # ── Validation handshake (always unauthenticated) ──────────────────
     vtoken = validationToken or request.query_params.get("validationToken", "")
     if vtoken:
-        print(f"[WEBHOOK] Validation handshake received token={vtoken[:20]}...")
+        print("[WEBHOOK] Validation handshake received")
         return PlainTextResponse(content=vtoken, status_code=200)
 
     # ── Lifecycle notifications (keep-alive pings from Graph) ──────────

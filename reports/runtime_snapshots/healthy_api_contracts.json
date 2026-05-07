@@ -1,0 +1,82 @@
+{
+  "version": "1.0.0",
+  "captured": "2026-05-07",
+  "description": "Known-good API response shapes. Future patches must not change these schemas without updating contract hashes.",
+  "snapshots": {
+    "/api/debug/ibkr": {
+      "required_fields": ["mode", "bridge_enabled", "real_trade", "execution_blocked", "readonly", "checked_at"],
+      "safety_invariants": {"real_trade": false, "execution_blocked": true, "readonly": true},
+      "example_response": {
+        "mode": "remote_bridge",
+        "bridge_enabled": true,
+        "bridge_url": "https://xxx.ngrok.io",
+        "token_set": true,
+        "readonly": true,
+        "execution_blocked": true,
+        "real_trade": false,
+        "data_origin": "ibkr_live",
+        "account_mode": "LIVE",
+        "account_type": "LIVE",
+        "broker_connected": true,
+        "bridge_reachable": true,
+        "snapshot_stale": false,
+        "last_successful_sync": "2026-05-07T12:00:00",
+        "bridge_latency_ms": 42.1,
+        "positions_count": 5,
+        "checked_at": "2026-05-07T12:00:00",
+        "watchdog": {
+          "running": true,
+          "consecutive_failures": 0,
+          "circuit_open": false,
+          "current_backoff_secs": 60
+        }
+      },
+      "contract_hash": "36866a7564c08213d2ab"
+    },
+    "/api/portfolio/status": {
+      "required_fields": ["status", "ibkr", "hapi", "real_trade"],
+      "safety_invariants": {"real_trade": false},
+      "example_response": {
+        "status": "ok",
+        "ibkr": {"status": "connected", "bridge_ok": true},
+        "hapi": {"status": "connected"},
+        "real_trade": false
+      },
+      "contract_hash": "ea837416cdc5fec613f6"
+    },
+    "/api/health": {
+      "required_fields": ["status"],
+      "safety_invariants": {},
+      "example_response": {"status": "ok"},
+      "contract_hash": "5ebbcd69260a1c1fdadd"
+    },
+    "/api/bridge/watchdog": {
+      "required_fields": ["running", "consecutive_failures", "real_trade"],
+      "safety_invariants": {"real_trade": false},
+      "example_response": {
+        "running": true,
+        "bridge_reachable": true,
+        "ibkr_connected": true,
+        "account_mode": "LIVE",
+        "last_checked_at": "2026-05-07T12:00:00",
+        "last_healthy_at": "2026-05-07T12:00:00",
+        "stale_detected": false,
+        "cache_age_seconds": 30,
+        "consecutive_failures": 0,
+        "circuit_open": false,
+        "current_backoff_secs": 60,
+        "real_trade": false
+      },
+      "contract_hash": "8b2f14b0471d0169ca46"
+    },
+    "/api/debug/permissions": {
+      "required_fields": ["real_trade_disabled", "execution_guard_active", "ibkr_read_only"],
+      "safety_invariants": {
+        "real_trade_disabled": true,
+        "execution_guard_active": true,
+        "ibkr_read_only": true
+      },
+      "contract_hash": "8c2bf3472218249c9c23"
+    }
+  }
+}

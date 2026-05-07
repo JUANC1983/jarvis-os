@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "captured": "2026-05-07",
+  "description": "Known-good navigation structure. Any patch must preserve this structure.",
+  "primary_sections": [
+    {
+      "id": "home",
+      "label": "🏠 Home",
+      "default_tab": "overview",
+      "sub_nav": []
+    },
+    {
+      "id": "work",
+      "label": "💼 Work",
+      "default_tab": "productivity",
+      "sub_nav": ["Tasks", "Calendar", "Outlook", "Projects", "Automations"]
+    },
+    {
+      "id": "markets",
+      "label": "📈 Markets",
+      "default_tab": "markets",
+      "sub_nav": ["Portfolio", "Cockpit", "Lab", "Learning", "Analysis"]
+    },
+    {
+      "id": "life",
+      "label": "🌿 Life",
+      "default_tab": "life",
+      "sub_nav": ["Life OS", "Golf Performance", "(fitness tabs from localStorage)"]
+    },
+    {
+      "id": "intelligence",
+      "label": "🧠 Intelligence",
+      "default_tab": "agents",
+      "sub_nav": ["Agents", "News", "Analytics", "Memory"]
+    },
+    {
+      "id": "system",
+      "label": "⚙️ System",
+      "default_tab": "system",
+      "sub_nav": ["System", "AI Chat"]
+    }
+  ],
+  "mode_toggle": {
+    "modes": ["beginner", "operator"],
+    "default": "operator",
+    "storage_key": "jarvis_mode",
+    "css_classes": ["mode-beginner", "mode-operator"]
+  },
+  "legacy_nav": {
+    "id": "legacy-tab-nav",
+    "visible": false,
+    "purpose": "JS compatibility for applyModules() and switchTab() — must never be deleted",
+    "display": "none!important"
+  },
+  "golf_access_path": "Life → Golf Performance",
+  "golf_discoverability_score": 91
+}

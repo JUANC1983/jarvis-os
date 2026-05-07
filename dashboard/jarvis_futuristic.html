@@ -4849,6 +4849,36 @@ window.JARVIS_DEBUG = {
   initializedModules: [],
   loadingModules: []
 };
+window.JARVIS_RUNTIME_DIAGNOSTICS = {
+  activeRequests: {},
+  failedRequests: [],
+  activeIntervals: {},
+  lastHydration: null,
+  runtimeErrors: window.JARVIS_DEBUG.runtimeErrors
+};
+
+function _diagRequestStart(url) {
+  const key = String(url || "unknown");
+  window.JARVIS_RUNTIME_DIAGNOSTICS.activeRequests[key] = {
+    startedAt: Date.now()
+  };
+}
+
+function _diagRequestEnd(url, ok, error) {
+  const key = String(url || "unknown");
+  delete window.JARVIS_RUNTIME_DIAGNOSTICS.activeRequests[key];
+  if (!ok) {
+    window.JARVIS_RUNTIME_DIAGNOSTICS.failedRequests.push({
+      url: key,
+      error: String(error || "request failed"),
+      time: Date.now()
+    });
+    if (window.JARVIS_RUNTIME_DIAGNOSTICS.failedRequests.length > 50) {
+      window.JARVIS_RUNTIME_DIAGNOSTICS.failedRequests.shift();
+    }
+  }
+  window.JARVIS_RUNTIME_DIAGNOSTICS.lastHydration = new Date().toISOString();
+}
 
 window.onerror = function(msg, src, line, col, err) {
   const entry = { msg: String(msg), src, line, col, time: Date.now() };
@@ -4906,7 +4936,10 @@ const AGENT_META = {
 
 /* ── Tab switching ──────────────────── */
 let _tabSwitchTimer = null;
+let _tabSwitchPendingName = null;
 function switchTab(name) {
+  if (!name || window.JARVIS_TABS.loading[name]) return;
+  window.JARVIS_TABS.loading[name] = true;
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".tab-btn,.mob-btn").forEach(b => b.classList.remove("active"));
   const panel = qs("tab-" + name);
@@ -4930,24 +4963,36 @@ function switchTab(name) {
     _activateSub && _activateSub(name);
   }
   // Debounce lazy-loads to prevent race conditions on rapid tab switching
+  if (_tabSwitchPendingName && _tabSwitchPendingName !== name) {
+    delete window.JARVIS_TABS.loading[_tabSwitchPendingName];
+  }
   clearTimeout(_tabSwitchTimer);
+  _tabSwitchPendingName = name;
   _tabSwitchTimer = setTimeout(() => {
-    if (name === "automations")  loadAutomationsUpgraded();
-    if (name === "life")         loadAllLife();
-    if (name === "outlook")      _onOutlookTabActivated();
-    if (name === "memory")       gmInit();
-    if (name === "calendar")     loadCalendarEvents(_cal.range || "day");
-    if (name === "projects")     loadProjects();
-    if (name === "overview" || name === "productivity") loadHome();
-    if (name === "overview") { try { loadUnifiedPriorities(); } catch(_) {} }
-    if (name === "intelligence") { try { loadNews(); loadAgents(); } catch(_) {} }
-    if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
-    if (name === "golf") { _loadSwingDrills(); }
-    if (name === "markets")  { try { _initMarketsTab(); } catch(_) { try { loadPortfolioSummary(null); } catch(__) {} } }
+    try {
+      if (name === "automations")  loadAutomationsUpgraded();
+      if (name === "life")         loadAllLife();
+      if (name === "outlook")      _onOutlookTabActivated();
+      if (name === "memory")       gmInit();
+      if (name === "calendar")     loadCalendarEvents(_cal.range || "day");
+      if (name === "projects")     loadProjects();
+      if (name === "overview" || name === "productivity") loadHome();
+      if (name === "overview") { try { loadUnifiedPriorities(); } catch(_) {} }
+      if (name === "intelligence") { try { loadNews(); loadAgents(); } catch(_) {} }
+      if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
+      if (name === "golf") { _loadSwingDrills(); }
+      if (name === "markets")  { try { _initMarketsTab(); } catch(_) { try { loadPortfolioSummary(null); } catch(__) {} } }
+    } finally {
+      delete window.JARVIS_TABS.loading[name];
+      if (_tabSwitchPendingName === name) _tabSwitchPendingName = null;
+    }
   }, 120);
 }
-document.querySelectorAll(".tab-btn,.mob-btn").forEach(b =>
-  b.addEventListener("click", () => switchTab(b.dataset.tab)));
+document.querySelectorAll(".tab-btn,.mob-btn").forEach(b => {
+  if (b.dataset.jarvisTabBound === "1") return;
+  b.dataset.jarvisTabBound = "1";
+  b.addEventListener("click", () => switchTab(b.dataset.tab));
+});
 
 /* ── Live clock ─────────────────────── */
 (function clock() {
@@ -5552,13 +5597,17 @@ async function reAnalyzeStock() {
 async function _fetchWithTimeout(url, options = {}, ms = 8000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
+  _diagRequestStart(url);
   try {
     const r = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timer);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
+    const data = await r.json();
+    _diagRequestEnd(url, true);
+    return data;
   } catch(e) {
     clearTimeout(timer);
+    _diagRequestEnd(url, false, e && e.message ? e.message : e);
     if (e.name === "AbortError") throw new Error("Request timed out after " + ms + "ms");
     throw e;
   }
@@ -6036,7 +6085,7 @@ async function loadTraderAudit(btn) {
 
 async function loadLearningMetrics() {
   try {
-    const d = await fetch("/api/trader/learning").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/trader/learning", {}, 12000);
     const m = d.metrics || {};
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
 
@@ -6160,7 +6209,20 @@ const _intervals = {};
 function _registerInterval(key, fn, ms) {
   if (_intervals[key]) { clearInterval(_intervals[key]); }
   _intervals[key] = setInterval(fn, ms);
+  window.JARVIS_RUNTIME_DIAGNOSTICS.activeIntervals[key] = {
+    ms,
+    startedAt: Date.now()
+  };
+  return _intervals[key];
 }
+function _clearRegisteredIntervals() {
+  Object.entries(_intervals).forEach(([key, id]) => {
+    try { clearInterval(id); } catch(_) {}
+    delete _intervals[key];
+    delete window.JARVIS_RUNTIME_DIAGNOSTICS.activeIntervals[key];
+  });
+}
+window.addEventListener("beforeunload", _clearRegisteredIntervals);
 
 // Panel load guard — prevents concurrent fetches on rapid tab clicks
 const _panelLoading = {};
@@ -6378,12 +6440,13 @@ async function loadPaperAnalytics(btn) {
   _panelLoading.lab = true;
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
   try {
-    const [analytics, history] = await Promise.all([
-      fetch("/api/paper/analytics").then(r => r.json()),
-      fetch("/api/paper/history").then(r => r.json()),
+    const [analyticsRes, historyRes] = await Promise.allSettled([
+      _fetchWithTimeout("/api/paper/analytics", {}, 12000),
+      _fetchWithTimeout("/api/paper/history", {}, 12000),
     ]);
 
-    const d = analytics;
+    const d = analyticsRes.status === "fulfilled" ? analyticsRes.value : { status: "error", error: analyticsRes.reason?.message || "Analytics unavailable" };
+    const history = historyRes.status === "fulfilled" ? historyRes.value : { trades: [] };
     if (d.status !== "ok") throw new Error(d.error || "Analytics unavailable");
 
     // 12 metrics
@@ -6453,6 +6516,8 @@ async function loadPaperAnalytics(btn) {
 
   } catch(e) {
     console.warn("loadPaperAnalytics:", e);
+    _set("lab-strategy-table", '<span style="color:var(--soft);font-size:12px">Paper analytics unavailable. <button class="btn-ol btn-sm" onclick="loadPaperAnalytics(null)">Retry</button></span>');
+    _set("lab-trade-history", '<span style="color:var(--soft);font-size:12px">Trade history unavailable. <button class="btn-ol btn-sm" onclick="loadPaperAnalytics(null)">Retry</button></span>');
     showToast("Paper analytics error: " + e.message, "error");
   } finally {
     _panelLoading.lab = false;
@@ -6553,11 +6618,14 @@ async function loadLearningFull(btn) {
   _panelLoading.learning = true;
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
   try {
-    const [metricsRes, calRes, accRes] = await Promise.all([
-      fetch("/api/trader/learning").then(r => r.json()),
-      fetch("/api/trader/learning/calibration").then(r => r.json()),
-      fetch("/api/trader/learning/accuracy").then(r => r.json()),
+    const [metricsResult, calResult, accResult] = await Promise.allSettled([
+      _fetchWithTimeout("/api/trader/learning", {}, 12000),
+      _fetchWithTimeout("/api/trader/learning/calibration", {}, 12000),
+      _fetchWithTimeout("/api/trader/learning/accuracy", {}, 12000),
     ]);
+    const metricsRes = metricsResult.status === "fulfilled" ? metricsResult.value : { metrics: {}, by_signal: {} };
+    const calRes = calResult.status === "fulfilled" ? calResult.value : { calibration: [] };
+    const accRes = accResult.status === "fulfilled" ? accResult.value : { by_symbol: [] };
     const m = metricsRes.metrics || {};
     const bySignal = metricsRes.by_signal || {};
 
@@ -6649,6 +6717,8 @@ async function loadLearningFull(btn) {
 
   } catch(e) {
     console.warn("loadLearningFull:", e);
+    _set("lc-narrative", '<span style="color:var(--soft)">Learning data unavailable. <button class="btn-ol btn-sm" onclick="loadLearningFull(null)">Retry</button></span>');
+    _set("learn-signal-breakdown", '<span style="color:var(--soft)">Signal breakdown unavailable.</span>');
     showToast("Learning load error: " + e.message, "error");
   } finally {
     _panelLoading.learning = false;
@@ -7114,6 +7184,8 @@ async function uploadFiles(files) {
 
 function initUpload() {
   const zone = qs("uploadZone"), input = qs("fileInput"); if (!zone||!input) return;
+  if (zone.dataset.jarvisUploadBound === "1") return;
+  zone.dataset.jarvisUploadBound = "1";
   zone.onclick = e => { if (e.target!==input) input.click(); };
   input.onchange = async e => { if (e.target.files?.length) await uploadFiles(e.target.files); };
   zone.addEventListener("dragover", e => e.preventDefault());
@@ -7123,10 +7195,12 @@ function initUpload() {
 /* ── Golf ───────────────────────────── */
 async function loadGolf() {
   try {
-    const [d, pd] = await Promise.all([
-      fetch("/dashboard/golf").then(r => r.json()),
-      fetch("/api/golf/profile").then(r => r.json()).catch(() => ({ profile: {} })),
+    const [golfResult, profileResult] = await Promise.allSettled([
+      _fetchWithTimeout("/dashboard/golf", {}, 12000),
+      _fetchWithTimeout("/api/golf/profile", {}, 12000),
     ]);
+    const d = golfResult.status === "fulfilled" ? golfResult.value : { courses: [], insights: [] };
+    const pd = profileResult.status === "fulfilled" ? profileResult.value : { profile: {} };
     const courses  = d.courses  || [];
     const insights = d.insights || [];
     const profile  = pd.profile || {};
@@ -7892,10 +7966,12 @@ function vbSetState(state, label) {
 // ── TTS status ───────────────────────────────────────────────────────
 async function initVoiceStatus() {
   try {
-    const [statusD, settingsD] = await Promise.all([
-      fetch("/api/voice/status").then(r => r.json()),
-      fetch("/api/voice/settings").then(r => r.json()),
+    const [statusResult, settingsResult] = await Promise.allSettled([
+      _fetchWithTimeout("/api/voice/status", {}, 8000),
+      _fetchWithTimeout("/api/voice/settings", {}, 8000),
     ]);
+    const statusD = statusResult.status === "fulfilled" ? statusResult.value : {};
+    const settingsD = settingsResult.status === "fulfilled" ? settingsResult.value : {};
     voiceState.ttsAvailable = statusD.elevenlabs_configured === true;
     const badge = qs("voiceStatusBadge");
     if (badge) {
@@ -8159,7 +8235,7 @@ function onVbLangChange(val) {
 function _normalizeText(s) {
   return (s || "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")  // strip combining diacritics (é→e, ñ→n, etc.)
+    .replace(/[\u0300-\u036f]/g, "")  // strip combining diacritics after NFD normalization
     .replace(/[¿¡]/g, "")             // strip inverted punctuation
     .toLowerCase()
     .trim();
@@ -9105,11 +9181,14 @@ const _wowState = { briefOpen: false, dismissed: new Set() };
 
 async function loadWow() {
   try {
-    const [insR, briR, sugR] = await Promise.all([
-      fetch("/api/wow/insights").then(r => r.json()).catch(()=>({insights:[]})),
-      fetch("/api/wow/briefing").then(r => r.json()).catch(()=>({})),
-      fetch("/api/wow/suggestions").then(r => r.json()).catch(()=>({suggestions:[]})),
+    const [insResult, briResult, sugResult] = await Promise.allSettled([
+      _fetchWithTimeout("/api/wow/insights", {}, 8000),
+      _fetchWithTimeout("/api/wow/briefing", {}, 8000),
+      _fetchWithTimeout("/api/wow/suggestions", {}, 8000),
     ]);
+    const insR = insResult.status === "fulfilled" ? insResult.value : { insights: [] };
+    const briR = briResult.status === "fulfilled" ? briResult.value : {};
+    const sugR = sugResult.status === "fulfilled" ? sugResult.value : { suggestions: [] };
     _renderInsights(insR.insights || []);
     _renderBriefing(briR);
     _renderSuggestions(sugR.suggestions || []);
@@ -9605,7 +9684,7 @@ function initWeather() {
     { timeout: 8000, maximumAge: 600000 }
   );
   // Refresh every 15 min
-  setInterval(() => {
+  _registerInterval("weather", () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
@@ -9983,7 +10062,7 @@ async function boot() {
   try { checkOnboarding(); }      catch(e) {}
   try { loadCommanderBrief(); }   catch(e) {}
   try { loadCommandHistory(); }   catch(e) {}
-  try { setInterval(loadCommandHistory, 60000); } catch(e) {}
+  try { _registerInterval("commandHistory", loadCommandHistory, 60000); } catch(e) {}
 
   // Phase 7: OAuth redirect handling
   try {
@@ -11140,13 +11219,13 @@ async function initOutlook() {
 function _olStartPolling() {
   if (_olPollTimer) clearInterval(_olPollTimer);
   // Badge refresh: runs every 30s regardless of active tab
-  _olPollTimer = setInterval(async () => {
+  _olPollTimer = _registerInterval("outlookStatus", async () => {
     try { await loadOutlookStatus(); } catch(_) {}
   }, 30000);
 
   // Fallback inbox poll every 60s when tab is active (in case webhook is down)
-  if (!window._olInboxPollTimer) {
-    window._olInboxPollTimer = setInterval(async () => {
+  if (window._olInboxPollTimer) clearInterval(window._olInboxPollTimer);
+  window._olInboxPollTimer = _registerInterval("outlookInbox", async () => {
       const tabActive = document.querySelector('[data-tab="outlook"]')?.classList.contains("active");
       if (!tabActive) return;
       // Trigger backend poll (fetches from Graph directly, bypasses webhook)
@@ -11166,7 +11245,6 @@ function _olStartPolling() {
       } catch(_) {}
       try { await loadOutlookInbox(); } catch(_) {}
     }, 60000);
-  }
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
@@ -12108,7 +12186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try { loadConnectionStatus(); } catch(e) {}
     try { _loadHomeGolfCard(); } catch(e) {}
     // Refresh connection status every 5 minutes
-    setInterval(() => { try { loadConnectionStatus(); } catch(e) {} }, 300000);
+    _registerInterval("connectionStatus", () => { try { loadConnectionStatus(); } catch(e) {} }, 300000);
   }, 2500);
 });
 </script>

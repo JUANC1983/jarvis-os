@@ -8,3 +8,9 @@ __pycache__/
 venv/
 .env/
 backup_full_*/
+
+# Secret key files — never commit
+data/bridge/bridge_token.key
+data/jwt_secret.key
+data/bridge/snapshots/
+data/users.json

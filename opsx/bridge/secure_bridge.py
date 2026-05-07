@@ -501,9 +501,17 @@ app = FastAPI(
     redoc_url=None,
 )
 
+import os as _cors_os
+_bridge_cors_env = _cors_os.getenv("BRIDGE_ALLOWED_ORIGINS", "")
+_bridge_origins = [o.strip() for o in _bridge_cors_env.split(",") if o.strip()] or ["*"]
+if "*" in _bridge_origins and _cors_os.getenv("RAILWAY_ENVIRONMENT"):
+    import logging as _cors_log
+    _cors_log.getLogger("jarvis.bridge").warning(
+        "CORS: BRIDGE_ALLOWED_ORIGINS is wildcard in production — set it to your Railway app URL"
+    )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_bridge_origins,
     allow_methods=["GET", "OPTIONS"],
     allow_headers=["Authorization", "X-Bridge-Token", "Content-Type"],
 )

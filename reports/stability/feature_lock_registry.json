@@ -1,0 +1,457 @@
+{
+  "version": "1.0.0",
+  "created": "2026-05-07",
+  "governor_patch": "JARVIS PRODUCTION STABILITY GOVERNOR",
+  "description": "Canonical registry of protected JARVIS features. Any patch touching a protected=true feature must pass full regression QA before merge.",
+  "registry": [
+    {
+      "feature_id": "IBKR_LIVE_BRIDGE",
+      "feature_name": "IBKR Live Bridge (Remote)",
+      "owner_module": "opsx/connectors/ibkr_bridge_client.py",
+      "stable": true,
+      "protected": true,
+      "criticality": "CRITICAL",
+      "api_contract_hash": "36866a7564c08213d2ab",
+      "ui_contract_hash": "cs-ibkr-status-bar",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "IBKR_BRIDGE_URL",
+        "IBKR_BRIDGE_TOKEN",
+        "ENABLE_REMOTE_IBKR_BRIDGE",
+        "opsx/bridge/watchdog.py",
+        "opsx/bridge/production_guard.py",
+        "opsx/bridge/secure_bridge.py"
+      ],
+      "protected_endpoints": ["/api/debug/ibkr", "/api/portfolio/status", "/api/bridge/watchdog"],
+      "safety_invariants": {
+        "real_trade": false,
+        "execution_blocked": true,
+        "readonly": true,
+        "localhost_blocked_in_production": true
+      },
+      "notes": "IBKRBridgeClient is the only valid connector in Railway. IBKRReadOnly (localhost:5000) must never load in production. IBKRNotConfiguredStub returns on missing config instead of fallback."
+    },
+    {
+      "feature_id": "PAPER_LAB",
+      "feature_name": "Paper Lab (Simulated Trading)",
+      "owner_module": "core/paper_trading_engine.py",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": "8eae6644b6f63b9549a6",
+      "ui_contract_hash": "paper-lab-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "core/paper_trading_engine.py",
+        "data/paper_trading/",
+        "dashboard: Markets → Lab"
+      ],
+      "protected_endpoints": ["/api/paper/lab", "/api/paper/portfolio", "/api/paper/reset"],
+      "safety_invariants": {
+        "real_trade": false,
+        "execution_blocked": true,
+        "simulation_mode": true
+      },
+      "notes": "Paper Lab must remain clearly labeled 'SIMULATED'. real_trade=false always. Reset requires confirm()."
+    },
+    {
+      "feature_id": "PORTFOLIO_COCKPIT",
+      "feature_name": "Portfolio Cockpit",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadCockpit()",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": "ea837416cdc5fec613f6",
+      "ui_contract_hash": "cockpit-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "opsx/connectors/ibkr_bridge_client.py",
+        "core/unified_portfolio_engine.py",
+        "/api/portfolio/cockpit",
+        "/api/portfolio/summary"
+      ],
+      "protected_endpoints": ["/api/portfolio/cockpit", "/api/portfolio/summary", "/api/portfolio/positions"],
+      "safety_invariants": {
+        "real_trade": false,
+        "execution_blocked": true,
+        "account_separation": true
+      },
+      "notes": "const brokers declared once only in loadCockpit() — duplicate declaration caused prior runtime crash. Protected by stability governor."
+    },
+    {
+      "feature_id": "MARKETS_DASHBOARD",
+      "feature_name": "Markets Dashboard",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadPortfolioSummary()",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": "60accf8391d7676951b7",
+      "ui_contract_hash": "markets-section",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "/api/portfolio/summary",
+        "/api/portfolio/cockpit",
+        "/api/paper/lab",
+        "dashboard: Markets section"
+      ],
+      "protected_endpoints": ["/api/portfolio/summary", "/api/portfolio/positions", "/api/portfolio/cockpit"],
+      "safety_invariants": {
+        "real_trade": false,
+        "live_paper_separation": true
+      },
+      "notes": "LIVE and PAPER portfolios must be visually and data-separated. IBKR LIVE READ-ONLY badge must remain visible."
+    },
+    {
+      "feature_id": "NAVIGATION_SYSTEM",
+      "feature_name": "Navigation System (6-Section)",
+      "owner_module": "dashboard/jarvis_futuristic.html:switchSection()",
+      "stable": true,
+      "protected": true,
+      "criticality": "CRITICAL",
+      "api_contract_hash": null,
+      "ui_contract_hash": "jarvis-primary-nav",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "dashboard/jarvis_futuristic.html",
+        "switchSection()",
+        "switchTab()",
+        "_activateSub()",
+        "6 section buttons: home/work/markets/life/intelligence/system"
+      ],
+      "protected_endpoints": [],
+      "safety_invariants": {},
+      "notes": "6-section nav replaced 18-tab nav. Legacy #legacy-tab-nav preserved hidden for JS compatibility. Never delete legacy nav."
+    },
+    {
+      "feature_id": "SWITCH_TAB",
+      "feature_name": "switchTab() Function",
+      "owner_module": "dashboard/jarvis_futuristic.html:switchTab()",
+      "stable": true,
+      "protected": true,
+      "criticality": "CRITICAL",
+      "api_contract_hash": null,
+      "ui_contract_hash": "switchTab-function",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "window.JARVIS_TABS",
+        "_activateSub()",
+        "all section/sub-nav buttons"
+      ],
+      "protected_endpoints": [],
+      "safety_invariants": {},
+      "notes": "switchTab() tracks JARVIS_TABS.active. Calls _activateSub() defensively. Must NEVER be renamed or removed. 156+ onclick handlers depend on it."
+    },
+    {
+      "feature_id": "HOME_HYDRATION",
+      "feature_name": "Home Panel Hydration",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadHome()",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": null,
+      "ui_contract_hash": "overview-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "loadHome()",
+        "_bootModule()",
+        "boot()",
+        "/api/home/brief",
+        "/api/intelligence/brief"
+      ],
+      "protected_endpoints": ["/api/home/brief", "/api/intelligence/brief"],
+      "safety_invariants": {},
+      "notes": "loadHome() must use switchTab('overview') not switchTab('home'). safeFetch used to prevent infinite loading."
+    },
+    {
+      "feature_id": "LOAD_CONNECTION_STATUS",
+      "feature_name": "loadConnectionStatus()",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadConnectionStatus()",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": "5ebbcd69260a1c1fdadd",
+      "ui_contract_hash": "connection-status-bar",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "/api/debug/ibkr",
+        "/api/portfolio/status",
+        "/api/bridge/watchdog",
+        "/api/outlook/status",
+        "/api/calendar/events"
+      ],
+      "protected_endpoints": ["/api/debug/ibkr", "/api/bridge/watchdog", "/api/health"],
+      "safety_invariants": {},
+      "notes": "Shows CONNECTED/RECONNECTING/DEGRADED/STALE SNAPSHOT/BRIDGE OFFLINE/Not configured based on rich debug state. Never revert to simple binary status."
+    },
+    {
+      "feature_id": "OUTLOOK_SYNC",
+      "feature_name": "Outlook Email Sync",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadOutlook()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": "bf96a156ec8a05ad",
+      "ui_contract_hash": "outlook-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "/api/outlook/emails",
+        "/api/outlook/status",
+        "Work → Outlook sub-nav"
+      ],
+      "protected_endpoints": ["/api/outlook/emails", "/api/outlook/status"],
+      "safety_invariants": {},
+      "notes": "Delete email requires confirm(). Outlook sub-nav item must remain in Work section."
+    },
+    {
+      "feature_id": "CALENDAR_SYNC",
+      "feature_name": "Calendar Sync",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadCalendar()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": "8d2b7a45c01f4618",
+      "ui_contract_hash": "calendar-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "/api/calendar/events",
+        "Work → Calendar sub-nav"
+      ],
+      "protected_endpoints": ["/api/calendar/events"],
+      "safety_invariants": {},
+      "notes": "Delete event requires confirm()."
+    },
+    {
+      "feature_id": "MEMORY_SYSTEM",
+      "feature_name": "AI Memory System",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadMemory()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": "4f53cda18c2baa0c",
+      "ui_contract_hash": "memory-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "/api/memory/entries",
+        "Intelligence → Memory sub-nav"
+      ],
+      "protected_endpoints": ["/api/memory/entries"],
+      "safety_invariants": {},
+      "notes": "Memory accessible at Intelligence → Memory. Sub-nav must be preserved."
+    },
+    {
+      "feature_id": "GOLF_DASHBOARD",
+      "feature_name": "Golf Performance Dashboard",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadGolfDashboard()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": "4f53cda18c2baa0c",
+      "ui_contract_hash": "golf-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "/api/golf/bag",
+        "/api/golf/rounds",
+        "Life → Golf Performance sub-nav",
+        "Home golf card"
+      ],
+      "protected_endpoints": ["/api/golf/bag", "/api/golf/rounds"],
+      "safety_invariants": {},
+      "notes": "Golf must ALWAYS be accessible at Life → Golf Performance. Discoverability score improved from 38 to 91/100. Never move or remove."
+    },
+    {
+      "feature_id": "VOICE_SYSTEM",
+      "feature_name": "Voice Command System",
+      "owner_module": "dashboard/jarvis_futuristic.html:cmdMic()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": null,
+      "ui_contract_hash": "voice-button",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "cmdMic()",
+        "initVoice()",
+        "window.SpeechRecognition",
+        "command bar"
+      ],
+      "protected_endpoints": ["/api/command/route"],
+      "safety_invariants": {},
+      "notes": "Voice accessible from command bar on all sections. Browser permission required."
+    },
+    {
+      "feature_id": "AUTOMATIONS",
+      "feature_name": "Automations Engine",
+      "owner_module": "dashboard/jarvis_futuristic.html:loadAutomationsUpgraded()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": null,
+      "ui_contract_hash": "automations-panel",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "loadAutomationsUpgraded()",
+        "Promise.allSettled() — not Promise.all()",
+        "Work → Automations sub-nav"
+      ],
+      "protected_endpoints": ["/api/automation/list", "/api/automation/status"],
+      "safety_invariants": {},
+      "notes": "Uses Promise.allSettled — one automation failure must NOT block others. Was previously a breaking bug fixed in prior patch."
+    },
+    {
+      "feature_id": "WATCHDOG",
+      "feature_name": "Bridge Reconnect Watchdog",
+      "owner_module": "opsx/bridge/watchdog.py",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": "8b2f14b0471d0169ca46",
+      "ui_contract_hash": "cs-ibkr-status-bar",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "IBKR_BRIDGE_URL",
+        "IBKR_BRIDGE_TOKEN",
+        "ENABLE_REMOTE_IBKR_BRIDGE",
+        "/api/bridge/watchdog"
+      ],
+      "protected_endpoints": ["/api/bridge/watchdog"],
+      "safety_invariants": {
+        "real_trade": false,
+        "exponential_backoff": true,
+        "circuit_breaker": true
+      },
+      "notes": "Exponential backoff: 1s→2s→4s→...→120s. Circuit opens after 5 consecutive failures. Half-open reset after 300s."
+    },
+    {
+      "feature_id": "SNAPSHOT_ENGINE",
+      "feature_name": "Portfolio Snapshot Engine",
+      "owner_module": "opsx/connectors/ibkr_bridge_client.py:_save_snapshot()",
+      "stable": true,
+      "protected": true,
+      "criticality": "HIGH",
+      "api_contract_hash": null,
+      "ui_contract_hash": null,
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "data/portfolio/ibkr_bridge_snapshot.json",
+        "opsx/connectors/ibkr_bridge_client.py",
+        "opsx/bridge/snapshot_cache.py"
+      ],
+      "protected_endpoints": [],
+      "safety_invariants": {
+        "real_trade": false,
+        "stale_flag": "_stale"
+      },
+      "notes": "Disk snapshot used as fallback when bridge offline. Must always include _stale flag. Never return stale data without marking it."
+    },
+    {
+      "feature_id": "HEALTH_ENDPOINTS",
+      "feature_name": "Health Check Endpoints",
+      "owner_module": "main.py:/api/health",
+      "stable": true,
+      "protected": true,
+      "criticality": "CRITICAL",
+      "api_contract_hash": "5ebbcd69260a1c1fdadd",
+      "ui_contract_hash": null,
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "main.py",
+        "opsx/bridge/watchdog.py"
+      ],
+      "protected_endpoints": ["/api/health", "/api/debug/ibkr", "/api/debug/permissions", "/api/bridge/watchdog"],
+      "safety_invariants": {
+        "real_trade": false
+      },
+      "notes": "Health endpoints must always return JSON. Never return 500 on health check — degrade gracefully."
+    },
+    {
+      "feature_id": "EXECUTION_GUARD",
+      "feature_name": "Execution Guard Middleware",
+      "owner_module": "opsx/bridge/execution_guard.py",
+      "stable": true,
+      "protected": true,
+      "criticality": "CRITICAL",
+      "api_contract_hash": null,
+      "ui_contract_hash": null,
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "opsx/bridge/execution_guard.py",
+        "main.py (middleware install)"
+      ],
+      "protected_endpoints": [],
+      "safety_invariants": {
+        "execution_blocked": true,
+        "http_403_on_execution": true,
+        "x_execution_guard_header": true
+      },
+      "notes": "ExecutionGuardMiddleware must remain installed. NEVER remove from main.py. Blocks all /order, /trade/execute, /broker/order, /place, /transmit paths."
+    },
+    {
+      "feature_id": "ONBOARDING_WIZARD",
+      "feature_name": "7-Step Onboarding Wizard",
+      "owner_module": "dashboard/jarvis_futuristic.html:wizNext()/wizBack()/saveOnboarding()",
+      "stable": true,
+      "protected": true,
+      "criticality": "MEDIUM",
+      "api_contract_hash": null,
+      "ui_contract_hash": "onboarding-overlay",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "wizNext()", "wizBack()", "wizGoTo()", "saveOnboarding()",
+        "localStorage.jarvis_modules",
+        "#wizGoalsGrid"
+      ],
+      "protected_endpoints": [],
+      "safety_invariants": {},
+      "notes": "7-step wizard replaces old module picker. Legacy #moduleGrid preserved hidden for backward compatibility. saveOnboarding() syncs both systems."
+    },
+    {
+      "feature_id": "RUNTIME_BOOTLOADER",
+      "feature_name": "JS Runtime Bootloader",
+      "owner_module": "dashboard/jarvis_futuristic.html:boot()",
+      "stable": true,
+      "protected": true,
+      "criticality": "CRITICAL",
+      "api_contract_hash": null,
+      "ui_contract_hash": "JARVIS_RUNTIME",
+      "last_verified": "2026-05-07",
+      "qa_status": "PASS",
+      "dependencies": [
+        "window.JARVIS_RUNTIME",
+        "window.JARVIS_TABS",
+        "window.JARVIS_DEBUG",
+        "_bootModule()",
+        "_loadingWatchdog()",
+        "boot() — 7-phase async sequence"
+      ],
+      "protected_endpoints": [],
+      "safety_invariants": {},
+      "notes": "CRITICAL: Never add duplicate const declarations in any loadXxx() function under 'use strict'. Was the root cause of prior total runtime crash. _loadingWatchdog() fires 15s after boot to clear stuck loading states."
+    }
+  ],
+  "protection_rules": {
+    "modify_protected_feature": "requires explicit override key + automatic QA rerun",
+    "delete_protected_feature": "BLOCKED — must get written approval in commit message",
+    "rename_critical_function": "BLOCKED — 156+ onclick handlers may depend on it",
+    "change_api_contract": "requires api_contract_hash update + regression test",
+    "add_duplicate_const": "BLOCKED — causes SyntaxError under use strict"
+  }
+}

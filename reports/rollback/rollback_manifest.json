@@ -1,0 +1,95 @@
+{
+  "version": "1.0.0",
+  "created": "2026-05-07",
+  "description": "Rollback manifest for JARVIS production deployments. Use this to identify stable targets when a deploy breaks.",
+  "stable_commits": [
+    {
+      "commit_hash": "8cf26fd50934b3d1d13accab174ac5933d041f27",
+      "short_hash": "8cf26fd5",
+      "message": "Production runtime stabilization + IBKR bridge hardening",
+      "date": "2026-05-07",
+      "stability_tier": "STABLE",
+      "patches_included": [
+        "IBKR Bridge Hardening (10 phases)",
+        "Production Guard (IBKRNotConfiguredStub, validate_production_config)",
+        "Watchdog exponential backoff + circuit breaker",
+        "Frontend Runtime + Hydration Recovery",
+        "Experience Engineering Premium UX Patch"
+      ],
+      "known_issues": [],
+      "rollback_safe": true
+    },
+    {
+      "commit_hash": "3d80b2c5",
+      "short_hash": "3d80b2c5",
+      "message": "JARVIS frontend hydration runtime recovery",
+      "date": "2026-05-07",
+      "stability_tier": "STABLE",
+      "patches_included": [
+        "Frontend Runtime Recovery (9 parts)",
+        "Duplicate const brokers fix in loadCockpit()",
+        "safeApi() with retry logic",
+        "JARVIS_RUNTIME global guard",
+        "_loadingWatchdog() 15s timeout"
+      ],
+      "known_issues": [
+        "IBKR bridge hardening not yet applied"
+      ],
+      "rollback_safe": true
+    },
+    {
+      "commit_hash": "6bbb8a2f",
+      "short_hash": "6bbb8a2f",
+      "message": "JARVIS final runtime stabilization + premium UX recovery",
+      "date": "2026-05-07",
+      "stability_tier": "STABLE",
+      "patches_included": [
+        "Experience Engineering UX Patch",
+        "6-section navigation",
+        "7-step onboarding wizard",
+        "Trust badges + connection status bar"
+      ],
+      "known_issues": [
+        "IBKR bridge hardening not yet applied"
+      ],
+      "rollback_safe": true
+    }
+  ],
+  "rollback_procedure": {
+    "step_1": "Identify which commit introduced the regression (git bisect or deploy history)",
+    "step_2": "Find the last stable commit in stable_commits above",
+    "step_3": "git checkout <stable_hash> -- main.py dashboard/jarvis_futuristic.html (file-level rollback)",
+    "step_4": "Or: git revert <bad_commit_hash> to create a safe revert commit",
+    "step_5": "Run deployment_guard.py on the reverted state",
+    "step_6": "Deploy reverted state to Railway",
+    "caution": "Never force-push to main. Use git revert to preserve history."
+  },
+  "regression_identification": {
+    "primary_signals": [
+      "Dashboard loads but shows infinite spinner",
+      "switchTab() doesn't navigate",
+      "IBKR debug endpoint returns localhost URL",
+      "real_trade=True in any API response",
+      "Portfolio cockpit shows SyntaxError in browser console",
+      "Connection status bar never updates"
+    ],
+    "diagnostic_endpoints": [
+      "/api/debug/ibkr",
+      "/api/bridge/watchdog",
+      "/api/debug/permissions",
+      "/api/health"
+    ],
+    "browser_console_checks": [
+      "window.JARVIS_RUNTIME.initialized === true",
+      "window.JARVIS_RUNTIME.errors (should be empty [])",
+      "window.JARVIS_DEBUG.failedModules (should be [])"
+    ]
+  },
+  "deploy_runtime_fingerprint": {
+    "python_files_count": "check with: find . -name '*.py' | wc -l",
+    "html_size_kb_expected_min": 400,
+    "feature_lock_registry_version": "1.0.0",
+    "stability_governor_version": "1.0.0",
+    "ibkr_hardening_version": "1.0.0"
+  }
+}
