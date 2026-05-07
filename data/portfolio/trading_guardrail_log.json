@@ -670,5 +670,68 @@
     "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_pre_omega_final.py\", line 205, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 407, in reqGlobalCancel\n    return self._block(\"reqGlobalCancel\")",
     "account": "",
     "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.124513",
+    "method": "placeOrder",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 383, in placeOrder\n    return self._block(\"placeOrder\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.153593",
+    "method": "cancelOrder",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 386, in cancelOrder\n    return self._block(\"cancelOrder\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.165661",
+    "method": "modifyOrder",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 389, in modifyOrder\n    return self._block(\"modifyOrder\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.183022",
+    "method": "place_order",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 392, in place_order\n    return self._block(\"place_order\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.197923",
+    "method": "cancel_order",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 395, in cancel_order\n    return self._block(\"cancel_order\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.217650",
+    "method": "modify_order",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 398, in modify_order\n    return self._block(\"modify_order\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.231029",
+    "method": "transmit_order",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 401, in transmit_order\n    return self._block(\"transmit_order\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.251345",
+    "method": "execute_trade",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 404, in execute_trade\n    return self._block(\"execute_trade\")",
+    "account": "",
+    "blocked": true
+  },
+  {
+    "timestamp": "2026-05-06T21:49:33.266440",
+    "method": "reqGlobalCancel",
+    "caller": "File \"C:\\Users\\juanc\\JARVIS\\tests\\qa_portfolio_integration.py\", line 209, in <module>\n    getattr(conn, method)()\n  File \"C:\\Users\\juanc\\JARVIS\\opsx\\connectors\\ibkr_connector.py\", line 407, in reqGlobalCancel\n    return self._block(\"reqGlobalCancel\")",
+    "account": "",
+    "blocked": true
   }
 ]

@@ -1,0 +1,284 @@
+[
+  {
+    "timestamp": "2026-05-06T21:48:53.947943",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:53.962438",
+    "method": "cancelOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:53.984578",
+    "method": "modifyOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:53.998579",
+    "method": "place_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.012529",
+    "method": "cancel_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.024164",
+    "method": "modify_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.032061",
+    "method": "transmit_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.048218",
+    "method": "execute_trade",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.064666",
+    "method": "reqGlobalCancel",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.083476",
+    "method": "reqExecutions",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:48:54.098106",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.123603",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.142662",
+    "method": "cancelOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.161505",
+    "method": "modifyOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.182042",
+    "method": "place_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.202388",
+    "method": "cancel_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.220491",
+    "method": "modify_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.238210",
+    "method": "transmit_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.256428",
+    "method": "execute_trade",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.272440",
+    "method": "reqGlobalCancel",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.285006",
+    "method": "reqExecutions",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-06T21:49:24.299018",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.617806",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.656400",
+    "method": "cancelOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.680157",
+    "method": "modifyOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.688675",
+    "method": "place_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.710164",
+    "method": "cancel_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.724222",
+    "method": "modify_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.739194",
+    "method": "transmit_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.743822",
+    "method": "execute_trade",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.767445",
+    "method": "reqGlobalCancel",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.781711",
+    "method": "reqExecutions",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T01:48:39.793720",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:41.997060",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.012000",
+    "method": "cancelOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.036370",
+    "method": "modifyOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.061699",
+    "method": "place_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.078085",
+    "method": "cancel_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.089469",
+    "method": "modify_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.102857",
+    "method": "transmit_order",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.120207",
+    "method": "execute_trade",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.132313",
+    "method": "reqGlobalCancel",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.147021",
+    "method": "reqExecutions",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:11:42.160018",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:13:51.242510",
+    "method": "placeOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:13:51.271800",
+    "method": "cancelOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  },
+  {
+    "timestamp": "2026-05-07T02:13:51.288988",
+    "method": "modifyOrder",
+    "blocked": true,
+    "source": "secure_bridge"
+  }
+]

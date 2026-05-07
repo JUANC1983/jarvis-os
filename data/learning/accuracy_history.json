@@ -52,5 +52,11 @@
     "win_rate": 77.8,
     "total": 9,
     "quality_score": 68
+  },
+  {
+    "date": "2026-05-06",
+    "win_rate": 80.0,
+    "total": 10,
+    "quality_score": 73
   }
 ]

@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "account": "DUM811421",
+  "net_liquidation": 1041379.22,
+  "total_cash": 999282.98,
+  "gross_position": 41752.0,
+  "buying_power": 4109027.28,
+  "available_funds": 1027256.82,
+  "unrealized_pnl": 18723.0,
+  "realized_pnl": 0.0,
+  "daily_pnl": -101.0,
+  "positions": [
+    {
+      "symbol": "TSM",
+      "sec_type": "STK",
+      "quantity": 100.0,
+      "avg_cost": 231.26,
+      "market_value": 23126.0,
+      "unrealized_pnl": 0.0,
+      "currency": "USD",
+      "real_trade": false
+    }
+  ],
+  "position_count": 1,
+  "real_trade": false,
+  "fetched_at": "2026-05-07T02:36:51.566129",
+  "_cached_at": "2026-05-07T02:36:51.566129"
+}

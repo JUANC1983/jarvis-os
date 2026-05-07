@@ -1,13 +1,13 @@
 [
   {
-    "id": "pt_4925535c",
+    "id": "pt_283e39c6",
     "symbol": "NVDA",
     "action": "buy",
     "quantity": 5,
     "price": 500.0,
     "value": 2500.0,
     "thesis": "test thesis",
-    "timestamp": "2026-05-06T21:30:25.892770",
+    "timestamp": "2026-05-06T21:49:33.035972",
     "real_trade": false
   }
 ]

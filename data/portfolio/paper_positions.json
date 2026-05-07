@@ -1,6 +1,6 @@
 [
   {
-    "id": "pp_91e3e6fb",
+    "id": "pp_ba3f7ebc",
     "symbol": "NVDA",
     "name": "NVDA",
     "broker_source": "paper",
@@ -13,7 +13,7 @@
     "avg_cost": 500.0,
     "unrealized_pnl": 0,
     "unrealized_pnl_pct": 0,
-    "imported_at": "2026-05-06T21:30:25.892770",
+    "imported_at": "2026-05-06T21:49:33.035972",
     "thesis": "test thesis",
     "paper_only": true
   }

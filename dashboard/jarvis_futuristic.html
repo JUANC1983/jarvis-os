@@ -1748,7 +1748,85 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .gm-badge.type-goal{background:rgba(251,191,36,.1);color:#fbbf24}
 .gm-badge.mod{background:rgba(255,255,255,.07);color:#64748b}
 .gm-mode-off{color:#ef4444}.gm-mode-shadow{color:#f59e0b}.gm-mode-active{color:#22c55e}
+
+/* ── JARVIS Portfolio OS — Premium Dark Components ──────────────── */
+.mkt-subnav{display:flex;gap:2px;background:rgba(255,255,255,.04);border-radius:10px;padding:3px;margin-bottom:18px;border:1px solid rgba(255,255,255,.06)}
+.mkt-subnav-btn{flex:1;padding:7px 12px;border:none;background:transparent;color:var(--soft);font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-radius:8px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.mkt-subnav-btn.active{background:rgba(68,240,255,.12);color:var(--cyan);box-shadow:0 0 0 1px rgba(68,240,255,.18)}
+.mkt-subnav-btn:hover:not(.active){background:rgba(255,255,255,.05);color:var(--white)}
+.mkt-panel{display:none}.mkt-panel.active{display:block}
+/* Hero card */
+.hero-card{background:linear-gradient(135deg,rgba(8,19,30,.95) 0%,rgba(12,28,46,.9) 100%);border:1px solid rgba(68,240,255,.15);border-radius:14px;padding:20px 24px;position:relative;overflow:hidden}
+.hero-card::before{content:"";position:absolute;top:-50%;right:-10%;width:200px;height:200px;background:radial-gradient(ellipse at center,rgba(68,240,255,.06) 0%,transparent 70%);pointer-events:none}
+.hero-val{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1}
+.hero-label{font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.hero-sub{font-size:12px;color:var(--soft);margin-top:5px}
+/* Metric grid */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.metric-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px}
+.metric-card .ml{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.metric-card .mv{font-size:16px;font-weight:800;line-height:1}
+.metric-card .ms{font-size:10px;color:var(--soft);margin-top:3px}
+/* AI Insights stream */
+.insight-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;line-height:1.5}
+.insight-item:last-child{border-bottom:none}
+.insight-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);margin-top:4px;flex-shrink:0;box-shadow:0 0 6px rgba(68,240,255,.5)}
+/* Risk gauge ring */
+.risk-ring{width:90px;height:90px;position:relative;margin:0 auto 8px}
+.risk-ring svg{transform:rotate(-90deg)}
+.risk-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* Sector bars */
+.sector-bar-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.sector-bar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.sector-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+/* Live dot */
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80;animation:livePulse 2s infinite}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.4}}
+.stale-dot{background:#f87171;box-shadow:0 0 8px #f87171;animation:none}
+/* Status pill */
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.pill-ok{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.pill-warn{background:rgba(250,204,21,.1);color:#fde047;border:1px solid rgba(250,204,21,.2)}
+.pill-err{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+.pill-sim{background:rgba(167,139,250,.15);color:#c084fc;border:1px solid rgba(167,139,250,.25)}
+/* Chart container */
+.chart-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px;position:relative}
+.chart-title{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+/* Execution panel */
+.exec-form{background:rgba(8,19,30,.9);border:1px solid rgba(68,240,255,.1);border-radius:12px;padding:14px}
+.exec-row{display:grid;gap:8px;margin-bottom:8px}
+.exec-row-3{grid-template-columns:1fr 1fr 1fr}
+.exec-row-2{grid-template-columns:1fr 1fr}
+.exec-field label{display:block;font-size:10px;color:var(--soft);font-weight:700;letter-spacing:.5px;margin-bottom:4px;text-transform:uppercase}
+/* Trade history table */
+.trade-table{width:100%;border-collapse:collapse;font-size:11px}
+.trade-table th{text-align:left;color:var(--soft);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.trade-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--fg)}
+.trade-table tr:hover td{background:rgba(255,255,255,.02)}
+/* Learning calibration */
+.cal-bar{display:flex;flex-direction:column;gap:2px;padding:4px 0}
+.cal-bar-row{display:flex;align-items:center;gap:8px;font-size:11px}
+.cal-bar-label{width:55px;color:var(--soft);font-size:10px}
+.cal-bar-track{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;position:relative}
+.cal-bar-actual{height:100%;border-radius:4px;background:var(--cyan);transition:width .5s}
+.cal-bar-expected{position:absolute;top:0;height:100%;border-right:2px solid rgba(250,204,21,.7)}
+.cal-bar-stat{width:35px;text-align:right;font-weight:700}
+/* Skeleton loader */
+.skel{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:skelAnim 1.4s infinite;border-radius:6px;height:14px}
+@keyframes skelAnim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Reconnect banner */
+.reconnect-banner{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#f87171;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+/* Explainability block */
+.explain-block{background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:10px;padding:12px 14px;margin-top:10px}
+.explain-row{display:flex;align-items:flex-start;gap:8px;font-size:11px;padding:3px 0;line-height:1.5}
+.explain-icon{font-size:13px;width:16px;flex-shrink:0;margin-top:1px}
+/* Broker status chips */
+.broker-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px}
+.broker-chip-name{font-size:10px;font-weight:800;letter-spacing:1px;width:52px}
+/* Last update timestamp bar */
+.ts-bar{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--soft);padding:6px 0;flex-wrap:wrap}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -2173,121 +2251,401 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 <!-- ══════════════ MARKETS ══════════════ -->
 <div id="tab-markets" class="tab-panel">
 
-  <!-- ── Premium OS Header ───────────────────────────────────────────────── -->
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+  <!-- ══ JARVIS Portfolio OS — Premium Header ════════════════════════════ -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
     <div>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-.3px">JARVIS Portfolio OS</div>
-      <div style="font-size:12px;color:var(--soft);margin-top:3px">Institutional-grade intelligence · Read-only · <span style="color:#a78bfa">real_trade: false</span></div>
+      <div style="font-size:19px;font-weight:900;letter-spacing:-.4px;color:var(--white)">JARVIS Portfolio OS</div>
+      <div style="font-size:11px;color:var(--soft);margin-top:2px">Institutional Intelligence · <span style="color:#a78bfa">real_trade: false always</span> · Paper-safe</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div id="mkt-live-dot" class="live-dot stale-dot"></div>
+        <span id="mkt-connection-label" style="font-size:10px;color:var(--soft)">offline</span>
+      </div>
       <span id="mkt-regime-badge" class="badge b-idle" style="font-size:11px">REGIME --</span>
-      <span style="font-size:11px;color:var(--soft)" id="mkt-snapshot-time"></span>
-      <button class="btn-p btn-sm" onclick="loadPortfolioSummary(this);loadPaperStatus();" id="port-refresh-btn" style="font-size:11px;padding:5px 12px">↻ Refresh All</button>
+      <span style="font-size:10px;color:var(--soft)" id="mkt-snapshot-time"></span>
+      <button class="btn-p btn-sm" onclick="loadCockpit(this)" id="port-refresh-btn" style="font-size:11px;padding:5px 12px">↻ Refresh All</button>
     </div>
   </div>
 
-  <!-- ── Market Indices Bar ─────────────────────────────────────────────── -->
-  <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;margin-bottom:14px">
-    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center" id="mkt-indices">
-      <span style="color:var(--soft);font-size:12px">Loading indices…</span>
-    </div>
+  <!-- ══ Sub-Navigation ═════════════════════════════════════════════════ -->
+  <div class="mkt-subnav" role="tablist">
+    <button class="mkt-subnav-btn active" id="mkt-nav-cockpit"  onclick="switchMarketPanel('cockpit')"  role="tab">Cockpit</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-lab"      onclick="switchMarketPanel('lab')"      role="tab">Paper Lab</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-learning" onclick="switchMarketPanel('learning')" role="tab">AI Learning</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-analysis" onclick="switchMarketPanel('analysis')" role="tab">Analysis</button>
   </div>
 
-  <div id="mkt-auto" class="auto-card" style="display:none"></div>
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- PANEL 1: PORTFOLIO INTELLIGENCE COCKPIT                             -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <div id="mkt-panel-cockpit" class="mkt-panel active">
 
-  <!-- ── Row 1: Portfolio Score + KPIs ──────────────────────────────────── -->
-  <div style="display:grid;grid-template-columns:200px 1fr;gap:12px;margin-bottom:12px;align-items:start">
-
-    <!-- Score gauge -->
-    <div class="card" style="padding:16px;text-align:center;min-height:140px;display:flex;flex-direction:column;justify-content:center;align-items:center">
-      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Risk Score</div>
-      <div id="port-risk-score" style="font-size:48px;font-weight:900;line-height:1;color:#4ade80">—</div>
-      <div style="font-size:10px;color:var(--soft);margin-top:4px">/100</div>
-      <div id="port-risk-level" style="font-size:10px;font-weight:700;margin-top:6px;padding:2px 8px;border-radius:8px;background:rgba(74,222,128,.15);color:#4ade80;text-transform:uppercase;letter-spacing:.5px">—</div>
-      <div id="port-status-chip" style="font-size:10px;color:var(--soft);margin-top:6px">—</div>
+    <div id="cockpit-stale-banner" class="reconnect-banner" style="display:none">
+      ⚡ Stale data — broker connection interrupted. Showing last known snapshot.
+      <button class="btn-ol btn-sm" style="font-size:11px;margin-left:auto" onclick="loadCockpit(null)">Reconnect</button>
     </div>
 
-    <!-- KPI tiles -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px" id="port-kpi-row">
-      <div class="tile"><div class="tl">Total Portfolio</div><div class="tv" id="port-total">—</div></div>
-      <div class="tile"><div class="tl">Invested</div><div class="tv" id="port-invested">—</div></div>
-      <div class="tile"><div class="tl">Cash</div><div class="tv" id="port-cash">—</div><div id="port-cash-pct" style="font-size:10px;color:var(--soft);margin-top:2px"></div></div>
-      <div class="tile"><div class="tl">Daily P&L</div><div class="tv" id="port-daily-pnl">—</div><div id="port-daily-pct" style="font-size:10px;color:var(--soft);margin-top:2px"></div></div>
-      <div class="tile"><div class="tl">Unrealized P&L</div><div class="tv" id="port-unrealized">—</div><div id="port-unr-pct" style="font-size:10px;color:var(--soft);margin-top:2px"></div></div>
-      <div class="tile"><div class="tl">Positions</div><div class="tv" id="port-positions-count">—</div></div>
-    </div>
-  </div>
-
-  <!-- ── AI Summary ──────────────────────────────────────────────────────── -->
-  <div class="card" style="padding:12px 16px;margin-bottom:12px;border-left:3px solid #a78bfa">
-    <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Portfolio Intelligence · AI Narrative</div>
-    <div id="port-summary" style="font-size:13px;color:var(--fg);line-height:1.6">
-      Click <strong>Refresh All</strong> to generate institutional portfolio analysis.
-    </div>
-  </div>
-
-  <!-- ── Row 2: Risks / Opportunities ───────────────────────────────────── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    <div class="card" style="padding:14px">
-      <div style="font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Top Risks</div>
-      <div id="port-risks" style="font-size:12px;color:var(--fg);line-height:1.7"><span style="color:var(--soft)">—</span></div>
-    </div>
-    <div class="card" style="padding:14px">
-      <div style="font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Opportunities</div>
-      <div id="port-opps" style="font-size:12px;color:var(--fg);line-height:1.7"><span style="color:var(--soft)">—</span></div>
-    </div>
-  </div>
-
-  <!-- ── Row 3: Broker Breakdown + Sector Exposure ──────────────────────── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-
-    <!-- Broker Breakdown -->
-    <div class="card" id="broker-card" style="padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;font-weight:700">Broker Breakdown</span>
-        <span style="font-size:10px;color:#a78bfa;font-weight:700;padding:1px 6px;border-radius:6px;background:rgba(167,139,250,.15)">READ-ONLY</span>
-      </div>
-      <div id="broker-grid" style="display:flex;flex-direction:column;gap:8px">
-        <div id="broker-ibkr" style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px">
-          <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#60a5fa;margin-bottom:6px">IBKR TWS</div>
-          <div id="ibkr-status" style="font-size:11px;color:var(--soft)">Not connected</div>
-        </div>
-        <div id="broker-hapi" style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px">
-          <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#34d399;margin-bottom:6px">HAPI</div>
-          <div id="hapi-status" style="font-size:11px;color:var(--soft)">Not connected</div>
+    <!-- Row 1: Net Worth Hero + Paper Hero -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="hero-card">
+        <div class="hero-label">Real Portfolio</div>
+        <div class="hero-val" id="ck-real-total" style="color:var(--cyan)">—</div>
+        <div class="hero-sub" id="ck-real-sub">Loading…</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <div style="text-align:center"><div style="font-size:10px;color:var(--soft)">Invested</div><div style="font-size:13px;font-weight:800" id="ck-real-invested">—</div></div>
+          <div style="text-align:center"><div style="font-size:10px;color:var(--soft)">Cash</div><div style="font-size:13px;font-weight:800" id="ck-real-cash">—</div></div>
+          <div style="text-align:center"><div style="font-size:10px;color:var(--soft)">Positions</div><div style="font-size:13px;font-weight:800" id="ck-real-pos">—</div></div>
         </div>
       </div>
-      <div id="port-warnings" style="margin-top:10px"></div>
-    </div>
-
-    <!-- Sector Exposure -->
-    <div class="card" style="padding:14px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Sector Exposure</div>
-      <div id="port-sector-bars" style="display:flex;flex-direction:column;gap:6px">
-        <span style="color:var(--soft);font-size:12px">No data</span>
+      <div class="hero-card" style="border-color:rgba(167,139,250,.2)">
+        <div class="hero-label">Paper Lab <span class="status-pill pill-sim" style="font-size:9px;vertical-align:middle">SIM</span></div>
+        <div class="hero-val" id="ck-paper-total" style="color:#a78bfa">—</div>
+        <div class="hero-sub" id="ck-paper-sub">Loading…</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <div style="text-align:center"><div style="font-size:10px;color:var(--soft)">Total P&L</div><div style="font-size:13px;font-weight:800" id="ck-paper-pnl">—</div></div>
+          <div style="text-align:center"><div style="font-size:10px;color:var(--soft)">Cash</div><div style="font-size:13px;font-weight:800" id="ck-paper-cash">—</div></div>
+          <div style="text-align:center"><div style="font-size:10px;color:var(--soft)">Trades</div><div style="font-size:13px;font-weight:800" id="ck-paper-trades">—</div></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Row 4: Top Holdings (full width) ───────────────────────────────── -->
-  <div class="card" id="holdings-card" style="padding:14px;margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <span style="font-size:13px;font-weight:700">Top Holdings</span>
-      <span style="font-size:11px;color:var(--soft)">by market value · max 10</span>
+    <!-- Row 2: 8 KPI Metrics -->
+    <div class="metric-grid" style="margin-bottom:12px" id="ck-kpi-grid">
+      <div class="metric-card"><div class="ml">Daily P&L</div><div class="mv" id="ck-daily-pnl">—</div><div class="ms" id="ck-daily-pct"></div></div>
+      <div class="metric-card"><div class="ml">Unrealized P&L</div><div class="mv" id="ck-unrealized">—</div></div>
+      <div class="metric-card"><div class="ml">Cash %</div><div class="mv" id="ck-cash-pct">—</div><div class="ms">of total portfolio</div></div>
+      <div class="metric-card"><div class="ml">Risk Score</div><div class="mv" id="ck-risk-score">—</div><div class="ms" id="ck-risk-label"></div></div>
+      <div class="metric-card"><div class="ml">Paper P&L</div><div class="mv" id="ck-paper-pnl-metric">—</div><div class="ms" id="ck-paper-pnl-pct"></div></div>
+      <div class="metric-card"><div class="ml">Positions</div><div class="mv" id="ck-positions">—</div><div class="ms">real holdings</div></div>
+      <div class="metric-card"><div class="ml">Brokers</div><div class="mv" id="ck-broker-count">—</div><div class="ms">connected</div></div>
+      <div class="metric-card"><div class="ml">Paper Positions</div><div class="mv" id="ck-paper-pos">—</div><div class="ms">simulated</div></div>
     </div>
-    <div id="port-holdings-table" style="font-size:12px">
-      <div style="color:var(--soft);font-size:12px;padding:6px">No positions loaded.</div>
+
+    <!-- Row 3: AI Insights + Risk Gauge + Broker Status -->
+    <div style="display:grid;grid-template-columns:1fr 200px;gap:12px;margin-bottom:12px">
+      <!-- AI Insights -->
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">AI Portfolio Insights</div>
+        <div id="ck-insights-stream"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:80%;margin-bottom:6px"></div><div class="skel" style="width:60%"></div></div>
+        <div id="ck-port-summary" style="font-size:12px;color:var(--soft);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);line-height:1.6"></div>
+      </div>
+      <!-- Risk Score + Broker Chips -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="card" style="padding:14px;text-align:center;flex:1">
+          <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Health Score</div>
+          <div id="ck-risk-ring" style="position:relative;width:80px;height:80px;margin:0 auto 8px">
+            <svg width="80" height="80" style="transform:rotate(-90deg)">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7"/>
+              <circle id="ck-risk-arc" cx="40" cy="40" r="32" fill="none" stroke="#4ade80" stroke-width="7" stroke-dasharray="201 201" stroke-linecap="round"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-size:20px;font-weight:900" id="ck-ring-score">—</div>
+              <div style="font-size:9px;color:var(--soft)">/100</div>
+            </div>
+          </div>
+          <div id="ck-ring-label" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;display:inline-block">—</div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Brokers</div>
+          <div id="ck-broker-chips" style="display:flex;flex-direction:column;gap:5px">
+            <div class="skel"></div><div class="skel" style="width:70%"></div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- ── Row 5: Trader Analysis + Market News ───────────────────────────── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <!-- Row 4: Sector Exposure + Asset Classes + Top Risks -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Sector Exposure</div>
+        <div id="ck-sector-bars"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:75%;margin-bottom:6px"></div><div class="skel" style="width:50%"></div></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Asset Classes</div>
+        <div id="ck-asset-bars"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:60%"></div></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Top Risks</div>
+        <div id="ck-top-risks" style="font-size:12px;line-height:1.7"><span style="color:var(--soft)">—</span></div>
+        <div style="font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.7px;margin:10px 0 6px">Opportunities</div>
+        <div id="ck-opps" style="font-size:12px;line-height:1.7"><span style="color:var(--soft)">—</span></div>
+      </div>
+    </div>
 
-    <!-- Trader Analysis -->
-    <div class="card">
+    <!-- Row 5: Top Holdings -->
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:700">Top Holdings</span>
+        <span style="font-size:11px;color:var(--soft)">by market value</span>
+      </div>
+      <div id="port-holdings-table" style="font-size:12px"><div style="color:var(--soft);font-size:12px">No positions loaded.</div></div>
+    </div>
+
+    <!-- Row 6: Concentration Warnings + Paper Trade Ideas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#facc15;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Concentration Warnings</div>
+        <div id="ck-warnings" style="font-size:12px;color:var(--soft);line-height:1.7">None detected.</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Paper Trade Ideas</div>
+        <div id="ck-paper-ideas" style="font-size:12px;color:var(--soft);line-height:1.7">—</div>
+      </div>
+    </div>
+
+    <!-- Timestamp bar -->
+    <div class="ts-bar" id="ck-ts-bar">
+      <div class="live-dot stale-dot" id="ck-data-dot"></div>
+      <span id="ck-ts-label">No data loaded</span>
+      <span style="margin-left:auto"><button class="btn-ol btn-sm" style="font-size:10px" onclick="loadCockpit(null)">↻ Refresh</button></span>
+    </div>
+  </div><!-- /cockpit -->
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- PANEL 2: PAPER TRADING LABORATORY                                   -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <div id="mkt-panel-lab" class="mkt-panel">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:800">Paper Trading Lab</div>
+        <div style="font-size:11px;color:var(--soft);margin-top:2px">Simulated · Read-only · <span style="color:#a78bfa">real_trade: false always</span></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-ol btn-sm" onclick="paperImportReal()" style="font-size:11px">↓ Import Real</button>
+        <button class="btn-p btn-sm" onclick="loadPaperAnalytics(null)" style="font-size:11px">↻ Refresh Lab</button>
+      </div>
+    </div>
+
+    <!-- 12 Metric Grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:14px" id="lab-metric-grid">
+      <div class="metric-card"><div class="ml">Portfolio Value</div><div class="mv" id="lab-total">—</div><div class="ms">simulated capital</div></div>
+      <div class="metric-card"><div class="ml">Daily Paper P&L</div><div class="mv" id="lab-daily-pnl">—</div></div>
+      <div class="metric-card"><div class="ml">Unrealized P&L</div><div class="mv" id="lab-unrealized">—</div></div>
+      <div class="metric-card"><div class="ml">Win Rate</div><div class="mv" id="lab-win-rate">—</div><div class="ms" id="lab-win-sub"></div></div>
+      <div class="metric-card"><div class="ml">Avg Gain</div><div class="mv" id="lab-avg-gain" style="color:#4ade80">—</div><div class="ms">open winners</div></div>
+      <div class="metric-card"><div class="ml">Avg Loss</div><div class="mv" id="lab-avg-loss" style="color:#f87171">—</div><div class="ms">open losers</div></div>
+      <div class="metric-card"><div class="ml">Risk / Reward</div><div class="mv" id="lab-rr">—</div><div class="ms">gain / loss ratio</div></div>
+      <div class="metric-card"><div class="ml">Max Drawdown</div><div class="mv" id="lab-drawdown" style="color:#f87171">—</div></div>
+      <div class="metric-card"><div class="ml">Open Positions</div><div class="mv" id="lab-open-pos">—</div></div>
+      <div class="metric-card"><div class="ml">Closed Trades</div><div class="mv" id="lab-closed">—</div></div>
+      <div class="metric-card"><div class="ml">Total Trades</div><div class="mv" id="paper-trades">—</div></div>
+      <div class="metric-card"><div class="ml">AI Confidence</div><div class="mv" id="lab-ai-conf">—</div><div class="ms">/100 learning score</div></div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="chart-box">
+        <div class="chart-title">Equity Curve</div>
+        <canvas id="lab-equity-chart" height="120"></canvas>
+        <div id="lab-equity-empty" style="display:none;text-align:center;padding:30px;color:var(--soft);font-size:12px">No trade history yet. Execute paper trades to see equity curve.</div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Signal Performance vs AI Confidence</div>
+        <canvas id="lab-signal-chart" height="120"></canvas>
+        <div id="lab-signal-empty" style="display:none;text-align:center;padding:30px;color:var(--soft);font-size:12px">No learning data yet.</div>
+      </div>
+    </div>
+
+    <!-- Strategy Performance + Paper vs Real -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Strategy Performance</div>
+        <div id="lab-strategy-table" style="font-size:12px;color:var(--soft)">No strategies tagged yet.</div>
+      </div>
+      <div class="card" id="compare-card" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:13px;font-weight:700">Paper vs Real</span>
+          <button class="btn-ol btn-sm" style="font-size:11px" onclick="paperCompareReal()">Compare Now</button>
+        </div>
+        <div id="compare-result" style="font-size:12px;color:var(--soft);line-height:1.7">Click <strong>Compare Now</strong> to compare.</div>
+      </div>
+    </div>
+
+    <!-- Phase 7: Enhanced Execution Panel -->
+    <div class="exec-form" id="paper-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span style="font-size:14px;font-weight:800">Execute Paper Trade</span>
+        <span class="status-pill pill-sim">SIM ONLY</span>
+        <span style="font-size:10px;color:var(--soft);margin-left:auto">No real orders · real_trade: false</span>
+      </div>
+      <!-- Row 1: Symbol + Action -->
+      <div class="exec-row exec-row-2 exec-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="exec-field">
+          <label>Symbol</label>
+          <input id="paper-symbol" class="input" placeholder="AAPL, TSLA, SPY…" value="AAPL" style="font-size:12px"/>
+        </div>
+        <div class="exec-field">
+          <label>Action</label>
+          <select id="paper-action" class="input" style="font-size:12px">
+            <option value="buy">Buy — open / add long</option>
+            <option value="sell">Sell — close / exit long</option>
+            <option value="add">Add to Position</option>
+            <option value="trim">Trim Position (partial sell)</option>
+          </select>
+        </div>
+      </div>
+      <!-- Row 2: Qty + Price + Stop Loss + Take Profit -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="exec-field">
+          <label>Quantity</label>
+          <input id="paper-qty" class="input" type="number" value="10" min="0.001" step="0.01" style="font-size:12px"/>
+        </div>
+        <div class="exec-field">
+          <label>Price ($)</label>
+          <input id="paper-price" class="input" type="number" placeholder="leave 0 = market" step="0.01" style="font-size:12px"/>
+        </div>
+        <div class="exec-field">
+          <label>Stop Loss ($)</label>
+          <input id="paper-stop" class="input" type="number" placeholder="optional" step="0.01" style="font-size:12px"/>
+        </div>
+        <div class="exec-field">
+          <label>Take Profit ($)</label>
+          <input id="paper-tp" class="input" type="number" placeholder="optional" step="0.01" style="font-size:12px"/>
+        </div>
+      </div>
+      <!-- Row 3: Strategy + Notes + Execute -->
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:flex-end">
+        <div class="exec-field">
+          <label>Strategy Tag</label>
+          <input id="paper-strategy" class="input" placeholder="breakout, dip-buy, swing…" style="font-size:12px"/>
+        </div>
+        <div class="exec-field">
+          <label>Trade Thesis / Notes</label>
+          <input id="paper-thesis" class="input" placeholder="Why this trade?" style="font-size:12px"/>
+        </div>
+        <button class="btn-p" onclick="paperSimulateTrade()" style="padding:8px 20px;font-size:12px;font-weight:700;white-space:nowrap">
+          Simulate Trade
+        </button>
+      </div>
+      <!-- Safety confirmation area -->
+      <div id="lab-trade-feedback" style="margin-top:10px;font-size:12px;display:none"></div>
+      <!-- Quick controls -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)">
+        <button class="btn-ol btn-sm" onclick="loadPaperStatus()" style="font-size:11px">↻ Status</button>
+        <button class="btn-ol btn-sm" onclick="paperCompareReal()" style="font-size:11px">Compare vs Real</button>
+        <button class="btn-ol btn-sm" style="color:#f87171;font-size:11px" onclick="paperReset()">⚠ Reset Lab</button>
+      </div>
+    </div>
+
+    <!-- Open Positions Table -->
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Open Paper Positions</div>
+      <div id="paper-positions-list" style="font-size:12px"><div style="color:var(--soft)">No open positions.</div></div>
+    </div>
+
+    <!-- Trade History -->
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px">Trade History</div>
+        <span style="font-size:10px;color:var(--soft)">last 20</span>
+      </div>
+      <div id="lab-trade-history"><div style="color:var(--soft);font-size:12px">No trades recorded.</div></div>
+    </div>
+
+  </div><!-- /lab -->
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- PANEL 3: AI LEARNING CENTER                                         -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <div id="mkt-panel-learning" class="mkt-panel">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:800">AI Learning Center</div>
+        <div style="font-size:11px;color:var(--soft);margin-top:2px">Adaptive signal calibration · Outcome memory · Trust the process</div>
+      </div>
+      <button class="btn-p btn-sm" onclick="loadLearningFull(null)" style="font-size:11px">↻ Refresh Learning</button>
+    </div>
+
+    <!-- 10 Metric Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px" id="lc-metric-grid">
+      <div class="metric-card"><div class="ml">Total Analyzed</div><div class="mv" id="lc-total">—</div><div class="ms">signals tracked</div></div>
+      <div class="metric-card"><div class="ml">Signal Accuracy</div><div class="mv" id="lc-accuracy">—</div><div class="ms" id="lc-accuracy-sub"></div></div>
+      <div class="metric-card"><div class="ml">Bullish Accuracy</div><div class="mv" id="lc-bull-acc" style="color:#4ade80">—</div></div>
+      <div class="metric-card"><div class="ml">Bearish Accuracy</div><div class="mv" id="lc-bear-acc" style="color:#f87171">—</div></div>
+      <div class="metric-card" id="learning-kpi-row"><div class="ml">Win Rate</div><div class="mv" id="learn-winrate">—</div><div class="ms">all signals</div></div>
+      <div class="metric-card"><div class="ml">Outcomes</div><div class="mv" id="learn-outcomes">—</div><div class="ms">recorded</div></div>
+      <div class="metric-card"><div class="ml">Quality Score</div><div class="mv" id="learn-quality">—</div><div class="ms">/100</div></div>
+      <div class="metric-card"><div class="ml">Calibration</div><div class="mv" id="lc-calibration">—</div><div class="ms" id="lc-cal-sub"></div></div>
+      <div class="metric-card"><div class="ml">Avg Return</div><div class="mv" id="lc-avg-ret">—</div><div class="ms">per outcome</div></div>
+      <div class="metric-card"><div class="ml">Improving?</div><div class="mv" id="lc-trend">—</div><div class="ms" id="lc-trend-sub"></div></div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="chart-box">
+        <div class="chart-title">Confidence Calibration — Expected vs Actual</div>
+        <canvas id="lc-calibration-chart" height="130"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Win Rate by Signal Type</div>
+        <canvas id="lc-signal-chart" height="130"></canvas>
+      </div>
+    </div>
+
+    <!-- Best/Worst setups + Signal Performance Detail -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Best Performing Setups</div>
+        <div id="lc-best-setups" style="font-size:12px;color:var(--soft)">No data yet.</div>
+        <div style="font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.7px;margin:12px 0 8px">Worst Performing Setups</div>
+        <div id="lc-worst-setups" style="font-size:12px;color:var(--soft)">No data yet.</div>
+      </div>
+      <div class="card" id="learning-card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Signal Performance Detail</div>
+        <div id="learn-calibration-row" style="margin-bottom:8px"></div>
+        <div id="learn-signal-breakdown" style="font-size:12px;color:var(--soft)">No signal outcomes yet.</div>
+      </div>
+    </div>
+
+    <!-- What the AI learned + Record Outcome -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">What The AI Learned</div>
+        <div id="lc-narrative" style="font-size:12px;color:var(--soft);line-height:1.7">Loading learning narrative…</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Record Outcome</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div><label style="font-size:10px;color:var(--soft);display:block;margin-bottom:3px">Symbol</label><input id="learn-symbol" class="input" style="font-size:11px;padding:5px 8px" placeholder="AAPL"/></div>
+          <div><label style="font-size:10px;color:var(--soft);display:block;margin-bottom:3px">Signal</label>
+          <select id="learn-signal" class="input" style="font-size:11px;padding:5px 8px">
+            <option value="BUY">BUY</option><option value="WATCH">WATCH</option><option value="AVOID">AVOID</option>
+          </select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:flex-end">
+          <div><label style="font-size:10px;color:var(--soft);display:block;margin-bottom:3px">Return %</label><input id="learn-return" class="input" type="number" step="0.1" placeholder="3.2" style="font-size:11px;padding:5px 8px"/></div>
+          <div><label style="font-size:10px;color:var(--soft);display:block;margin-bottom:3px">Holding Days</label><input id="learn-days" class="input" type="number" value="5" min="1" style="font-size:11px;padding:5px 8px"/></div>
+          <button class="btn-p btn-sm" onclick="recordLearningOutcome()" style="padding:5px 10px;white-space:nowrap;font-size:11px">+ Record</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /learning -->
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- PANEL 4: ANALYSIS (Trader + News + Recommendations + Audit)         -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <div id="mkt-panel-analysis" class="mkt-panel">
+
+    <!-- Market Indices Bar -->
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center" id="mkt-indices">
+        <span style="color:var(--soft);font-size:12px">Loading indices…</span>
+      </div>
+    </div>
+
+    <div id="mkt-auto" class="auto-card" style="display:none"></div>
+
+    <!-- Trader Analysis (enhanced with explainability) -->
+    <div class="card" style="margin-bottom:12px">
       <div class="ch">
-        <span class="ct">Trader Analysis</span>
-        <span class="cs">ticker or company</span>
+        <span class="ct">AI Trader Analysis</span>
+        <span class="cs">Deep signal analysis with explainability</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
         <div class="tile"><div class="tl">Symbol</div><div class="tv" style="font-size:14px" id="traderSymbol">AAPL</div></div>
@@ -2296,171 +2654,79 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         <div class="tile"><div class="tl">Price</div><div class="tv" style="font-size:14px" id="priceNow">--</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px">
-        <input id="symbolInput" class="input" placeholder="AAPL, Tesla, BTC, Nvidia…" value="AAPL"/>
+        <input id="symbolInput" class="input" placeholder="AAPL, Tesla, NVDA, BTC…" value="AAPL"/>
         <button id="analyzeBtn" class="btn-p btn-sm">Analyze</button>
       </div>
       <div class="trader-plan">
         <div class="col" id="tradePlan" style="gap:8px"></div>
         <div class="col" id="tradeNarrative" style="gap:8px"></div>
       </div>
+      <!-- Phase 5: Explainability block -->
+      <div id="trader-explain-block" class="explain-block" style="display:none"></div>
     </div>
 
-    <!-- Market News -->
-    <div class="card">
-      <div class="ch">
-        <span class="ct">Market News</span>
-        <button class="btn-ol btn-sm" onclick="loadMarketNews()">↻</button>
-        <button class="btn-ol btn-sm" onclick="switchTab('intelligence')">Full Feed →</button>
-      </div>
-      <div id="mkt-news" class="ga"><div style="color:var(--soft);font-size:12px;padding:8px">Loading news…</div></div>
-    </div>
-  </div>
-
-  <!-- ── Row 6: Recommendations ─────────────────────────────────────────── -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="ch">
-      <span class="ct">AI Recommendations</span>
-      <span class="cs">daily picks</span>
-      <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadRecommendations()">↻</button>
-    </div>
-    <div id="recommendations" class="ga"><div style="color:var(--soft);font-size:12px;padding:8px">Loading recommendations…</div></div>
-  </div>
-
-  <!-- ── Row 7: Paper Trading Lab + Trader Audit ────────────────────────── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-
-    <!-- Paper Trading Lab -->
-    <div class="card" id="paper-card" style="padding:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span style="font-size:13px;font-weight:700">Paper Trading Lab</span>
-        <span style="font-size:10px;padding:2px 6px;border-radius:6px;background:rgba(168,85,247,.2);color:#c084fc;font-weight:700">SIM</span>
-        <span style="font-size:10px;color:var(--soft);margin-left:auto">real_trade: false</span>
-      </div>
-
-      <!-- Paper KPIs -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px" id="paper-kpi-row">
-        <div class="tile"><div class="tl">Portfolio Value</div><div class="tv" id="paper-total">—</div></div>
-        <div class="tile"><div class="tl">Cash</div><div class="tv" id="paper-cash">—</div></div>
-        <div class="tile"><div class="tl">Total P&L</div><div class="tv" id="paper-pnl">—</div></div>
-        <div class="tile"><div class="tl">Total Trades</div><div class="tv" id="paper-trades">—</div></div>
-      </div>
-
-      <!-- Trade input form -->
-      <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;margin-bottom:8px">
-        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Simulate Trade</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-          <div>
-            <div style="font-size:10px;color:var(--soft);margin-bottom:2px">Symbol</div>
-            <input id="paper-symbol" class="input" style="font-size:12px;padding:5px 8px" placeholder="AAPL" value="AAPL"/>
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--soft);margin-bottom:2px">Action</div>
-            <select id="paper-action" class="input" style="font-size:12px;padding:5px 8px">
-              <option value="buy">Buy</option>
-              <option value="sell">Sell</option>
-              <option value="add">Add to position</option>
-              <option value="trim">Trim position</option>
-            </select>
-          </div>
+    <!-- Recommendations + News -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="card">
+        <div class="ch">
+          <span class="ct">AI Recommendations</span>
+          <span class="cs">daily picks</span>
+          <button class="btn-ol btn-sm" style="margin-left:auto" onclick="loadRecommendations()">↻</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px">
-          <div>
-            <div style="font-size:10px;color:var(--soft);margin-bottom:2px">Qty</div>
-            <input id="paper-qty" class="input" style="font-size:12px;padding:5px 8px" type="number" value="10" min="0.01" step="0.01"/>
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--soft);margin-bottom:2px">Price ($)</div>
-            <input id="paper-price" class="input" style="font-size:12px;padding:5px 8px" type="number" placeholder="market" step="0.01"/>
-          </div>
-          <div style="display:flex;align-items:flex-end">
-            <button class="btn-p btn-sm" onclick="paperSimulateTrade()" style="white-space:nowrap;padding:5px 10px">Execute</button>
-          </div>
+        <div id="recommendations" class="ga"><div style="color:var(--soft);font-size:12px;padding:8px">Loading…</div></div>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <span class="ct">Market News</span>
+          <button class="btn-ol btn-sm" onclick="loadMarketNews()">↻</button>
+          <button class="btn-ol btn-sm" onclick="switchTab('intelligence')">Full Feed →</button>
         </div>
+        <div id="mkt-news" class="ga"><div style="color:var(--soft);font-size:12px;padding:8px">Loading news…</div></div>
       </div>
-
-      <!-- Paper controls -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <button class="btn-ol btn-sm" onclick="paperImportReal()" style="font-size:11px">↓ Import Real</button>
-        <button class="btn-ol btn-sm" onclick="loadPaperStatus()" style="font-size:11px">↻</button>
-        <button class="btn-ol btn-sm" onclick="paperCompareReal()" style="font-size:11px">Compare vs Real</button>
-        <button class="btn-ol btn-sm" style="color:#f87171;font-size:11px" onclick="paperReset()">Reset</button>
-      </div>
-
-      <div id="paper-positions-list" style="font-size:12px"></div>
     </div>
 
-    <!-- Trader Reliability Score -->
-    <div class="card" id="trader-audit-card" style="padding:14px">
+    <!-- Trader Reliability Audit -->
+    <div class="card" id="trader-audit-card" style="padding:14px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;font-weight:700">Trader Reliability Score</span>
+        <div>
+          <span style="font-size:13px;font-weight:700">Trader Reliability Audit</span>
+          <div style="font-size:10px;color:var(--soft);margin-top:2px">Stress-tests AI trader across 8 symbols</div>
+        </div>
         <button class="btn-ol btn-sm" style="font-size:11px" onclick="loadTraderAudit(this)">Run Audit</button>
       </div>
       <div id="trader-audit-result" style="color:var(--soft);font-size:12px;line-height:1.6">
-        Click <strong>Run Audit</strong> to stress-test the AI trader agent.
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Row 8: Learning Engine + Compare Panel ─────────────────────────── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-
-    <!-- Adaptive Learning Metrics -->
-    <div class="card" id="learning-card" style="padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div>
-          <div style="font-size:13px;font-weight:700">AI Learning Engine</div>
-          <div style="font-size:10px;color:var(--soft);margin-top:2px">Adaptive signal calibration · outcome memory</div>
-        </div>
-        <button class="btn-ol btn-sm" style="font-size:11px" onclick="loadLearningMetrics()">↻</button>
-      </div>
-
-      <!-- Learning KPIs -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px" id="learning-kpi-row">
-        <div class="tile"><div class="tl">Win Rate</div><div class="tv" id="learn-winrate">—</div></div>
-        <div class="tile"><div class="tl">Outcomes</div><div class="tv" id="learn-outcomes">—</div></div>
-        <div class="tile"><div class="tl">Quality</div><div class="tv" id="learn-quality">—</div></div>
-      </div>
-
-      <!-- Calibration status -->
-      <div id="learn-calibration-row" style="margin-bottom:8px"></div>
-
-      <!-- By-signal breakdown -->
-      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Signal Performance</div>
-      <div id="learn-signal-breakdown" style="font-size:12px;color:var(--soft)">No data yet — run paper trades to build signal memory.</div>
-
-      <!-- Record outcome form -->
-      <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,.03);border-radius:8px">
-        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Record Outcome</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:5px">
-          <input id="learn-symbol" class="input" style="font-size:11px;padding:4px 7px" placeholder="AAPL"/>
-          <select id="learn-signal" class="input" style="font-size:11px;padding:4px 7px">
-            <option value="BUY">BUY</option>
-            <option value="WATCH">WATCH</option>
-            <option value="AVOID">AVOID</option>
-          </select>
-          <input id="learn-return" class="input" style="font-size:11px;padding:4px 7px" type="number" step="0.1" placeholder="Return %"/>
-          <button class="btn-p btn-sm" style="font-size:11px;padding:4px 8px;white-space:nowrap" onclick="recordLearningOutcome()">+ Record</button>
-        </div>
+        Click <strong>Run Audit</strong> to validate AI trader signal quality and reliability.
       </div>
     </div>
 
-    <!-- Paper vs Real Compare Panel -->
-    <div class="card" id="compare-card" style="padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;font-weight:700">Paper vs Real</span>
-        <button class="btn-ol btn-sm" style="font-size:11px" onclick="paperCompareReal()">Compare Now</button>
-      </div>
-      <div id="compare-result" style="font-size:12px;color:var(--soft);line-height:1.7">
-        Click <strong>Compare Now</strong> to see how your Paper Lab differs from your real portfolio.
-      </div>
-    </div>
+  </div><!-- /analysis -->
 
-  </div>
-
-  <!-- ── Stale Data Banner (hidden by default) ─────────────────────────── -->
-  <div id="stale-banner" style="display:none;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#fde047">
-    ⚠ <strong>Stale data detected</strong> — broker connection was interrupted. Showing last known snapshot.
-    <button class="btn-ol btn-sm" style="font-size:11px;margin-left:10px" onclick="loadPortfolioSummary(null)">Reconnect &amp; Refresh</button>
+  <!-- ── Legacy / hidden elements (keep IDs for existing JS compatibility) ─ -->
+  <div style="display:none">
+    <div id="port-summary"></div>
+    <div id="port-risks"></div>
+    <div id="port-opps"></div>
+    <div id="port-risk-score"></div>
+    <div id="port-risk-level"></div>
+    <div id="port-status-chip"></div>
+    <div id="port-total"></div>
+    <div id="port-invested"></div>
+    <div id="port-cash"></div>
+    <div id="port-cash-pct"></div>
+    <div id="port-daily-pnl"></div>
+    <div id="port-daily-pct"></div>
+    <div id="port-unrealized"></div>
+    <div id="port-unr-pct"></div>
+    <div id="port-positions-count"></div>
+    <div id="port-sector-bars"></div>
+    <div id="port-warnings"></div>
+    <div id="broker-grid"></div>
+    <div id="ibkr-status"></div>
+    <div id="hapi-status"></div>
+    <div id="paper-total"></div>
+    <div id="paper-cash"></div>
+    <div id="paper-pnl"></div>
+    <div id="stale-banner"></div>
   </div>
 
 </div>
@@ -4056,7 +4322,7 @@ function switchTab(name) {
     if (name === "intelligence") { try { loadNews(); loadAgents(); } catch(_) {} }
     if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
     if (name === "golf") { _loadSwingDrills(); }
-    if (name === "markets")  { try { loadPortfolioSummary(null); loadPaperStatus(); loadLearningMetrics(); } catch(_) {} }
+    if (name === "markets")  { try { _initMarketsTab(); } catch(_) { try { loadPortfolioSummary(null); } catch(__) {} } }
     if (name === "overview") { try { loadUnifiedPriorities(); } catch(_) {} }
   }, 120);
 }
@@ -4509,6 +4775,10 @@ async function analyzeTrader() {
       : fallbackLines.map(x => `<div class="brief-cell">${_esc(x)}</div>`).join("");
 
     if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML = narrative;
+
+    // Phase 5: Render explainability block in analysis panel
+    try { _renderExplainBlock(d); } catch(_) {}
+
   } catch(e) {
     console.warn("analyzeTrader:", e);
     if (qs("tradeNarrative")) qs("tradeNarrative").innerHTML =
@@ -5177,13 +5447,650 @@ async function recordLearningOutcome() {
       showToast(`Outcome recorded: ${symbol} → ${d.outcome} (win rate: ${d.current_win_rate}%)`, "success");
       document.getElementById("learn-symbol").value = "";
       document.getElementById("learn-return").value = "";
-      await loadLearningMetrics();
+      const daysEl = document.getElementById("learn-days");
+      if (daysEl) daysEl.value = "5";
+      await loadLearningFull(null);
     } else {
       showToast("Record failed: " + (d.error || "unknown"), "error");
     }
   } catch(e) {
     showToast("Error: " + e.message, "error");
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   JARVIS PORTFOLIO OS — ALL NEW PANEL LOGIC
+══════════════════════════════════════════════════════════════ */
+
+// ── Market Panel Sub-Navigation ─────────────────────────────────────────
+
+let _mktActivePanel = "cockpit";
+let _labChartEquity = null;
+let _labChartSignal = null;
+let _lcChartCal = null;
+let _lcChartSig = null;
+
+function switchMarketPanel(name) {
+  _mktActivePanel = name;
+  ["cockpit","lab","learning","analysis"].forEach(p => {
+    const el = document.getElementById("mkt-panel-" + p);
+    const btn = document.getElementById("mkt-nav-" + p);
+    if (el)  el.classList.toggle("active", p === name);
+    if (btn) btn.classList.toggle("active", p === name);
+  });
+  if (name === "cockpit")  loadCockpit(null);
+  if (name === "lab")      loadPaperAnalytics(null);
+  if (name === "learning") loadLearningFull(null);
+  if (name === "analysis") { try { loadMarketNews(); loadRecommendations(); } catch(_) {} }
+}
+
+// ── Live indicator helpers ───────────────────────────────────────────────
+
+function _setLiveIndicator(live) {
+  const dot   = document.getElementById("mkt-live-dot");
+  const label = document.getElementById("mkt-connection-label");
+  if (dot)   { dot.className   = live ? "live-dot" : "live-dot stale-dot"; }
+  if (label) { label.textContent = live ? "live" : "stale"; }
+}
+
+function _setTs(id, label) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = label + " · " + new Date().toLocaleTimeString();
+}
+
+// ── PANEL 1: Portfolio Intelligence Cockpit ──────────────────────────────
+
+async function loadCockpit(btn) {
+  if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
+  try {
+    const d = await fetch("/api/portfolio/cockpit").then(r => r.json());
+    if (d.status !== "ok") throw new Error(d.error || "Cockpit error");
+
+    const real   = d.real   || {};
+    const paper  = d.paper  || {};
+    const intel  = d.intelligence || {};
+    const fromCache = real._from_cache;
+
+    // Live indicator
+    _setLiveIndicator(!fromCache);
+
+    // Hero cards
+    _set("ck-real-total",    _fmtVal(real.total_value));
+    _set("ck-real-sub",      `${fromCache ? "⚡ cached snapshot" : "live"} · ${real.position_count||0} positions`);
+    _set("ck-real-invested", _fmtVal(real.invested));
+    _set("ck-real-cash",     _fmtVal(real.cash));
+    _set("ck-real-pos",      String(real.position_count||0));
+
+    const ppnlColor = (paper.pnl_total||0) >= 0 ? "#4ade80" : "#f87171";
+    _set("ck-paper-total",   _fmtVal(paper.total_value));
+    _set("ck-paper-sub",     `${paper.position_count||0} positions · ${paper.trade_count||0} trades`);
+    _set("ck-paper-pnl",     `<span style="color:${ppnlColor}">${_fmtPnl(paper.pnl_total)}</span>`);
+    _set("ck-paper-cash",    _fmtVal(paper.cash));
+    _set("ck-paper-trades",  String(paper.trade_count||0));
+
+    // 8 KPIs
+    const dpnlColor = (real.daily_pnl||0) >= 0 ? "#4ade80" : "#f87171";
+    _set("ck-daily-pnl",  `<span style="color:${dpnlColor}">${_fmtPnl(real.daily_pnl)}</span>`);
+    _set("ck-daily-pct",  real.daily_pnl_pct ? `${real.daily_pnl_pct > 0 ? "+" : ""}${(real.daily_pnl_pct||0).toFixed(2)}%` : "");
+    const unrColor = (real.unrealized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
+    _set("ck-unrealized", `<span style="color:${unrColor}">${_fmtPnl(real.unrealized_pnl)}</span>`);
+    const cashPct = real.total_value > 0 ? Math.round((real.cash||0) / (real.total_value + (real.cash||0)) * 100) : 0;
+    _set("ck-cash-pct",   `${cashPct}%`);
+    const riskScore = intel.portfolio_score || 0;
+    const riskColor = riskScore >= 65 ? "#4ade80" : riskScore >= 45 ? "#facc15" : "#f87171";
+    _set("ck-risk-score", `<span style="color:${riskColor}">${riskScore}</span>`);
+    _set("ck-risk-label", `<span style="color:${riskColor}">${(intel.risk_level||"—").toUpperCase()}</span>`);
+    _set("ck-paper-pnl-metric", `<span style="color:${ppnlColor}">${_fmtPnl(paper.pnl_total)}</span>`);
+    _set("ck-paper-pnl-pct",    paper.pnl_pct ? `${paper.pnl_pct > 0 ? "+" : ""}${(paper.pnl_pct||0).toFixed(2)}%` : "");
+    _set("ck-positions",  String(real.position_count||0));
+    const connectedBrokers = Object.values(d.brokers||{}).filter(b => !["not_connected","disconnected","not_configured"].includes(b.status)).length;
+    _set("ck-broker-count", String(connectedBrokers));
+    _set("ck-paper-pos",  String(paper.position_count||0));
+
+    // Risk gauge ring
+    const arc = document.getElementById("ck-risk-arc");
+    if (arc) {
+      const circumference = 2 * Math.PI * 32; // 201.06
+      const offset = circumference * (1 - riskScore / 100);
+      arc.style.strokeDasharray = `${circumference} ${circumference}`;
+      arc.style.strokeDashoffset = offset;
+      arc.style.stroke = riskColor;
+    }
+    _set("ck-ring-score", String(riskScore));
+    const ringLabel = document.getElementById("ck-ring-label");
+    if (ringLabel) {
+      ringLabel.textContent = (intel.risk_level||"—").toUpperCase();
+      ringLabel.style.background = riskScore >= 65 ? "rgba(74,222,128,.1)" : riskScore >= 45 ? "rgba(250,204,21,.1)" : "rgba(248,113,113,.1)";
+      ringLabel.style.color = riskColor;
+    }
+
+    // AI Insights stream
+    const insights = (intel.ai_insights || ["Connect broker for live insights."]);
+    _set("ck-insights-stream", insights.map(s =>
+      `<div class="insight-item"><div class="insight-dot"></div><span>${_esc(s)}</span></div>`
+    ).join(""));
+    _set("ck-port-summary", _esc(intel.summary || ""));
+
+    // Sector bars
+    const sectors = d.sector_exposure || [];
+    _set("ck-sector-bars", sectors.length ? sectors.map(s => {
+      const colors = ["#60a5fa","#a78bfa","#34d399","#facc15","#f87171","#fb923c","#38bdf8"];
+      const col = colors[sectors.indexOf(s) % colors.length];
+      return `<div class="sector-bar-row">
+        <div style="font-size:10px;color:var(--soft);width:80px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${_esc(s.label||s.sector||"")}</div>
+        <div class="sector-bar-track"><div class="sector-bar-fill" style="width:${s.pct||0}%;background:${col}"></div></div>
+        <div style="font-size:11px;font-weight:700;width:32px;text-align:right">${s.pct||0}%</div>
+      </div>`;
+    }).join("") : '<span style="color:var(--soft);font-size:12px">No sector data</span>');
+
+    // Asset class bars
+    const assets = d.asset_class_exposure || [];
+    _set("ck-asset-bars", assets.length ? assets.map(a => `
+      <div class="sector-bar-row">
+        <div style="font-size:10px;color:var(--soft);width:60px">${_esc(a.label||"")}</div>
+        <div class="sector-bar-track"><div class="sector-bar-fill" style="width:${a.pct||0}%;background:#a78bfa"></div></div>
+        <div style="font-size:11px;font-weight:700;width:32px;text-align:right">${a.pct||0}%</div>
+      </div>`).join("") : '<span style="color:var(--soft);font-size:12px">No asset data</span>');
+
+    // Top risks + opportunities
+    const risks = intel.top_risks || [];
+    _set("ck-top-risks", risks.length ? risks.map(r => `<div style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#f87171">•</span><span>${_esc(r)}</span></div>`).join("") : '<span style="color:var(--soft)">None detected</span>');
+    const opps = intel.opportunities || [];
+    _set("ck-opps", opps.length ? opps.map(o => `<div style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#4ade80">+</span><span>${_esc(o)}</span></div>`).join("") : '<span style="color:var(--soft)">Load data for insights</span>');
+
+    // Broker chips
+    const brokers = d.brokers || {};
+    const brokerHtml = Object.entries(brokers).map(([name, b]) => {
+      const connected = !["not_connected","disconnected","not_configured"].includes(b.status);
+      const stale = b._stale;
+      const dotClass = connected ? (stale ? "live-dot stale-dot" : "live-dot") : "live-dot stale-dot";
+      const pillClass = connected ? (stale ? "pill-warn" : "pill-ok") : "pill-err";
+      const statusText = connected ? (stale ? "stale" : "live") : "offline";
+      return `<div class="broker-chip">
+        <div class="broker-chip-name" style="color:${name==="ibkr"?"#60a5fa":name==="hapi"?"#34d399":"#a78bfa"}">${name.toUpperCase()}</div>
+        <div class="${dotClass}" style="flex-shrink:0"></div>
+        <span class="status-pill ${pillClass}" style="font-size:9px">${statusText}</span>
+        ${connected ? `<span style="font-size:10px;color:var(--soft);margin-left:auto">${_fmtVal(b.market_value||0)}</span>` : ""}
+      </div>`;
+    }).join("") || '<div style="font-size:11px;color:var(--soft)">No brokers configured</div>';
+    _set("ck-broker-chips", brokerHtml);
+
+    // Concentration warnings
+    const warns = d.concentration_warnings || [];
+    _set("ck-warnings", warns.length ? warns.map(w =>
+      `<div style="display:flex;gap:6px;margin-bottom:5px;font-size:11px"><span style="color:#facc15">⚠</span><span>${_esc(w.symbol||"")} — ${_esc(w.type||"")} (${w.weight_pct||0}%)</span></div>`
+    ).join("") : '<span style="color:var(--soft)">No concentration warnings</span>');
+
+    // Paper trade ideas
+    const ideas = intel.paper_ideas || [];
+    _set("ck-paper-ideas", ideas.length ? ideas.map(i => `<div style="margin-bottom:5px;font-size:11px">→ ${_esc(i)}</div>`).join("") : '<span style="color:var(--soft)">Run cockpit for ideas</span>');
+
+    // Stale banner
+    const staleBanner = document.getElementById("cockpit-stale-banner");
+    if (staleBanner) staleBanner.style.display = fromCache ? "flex" : "none";
+
+    // Also update legacy hidden elements for backward compat
+    _set("port-total",    _fmtVal(real.total_value));
+    _set("port-invested", _fmtVal(real.invested));
+    _set("port-cash",     _fmtVal(real.cash));
+    _set("port-daily-pnl", _fmtPnl(real.daily_pnl));
+    _set("port-unrealized", _fmtPnl(real.unrealized_pnl));
+    _set("port-summary",  intel.summary || "");
+    _set("port-risk-score", String(riskScore));
+    _set("port-risk-level", (intel.risk_level||"—").toUpperCase());
+
+    _setTs("ck-ts-label", fromCache ? "Stale — cached data" : "Last updated");
+    const dataDot = document.getElementById("ck-data-dot");
+    if (dataDot) dataDot.className = fromCache ? "live-dot stale-dot" : "live-dot";
+    const snapTimeEl = document.getElementById("mkt-snapshot-time");
+    if (snapTimeEl) snapTimeEl.textContent = new Date().toLocaleTimeString();
+
+    // Also load holdings
+    await loadTopHoldings();
+
+  } catch(e) {
+    console.warn("loadCockpit:", e);
+    _setLiveIndicator(false);
+    showToast("Cockpit load error: " + e.message, "error");
+  } finally {
+    if (btn) { btn.textContent = "↻ Refresh All"; btn.disabled = false; }
+  }
+}
+
+function _set(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+// ── PANEL 2: Paper Analytics (Lab) ──────────────────────────────────────
+
+async function loadPaperAnalytics(btn) {
+  if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
+  try {
+    const [analytics, history] = await Promise.all([
+      fetch("/api/paper/analytics").then(r => r.json()),
+      fetch("/api/paper/history").then(r => r.json()),
+    ]);
+
+    const d = analytics;
+    if (d.status !== "ok") throw new Error(d.error || "Analytics unavailable");
+
+    // 12 metrics
+    const pnlColor = (d.total_pnl||0) >= 0 ? "#4ade80" : "#f87171";
+    _set("lab-total",      _fmtVal(d.portfolio_value));
+    _set("lab-daily-pnl",  `<span style="color:${pnlColor}">${_fmtPnl(d.total_pnl)}</span>`);
+    _set("lab-unrealized", `<span style="color:${(d.unrealized_pnl||0)>=0?"#4ade80":"#f87171"}">${_fmtPnl(d.unrealized_pnl)}</span>`);
+    const wrColor = (d.win_rate||0) >= 55 ? "#4ade80" : (d.win_rate||0) >= 40 ? "#facc15" : "#f87171";
+    _set("lab-win-rate",   `<span style="color:${wrColor}">${d.win_rate||0}%</span>`);
+    _set("lab-win-sub",    `${d.winners||0}W / ${d.losers||0}L`);
+    _set("lab-avg-gain",   d.avg_gain_pct ? `+${d.avg_gain_pct}%` : "—");
+    _set("lab-avg-loss",   d.avg_loss_pct ? `${d.avg_loss_pct}%` : "—");
+    const rrColor = (d.risk_reward||0) >= 1.5 ? "#4ade80" : (d.risk_reward||0) >= 1 ? "#facc15" : "#f87171";
+    _set("lab-rr",         d.risk_reward ? `<span style="color:${rrColor}">${d.risk_reward}:1</span>` : "—");
+    _set("lab-drawdown",   d.max_drawdown_pct ? `${d.max_drawdown_pct}%` : "0%");
+    _set("lab-open-pos",   String(d.open_positions||0));
+    _set("lab-closed",     String(d.closed_trades||0));
+    _set("paper-trades",   String(d.trade_count||0));
+    const confColor = (d.learning_confidence_score||0) >= 65 ? "#4ade80" : (d.learning_confidence_score||0) >= 40 ? "#facc15" : "#f87171";
+    _set("lab-ai-conf",    `<span style="color:${confColor}">${d.learning_confidence_score||0}</span>`);
+
+    // Also update paper-total and paper-cash for legacy
+    _set("paper-total", _fmtVal(d.portfolio_value));
+    _set("paper-cash",  _fmtVal(d.cash));
+    _set("paper-pnl",   `<span style="color:${pnlColor}">${_fmtPnl(d.total_pnl)}</span>`);
+
+    // Strategy table
+    const strats = d.strategy_performance || [];
+    _set("lab-strategy-table", strats.length ? `
+      <table class="trade-table">
+        <thead><tr><th>Strategy</th><th>Trades</th><th>Volume</th></tr></thead>
+        <tbody>${strats.map(s => `<tr>
+          <td>${_esc(s.strategy)}</td>
+          <td>${s.trades}</td>
+          <td>${_fmtVal(s.volume)}</td>
+        </tr>`).join("")}</tbody>
+      </table>` : '<span style="color:var(--soft);font-size:12px">No trades tagged with strategies yet.</span>');
+
+    // Equity Curve Chart
+    const curve = d.equity_curve || [];
+    _renderEquityChart(curve, d.initial_value || 100000);
+
+    // Trade history table
+    const trades = (history.trades || []).slice(-20).reverse();
+    _set("lab-trade-history", trades.length ? `
+      <table class="trade-table">
+        <thead><tr><th>Time</th><th>Symbol</th><th>Action</th><th>Qty</th><th>Price</th><th>Value</th><th>Strategy</th></tr></thead>
+        <tbody>${trades.map(t => {
+          const actionColor = t.action === "buy" || t.action === "add" ? "#60a5fa" : "#f87171";
+          return `<tr>
+            <td style="color:var(--soft)">${(t.timestamp||"").substring(0,10)}</td>
+            <td style="font-weight:700">${_esc(t.symbol||"")}</td>
+            <td style="color:${actionColor};font-weight:700;text-transform:uppercase">${_esc(t.action||"")}</td>
+            <td>${t.quantity||0}</td>
+            <td>$${(t.price||0).toFixed(2)}</td>
+            <td>${_fmtVal(t.value)}</td>
+            <td style="color:var(--soft)">${_esc(t.thesis||"—")}</td>
+          </tr>`;
+        }).join("")}</tbody>
+      </table>` : '<span style="color:var(--soft);font-size:12px">No trades recorded.</span>');
+
+    // Open positions
+    await loadPaperPositions();
+
+    // Render signal chart with learning data
+    await _loadAndRenderSignalChart();
+
+  } catch(e) {
+    console.warn("loadPaperAnalytics:", e);
+    showToast("Paper analytics error: " + e.message, "error");
+  } finally {
+    if (btn) { btn.textContent = "↻ Refresh Lab"; btn.disabled = false; }
+  }
+}
+
+function _renderEquityChart(curve, initialValue) {
+  const canvas = document.getElementById("lab-equity-chart");
+  const emptyEl = document.getElementById("lab-equity-empty");
+  if (!canvas) return;
+  if (!curve || curve.length < 2) {
+    canvas.style.display = "none";
+    if (emptyEl) emptyEl.style.display = "block";
+    return;
+  }
+  canvas.style.display = "block";
+  if (emptyEl) emptyEl.style.display = "none";
+  if (_labChartEquity) { _labChartEquity.destroy(); _labChartEquity = null; }
+  const labels = curve.map(p => p.date);
+  const values = curve.map(p => p.value);
+  const lastVal = values[values.length - 1];
+  const lineColor = lastVal >= initialValue ? "#4ade80" : "#f87171";
+  _labChartEquity = new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: lineColor,
+        backgroundColor: lineColor.replace(")", ",.08)").replace("rgb", "rgba"),
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: curve.length > 10 ? 0 : 3,
+        pointHoverRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => " $" + ctx.parsed.y.toLocaleString() }
+      }},
+      scales: {
+        x: { ticks: { color: "#6e9bb5", font: { size: 9 } }, grid: { color: "rgba(255,255,255,.04)" } },
+        y: { ticks: { color: "#6e9bb5", font: { size: 9 }, callback: v => "$" + v.toLocaleString() }, grid: { color: "rgba(255,255,255,.04)" } }
+      }
+    }
+  });
+}
+
+async function _loadAndRenderSignalChart() {
+  const canvas = document.getElementById("lab-signal-chart");
+  const emptyEl = document.getElementById("lab-signal-empty");
+  if (!canvas) return;
+  try {
+    const d = await fetch("/api/trader/learning").then(r => r.json());
+    const bySignal = d.by_signal || {};
+    const signals = Object.values(bySignal);
+    if (!signals.length) {
+      canvas.style.display = "none";
+      if (emptyEl) emptyEl.style.display = "block";
+      return;
+    }
+    canvas.style.display = "block";
+    if (emptyEl) emptyEl.style.display = "none";
+    if (_labChartSignal) { _labChartSignal.destroy(); _labChartSignal = null; }
+    const labels  = signals.map(s => s.signal_type);
+    const winRates = signals.map(s => s.win_rate);
+    const confs   = signals.map(s => s.avg_confidence);
+    _labChartSignal = new Chart(canvas.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          { label: "Win Rate %", data: winRates, backgroundColor: "rgba(74,222,128,.6)", borderRadius: 4 },
+          { label: "Avg Confidence %", data: confs, backgroundColor: "rgba(167,139,250,.4)", borderRadius: 4 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#6e9bb5", font: { size: 10 } } } },
+        scales: {
+          x: { ticks: { color: "#6e9bb5", font: { size: 10 } }, grid: { display: false } },
+          y: { max: 100, ticks: { color: "#6e9bb5", font: { size: 9 }, callback: v => v + "%" }, grid: { color: "rgba(255,255,255,.04)" } }
+        }
+      }
+    });
+  } catch(e) { console.warn("signal chart:", e); }
+}
+
+// ── PANEL 3: AI Learning Center (Full) ──────────────────────────────────
+
+async function loadLearningFull(btn) {
+  if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
+  try {
+    const [metricsRes, calRes, accRes] = await Promise.all([
+      fetch("/api/trader/learning").then(r => r.json()),
+      fetch("/api/trader/learning/calibration").then(r => r.json()),
+      fetch("/api/trader/learning/accuracy").then(r => r.json()),
+    ]);
+    const m = metricsRes.metrics || {};
+    const bySignal = metricsRes.by_signal || {};
+
+    // 10 metric cards
+    const wr = m.overall_win_rate || 0;
+    const wrColor = wr >= 55 ? "#4ade80" : wr >= 40 ? "#facc15" : "#f87171";
+    _set("lc-total",    String(m.total_outcomes || 0));
+    _set("lc-accuracy", `<span style="color:${wrColor}">${wr}%</span>`);
+    _set("lc-accuracy-sub", `recent: ${m.recent_win_rate_30||0}%`);
+
+    const buyWR  = m.signal_breakdown?.BUY?.win_rate  || 0;
+    const avoidWR = m.signal_breakdown?.AVOID?.win_rate || 0;
+    _set("lc-bull-acc", `${buyWR}%`);
+    _set("lc-bear-acc", `${avoidWR}%`);
+    _set("learn-winrate",  `<span style="color:${wrColor}">${wr}%</span>`);
+    _set("learn-outcomes", String(m.total_outcomes || 0));
+    const qs = m.learning_quality_score || 0;
+    const qsColor = qs >= 65 ? "#4ade80" : qs >= 40 ? "#facc15" : "#f87171";
+    _set("learn-quality", `<span style="color:${qsColor}">${qs}</span>`);
+
+    const calErr = m.calibration_error || 0;
+    const calOk = calErr < 15;
+    _set("lc-calibration", `<span style="color:${calOk?"#4ade80":"#facc15"}">${calErr}% err</span>`);
+    _set("lc-cal-sub", calOk ? "well calibrated" : m.is_overconfident ? "overconfident" : "underconfident");
+    const avgRet = m.avg_return_pct || 0;
+    _set("lc-avg-ret", `<span style="color:${avgRet>=0?"#4ade80":"#f87171"}">${avgRet>0?"+":""}${avgRet}%</span>`);
+    const trend = (m.recent_win_rate_30||0) > wr + 2;
+    const trendDown = (m.recent_win_rate_30||0) < wr - 2;
+    _set("lc-trend",     trend ? `<span style="color:#4ade80">Improving</span>` : trendDown ? `<span style="color:#f87171">Declining</span>` : `<span style="color:#facc15">Stable</span>`);
+    _set("lc-trend-sub", `recent: ${m.recent_win_rate_30||0}% vs ${wr}% all-time`);
+
+    // Calibration status row (legacy)
+    const calEl = document.getElementById("learn-calibration-row");
+    if (calEl) {
+      let msg = m.total_outcomes < 5
+        ? '<span style="color:var(--soft)">Insufficient data — need ≥5 outcomes.</span>'
+        : m.is_overconfident
+        ? `<span style="color:#f87171">Overconfident — avg confidence ${m.avg_confidence}% > win rate ${wr}%</span>`
+        : m.is_underconfident
+        ? `<span style="color:#facc15">Underconfident — actual performance exceeds predicted.</span>`
+        : `<span style="color:#4ade80">Well calibrated — error: ${calErr}%</span>`;
+      calEl.innerHTML = `<div style="font-size:11px;padding:5px 8px;background:rgba(255,255,255,.03);border-radius:6px">${msg}</div>`;
+    }
+
+    // Signal breakdown (legacy element in learning card)
+    const sigEl = document.getElementById("learn-signal-breakdown");
+    if (sigEl) {
+      const sigs = Object.values(bySignal);
+      sigEl.innerHTML = sigs.length ? sigs.map(s => {
+        const c = s.win_rate >= 55 ? "#4ade80" : s.win_rate >= 40 ? "#facc15" : "#f87171";
+        const cal = s.calibrated ? `<span style="color:#4ade80;font-size:10px">calibrated</span>` : `<span style="color:#f87171;font-size:10px">err:${s.calibration_error}%</span>`;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="width:50px;font-weight:700;font-size:11px">${_esc(s.signal_type)}</div>
+          <div style="flex:1;background:rgba(255,255,255,.06);border-radius:3px;height:4px"><div style="width:${s.win_rate}%;height:100%;background:${c};border-radius:3px"></div></div>
+          <div style="font-size:11px;color:${c};width:36px;text-align:right">${s.win_rate}%</div>
+          <div style="font-size:10px;color:var(--soft);width:28px;text-align:right">${s.total}x</div>
+          <div style="width:70px;text-align:right">${cal}</div>
+        </div>`;
+      }).join("") : '<span style="color:var(--soft)">No signal outcomes yet.</span>';
+    }
+
+    // Best/worst setups from accuracy
+    const bySymbol = (accRes.by_symbol || []);
+    const best = bySymbol.filter(s => s.total >= 2).sort((a,b) => b.win_rate - a.win_rate).slice(0,5);
+    const worst = bySymbol.filter(s => s.total >= 2).sort((a,b) => a.win_rate - b.win_rate).slice(0,5);
+    _set("lc-best-setups", best.length ? best.map(s =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px">
+        <span style="width:45px;font-weight:700">${_esc(s.symbol)}</span>
+        <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px"><div style="width:${s.win_rate}%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+        <span style="color:#4ade80;font-weight:700">${s.win_rate}%</span>
+        <span style="color:var(--soft)">${s.total}x</span>
+      </div>`).join("") : '<span style="color:var(--soft)">Need ≥2 outcomes per symbol</span>');
+    _set("lc-worst-setups", worst.length ? worst.map(s =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px">
+        <span style="width:45px;font-weight:700">${_esc(s.symbol)}</span>
+        <div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px"><div style="width:${s.win_rate}%;height:100%;background:#f87171;border-radius:2px"></div></div>
+        <span style="color:#f87171;font-weight:700">${s.win_rate}%</span>
+        <span style="color:var(--soft)">${s.total}x</span>
+      </div>`).join("") : '<span style="color:var(--soft)">Need ≥2 outcomes per symbol</span>');
+
+    // Learning narrative
+    const qualLabel = m.learning_quality_label || "insufficient_data";
+    const narrative = _buildLearningNarrative(m, qualLabel);
+    _set("lc-narrative", narrative);
+
+    // Charts
+    _renderCalibrationChart(calRes.calibration || []);
+    _renderLcSignalChart(bySignal);
+
+  } catch(e) {
+    console.warn("loadLearningFull:", e);
+    showToast("Learning load error: " + e.message, "error");
+  } finally {
+    if (btn) { btn.textContent = "↻ Refresh Learning"; btn.disabled = false; }
+  }
+}
+
+function _buildLearningNarrative(m, qualLabel) {
+  const n = m.total_outcomes || 0;
+  if (n < 5) return `<span style="color:var(--soft)">Insufficient data — record at least 5 outcomes to begin learning analysis. Current: ${n} outcomes.</span>`;
+  const wr = m.overall_win_rate || 0;
+  const qs = m.learning_quality_score || 0;
+  const recent = m.recent_win_rate_30 || 0;
+  const improving = recent > wr + 2;
+  const declining = recent < wr - 2;
+  return [
+    `The AI has analyzed <strong>${n} outcomes</strong> with an overall win rate of <strong style="color:${wr>=55?"#4ade80":"#f87171"}">${wr}%</strong>.`,
+    qs >= 65 ? `Learning quality is <strong style="color:#4ade80">EXCELLENT</strong> — system is well-calibrated and reliable.`
+             : qs >= 40 ? `Learning quality is <strong style="color:#facc15">GOOD</strong> — accumulating signal history.`
+             : `Learning is in early stage — <strong>${n}</strong> outcomes is a small sample.`,
+    improving ? `<strong style="color:#4ade80">Trend: IMPROVING</strong> — recent 30 outcomes show ${recent}% win rate vs ${wr}% historical.`
+              : declining ? `<strong style="color:#f87171">Trend: DECLINING</strong> — recent performance ${recent}% below ${wr}% historical average.`
+              : `Trend: <strong style="color:#facc15">STABLE</strong> — consistent performance over recent outcomes.`,
+    m.is_overconfident ? `⚠ Overconfidence detected — confidence signals exceed actual accuracy. Calibration recommended.`
+                       : m.is_underconfident ? `System may be underconfident — actual outcomes exceed predicted confidence.`
+                       : `Confidence calibration is <strong style="color:#4ade80">healthy</strong>.`,
+    m.best_return_pct ? `Best recorded return: <strong style="color:#4ade80">+${m.best_return_pct}%</strong>. Worst: <strong style="color:#f87171">${m.worst_return_pct}%</strong>.` : "",
+  ].filter(Boolean).map(s => `<p style="margin:0 0 6px 0">${s}</p>`).join("");
+}
+
+function _renderCalibrationChart(calibration) {
+  const canvas = document.getElementById("lc-calibration-chart");
+  if (!canvas) return;
+  if (_lcChartCal) { _lcChartCal.destroy(); _lcChartCal = null; }
+  const labels = calibration.map(b => b.range);
+  const actual  = calibration.map(b => b.win_rate);
+  const expected = calibration.map(b => (b.expected_min + b.expected_max) / 2);
+  _lcChartCal = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Actual Win Rate %", data: actual, backgroundColor: "rgba(68,240,255,.5)", borderRadius: 4 },
+        { label: "Expected %", data: expected, type: "line", borderColor: "#facc15", borderWidth: 2, borderDash: [4,3], pointRadius: 3, fill: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#6e9bb5", font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { color: "#6e9bb5", font: { size: 9 } }, grid: { display: false } },
+        y: { max: 100, ticks: { color: "#6e9bb5", font: { size: 9 }, callback: v => v + "%" }, grid: { color: "rgba(255,255,255,.04)" } }
+      }
+    }
+  });
+}
+
+function _renderLcSignalChart(bySignal) {
+  const canvas = document.getElementById("lc-signal-chart");
+  if (!canvas) return;
+  if (_lcChartSig) { _lcChartSig.destroy(); _lcChartSig = null; }
+  const sigs = Object.values(bySignal);
+  if (!sigs.length) { canvas.style.display = "none"; return; }
+  canvas.style.display = "block";
+  _lcChartSig = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sigs.map(s => s.signal_type),
+      datasets: [
+        { label: "Win Rate %", data: sigs.map(s => s.win_rate), backgroundColor: sigs.map(s => s.win_rate>=55?"rgba(74,222,128,.6)":s.win_rate>=40?"rgba(250,204,21,.5)":"rgba(248,113,113,.5)"), borderRadius: 4 },
+        { label: "Total Outcomes", data: sigs.map(s => s.total), backgroundColor: "rgba(167,139,250,.25)", borderRadius: 4, yAxisID: "y2" },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#6e9bb5", font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { color: "#6e9bb5", font: { size: 10 } }, grid: { display: false } },
+        y: { max: 100, ticks: { color: "#6e9bb5", font: { size: 9 }, callback: v => v + "%" }, grid: { color: "rgba(255,255,255,.04)" } },
+        y2: { position: "right", ticks: { color: "#6e9bb5", font: { size: 9 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ── Phase 5: Explainability Layer (enhance analyzeTrader output) ─────────
+
+function _renderExplainBlock(data) {
+  const el = document.getElementById("trader-explain-block");
+  if (!el) return;
+  const expl = data.explainability || {};
+  const regime = data.market_regime || {};
+  const portfolio = data.portfolio_filter || {};
+  const learning = data.learning_adjustment || {};
+  if (!expl.why && !regime.label) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  const rows = [];
+  if (expl.why) rows.push(`<div class="explain-row"><div class="explain-icon">💡</div><div><strong>Why:</strong> ${_esc(expl.why)}</div></div>`);
+  if (expl.key_risk) rows.push(`<div class="explain-row"><div class="explain-icon">⚠</div><div><strong>Key Risk:</strong> ${_esc(expl.key_risk)}</div></div>`);
+  if (expl.uncertainty) rows.push(`<div class="explain-row"><div class="explain-icon">🔍</div><div><strong>Uncertainty:</strong> ${_esc(expl.uncertainty)}</div></div>`);
+  if (expl.alternative_scenario) rows.push(`<div class="explain-row"><div class="explain-icon">↔</div><div><strong>Alternative:</strong> ${_esc(expl.alternative_scenario)}</div></div>`);
+  if (regime.label) rows.push(`<div class="explain-row"><div class="explain-icon">📊</div><div><strong>Regime:</strong> ${_esc(regime.label)} (score delta: ${regime.score_delta>=0?"+":""}${regime.score_delta||0})</div></div>`);
+  if (portfolio.already_held) rows.push(`<div class="explain-row"><div class="explain-icon">📦</div><div><strong>Portfolio:</strong> Already held — ${portfolio.existing_weight_pct||0}% weight. Score adjusted ${portfolio.delta>=0?"+":""}${portfolio.delta||0}.</div></div>`);
+  if (learning.adjustment !== undefined && learning.adjustment !== 0) rows.push(`<div class="explain-row"><div class="explain-icon">🧠</div><div><strong>Learning:</strong> Historical win rate ${learning.win_rate||0}% → score ${learning.adjustment>=0?"+":""}${learning.adjustment} (${learning.confidence||"low"} confidence, ${learning.sample_size||0} samples)</div></div>`);
+  el.innerHTML = `<div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">AI Explainability — Why This Signal</div>${rows.join("")}`;
+}
+
+// ── Enhanced paperSimulateTrade with stop/take-profit/strategy ───────────
+
+async function paperSimulateTrade() {
+  const sym      = (document.getElementById("paper-symbol")?.value || "").trim().toUpperCase();
+  const action   = document.getElementById("paper-action")?.value || "buy";
+  const qty      = parseFloat(document.getElementById("paper-qty")?.value || "0");
+  const price    = parseFloat(document.getElementById("paper-price")?.value || "0");
+  const strategy = (document.getElementById("paper-strategy")?.value || "").trim();
+  const thesis   = (document.getElementById("paper-thesis")?.value || "").trim();
+  const stopLoss = parseFloat(document.getElementById("paper-stop")?.value || "0") || null;
+  const takeProfit = parseFloat(document.getElementById("paper-tp")?.value || "0") || null;
+
+  if (!sym) { showToast("Symbol required", "error"); return; }
+  if (qty <= 0) { showToast("Quantity must be > 0", "error"); return; }
+
+  const fullThesis = [strategy ? `[${strategy}]` : "", thesis, stopLoss ? `SL:$${stopLoss}` : "", takeProfit ? `TP:$${takeProfit}` : ""].filter(Boolean).join(" ");
+
+  const feedbackEl = document.getElementById("lab-trade-feedback");
+  if (feedbackEl) { feedbackEl.style.display = "block"; feedbackEl.innerHTML = '<span style="color:var(--soft)">⏳ Submitting paper trade…</span>'; }
+
+  try {
+    const d = await fetch("/api/paper/simulate-trade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol: sym, action, quantity: qty, price, thesis: fullThesis }),
+    }).then(r => r.json());
+    if (d.status === "ok") {
+      showToast(d.message || "Paper trade simulated", "success");
+      if (feedbackEl) feedbackEl.innerHTML = `<span style="color:#4ade80">✔ ${_esc(d.message||"Trade simulated")}</span>`;
+      await loadPaperAnalytics(null);
+    } else {
+      showToast("Error: " + (d.message || d.error || "unknown"), "error");
+      if (feedbackEl) feedbackEl.innerHTML = `<span style="color:#f87171">✘ ${_esc(d.message||d.error||"Trade failed")}</span>`;
+    }
+  } catch(e) {
+    showToast("Error: " + e.message, "error");
+    if (feedbackEl) feedbackEl.innerHTML = `<span style="color:#f87171">✘ ${_esc(e.message)}</span>`;
+  }
+}
+
+// ── Patch: loadLearningMetrics now delegates to loadLearningFull ─────────
+
+async function loadLearningMetrics() { return loadLearningFull(null); }
+
+// ── Patch: loadPaperStatus now delegates to loadPaperAnalytics ───────────
+
+async function loadPaperStatus() { return loadPaperAnalytics(null); }
+
+// ── Market init: switch to cockpit on tab open ────────────────────────────
+
+function _initMarketsTab() {
+  switchMarketPanel("cockpit");
 }
 
 /* ── News ───────────────────────────── */

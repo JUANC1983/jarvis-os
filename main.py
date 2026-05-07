@@ -6173,6 +6173,209 @@ def paper_reset(current_user: dict = Depends(get_optional_user)):
     return _paper_trading.reset()
 
 
+# ── Paper Analytics (rich computed metrics) ────────────────────────────
+
+def _compute_equity_curve(trades: List[Dict], initial_value: float) -> List[Dict]:
+    """Build simplified equity curve from trade history (last 30 data points)."""
+    if not trades:
+        return [{"date": datetime.utcnow().date().isoformat(), "value": round(initial_value, 2)}]
+    from collections import defaultdict
+    daily: Dict[str, float] = defaultdict(float)
+    for t in trades:
+        date = (t.get("timestamp") or "")[:10]
+        if not date:
+            continue
+        val = float(t.get("value", 0))
+        if t.get("action") in ("sell", "trim"):
+            daily[date] += val
+        elif t.get("action") in ("buy", "add"):
+            daily[date] -= val
+    sorted_dates = sorted(daily.keys())
+    if not sorted_dates:
+        return [{"date": datetime.utcnow().date().isoformat(), "value": round(initial_value, 2)}]
+    running = initial_value
+    curve = [{"date": sorted_dates[0], "value": round(running, 2)}]
+    for d in sorted_dates:
+        running += daily[d]
+        curve.append({"date": d, "value": round(max(running, 0), 2)})
+    return curve[-30:]
+
+
+@app.get("/api/paper/analytics")
+def paper_analytics(current_user: dict = Depends(get_optional_user)):
+    """Rich paper trading analytics — win rate, avg gain/loss, risk/reward, max drawdown, equity curve."""
+    _portfolio_guard()
+    try:
+        perf      = _paper_trading.get_performance()
+        hist      = _paper_trading.get_history()
+        positions = _paper_trading.get_positions()
+
+        all_trades    = hist.get("trades", [])
+        closed_trades = [t for t in all_trades if t.get("action") in ("sell", "trim")]
+        pos_list      = positions.get("positions", [])
+
+        # Win / loss from open positions (unrealized P&L proxy)
+        winners   = [p for p in pos_list if p.get("unrealized_pnl", 0) > 0]
+        losers    = [p for p in pos_list if p.get("unrealized_pnl", 0) < 0]
+        n_pos     = len(pos_list)
+        win_rate  = round(len(winners) / n_pos * 100, 1) if n_pos else 0
+        avg_gain  = round(sum(p.get("unrealized_pnl_pct", 0) for p in winners) / len(winners), 2) if winners else 0
+        avg_loss  = round(sum(p.get("unrealized_pnl_pct", 0) for p in losers) / len(losers), 2) if losers else 0
+        rr        = round(avg_gain / abs(avg_loss), 2) if avg_loss < 0 else 0
+
+        initial_value = float(perf.get("initial_value", 100_000))
+        total_pnl_pct = float(perf.get("total_pnl_pct", 0))
+        max_drawdown  = round(min(0.0, total_pnl_pct), 2)
+
+        # Strategy performance
+        from collections import defaultdict as _dd
+        strat: Dict[str, Any] = _dd(lambda: {"count": 0, "volume": 0.0})
+        for t in all_trades:
+            key = (t.get("thesis") or "no strategy").strip() or "no strategy"
+            strat[key]["count"]  += 1
+            strat[key]["volume"] = round(strat[key]["volume"] + float(t.get("value", 0)), 2)
+        strategy_list = sorted(
+            [{"strategy": k, "trades": v["count"], "volume": v["volume"]} for k, v in strat.items()],
+            key=lambda x: x["trades"], reverse=True
+        )[:8]
+
+        # Learning confidence
+        learning_confidence = 0
+        if _trader_learning:
+            try:
+                lm = _trader_learning.get_metrics()
+                learning_confidence = lm.get("learning_quality_score", 0)
+            except Exception:
+                pass
+
+        equity_curve = _compute_equity_curve(all_trades, initial_value)
+
+        return {
+            "status":                   "ok",
+            "portfolio_value":          round(float(perf.get("current_value", 0)), 2),
+            "initial_value":            round(initial_value, 2),
+            "cash":                     round(float(perf.get("cash", 0)), 2),
+            "total_pnl":                round(float(perf.get("total_pnl", 0)), 2),
+            "total_pnl_pct":            round(total_pnl_pct, 2),
+            "trade_count":              len(all_trades),
+            "open_positions":           n_pos,
+            "closed_trades":            len(closed_trades),
+            "win_rate":                 win_rate,
+            "winners":                  len(winners),
+            "losers":                   len(losers),
+            "avg_gain_pct":             avg_gain,
+            "avg_loss_pct":             avg_loss,
+            "risk_reward":              rr,
+            "max_drawdown_pct":         max_drawdown,
+            "unrealized_pnl":           round(sum(p.get("unrealized_pnl", 0) for p in pos_list), 2),
+            "equity_curve":             equity_curve,
+            "strategy_performance":     strategy_list,
+            "learning_confidence_score": learning_confidence,
+            "real_trade":               False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+# ── Portfolio Cockpit (one-shot combined view) ─────────────────────────
+
+def _build_ai_insights(snapshot: Dict, intel: Dict, paper_status: Dict) -> List[str]:
+    """Contextual AI insight strings from live portfolio data."""
+    insights: List[str] = []
+    positions  = snapshot.get("all_positions", [])
+    total_val  = snapshot.get("total_market_value", 0)
+    total_port = snapshot.get("total_portfolio_value", 0)
+
+    if positions and total_val > 0:
+        top = max(positions, key=lambda p: p.get("market_value", 0))
+        top_pct = round(top.get("market_value", 0) / total_val * 100, 1)
+        if top_pct > 20:
+            insights.append(f"{top['symbol']} represents {top_pct}% of invested portfolio.")
+
+    sectors = snapshot.get("sector_exposure", [])
+    if sectors and sectors[0].get("pct", 0) > 40:
+        s = sectors[0]
+        insights.append(f"{s['label']} sector at {s['pct']}% — concentration risk.")
+
+    daily_pnl = snapshot.get("total_daily_pnl", 0)
+    daily_pct = snapshot.get("total_daily_pnl_pct", 0)
+    if abs(daily_pct) >= 1:
+        direction = "up" if daily_pnl >= 0 else "down"
+        insights.append(f"Portfolio {direction} {abs(daily_pct):.1f}% today (${daily_pnl:+,.0f}).")
+
+    paper_pnl_pct = float(paper_status.get("pnl_pct", 0))
+    if paper_status.get("total_portfolio", 0) > 0:
+        if paper_pnl_pct > 2:
+            insights.append(f"Paper Lab +{paper_pnl_pct:.1f}% — simulation outperforming.")
+        elif paper_pnl_pct < -2:
+            insights.append(f"Paper Lab {paper_pnl_pct:.1f}% — review simulation strategy.")
+
+    if intel.get("risk_level") in ("high", "critical"):
+        insights.append(f"Risk level: {intel['risk_level'].upper()} — review concentration and exposure.")
+
+    if total_port > 0:
+        cash_pct = snapshot.get("total_cash", 0) / total_port * 100
+        if cash_pct > 30:
+            insights.append(f"{cash_pct:.0f}% cash — consider gradual deployment.")
+        elif cash_pct < 3:
+            insights.append(f"Low cash ({cash_pct:.0f}%) — limited flexibility.")
+
+    if not insights:
+        insights.append("Connect IBKR or Hapi for live portfolio insights.")
+    return insights[:5]
+
+
+@app.get("/api/portfolio/cockpit")
+def portfolio_cockpit(current_user: dict = Depends(get_optional_user)):
+    """One-shot cockpit: unified portfolio + intelligence + paper overview."""
+    _portfolio_guard()
+    try:
+        snapshot     = _build_unified_snapshot()
+        intel        = _portfolio_intel.analyze(snapshot)
+        paper_status = _paper_trading.get_status()
+        paper_total  = float(paper_status.get("total_portfolio", 0))
+        real_total   = float(snapshot.get("total_portfolio_value", 0))
+        return {
+            "status": "ok",
+            "real": {
+                "total_value":     real_total,
+                "invested":        snapshot.get("total_market_value", 0),
+                "cash":            snapshot.get("total_cash", 0),
+                "daily_pnl":       snapshot.get("total_daily_pnl", 0),
+                "daily_pnl_pct":   snapshot.get("total_daily_pnl_pct", 0),
+                "unrealized_pnl":  snapshot.get("total_unrealized_pnl", 0),
+                "position_count":  snapshot.get("position_count", 0),
+                "_from_cache":     snapshot.get("_from_cache", False),
+            },
+            "paper": {
+                "total_value":     paper_total,
+                "cash":            paper_status.get("cash", 0),
+                "pnl_total":       paper_status.get("pnl_total", 0),
+                "pnl_pct":         paper_status.get("pnl_pct", 0),
+                "trade_count":     paper_status.get("trade_count", 0),
+                "position_count":  paper_status.get("position_count", 0),
+            },
+            "combined_total":      round(real_total + paper_total, 2),
+            "intelligence": {
+                "portfolio_score": intel.get("portfolio_score", 0),
+                "risk_level":      intel.get("risk_level", "unknown"),
+                "summary":         intel.get("summary", ""),
+                "top_risks":       intel.get("top_risks", [])[:3],
+                "opportunities":   intel.get("opportunities", [])[:3],
+                "paper_ideas":     intel.get("paper_trade_ideas", [])[:3],
+                "ai_insights":     _build_ai_insights(snapshot, intel, paper_status),
+            },
+            "sector_exposure":         snapshot.get("sector_exposure", [])[:6],
+            "asset_class_exposure":    snapshot.get("asset_class_exposure", []),
+            "largest_positions":       snapshot.get("largest_positions", [])[:5],
+            "concentration_warnings":  snapshot.get("concentration_warnings", [])[:3],
+            "brokers":                 snapshot.get("brokers", {}),
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
 # ── Trader Audit ───────────────────────────────────────────────────────
 
 @app.get("/api/trader/audit")

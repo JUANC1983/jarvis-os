@@ -115,5 +115,18 @@
     "source": "qa_test",
     "context": {},
     "recorded_at": "2026-05-06T21:30:25.922961"
+  },
+  {
+    "id": "lo_20260506214933_AAPL",
+    "symbol": "AAPL",
+    "signal_type": "BUY",
+    "confidence": 0.75,
+    "predicted_direction": "up",
+    "actual_return_pct": 3.2,
+    "holding_days": 5,
+    "outcome": "win",
+    "source": "qa_test",
+    "context": {},
+    "recorded_at": "2026-05-06T21:49:33.066932"
   }
 ]
