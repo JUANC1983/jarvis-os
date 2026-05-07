@@ -5820,8 +5820,18 @@ def trader_analyze(body: _TraderAnalyzeReq):
 # PORTFOLIO INTELLIGENCE — READ-ONLY — IBKR + HAPI + UNIFIED + PAPER
 # ══════════════════════════════════════════════════════════════════════
 
+import os as _os_env
+
 try:
-    from opsx.connectors.ibkr_readonly import ibkr as _ibkr, TradingBlockedError as _TradingBlockedError
+    # Remote bridge mode: Railway → ngrok → secure_bridge → IB Gateway
+    # Activate by setting ENABLE_REMOTE_IBKR_BRIDGE=true in Railway env vars.
+    if _os_env.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true":
+        from opsx.connectors.ibkr_bridge_client import ibkr_bridge as _ibkr, TradingBlockedError as _TradingBlockedError
+        logging.getLogger("jarvis").info("IBKR mode: REMOTE BRIDGE (%s)",
+                                         _os_env.getenv("IBKR_BRIDGE_URL", "NOT_SET"))
+    else:
+        from opsx.connectors.ibkr_readonly import ibkr as _ibkr, TradingBlockedError as _TradingBlockedError
+        logging.getLogger("jarvis").info("IBKR mode: local Client Portal (localhost:5000)")
     from opsx.connectors.hapi_readonly import hapi as _hapi
     from core.unified_portfolio_engine import unified_portfolio as _unified_portfolio
     from core.portfolio_intelligence_engine import portfolio_intelligence as _portfolio_intel
@@ -5883,6 +5893,95 @@ def portfolio_status(current_user: dict = Depends(get_optional_user)):
         "hapi":       hapi_status,
         "real_trade": False,
     }
+
+
+# ── IBKR Debug ────────────────────────────────────────────────────────
+
+@app.get("/api/debug/ibkr")
+def debug_ibkr(current_user: dict = Depends(get_optional_user)):
+    """
+    Deep diagnostic: bridge reachability, auth, broker connectivity,
+    snapshot freshness, and latency. Safe to call repeatedly — read-only.
+    """
+    import time as _time
+    import os as _os_dbg
+    from datetime import datetime as _dt
+
+    remote_mode  = _os_dbg.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true"
+    bridge_url   = _os_dbg.getenv("IBKR_BRIDGE_URL", "")
+    token_set    = bool(_os_dbg.getenv("IBKR_BRIDGE_TOKEN", ""))
+
+    result: Dict = {
+        "mode":          "remote_bridge" if remote_mode else "local_client_portal",
+        "bridge_url":    bridge_url or "(not set)",
+        "token_set":     token_set,
+        "real_trade":    False,
+        "checked_at":    _dt.utcnow().isoformat(),
+    }
+
+    if not _PORTFOLIO_AVAILABLE or not _ibkr:
+        result.update({"bridge_reachable": False, "auth_ok": False,
+                        "broker_connected": False, "error": "Portfolio modules unavailable"})
+        return result
+
+    t0 = _time.monotonic()
+    try:
+        health = _ibkr.health_check()
+        latency_ms = round((_time.monotonic() - t0) * 1000, 1)
+
+        if remote_mode:
+            bridge_ok    = health.get("bridge_ok", False)
+            ibkr_conn    = health.get("ibkr_connected", False)
+            result.update({
+                "bridge_reachable": bridge_ok,
+                "auth_ok":          bridge_ok and not health.get("error", "").startswith("auth"),
+                "broker_connected": ibkr_conn,
+                "account_id":       health.get("account", ""),
+                "readonly":         health.get("readonly", True),
+                "cache_stale":      health.get("cache_stale", True),
+                "bridge_latency_ms": latency_ms,
+                "paper_only":       True,
+            })
+        else:
+            connected = health.get("status") == "connected"
+            result.update({
+                "bridge_reachable": True,
+                "auth_ok":          True,
+                "broker_connected": connected,
+                "account_id":       health.get("account_id", health.get("account", "")),
+                "readonly":         True,
+                "bridge_latency_ms": latency_ms,
+                "paper_only":       True,
+            })
+
+        # Snapshot freshness
+        try:
+            snap = _ibkr.get_full_portfolio()
+            positions_count = len(snap.get("positions", []))
+            result["positions_count"] = positions_count
+            result["last_update"]     = snap.get("fetched_at", "")
+            result["snapshot_stale"]  = snap.get("_stale", True)
+            cache_age = 0
+            fetched_at = snap.get("fetched_at", "")
+            if fetched_at:
+                try:
+                    from datetime import timezone
+                    delta = _dt.utcnow() - _dt.fromisoformat(fetched_at.replace("Z", ""))
+                    cache_age = round(delta.total_seconds(), 1)
+                except Exception:
+                    pass
+            result["cache_age_seconds"] = cache_age
+        except Exception as snap_exc:
+            result["snapshot_error"] = str(snap_exc)
+
+    except Exception as exc:
+        result.update({
+            "bridge_reachable": False, "auth_ok": False,
+            "broker_connected": False, "error": str(exc),
+            "bridge_latency_ms": round((_time.monotonic() - t0) * 1000, 1),
+        })
+
+    return result
 
 
 # ── Unified Portfolio ──────────────────────────────────────────────────
@@ -6275,6 +6374,57 @@ def paper_analytics(current_user: dict = Depends(get_optional_user)):
         }
     except Exception as exc:
         return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+# ── Autonomous Paper Trader ────────────────────────────────────────────
+
+try:
+    from core.autonomous_paper_trader import autonomous_trader as _auto_trader
+    _AUTO_TRADER_AVAILABLE = True
+except Exception as _at_err:
+    _auto_trader = None
+    _AUTO_TRADER_AVAILABLE = False
+    logging.getLogger("jarvis").warning("Autonomous trader unavailable: %s", _at_err)
+
+
+@app.get("/api/paper/autonomous/status")
+def autonomous_status(current_user: dict = Depends(get_optional_user)):
+    """Autonomous paper trader: current state, regime, scan stats."""
+    if not _AUTO_TRADER_AVAILABLE or not _auto_trader:
+        return {"status": "unavailable", "real_trade": False}
+    return _auto_trader.get_status()
+
+
+@app.post("/api/paper/autonomous/start")
+def autonomous_start(current_user: dict = Depends(get_optional_user)):
+    """Start the autonomous paper trading simulation loop."""
+    if not _AUTO_TRADER_AVAILABLE or not _auto_trader:
+        return {"status": "unavailable", "real_trade": False}
+    return _auto_trader.start()
+
+
+@app.post("/api/paper/autonomous/stop")
+def autonomous_stop(current_user: dict = Depends(get_optional_user)):
+    """Stop the autonomous paper trading simulation loop."""
+    if not _AUTO_TRADER_AVAILABLE or not _auto_trader:
+        return {"status": "unavailable", "real_trade": False}
+    return _auto_trader.stop()
+
+
+@app.post("/api/paper/autonomous/scan")
+def autonomous_scan(current_user: dict = Depends(get_optional_user)):
+    """Trigger an immediate scan cycle (non-blocking)."""
+    if not _AUTO_TRADER_AVAILABLE or not _auto_trader:
+        return {"status": "unavailable", "real_trade": False}
+    return _auto_trader.trigger_scan()
+
+
+@app.get("/api/paper/autonomous/log")
+def autonomous_log(limit: int = 50, current_user: dict = Depends(get_optional_user)):
+    """Recent autonomous trade log entries."""
+    if not _AUTO_TRADER_AVAILABLE or not _auto_trader:
+        return {"trades": [], "total": 0, "real_trade": False}
+    return _auto_trader.get_trade_log(limit=min(limit, 200))
 
 
 # ── Portfolio Cockpit (one-shot combined view) ─────────────────────────

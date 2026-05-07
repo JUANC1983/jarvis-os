@@ -1789,8 +1789,9 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .pill-warn{background:rgba(250,204,21,.1);color:#fde047;border:1px solid rgba(250,204,21,.2)}
 .pill-err{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)}
 .pill-sim{background:rgba(167,139,250,.15);color:#c084fc;border:1px solid rgba(167,139,250,.25)}
-/* Chart container */
-.chart-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px;position:relative}
+/* Chart container — fixed height prevents Chart.js infinite resize */
+.chart-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px;position:relative;height:168px;overflow:hidden}
+.chart-box canvas{max-height:120px!important;height:120px!important;width:100%!important}
 .chart-title{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
 /* Execution panel */
 .exec-form{background:rgba(8,19,30,.9);border:1px solid rgba(68,240,255,.1);border-radius:12px;padding:14px}
@@ -5467,20 +5468,30 @@ async function recordLearningOutcome() {
 let _mktActivePanel = "cockpit";
 let _labChartEquity = null;
 let _labChartSignal = null;
-let _lcChartCal = null;
-let _lcChartSig = null;
+let _lcChartCal     = null;
+let _lcChartSig     = null;
+
+// Interval registry — prevents duplicate setInterval on repeated tab switches
+const _intervals = {};
+function _registerInterval(key, fn, ms) {
+  if (_intervals[key]) { clearInterval(_intervals[key]); }
+  _intervals[key] = setInterval(fn, ms);
+}
+
+// Panel load guard — prevents concurrent fetches on rapid tab clicks
+const _panelLoading = {};
 
 function switchMarketPanel(name) {
   _mktActivePanel = name;
   ["cockpit","lab","learning","analysis"].forEach(p => {
-    const el = document.getElementById("mkt-panel-" + p);
+    const el  = document.getElementById("mkt-panel-" + p);
     const btn = document.getElementById("mkt-nav-" + p);
     if (el)  el.classList.toggle("active", p === name);
     if (btn) btn.classList.toggle("active", p === name);
   });
-  if (name === "cockpit")  loadCockpit(null);
-  if (name === "lab")      loadPaperAnalytics(null);
-  if (name === "learning") loadLearningFull(null);
+  if (name === "cockpit"  && !_panelLoading.cockpit)   loadCockpit(null);
+  if (name === "lab"      && !_panelLoading.lab)        loadPaperAnalytics(null);
+  if (name === "learning" && !_panelLoading.learning)   loadLearningFull(null);
   if (name === "analysis") { try { loadMarketNews(); loadRecommendations(); } catch(_) {} }
 }
 
@@ -5501,6 +5512,8 @@ function _setTs(id, label) {
 // ── PANEL 1: Portfolio Intelligence Cockpit ──────────────────────────────
 
 async function loadCockpit(btn) {
+  if (_panelLoading.cockpit) return;
+  _panelLoading.cockpit = true;
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
   try {
     const d = await fetch("/api/portfolio/cockpit").then(r => r.json());
@@ -5653,6 +5666,7 @@ async function loadCockpit(btn) {
     _setLiveIndicator(false);
     showToast("Cockpit load error: " + e.message, "error");
   } finally {
+    _panelLoading.cockpit = false;
     if (btn) { btn.textContent = "↻ Refresh All"; btn.disabled = false; }
   }
 }
@@ -5665,6 +5679,8 @@ function _set(id, html) {
 // ── PANEL 2: Paper Analytics (Lab) ──────────────────────────────────────
 
 async function loadPaperAnalytics(btn) {
+  if (_panelLoading.lab) return;
+  _panelLoading.lab = true;
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
   try {
     const [analytics, history] = await Promise.all([
@@ -5744,6 +5760,7 @@ async function loadPaperAnalytics(btn) {
     console.warn("loadPaperAnalytics:", e);
     showToast("Paper analytics error: " + e.message, "error");
   } finally {
+    _panelLoading.lab = false;
     if (btn) { btn.textContent = "↻ Refresh Lab"; btn.disabled = false; }
   }
 }
@@ -5780,6 +5797,7 @@ function _renderEquityChart(curve, initialValue) {
       }]
     },
     options: {
+      animation: { duration: 0 },
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: {
         callbacks: { label: ctx => " $" + ctx.parsed.y.toLocaleString() }
@@ -5821,6 +5839,7 @@ async function _loadAndRenderSignalChart() {
         ]
       },
       options: {
+        animation: { duration: 0 },
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { labels: { color: "#6e9bb5", font: { size: 10 } } } },
         scales: {
@@ -5835,6 +5854,8 @@ async function _loadAndRenderSignalChart() {
 // ── PANEL 3: AI Learning Center (Full) ──────────────────────────────────
 
 async function loadLearningFull(btn) {
+  if (_panelLoading.learning) return;
+  _panelLoading.learning = true;
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
   try {
     const [metricsRes, calRes, accRes] = await Promise.all([
@@ -5935,6 +5956,7 @@ async function loadLearningFull(btn) {
     console.warn("loadLearningFull:", e);
     showToast("Learning load error: " + e.message, "error");
   } finally {
+    _panelLoading.learning = false;
     if (btn) { btn.textContent = "↻ Refresh Learning"; btn.disabled = false; }
   }
 }
@@ -5979,6 +6001,7 @@ function _renderCalibrationChart(calibration) {
       ]
     },
     options: {
+      animation: { duration: 0 },
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { labels: { color: "#6e9bb5", font: { size: 10 } } } },
       scales: {
@@ -6006,6 +6029,7 @@ function _renderLcSignalChart(bySignal) {
       ]
     },
     options: {
+      animation: { duration: 0 },
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { labels: { color: "#6e9bb5", font: { size: 10 } } } },
       scales: {
@@ -9172,12 +9196,11 @@ async function boot() {
   loadSwingHistory();
   applyExecutiveMode();
   loadUnifiedPriorities();
-  setInterval(loadMarketSnapshot,  30000);
-  setInterval(loadRecommendations, 30000);
-  setInterval(loadUnifiedPriorities, 300000); // refresh priority center every 5 min
-  setInterval(loadNotifications,   60000);
-  // Engagement loop — daily suggestion pulse every 5 min
-  setInterval(loadWow, 300000);
+  _registerInterval("marketSnapshot",    loadMarketSnapshot,    30000);
+  _registerInterval("recommendations",   loadRecommendations,   30000);
+  _registerInterval("unifiedPriorities", loadUnifiedPriorities, 300000);
+  _registerInterval("notifications",     loadNotifications,     60000);
+  _registerInterval("wow",               loadWow,               300000);
   // Onboarding check — skip if already configured
   checkOnboarding();
   // Commander brief + command history
