@@ -152,13 +152,43 @@ async def _start_watchdog():
     bridge_url   = _os_startup.getenv("IBKR_BRIDGE_URL", "")
     bridge_token = _os_startup.getenv("IBKR_BRIDGE_TOKEN", "")
     remote_mode  = _os_startup.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true"
-    if remote_mode and bridge_url and bridge_token:
+    hosted = bool(
+        _os_startup.getenv("RAILWAY_ENVIRONMENT")
+        or _os_startup.getenv("RAILWAY_SERVICE_ID")
+        or _os_startup.getenv("RAILWAY_PROJECT_ID")
+        or _os_startup.getenv("RAILWAY_STATIC_URL")
+        or _os_startup.getenv("RAILWAY_PUBLIC_DOMAIN")
+        or _os_startup.getenv("ENV", "").lower() in {"production", "prod"}
+    )
+    _log = logging.getLogger("jarvis")
+
+    # Phase 6: startup validation — must run before watchdog starts
+    try:
+        from opsx.bridge.production_guard import validate_production_config
+        validate_production_config(bridge_url, bridge_token, hosted)
+    except Exception as _guard_err:
+        _log.critical("IBKR PRODUCTION SAFETY VIOLATION at startup: %s", _guard_err)
+        # Do not crash server — but the violation is logged loudly and connector
+        # selection will also reject it below at portfolio module import time.
+
+    if (remote_mode or hosted) and bridge_url and bridge_token:
         try:
             from opsx.bridge.watchdog import watchdog_loop
             _asyncio.create_task(watchdog_loop(bridge_url, bridge_token))
-            logging.getLogger("jarvis").info("Bridge watchdog started → %s", bridge_url)
+            _log.info("Bridge watchdog started → %s", bridge_url)
         except Exception as _wd_err:
-            logging.getLogger("jarvis").warning("Watchdog start failed: %s", _wd_err)
+            _log.warning("Watchdog start failed: %s", _wd_err)
+    elif hosted and not bridge_url:
+        _log.critical(
+            "STARTUP: Railway/production detected but IBKR_BRIDGE_URL is not configured. "
+            "Watchdog NOT started. Portfolio features will show 'not_configured' status. "
+            "Fix: add IBKR_BRIDGE_URL=https://<ngrok-id>.ngrok.io to Railway env vars."
+        )
+    elif remote_mode and not bridge_url:
+        _log.warning(
+            "STARTUP: ENABLE_REMOTE_IBKR_BRIDGE=true but IBKR_BRIDGE_URL is not set. "
+            "Watchdog NOT started."
+        )
 brain           = ProductBrain()
 brain_pro       = ProductBrainPro()
 workspace       = DashboardWorkspaceEngine()
@@ -5849,13 +5879,47 @@ import os as _os_env
 try:
     # Remote bridge mode: Railway → ngrok → secure_bridge → IB Gateway
     # Activate by setting ENABLE_REMOTE_IBKR_BRIDGE=true in Railway env vars.
-    if _os_env.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true":
-        from opsx.connectors.ibkr_bridge_client import ibkr_bridge as _ibkr, TradingBlockedError as _TradingBlockedError
-        logging.getLogger("jarvis").info("IBKR mode: REMOTE BRIDGE (%s)",
-                                         _os_env.getenv("IBKR_BRIDGE_URL", "NOT_SET"))
+    _remote_bridge_enabled = _os_env.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true"
+    _hosted_runtime = bool(
+        _os_env.getenv("RAILWAY_ENVIRONMENT")
+        or _os_env.getenv("RAILWAY_SERVICE_ID")
+        or _os_env.getenv("RAILWAY_PROJECT_ID")
+        or _os_env.getenv("RAILWAY_STATIC_URL")
+        or _os_env.getenv("RAILWAY_PUBLIC_DOMAIN")
+        or _os_env.getenv("ENV", "").lower() in {"production", "prod"}
+    )
+    if _remote_bridge_enabled or _hosted_runtime:
+        # PRODUCTION / REMOTE BRIDGE MODE
+        # NEVER fall back to localhost:5000 — it is unreachable inside Railway.
+        _bridge_url   = _os_env.getenv("IBKR_BRIDGE_URL", "")
+        _bridge_token = _os_env.getenv("IBKR_BRIDGE_TOKEN", "")
+        from opsx.connectors.ibkr_bridge_client import TradingBlockedError as _TradingBlockedError
+        from opsx.bridge.production_guard import validate_production_config, IBKRNotConfiguredStub
+
+        # Raises ProductionConfigError if localhost URL detected in production
+        validate_production_config(_bridge_url, _bridge_token, _hosted_runtime)
+
+        if not _bridge_url:
+            # Hosted but bridge not configured: use explicit stub — NEVER localhost
+            _ibkr = IBKRNotConfiguredStub()
+            logging.getLogger("jarvis").critical(
+                "IBKR: Railway/production mode detected but IBKR_BRIDGE_URL is not set. "
+                "Using not-configured stub — portfolio data unavailable. "
+                "Fix: add IBKR_BRIDGE_URL to Railway environment variables."
+            )
+        else:
+            from opsx.connectors.ibkr_bridge_client import ibkr_bridge as _ibkr
+            logging.getLogger("jarvis").info(
+                "IBKR mode: REMOTE BRIDGE → %s  token_set=%s",
+                _bridge_url, bool(_bridge_token),
+            )
     else:
+        # DEV MODE ONLY — local Client Portal acceptable (won't work in Railway)
         from opsx.connectors.ibkr_readonly import ibkr as _ibkr, TradingBlockedError as _TradingBlockedError
-        logging.getLogger("jarvis").info("IBKR mode: local Client Portal (localhost:5000)")
+        logging.getLogger("jarvis").info(
+            "IBKR mode: dev — local Client Portal (localhost:5000) "
+            "[NOT for Railway deployment]"
+        )
     from opsx.connectors.hapi_readonly import hapi as _hapi
     from core.unified_portfolio_engine import unified_portfolio as _unified_portfolio
     from core.portfolio_intelligence_engine import portfolio_intelligence as _portfolio_intel
@@ -5885,13 +5949,13 @@ def _build_unified_snapshot(force_refresh: bool = False) -> Dict:
     try:
         if _ibkr:
             ibkr_data = _ibkr.get_full_portfolio()
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.getLogger("jarvis").warning("IBKR portfolio fetch failed: %s", exc)
     try:
         if _hapi:
             hapi_data = _hapi.get_full_portfolio()
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.getLogger("jarvis").warning("Hapi portfolio fetch failed: %s", exc)
     if ibkr_data or hapi_data:
         return _unified_portfolio.build_snapshot(ibkr_data, hapi_data)
     cached = _unified_portfolio.get_cached_snapshot()
@@ -5934,13 +5998,51 @@ def debug_ibkr(current_user: dict = Depends(get_optional_user)):
     remote_mode  = _os_dbg.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true"
     bridge_url   = _os_dbg.getenv("IBKR_BRIDGE_URL", "")
     token_set    = bool(_os_dbg.getenv("IBKR_BRIDGE_TOKEN", ""))
+    hosted       = bool(
+        _os_dbg.getenv("RAILWAY_ENVIRONMENT")
+        or _os_dbg.getenv("RAILWAY_SERVICE_ID")
+        or _os_dbg.getenv("RAILWAY_PROJECT_ID")
+        or _os_dbg.getenv("RAILWAY_STATIC_URL")
+        or _os_dbg.getenv("RAILWAY_PUBLIC_DOMAIN")
+        or _os_dbg.getenv("ENV", "").lower() in {"production", "prod"}
+    )
+
+    # Determine effective connector mode
+    if hosted or remote_mode:
+        if not bridge_url:
+            connector_mode = "not_configured"
+        else:
+            connector_mode = "remote_bridge"
+    else:
+        connector_mode = "local_dev"
+
+    # Pull watchdog state if available
+    _watchdog_info: Dict = {}
+    try:
+        from opsx.bridge.watchdog import get_watchdog_state
+        _watchdog_info = get_watchdog_state()
+    except Exception:
+        pass
 
     result: Dict = {
-        "mode":          "remote_bridge" if remote_mode else "local_client_portal",
-        "bridge_url":    bridge_url or "(not set)",
-        "token_set":     token_set,
-        "real_trade":    False,
-        "checked_at":    _dt.utcnow().isoformat(),
+        "mode":              connector_mode,
+        "bridge_enabled":    remote_mode or hosted,
+        "bridge_url":        bridge_url or "(not set)",
+        "token_set":         token_set,
+        "readonly":          True,
+        "execution_blocked": True,
+        "real_trade":        False,
+        "data_origin":       "unknown",
+        "checked_at":        _dt.utcnow().isoformat(),
+        "watchdog":          {
+            "running":              _watchdog_info.get("running", False),
+            "consecutive_failures": _watchdog_info.get("consecutive_failures", 0),
+            "circuit_open":         _watchdog_info.get("circuit_open", False),
+            "last_healthy_at":      _watchdog_info.get("last_healthy_at"),
+            "current_backoff_secs": _watchdog_info.get("current_backoff_secs"),
+            "stale_detected":       _watchdog_info.get("stale_detected", False),
+            "warning":              _watchdog_info.get("warning"),
+        },
     }
 
     if not _PORTFOLIO_AVAILABLE or not _ibkr:
@@ -5953,60 +6055,82 @@ def debug_ibkr(current_user: dict = Depends(get_optional_user)):
         health = _ibkr.health_check()
         latency_ms = round((_time.monotonic() - t0) * 1000, 1)
 
-        if remote_mode:
+        if connector_mode in ("remote_bridge", "not_configured"):
             bridge_ok    = health.get("bridge_ok", False)
             ibkr_conn    = health.get("ibkr_connected", False)
             account_id   = health.get("account", "")
             account_mode = "PAPER" if account_id.startswith("DU") else ("LIVE" if account_id else "UNKNOWN")
+            account_type = account_mode
+            data_origin  = ("ibkr_live" if account_type == "LIVE"
+                            else "ibkr_paper" if account_type == "PAPER"
+                            else "not_configured" if connector_mode == "not_configured"
+                            else "unknown")
             result.update({
-                "bridge_reachable":  bridge_ok,
-                "auth_ok":           bridge_ok and not health.get("error", "").startswith("auth"),
-                "broker_connected":  ibkr_conn,
-                "account_id":        account_id,
-                "account_mode":      account_mode,
-                "account_is_live":   account_mode == "LIVE",
-                "readonly":          health.get("readonly", True),
-                "cache_stale":       health.get("cache_stale", True),
-                "bridge_latency_ms": latency_ms,
-                "execution_blocked": True,
-                "real_trade":        False,
+                "bridge_reachable":      bridge_ok,
+                "auth_ok":               bridge_ok and not health.get("error", "").startswith("auth"),
+                "broker_connected":      ibkr_conn,
+                "account_id":            account_id,
+                "account_mode":          account_mode,
+                "account_type":          account_type,
+                "account_is_live":       account_mode == "LIVE",
+                "readonly":              health.get("readonly", True),
+                "execution_blocked":     True,
+                "real_trade":            False,
+                "cache_stale":           health.get("cache_stale", True),
+                "snapshot_stale":        health.get("cache_stale", True),
+                "bridge_latency_ms":     latency_ms,
+                "data_origin":           data_origin,
+                "last_successful_sync":  _watchdog_info.get("last_healthy_at"),
             })
         else:
-            connected  = health.get("status") == "connected"
-            account_id = health.get("account_id", health.get("account", ""))
+            connected    = health.get("status") == "connected"
+            account_id   = health.get("account_id", health.get("account", ""))
             account_mode = "PAPER" if account_id.startswith("DU") else ("LIVE" if account_id else "UNKNOWN")
+            account_type = account_mode
+            data_origin  = ("ibkr_live" if account_type == "LIVE"
+                            else "ibkr_paper" if account_type == "PAPER"
+                            else "unknown")
             result.update({
-                "bridge_reachable":  True,
-                "auth_ok":           True,
-                "broker_connected":  connected,
-                "account_id":        account_id,
-                "account_mode":      account_mode,
-                "account_is_live":   account_mode == "LIVE",
-                "readonly":          True,
-                "bridge_latency_ms": latency_ms,
-                "execution_blocked": True,
-                "real_trade":        False,
+                "bridge_reachable":      True,
+                "auth_ok":               True,
+                "broker_connected":      connected,
+                "account_id":            account_id,
+                "account_mode":          account_mode,
+                "account_type":          account_type,
+                "account_is_live":       account_mode == "LIVE",
+                "readonly":              True,
+                "execution_blocked":     True,
+                "real_trade":            False,
+                "snapshot_stale":        False,
+                "bridge_latency_ms":     latency_ms,
+                "data_origin":           data_origin,
+                "last_successful_sync":  None,
             })
 
-        # Snapshot freshness
+        # Snapshot freshness + positions
         try:
             snap = _ibkr.get_full_portfolio()
             positions_count = len(snap.get("positions", []))
-            result["positions_count"] = positions_count
-            result["last_update"]     = snap.get("fetched_at", "")
-            result["snapshot_stale"]  = snap.get("_stale", True)
-            cache_age = 0
-            fetched_at = snap.get("fetched_at", "")
+            fetched_at      = snap.get("fetched_at", "")
+            snap_stale      = snap.get("_stale", True)
+            cache_age       = 0
             if fetched_at:
                 try:
-                    from datetime import timezone
-                    delta = _dt.utcnow() - _dt.fromisoformat(fetched_at.replace("Z", ""))
+                    delta     = _dt.utcnow() - _dt.fromisoformat(fetched_at.replace("Z", ""))
                     cache_age = round(delta.total_seconds(), 1)
                 except Exception:
                     pass
-            result["cache_age_seconds"] = cache_age
+            result["positions_count"]     = positions_count
+            result["last_update"]         = fetched_at
+            result["snapshot_stale"]      = snap_stale
+            result["cache_age_seconds"]   = cache_age
+            result["data_origin"]         = snap.get("data_origin", result.get("data_origin", "unknown"))
+            result["account_type"]        = snap.get("account_type", result.get("account_type", "UNKNOWN"))
+            if not result.get("last_successful_sync") and not snap_stale and fetched_at:
+                result["last_successful_sync"] = fetched_at
         except Exception as snap_exc:
-            result["snapshot_error"] = str(snap_exc)
+            result["snapshot_error"]  = str(snap_exc)
+            result["positions_count"] = 0
 
     except Exception as exc:
         result.update({

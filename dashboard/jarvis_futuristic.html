@@ -1826,6 +1826,202 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .broker-chip-name{font-size:10px;font-weight:800;letter-spacing:1px;width:52px}
 /* Last update timestamp bar */
 .ts-bar{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--soft);padding:6px 0;flex-wrap:wrap}
+
+/* ══════════════════════════════════════════════════════════════
+   EXPERIENCE ENGINEERING — PREMIUM UX PATCH
+   Phases 1-15: Navigation, Mode Toggle, Trust, Home, Onboarding
+══════════════════════════════════════════════════════════════ */
+
+/* Hide legacy nav — preserved in DOM for JS compatibility */
+.tab-nav{display:none!important}
+
+/* ── Primary 6-Section Navigation ────────────────────────── */
+.jarvis-nav{
+  display:flex;align-items:center;gap:2px;
+  padding:0 26px;background:rgba(5,14,23,.97);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  overflow-x:auto;scrollbar-width:none;
+}
+.jarvis-nav::-webkit-scrollbar{display:none}
+.jarvis-nav-btn{
+  flex-shrink:0;padding:10px 18px;font-size:12px;font-weight:600;
+  color:var(--soft);background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .18s,border-color .18s,background .18s;
+  letter-spacing:.02em;white-space:nowrap;
+}
+.jarvis-nav-btn:hover{color:var(--white);background:rgba(255,255,255,.03)}
+.jarvis-nav-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(68,240,255,.04)}
+
+/* ── Secondary Sub-Navigation ────────────────────────────── */
+.jarvis-sub-nav{
+  display:none;align-items:center;gap:2px;
+  padding:6px 26px;background:rgba(8,13,20,.96);
+  border-bottom:1px solid rgba(255,255,255,.04);
+  overflow-x:auto;scrollbar-width:none;
+}
+.jarvis-sub-nav::-webkit-scrollbar{display:none}
+.jarvis-sub-btn{
+  flex-shrink:0;padding:5px 14px;font-size:11px;font-weight:500;
+  color:rgba(110,155,181,.8);background:none;border:none;cursor:pointer;
+  border-radius:6px;transition:all .15s;white-space:nowrap;
+}
+.jarvis-sub-btn:hover{color:var(--white);background:rgba(255,255,255,.05)}
+.jarvis-sub-btn.active{color:var(--cyan);background:rgba(68,240,255,.08);font-weight:700}
+
+/* ── Mode Toggle ─────────────────────────────────────────── */
+.mode-toggle-wrap{
+  display:flex;align-items:center;gap:0;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:2px;
+}
+.mode-pill{
+  padding:4px 12px;font-size:10px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;background:none;border:none;cursor:pointer;
+  color:var(--soft);border-radius:16px;transition:all .2s;
+}
+.mode-pill.active{background:rgba(68,240,255,.15);color:var(--cyan)}
+
+/* ── Connection Status Bar ───────────────────────────────── */
+.conn-bar{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  padding:10px 14px;background:rgba(5,14,23,.8);
+  border:1px solid rgba(255,255,255,.06);border-radius:10px;
+  margin-bottom:14px;
+}
+.conn-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;padding:4px 10px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:20px;
+}
+.conn-item-label{color:var(--soft);font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:10px}
+.conn-item-status{font-size:10px}
+.cs-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cs-ok{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.5)}
+.cs-err{background:#f87171;box-shadow:0 0 6px rgba(248,113,113,.3)}
+.cs-warn{background:#facc15;box-shadow:0 0 6px rgba(250,204,21,.3)}
+.cs-idle{background:#6b7280}
+
+/* ── Trust Badge Strip ───────────────────────────────────── */
+.trust-strip{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  margin-bottom:14px;
+}
+.trust-badge{
+  font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;
+}
+.trust-live{background:rgba(68,240,255,.08);color:#44f0ff;border:1px solid rgba(68,240,255,.25)}
+.trust-blocked{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.trust-ai{background:rgba(167,139,250,.1);color:#c084fc;border:1px solid rgba(167,139,250,.25)}
+.trust-sim{background:rgba(250,204,21,.08);color:#fde047;border:1px solid rgba(250,204,21,.2)}
+.trust-ts{background:transparent;color:var(--soft);border:1px solid rgba(255,255,255,.08)}
+
+/* ── Capability Card ("What JARVIS can do") ──────────────── */
+.capability-card{margin-bottom:14px!important;background:linear-gradient(135deg,rgba(8,13,20,.97) 0%,rgba(12,20,32,.97) 100%)!important}
+.cap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.cap-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.06);border-radius:8px;
+  cursor:pointer;transition:all .2s;
+}
+.cap-item:hover{background:rgba(68,240,255,.06);border-color:rgba(68,240,255,.2)}
+.cap-item-icon{font-size:16px;flex-shrink:0}
+.cap-item-text{font-size:11px;font-weight:600;color:var(--white)}
+.cap-item-sub{font-size:10px;color:var(--soft);margin-top:1px}
+
+/* ── Golf Performance Home Card ──────────────────────────── */
+.golf-home-card{
+  background:linear-gradient(135deg,rgba(10,20,10,.95),rgba(15,25,15,.95));
+  border:1px solid rgba(163,230,153,.15)!important;margin-bottom:14px!important;
+}
+.golf-home-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.golf-home-icon{font-size:22px}
+.golf-home-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.golf-metric{text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px 6px}
+.golf-metric-val{font-size:18px;font-weight:800;color:#a8e6a3}
+.golf-metric-lbl{font-size:10px;color:var(--soft);margin-top:2px}
+
+/* ── Action Receipt ──────────────────────────────────────── */
+.action-receipt{
+  background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);
+  border-radius:10px;padding:12px 14px;margin-top:10px;font-size:12px;
+}
+.ar-header{font-weight:700;color:#4ade80;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.ar-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;color:var(--soft)}
+.ar-val{color:var(--white);font-weight:600}
+
+/* ── Premium Empty States ────────────────────────────────── */
+.empty-premium{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:32px 20px;gap:10px;
+}
+.empty-premium-icon{font-size:36px;opacity:.7}
+.empty-premium-title{font-size:15px;font-weight:700;color:var(--white)}
+.empty-premium-sub{font-size:12px;color:var(--soft);max-width:320px;line-height:1.6}
+.empty-premium-time{font-size:10px;color:#6b7280;background:rgba(255,255,255,.04);padding:3px 10px;border-radius:20px}
+.empty-premium-btn{margin-top:6px}
+
+/* ── Beginner/Operator Mode visibility ───────────────────── */
+body.mode-operator .beginner-only{display:none!important}
+body.mode-beginner .operator-only{display:none!important}
+.operator-only{}
+.beginner-only{}
+
+/* ── Onboarding Wizard (7-step) ──────────────────────────── */
+.wizard-progress{display:flex;align-items:center;gap:6px;margin-bottom:24px;justify-content:center}
+.wiz-step{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;
+  border:2px solid rgba(255,255,255,.15);color:var(--soft);background:transparent;
+  flex-shrink:0;
+}
+.wiz-step.active{background:var(--cyan);color:#05101a;border-color:var(--cyan)}
+.wiz-step.done{background:rgba(74,222,128,.15);color:#4ade80;border-color:#4ade80}
+.wiz-connector{width:20px;height:2px;background:rgba(255,255,255,.1);border-radius:1px}
+.wizard-screen{display:none}
+.wizard-screen.active{display:block}
+.wizard-option-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:20px}
+.wizard-option{
+  padding:12px 10px;text-align:center;background:rgba(255,255,255,.03);
+  border:2px solid rgba(255,255,255,.08);border-radius:10px;cursor:pointer;
+  transition:all .2s;
+}
+.wizard-option:hover{border-color:rgba(68,240,255,.3);background:rgba(68,240,255,.04)}
+.wizard-option.selected{border-color:var(--cyan);background:rgba(68,240,255,.08)}
+.wizard-option-icon{font-size:22px;margin-bottom:6px}
+.wizard-option-label{font-size:12px;font-weight:700;color:var(--white)}
+.wizard-option-sub{font-size:10px;color:var(--soft);margin-top:2px}
+.wizard-nav{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:20px}
+.wizard-back{background:none;border:1px solid rgba(255,255,255,.1);color:var(--soft);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s}
+.wizard-back:hover{border-color:rgba(255,255,255,.2);color:var(--white)}
+.wizard-next{background:var(--cyan);color:#050e17;font-weight:800;padding:10px 28px;border:none;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s}
+.wizard-next:hover{background:#5ff5ff}
+.wizard-skip{font-size:11px;color:var(--soft);cursor:pointer;text-decoration:underline}
+.wizard-skip:hover{color:var(--white)}
+.conn-setup-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-bottom:8px;
+}
+.conn-setup-left{display:flex;align-items:center;gap:10px}
+.conn-setup-icon{font-size:20px}
+.conn-setup-label{font-size:13px;font-weight:600;color:var(--white)}
+.conn-setup-sub{font-size:11px;color:var(--soft);margin-top:2px}
+.conn-setup-time{font-size:10px;background:rgba(68,240,255,.07);color:#44f0ff;padding:2px 8px;border-radius:10px}
+
+/* ── Mobile bottom nav enhancements ──────────────────────── */
+@media(max-width:767px){
+  .jarvis-nav{padding:0 8px}
+  .jarvis-nav-btn{padding:8px 12px;font-size:11px}
+  .jarvis-sub-nav{padding:4px 8px}
+  .trust-strip{display:none}
+  .conn-bar{gap:5px;padding:8px 10px}
+  .conn-item{padding:3px 8px}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1834,52 +2030,279 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 <!-- Toast container -->
 <div id="toast-container"></div>
 
-<!-- ══════════════ ONBOARDING ══════════════ -->
+<!-- ══════════════ ONBOARDING WIZARD (7-step plug-and-play) ══════════════ -->
 <div id="onboarding-overlay" style="display:none">
-  <div class="onboarding-card">
-    <div style="text-align:center;margin-bottom:20px;font-size:36px">🤖</div>
-    <div class="onboarding-title">Welcome to JARVIS</div>
-    <div class="onboarding-sub">Your AI OS for life and work.<br>Which areas do you want to level up?</div>
-    <div class="module-grid" id="moduleGrid">
-      <div class="module-card selected" data-module="productivity">
-        <div class="module-card-icon">✅</div>
-        <div><div class="module-card-label">Productivity</div><div class="module-card-sub">Tasks & meetings</div></div>
+  <div class="onboarding-card" style="max-width:520px;max-height:90vh;overflow-y:auto">
+
+    <!-- Progress indicator -->
+    <div class="wizard-progress" id="wiz-progress">
+      <div class="wiz-step active" id="wiz-s1" onclick="wizGoTo(1)">1</div>
+      <div class="wiz-connector"></div>
+      <div class="wiz-step" id="wiz-s2" onclick="wizGoTo(2)">2</div>
+      <div class="wiz-connector"></div>
+      <div class="wiz-step" id="wiz-s3" onclick="wizGoTo(3)">3</div>
+      <div class="wiz-connector"></div>
+      <div class="wiz-step" id="wiz-s4" onclick="wizGoTo(4)">4</div>
+      <div class="wiz-connector"></div>
+      <div class="wiz-step" id="wiz-s5" onclick="wizGoTo(5)">5</div>
+      <div class="wiz-connector"></div>
+      <div class="wiz-step" id="wiz-s6" onclick="wizGoTo(6)">6</div>
+      <div class="wiz-connector"></div>
+      <div class="wiz-step" id="wiz-s7" onclick="wizGoTo(7)">7</div>
+    </div>
+
+    <!-- Step 1: Welcome -->
+    <div class="wizard-screen active" id="wiz-screen-1">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:48px;margin-bottom:12px">🤖</div>
+        <div class="onboarding-title" style="font-size:22px">Welcome to JARVIS</div>
+        <div class="onboarding-sub" style="font-size:14px;margin-top:8px">
+          Your AI Operating System for finance, life, and performance.<br>
+          Setup takes 3 minutes. Every step is optional.
+        </div>
       </div>
-      <div class="module-card selected" data-module="markets">
-        <div class="module-card-icon">📈</div>
-        <div><div class="module-card-label">Markets</div><div class="module-card-sub">Stocks & signals</div></div>
+      <div style="background:rgba(68,240,255,.06);border:1px solid rgba(68,240,255,.15);border-radius:10px;padding:14px;margin-bottom:20px">
+        <div style="font-size:12px;color:var(--cyan);font-weight:700;margin-bottom:8px">What you get:</div>
+        <div style="font-size:12px;color:var(--soft);line-height:1.8">
+          📈 Live portfolio intelligence (IBKR read-only)<br>
+          💼 Email, calendar, and task management<br>
+          ⛳ Golf AI coaching and performance tracking<br>
+          🧠 Persistent AI memory across all domains<br>
+          ⚡ Automations that run while you sleep
+        </div>
       </div>
-      <div class="module-card selected" data-module="projects">
-        <div class="module-card-icon">📋</div>
-        <div><div class="module-card-label">Projects</div><div class="module-card-sub">Kanban boards</div></div>
-      </div>
-      <div class="module-card" data-module="golf">
-        <div class="module-card-icon">⛳</div>
-        <div><div class="module-card-label">Golf</div><div class="module-card-sub">Swing AI & rounds</div></div>
-      </div>
-      <div class="module-card" data-module="running">
-        <div class="module-card-icon">🏃</div>
-        <div><div class="module-card-label">Running</div><div class="module-card-sub">Distance & pace</div></div>
-      </div>
-      <div class="module-card" data-module="cycling">
-        <div class="module-card-icon">🚴</div>
-        <div><div class="module-card-label">Cycling</div><div class="module-card-sub">Rides & cadence</div></div>
-      </div>
-      <div class="module-card" data-module="gym">
-        <div class="module-card-icon">🏋️</div>
-        <div><div class="module-card-label">Gym</div><div class="module-card-sub">Lifts & PRs</div></div>
-      </div>
-      <div class="module-card" data-module="tennis">
-        <div class="module-card-icon">🎾</div>
-        <div><div class="module-card-label">Tennis</div><div class="module-card-sub">Matches & skills</div></div>
+      <div class="wizard-nav">
+        <span class="wizard-skip" onclick="skipOnboarding()">Skip setup</span>
+        <button class="wizard-next" onclick="wizNext()">Get Started →</button>
       </div>
     </div>
-    <div class="onboarding-cta">
-      <button class="btn-p" onclick="saveOnboarding()" style="padding:12px 32px;font-size:14px">
-        Launch JARVIS →
-      </button>
+
+    <!-- Step 2: Goals -->
+    <div class="wizard-screen" id="wiz-screen-2">
+      <div class="onboarding-title" style="margin-bottom:4px">Choose your goals</div>
+      <div class="onboarding-sub" style="margin-bottom:16px">Select all that apply. You can change this later.</div>
+      <div class="wizard-option-grid" id="wizGoalsGrid">
+        <div class="wizard-option selected" data-module="productivity">
+          <div class="wizard-option-icon">💼</div>
+          <div class="wizard-option-label">Work Productivity</div>
+          <div class="wizard-option-sub">Tasks, email, calendar</div>
+        </div>
+        <div class="wizard-option selected" data-module="markets">
+          <div class="wizard-option-icon">📈</div>
+          <div class="wizard-option-label">Markets & Finance</div>
+          <div class="wizard-option-sub">Portfolio, signals, AI analysis</div>
+        </div>
+        <div class="wizard-option selected" data-module="projects">
+          <div class="wizard-option-icon">📋</div>
+          <div class="wizard-option-label">Projects</div>
+          <div class="wizard-option-sub">Kanban boards, milestones</div>
+        </div>
+        <div class="wizard-option selected" data-module="golf">
+          <div class="wizard-option-icon">⛳</div>
+          <div class="wizard-option-label">Golf Performance</div>
+          <div class="wizard-option-sub">Swing AI, courses, bag</div>
+        </div>
+        <div class="wizard-option" data-module="running">
+          <div class="wizard-option-icon">🏃</div>
+          <div class="wizard-option-label">Running</div>
+          <div class="wizard-option-sub">Distance, pace, PRs</div>
+        </div>
+        <div class="wizard-option" data-module="cycling">
+          <div class="wizard-option-icon">🚴</div>
+          <div class="wizard-option-label">Cycling</div>
+          <div class="wizard-option-sub">Rides and cadence</div>
+        </div>
+        <div class="wizard-option" data-module="gym">
+          <div class="wizard-option-icon">🏋️</div>
+          <div class="wizard-option-label">Gym & Strength</div>
+          <div class="wizard-option-sub">Lifts and PRs</div>
+        </div>
+        <div class="wizard-option" data-module="tennis">
+          <div class="wizard-option-icon">🎾</div>
+          <div class="wizard-option-label">Tennis</div>
+          <div class="wizard-option-sub">Matches and skills</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="wizBack()">← Back</button>
+        <button class="wizard-next" onclick="wizNext()">Continue →</button>
+      </div>
     </div>
-    <div class="onboarding-skip" onclick="skipOnboarding()">Skip for now</div>
+
+    <!-- Step 3: Connect Work Tools -->
+    <div class="wizard-screen" id="wiz-screen-3">
+      <div class="onboarding-title" style="margin-bottom:4px">Connect work tools</div>
+      <div class="onboarding-sub" style="margin-bottom:16px">Optional — skip if you don't use these yet.</div>
+      <div class="conn-setup-row">
+        <div class="conn-setup-left">
+          <span class="conn-setup-icon">📧</span>
+          <div>
+            <div class="conn-setup-label">Microsoft Outlook</div>
+            <div class="conn-setup-sub">JARVIS reads emails, suggests replies, detects follow-ups</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="conn-setup-time">2 min</span>
+          <button class="btn-ol btn-sm" onclick="switchSection('work');setTimeout(()=>switchTab('outlook'),80);skipOnboarding()">Connect</button>
+        </div>
+      </div>
+      <div class="conn-setup-row">
+        <div class="conn-setup-left">
+          <span class="conn-setup-icon">📅</span>
+          <div>
+            <div class="conn-setup-label">Google Calendar</div>
+            <div class="conn-setup-sub">JARVIS adds events, reads schedule, prepares briefings</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="conn-setup-time">2 min</span>
+          <button class="btn-ol btn-sm" onclick="switchSection('work');setTimeout(()=>switchTab('calendar'),80);skipOnboarding()">Connect</button>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="wizBack()">← Back</button>
+        <button class="wizard-next" onclick="wizNext()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Connect Finance -->
+    <div class="wizard-screen" id="wiz-screen-4">
+      <div class="onboarding-title" style="margin-bottom:4px">Connect finance</div>
+      <div class="onboarding-sub" style="margin-bottom:16px">All connections are <strong style="color:#44f0ff">read-only</strong>. JARVIS cannot trade on your behalf.</div>
+      <div class="conn-setup-row">
+        <div class="conn-setup-left">
+          <span class="conn-setup-icon">🏦</span>
+          <div>
+            <div class="conn-setup-label">IBKR Live Portfolio</div>
+            <div class="conn-setup-sub">Read-only access. Analyze holdings, PnL, risk, exposure. Execution always blocked.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="conn-setup-time">5 min</span>
+          <button class="btn-ol btn-sm" onclick="switchSection('markets');skipOnboarding()">Setup</button>
+        </div>
+      </div>
+      <div class="conn-setup-row" style="border-color:rgba(167,139,250,.15)">
+        <div class="conn-setup-left">
+          <span class="conn-setup-icon">🧪</span>
+          <div>
+            <div class="conn-setup-label">Paper Lab <span style="font-size:10px;background:rgba(167,139,250,.1);color:#c084fc;padding:1px 6px;border-radius:8px;margin-left:6px">SIMULATED</span></div>
+            <div class="conn-setup-sub">No real money. AI-driven portfolio simulation. Active immediately.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:#4ade80;font-weight:700">ACTIVE NOW</span>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="wizBack()">← Back</button>
+        <button class="wizard-next" onclick="wizNext()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Life & Golf -->
+    <div class="wizard-screen" id="wiz-screen-5">
+      <div class="onboarding-title" style="margin-bottom:4px">Life & performance</div>
+      <div class="onboarding-sub" style="margin-bottom:16px">Set up your personal domains for daily coaching.</div>
+      <div class="conn-setup-row" style="border-color:rgba(163,230,153,.15)">
+        <div class="conn-setup-left">
+          <span class="conn-setup-icon">⛳</span>
+          <div>
+            <div class="conn-setup-label">Golf Profile</div>
+            <div class="conn-setup-sub">JARVIS tracks handicap, bag, courses, swing history, and AI coaching</div>
+          </div>
+        </div>
+        <div>
+          <button class="btn-ol btn-sm" onclick="switchSection('life');setTimeout(()=>switchTab('golf'),80);skipOnboarding()">Setup Golf</button>
+        </div>
+      </div>
+      <div class="conn-setup-row">
+        <div class="conn-setup-left">
+          <span class="conn-setup-icon">🏠</span>
+          <div>
+            <div class="conn-setup-label">Life OS</div>
+            <div class="conn-setup-sub">Reminders, payments, shopping, personal goals — all in one place</div>
+          </div>
+        </div>
+        <div>
+          <button class="btn-ol btn-sm" onclick="switchSection('life');skipOnboarding()">Open Life</button>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="wizBack()">← Back</button>
+        <button class="wizard-next" onclick="wizNext()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 6: AI Features -->
+    <div class="wizard-screen" id="wiz-screen-6">
+      <div class="onboarding-title" style="margin-bottom:4px">Enable AI features</div>
+      <div class="onboarding-sub" style="margin-bottom:16px">All features below are active by default.</div>
+      <div class="wizard-option-grid">
+        <div class="wizard-option selected" style="pointer-events:none">
+          <div class="wizard-option-icon">🧠</div>
+          <div class="wizard-option-label">AI Memory</div>
+          <div class="wizard-option-sub">Active</div>
+        </div>
+        <div class="wizard-option selected" style="pointer-events:none">
+          <div class="wizard-option-icon">🎤</div>
+          <div class="wizard-option-label">Voice Input</div>
+          <div class="wizard-option-sub">Active</div>
+        </div>
+        <div class="wizard-option selected" style="pointer-events:none">
+          <div class="wizard-option-icon">⚡</div>
+          <div class="wizard-option-label">Automations</div>
+          <div class="wizard-option-sub">Active</div>
+        </div>
+        <div class="wizard-option selected" style="pointer-events:none">
+          <div class="wizard-option-icon">🔔</div>
+          <div class="wizard-option-label">Proactive Alerts</div>
+          <div class="wizard-option-sub">Active</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="wizBack()">← Back</button>
+        <button class="wizard-next" onclick="wizNext()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 7: Launch -->
+    <div class="wizard-screen" id="wiz-screen-7">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:12px">🚀</div>
+        <div class="onboarding-title" style="font-size:22px">JARVIS is ready</div>
+        <div class="onboarding-sub" style="font-size:13px;margin-top:8px">
+          Your personal dashboard has been configured.<br>
+          Start with a command, or explore any section.
+        </div>
+      </div>
+      <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.12);border-radius:10px;padding:14px;margin-bottom:20px">
+        <div style="font-size:11px;color:#4ade80;font-weight:700;margin-bottom:8px">Suggested first steps:</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn-ol" style="text-align:left;padding:8px 12px" onclick="tryExampleCmd('Plan my day');saveOnboarding()">📅 Plan my day →</button>
+          <button class="btn-ol" style="text-align:left;padding:8px 12px" onclick="switchSection('markets');saveOnboarding()">📈 Analyze my portfolio →</button>
+          <button class="btn-ol" style="text-align:left;padding:8px 12px" onclick="switchSection('life');setTimeout(()=>switchTab('golf'),80);saveOnboarding()">⛳ Open Golf performance →</button>
+        </div>
+      </div>
+      <div class="onboarding-cta">
+        <button class="btn-p" onclick="saveOnboarding()" style="padding:12px 40px;font-size:14px;width:100%">
+          Launch JARVIS →
+        </button>
+      </div>
+      <div class="onboarding-skip" onclick="skipOnboarding()" style="margin-top:10px">Skip and explore on my own</div>
+    </div>
+
+    <!-- Legacy module grid (hidden, used by saveOnboarding JS) -->
+    <div class="module-grid" id="moduleGrid" style="display:none">
+      <div class="module-card selected" data-module="productivity"></div>
+      <div class="module-card selected" data-module="markets"></div>
+      <div class="module-card selected" data-module="projects"></div>
+      <div class="module-card selected" data-module="golf"></div>
+      <div class="module-card" data-module="running"></div>
+      <div class="module-card" data-module="cycling"></div>
+      <div class="module-card" data-module="gym"></div>
+      <div class="module-card" data-module="tennis"></div>
+    </div>
   </div>
 </div>
 
@@ -1952,9 +2375,13 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     </div>
 
     <div class="hero-right">
+      <div class="mode-toggle-wrap" title="Beginner: simple view · Operator: full technical access">
+        <button class="mode-pill" id="mode-beginner-btn" onclick="setMode('beginner')">Simple</button>
+        <button class="mode-pill active" id="mode-operator-btn" onclick="setMode('operator')">Operator</button>
+      </div>
       <button id="autoBtn" class="btn-p">⚡ Auto JARVIS</button>
       <button id="exec-mode-btn" class="btn-g btn-sm" onclick="toggleExecutiveMode()" title="Executive Mode — focus view">Focus</button>
-      <button class="btn-g btn-sm" onclick="switchTab('chat')">💬 Chat</button>
+      <button class="btn-g btn-sm" onclick="switchSection('system');setTimeout(()=>switchTab('chat'),80)">💬 Chat</button>
       <div class="notif-wrap">
         <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown()" title="Notifications">
           🔔
@@ -1973,7 +2400,20 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     </div>
   </div>
 
-  <nav class="tab-nav">
+  <!-- ── New 6-Section Primary Navigation (Experience Engineering Patch) ── -->
+  <nav class="jarvis-nav" id="jarvis-primary-nav">
+    <button class="jarvis-nav-btn active" data-section="home"         onclick="switchSection('home')">🏠 Home</button>
+    <button class="jarvis-nav-btn"        data-section="work"         onclick="switchSection('work')">💼 Work</button>
+    <button class="jarvis-nav-btn"        data-section="markets"      onclick="switchSection('markets')">📈 Markets</button>
+    <button class="jarvis-nav-btn"        data-section="life"         onclick="switchSection('life')">🌿 Life</button>
+    <button class="jarvis-nav-btn"        data-section="intelligence" onclick="switchSection('intelligence')">🧠 Intelligence</button>
+    <button class="jarvis-nav-btn"        data-section="system"       onclick="switchSection('system')">⚙️ System</button>
+  </nav>
+  <!-- ── Contextual Sub-Navigation ── -->
+  <nav class="jarvis-sub-nav" id="jarvis-sub-nav"></nav>
+
+  <!-- ── Legacy nav preserved for JS compatibility (hidden) ── -->
+  <nav class="tab-nav" id="legacy-tab-nav" aria-hidden="true">
     <button class="tab-btn active" data-tab="overview">Overview</button>
     <button class="tab-btn" data-tab="markets">Markets</button>
     <button class="tab-btn" data-tab="agents">Agents</button>
@@ -1983,14 +2423,14 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <button class="tab-btn" data-tab="golf">Golf</button>
     <button class="tab-btn module-tab" data-tab="intelligence" data-module="intelligence">Intelligence</button>
     <button class="tab-btn module-tab" data-tab="analytics" data-module="analytics">Analytics</button>
-    <button class="tab-btn module-tab" data-tab="running" data-module="running" style="display:none">🏃 Running</button>
-    <button class="tab-btn module-tab" data-tab="cycling" data-module="cycling" style="display:none">🚴 Cycling</button>
-    <button class="tab-btn module-tab" data-tab="gym" data-module="gym" style="display:none">🏋️ Gym</button>
-    <button class="tab-btn module-tab" data-tab="tennis" data-module="tennis" style="display:none">🎾 Tennis</button>
-    <button class="tab-btn" data-tab="life">🏠 Life</button>
-    <button class="tab-btn" data-tab="outlook" id="outlook-tab-btn">📧 Outlook <span class="tab-dot" id="outlook-unread-dot" style="display:none;background:#f59e0b"></span></button>
-    <button class="tab-btn" data-tab="automations">⚡ Automations</button>
-    <button class="tab-btn" data-tab="memory">🧠 Memory</button>
+    <button class="tab-btn module-tab" data-tab="running" data-module="running">Running</button>
+    <button class="tab-btn module-tab" data-tab="cycling" data-module="cycling">Cycling</button>
+    <button class="tab-btn module-tab" data-tab="gym" data-module="gym">Gym</button>
+    <button class="tab-btn module-tab" data-tab="tennis" data-module="tennis">Tennis</button>
+    <button class="tab-btn" data-tab="life">Life</button>
+    <button class="tab-btn" data-tab="outlook" id="outlook-tab-btn">Outlook <span class="tab-dot" id="outlook-unread-dot" style="display:none;background:#f59e0b"></span></button>
+    <button class="tab-btn" data-tab="automations">Automations</button>
+    <button class="tab-btn" data-tab="memory">Memory</button>
     <button class="tab-btn" data-tab="system">System</button>
     <button class="tab-btn" data-tab="chat">Chat</button>
   </nav>
@@ -2000,6 +2440,121 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <!-- ══════════════ OVERVIEW ══════════════ -->
 <div id="tab-overview" class="tab-panel active">
+
+  <!-- ── Trust Safety Strip ─────────────────────────────────── -->
+  <div class="trust-strip">
+    <span class="trust-badge trust-live">🔒 LIVE READ-ONLY</span>
+    <span class="trust-badge trust-blocked">🚫 EXECUTION BLOCKED</span>
+    <span class="trust-badge trust-ai">🤖 AI ACTIVE</span>
+    <span class="trust-badge trust-sim">🧪 PAPER SIMULATED</span>
+    <span class="trust-badge trust-ts" id="trust-last-sync">Sync: —</span>
+  </div>
+
+  <!-- ── Connection Status Bar ──────────────────────────────── -->
+  <div class="conn-bar" id="conn-bar">
+    <div id="cs-outlook" class="conn-item">
+      <div class="cs-dot cs-idle"></div>
+      <span class="conn-item-label">Outlook</span>
+      <span class="conn-item-status" style="color:var(--soft);font-size:10px">Checking…</span>
+    </div>
+    <div id="cs-calendar" class="conn-item">
+      <div class="cs-dot cs-idle"></div>
+      <span class="conn-item-label">Calendar</span>
+      <span class="conn-item-status" style="color:var(--soft);font-size:10px">Checking…</span>
+    </div>
+    <div id="cs-ibkr" class="conn-item">
+      <div class="cs-dot cs-idle"></div>
+      <span class="conn-item-label">IBKR</span>
+      <span class="conn-item-status" style="color:var(--soft);font-size:10px">Checking…</span>
+    </div>
+    <div id="cs-memory" class="conn-item">
+      <div class="cs-dot cs-ok"></div>
+      <span class="conn-item-label">Memory</span>
+      <span class="conn-item-status" style="color:#4ade80;font-size:10px">Active</span>
+    </div>
+    <div id="cs-voice" class="conn-item">
+      <div class="cs-dot cs-idle" id="cs-voice-dot"></div>
+      <span class="conn-item-label">Voice</span>
+      <span class="conn-item-status" id="cs-voice-status" style="color:var(--soft);font-size:10px">Checking…</span>
+    </div>
+    <div id="cs-paper" class="conn-item">
+      <div class="cs-dot cs-ok"></div>
+      <span class="conn-item-label">Paper Lab</span>
+      <span class="conn-item-status" style="color:#c084fc;font-size:10px">Simulated</span>
+    </div>
+    <button class="btn-ol btn-sm" style="margin-left:auto;font-size:10px" onclick="loadConnectionStatus()">↻ Refresh</button>
+  </div>
+
+  <!-- ── What JARVIS Can Do (shown until first interaction) ─── -->
+  <div class="card capability-card" id="capability-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--white)">What JARVIS can do for you</div>
+        <div style="font-size:11px;color:var(--soft);margin-top:2px">Click any capability to explore it</div>
+      </div>
+      <button class="btn-ol btn-sm" style="font-size:10px" onclick="qs('capability-card').style.display='none';localStorage.setItem('jarvis_cap_dismissed','1')">✕ Hide</button>
+    </div>
+    <div class="cap-grid">
+      <div class="cap-item" onclick="switchSection('work')">
+        <span class="cap-item-icon">💼</span>
+        <div><div class="cap-item-text">Work Hub</div><div class="cap-item-sub">Email, calendar, tasks</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('markets')">
+        <span class="cap-item-icon">📈</span>
+        <div><div class="cap-item-text">Market Intelligence</div><div class="cap-item-sub">Portfolio, signals, AI analysis</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('life')">
+        <span class="cap-item-icon">🌿</span>
+        <div><div class="cap-item-text">Life OS</div><div class="cap-item-sub">Goals, reminders, routines</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('life');setTimeout(()=>switchTab('golf'),80)">
+        <span class="cap-item-icon">⛳</span>
+        <div><div class="cap-item-text">Golf Performance</div><div class="cap-item-sub">Swing AI, caddie, bag</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('work');setTimeout(()=>switchTab('automations'),80)">
+        <span class="cap-item-icon">⚡</span>
+        <div><div class="cap-item-text">Automations</div><div class="cap-item-sub">Smart workflows, triggers</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('intelligence');setTimeout(()=>switchTab('memory'),80)">
+        <span class="cap-item-icon">🧠</span>
+        <div><div class="cap-item-text">AI Memory</div><div class="cap-item-sub">What JARVIS remembers</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('system');setTimeout(()=>switchTab('chat'),80)">
+        <span class="cap-item-icon">💬</span>
+        <div><div class="cap-item-text">AI Chat</div><div class="cap-item-sub">Ask anything, anytime</div></div>
+      </div>
+      <div class="cap-item" onclick="switchSection('intelligence');setTimeout(()=>switchTab('agents'),80)">
+        <span class="cap-item-icon">🤖</span>
+        <div><div class="cap-item-text">AI Agents</div><div class="cap-item-sub">Autonomous intelligence</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Golf Performance Home Card (shown when golf data available) ── -->
+  <div class="card golf-home-card" id="home-golf-card" style="display:none">
+    <div class="golf-home-header">
+      <span class="golf-home-icon">⛳</span>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#a8e6a3">Golf Performance</div>
+        <div style="font-size:11px;color:var(--soft)">Your AI Golf Coach · JARVIS Caddie</div>
+      </div>
+      <button class="btn-ol btn-sm" style="margin-left:auto" onclick="switchSection('life');setTimeout(()=>switchTab('golf'),80)">Open Golf →</button>
+    </div>
+    <div class="golf-home-metrics">
+      <div class="golf-metric">
+        <div class="golf-metric-val" id="golf-home-handicap">—</div>
+        <div class="golf-metric-lbl">Handicap</div>
+      </div>
+      <div class="golf-metric">
+        <div class="golf-metric-val" id="golf-home-rounds">—</div>
+        <div class="golf-metric-lbl">Rounds</div>
+      </div>
+      <div class="golf-metric">
+        <div class="golf-metric-val" id="golf-home-insight">—</div>
+        <div class="golf-metric-lbl">AI Insight</div>
+      </div>
+    </div>
+  </div>
 
   <!-- UNIFIED PRIORITY CENTER -->
   <div class="card" id="unified-priority-center" style="margin-bottom:12px;border:1px solid rgba(99,102,241,.25);background:linear-gradient(135deg,rgba(15,15,30,.95),rgba(20,20,45,.95))">
@@ -2722,6 +3277,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <div id="port-sector-bars"></div>
     <div id="port-warnings"></div>
     <div id="broker-grid"></div>
+    <div id="broker-ibkr"></div>
+    <div id="broker-hapi"></div>
     <div id="ibkr-status"></div>
     <div id="hapi-status"></div>
     <div id="paper-total"></div>
@@ -4249,15 +4806,22 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 <!-- ══════════════ MOBILE NAV ══════════════ -->
 <nav class="mob-nav">
   <div class="mob-nav-inner">
-    <button class="mob-btn active" data-tab="overview"><span class="mi">🏠</span><span>Home</span></button>
-    <button class="mob-btn" data-tab="markets"><span class="mi">📈</span><span>Markets</span></button>
-    <button class="mob-btn" data-tab="chat"><span class="mi">💬</span><span>Chat</span></button>
-    <button class="mob-btn" data-tab="productivity"><span class="mi">✅</span><span>Tasks</span></button>
-    <button class="mob-btn" data-tab="calendar"><span class="mi">📅</span><span>Calendar</span></button>
-    <button class="mob-btn" data-tab="projects"><span class="mi">📋</span><span>Projects</span></button>
-    <button class="mob-btn" data-tab="golf"><span class="mi">⛳</span><span>Golf</span></button>
-    <button class="mob-btn" data-tab="intelligence"><span class="mi">📰</span><span>Intel</span></button>
-    <button class="mob-btn" data-tab="system"><span class="mi">⚙️</span><span>System</span></button>
+    <button class="mob-btn active" data-tab="overview"      onclick="switchSection('home')"><span class="mi">🏠</span><span>Home</span></button>
+    <button class="mob-btn"        data-tab="productivity"  onclick="switchSection('work')"><span class="mi">💼</span><span>Work</span></button>
+    <button class="mob-btn"        data-tab="markets"       onclick="switchSection('markets')"><span class="mi">📈</span><span>Markets</span></button>
+    <button class="mob-btn"        data-tab="life"          onclick="switchSection('life')"><span class="mi">🌿</span><span>Life</span></button>
+    <button class="mob-btn"        data-tab="agents"        onclick="switchSection('intelligence')"><span class="mi">🧠</span><span>AI</span></button>
+    <!-- Hidden mobile tabs preserved for JS compatibility -->
+    <button class="mob-btn" data-tab="calendar"     style="display:none"></button>
+    <button class="mob-btn" data-tab="projects"     style="display:none"></button>
+    <button class="mob-btn" data-tab="golf"         style="display:none"></button>
+    <button class="mob-btn" data-tab="intelligence" style="display:none"></button>
+    <button class="mob-btn" data-tab="system"       style="display:none"></button>
+    <button class="mob-btn" data-tab="chat"         style="display:none"></button>
+    <button class="mob-btn" data-tab="running"      style="display:none"></button>
+    <button class="mob-btn" data-tab="cycling"      style="display:none"></button>
+    <button class="mob-btn" data-tab="gym"          style="display:none"></button>
+    <button class="mob-btn" data-tab="tennis"       style="display:none"></button>
   </div>
 </nav>
 
@@ -4351,6 +4915,20 @@ function switchTab(name) {
   // Track active tab in runtime state
   window.JARVIS_TABS.active = name;
   window.JARVIS_TABS.loaded[name] = true;
+  // Sync primary section nav highlight
+  const _tabSectionMap = {
+    overview:"home", productivity:"work", calendar:"work", projects:"work",
+    outlook:"work", automations:"work", markets:"markets", life:"life",
+    golf:"life", running:"life", cycling:"life", gym:"life", tennis:"life",
+    agents:"intelligence", intelligence:"intelligence", analytics:"intelligence",
+    memory:"intelligence", system:"system", chat:"system"
+  };
+  const _sec = _tabSectionMap[name];
+  if (_sec) {
+    document.querySelectorAll(".jarvis-nav-btn").forEach(b =>
+      b.classList.toggle("active", b.dataset.section === _sec));
+    _activateSub && _activateSub(name);
+  }
   // Debounce lazy-loads to prevent race conditions on rapid tab switching
   clearTimeout(_tabSwitchTimer);
   _tabSwitchTimer = setTimeout(() => {
@@ -5080,10 +5658,30 @@ async function loadPortfolioSummary(btn) {
   const chipEl = document.getElementById("port-status-chip");
   if (chipEl) chipEl.textContent = "Refreshing…";
   try {
-    const [summary, analysis] = await Promise.all([
+    const [summaryRes, analysisRes] = await Promise.allSettled([
       _fetchWithTimeout("/api/portfolio/summary", {}, 12000),
       _fetchWithTimeout("/api/portfolio/analysis", {}, 12000),
     ]);
+    const summary = summaryRes.status === "fulfilled" ? summaryRes.value : {
+      total_portfolio_value: 0,
+      total_market_value: 0,
+      total_cash: 0,
+      total_daily_pnl: 0,
+      total_daily_pnl_pct: 0,
+      total_unrealized_pnl: 0,
+      position_count: 0,
+      concentration_warnings: [],
+      _from_cache: false,
+    };
+    const analysis = analysisRes.status === "fulfilled" ? analysisRes.value : {
+      portfolio_score: 0,
+      risk_level: "unknown",
+      summary: "Portfolio analysis unavailable. Broker data may still be loading.",
+      top_risks: [],
+      opportunities: [],
+    };
+    if (summaryRes.status === "rejected") console.warn("portfolio summary failed:", summaryRes.reason);
+    if (analysisRes.status === "rejected") console.warn("portfolio analysis failed:", analysisRes.reason);
 
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
     const _pct = v => v !== 0 ? `<span style="font-size:10px;color:${v>=0?'#4ade80':'#f87171'}">${v>=0?'+':''}${v.toFixed(2)}%</span>` : '';
@@ -5602,7 +6200,7 @@ async function loadCockpit(btn) {
   _panelLoading.cockpit = true;
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
   try {
-    const d = await fetch("/api/portfolio/cockpit").then(r => r.json());
+    const d = await _fetchWithTimeout("/api/portfolio/cockpit", {}, 12000);
     if (d.status !== "ok") throw new Error(d.error || "Cockpit error");
 
     const real   = d.real   || {};
@@ -11175,6 +11773,344 @@ function _renderGmNode(n) {
     ${tags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${tags}</div>` : ""}
   </div>`;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   EXPERIENCE ENGINEERING — JavaScript Layer
+   Phases 1-15: Section nav, mode toggle, connection status,
+   golf home card, wizard navigation, capability card, receipts
+══════════════════════════════════════════════════════════════ */
+
+/* ── Section Navigation System ──────────────────────────── */
+const _SECTION_DEFAULTS = {
+  home:         { tab: "overview",    hasSubs: false },
+  work:         { tab: "productivity", hasSubs: true  },
+  markets:      { tab: "markets",     hasSubs: false },
+  life:         { tab: "life",         hasSubs: true  },
+  intelligence: { tab: "agents",       hasSubs: true  },
+  system:       { tab: "system",       hasSubs: true  },
+};
+
+const _SUB_NAV_CONFIG = {
+  work: [
+    { tab:"productivity",  label:"📋 Tasks"       },
+    { tab:"calendar",      label:"📅 Calendar"    },
+    { tab:"projects",      label:"📁 Projects"    },
+    { tab:"outlook",       label:"📧 Outlook"     },
+    { tab:"automations",   label:"⚡ Automations" },
+  ],
+  life: [
+    { tab:"life",          label:"🏠 Life OS"           },
+    { tab:"golf",          label:"⛳ Golf Performance"  },
+  ],
+  intelligence: [
+    { tab:"agents",        label:"🤖 Agents"      },
+    { tab:"intelligence",  label:"📰 News"        },
+    { tab:"analytics",     label:"📊 Analytics"   },
+    { tab:"memory",        label:"🧠 Memory"      },
+  ],
+  system: [
+    { tab:"system",        label:"⚙️ System"      },
+    { tab:"chat",          label:"💬 AI Chat"     },
+  ],
+};
+
+let _activeSection = "home";
+
+function switchSection(section) {
+  _activeSection = section;
+
+  // Update primary nav active state
+  document.querySelectorAll(".jarvis-nav-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.section === section));
+
+  const cfg = _SECTION_DEFAULTS[section];
+  const subNav = qs("jarvis-sub-nav");
+  const savedMods = JSON.parse(localStorage.getItem("jarvis_modules") || "[]");
+
+  // Build sub-nav
+  let subs = _SUB_NAV_CONFIG[section] || [];
+
+  // Dynamically add fitness subs under Life based on saved modules
+  if (section === "life") {
+    const fitSubs = [
+      { tab:"running", label:"🏃 Running",  mod:"running"  },
+      { tab:"cycling", label:"🚴 Cycling",  mod:"cycling"  },
+      { tab:"gym",     label:"🏋️ Gym",      mod:"gym"      },
+      { tab:"tennis",  label:"🎾 Tennis",   mod:"tennis"   },
+    ];
+    fitSubs.forEach(f => { if (savedMods.includes(f.mod)) subs.push(f); });
+  }
+
+  if (subs.length > 0) {
+    subNav.innerHTML = subs.map(s =>
+      `<button class="jarvis-sub-btn" data-sub="${s.tab}" onclick="switchTab('${s.tab}');_activateSub('${s.tab}')">${s.label}</button>`
+    ).join("");
+    subNav.style.display = "flex";
+  } else {
+    subNav.innerHTML = "";
+    subNav.style.display = "none";
+  }
+
+  // Switch to default tab for section
+  if (cfg) {
+    switchTab(cfg.tab);
+    if (subs.length > 0) _activateSub(cfg.tab);
+  }
+
+  // Remember section in session
+  sessionStorage.setItem("jarvis_section", section);
+}
+
+function _activateSub(tab) {
+  document.querySelectorAll(".jarvis-sub-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.sub === tab));
+}
+
+/* ── Mode Toggle (Beginner/Operator) ─────────────────────── */
+function setMode(mode) {
+  const body = document.body;
+  body.classList.remove("mode-beginner", "mode-operator");
+  body.classList.add("mode-" + mode);
+  localStorage.setItem("jarvis_mode", mode);
+  document.querySelectorAll(".mode-pill").forEach(b =>
+    b.classList.toggle("active", b.id === ("mode-" + mode + "-btn")));
+  showToast(
+    mode === "beginner"
+      ? "Simple mode: streamlined view active"
+      : "Operator mode: full access enabled",
+    "info", 2000
+  );
+}
+
+function _restoreMode() {
+  const saved = localStorage.getItem("jarvis_mode") || "operator";
+  document.body.classList.add("mode-" + saved);
+  const btn = qs("mode-" + saved + "-btn");
+  if (btn) btn.classList.add("active");
+  const other = saved === "operator" ? "mode-beginner-btn" : "mode-operator-btn";
+  const otherBtn = qs(other);
+  if (otherBtn) otherBtn.classList.remove("active");
+}
+_restoreMode();
+
+/* ── Connection Status Loader ────────────────────────────── */
+async function loadConnectionStatus() {
+  const updateItem = (id, connected, statusText, statusColor) => {
+    const el = qs(id);
+    if (!el) return;
+    const dot = el.querySelector(".cs-dot");
+    const status = el.querySelector(".conn-item-status");
+    if (dot) dot.className = "cs-dot " + (connected === true ? "cs-ok" : connected === "warn" ? "cs-warn" : "cs-err");
+    if (status) { status.textContent = statusText; status.style.color = statusColor; }
+  };
+
+  // Voice support check (synchronous)
+  const hasVoice = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  updateItem("cs-voice", hasVoice, hasVoice ? "Supported" : "Chrome only", hasVoice ? "#4ade80" : "#f87171");
+
+  // Async health checks — portfolio calls debug endpoint for richer IBKR state
+  try {
+    const [ibkrDebug, portfolioStatus, outlookStatus, calendarEvents, watchdogState] =
+      await Promise.allSettled([
+        safeFetch("/api/debug/ibkr",                   {}, 6000, {}),
+        safeFetch("/api/portfolio/status",             {}, 5000, {}),
+        safeFetch("/api/outlook/status",               {}, 5000, {}),
+        safeFetch("/api/calendar/events?view=today",   {}, 5000, {}),
+        safeFetch("/api/bridge/watchdog",              {}, 4000, {}),
+      ]);
+
+    // ── IBKR status (rich: CONNECTED / RECONNECTING / DEGRADED / STALE / BRIDGE OFFLINE) ──
+    const dbg = ibkrDebug.status === "fulfilled" ? (ibkrDebug.value || {}) : {};
+    const wd  = watchdogState.status === "fulfilled" ? (watchdogState.value || {}) : {};
+    const p   = portfolioStatus.status === "fulfilled" ? (portfolioStatus.value || {}) : {};
+
+    let ibkrDot  = false;
+    let ibkrText = "Not connected";
+    let ibkrColor= "#6b7280";
+
+    const ibkrConnected    = dbg.broker_connected === true;
+    const bridgeReachable  = dbg.bridge_reachable  === true;
+    const snapshotStale    = dbg.snapshot_stale    === true;
+    const circuitOpen      = dbg.watchdog?.circuit_open === true || wd.circuit_open === true;
+    const consecFails      = dbg.watchdog?.consecutive_failures || wd.consecutive_failures || 0;
+    const connectorMode    = dbg.mode || "unknown";
+    const notConfigured    = connectorMode === "not_configured" || dbg.status === "not_configured";
+
+    if (notConfigured) {
+      ibkrDot   = "warn";
+      ibkrText  = "Not configured";
+      ibkrColor = "#f59e0b";
+    } else if (circuitOpen) {
+      ibkrDot   = false;
+      ibkrText  = "Bridge offline";
+      ibkrColor = "#f87171";
+    } else if (!bridgeReachable && consecFails > 0) {
+      ibkrDot   = false;
+      ibkrText  = `Reconnecting (${consecFails}×)`;
+      ibkrColor = "#f59e0b";
+    } else if (ibkrConnected && snapshotStale) {
+      ibkrDot   = "warn";
+      ibkrText  = "Stale snapshot";
+      ibkrColor = "#f59e0b";
+    } else if (ibkrConnected && bridgeReachable) {
+      ibkrDot   = true;
+      ibkrText  = "Live Read-Only";
+      ibkrColor = "#44f0ff";
+    } else if (bridgeReachable && !ibkrConnected) {
+      ibkrDot   = "warn";
+      ibkrText  = "Bridge OK · IBKR offline";
+      ibkrColor = "#f59e0b";
+    } else {
+      // Fallback to portfolio/status if debug endpoint gave nothing useful
+      const fallbackIbkr   = p.ibkr || {};
+      const fallbackOk     = ["connected","ok"].includes(fallbackIbkr.status);
+      ibkrDot   = fallbackOk ? true : false;
+      ibkrText  = fallbackOk ? "Live Read-Only" : "Not connected";
+      ibkrColor = fallbackOk ? "#44f0ff" : "#6b7280";
+    }
+
+    updateItem("cs-ibkr", ibkrDot, ibkrText, ibkrColor);
+
+    // ── Outlook + Calendar ────────────────────────────────────────────────────
+    const o   = outlookStatus.status === "fulfilled" ? (outlookStatus.value || {}) : {};
+    const olOk = o.connected === true || ["connected","ok"].includes(o.status);
+    const calOk = calendarEvents.status === "fulfilled" && !!calendarEvents.value;
+
+    updateItem("cs-outlook",  olOk  ? true : false,
+      olOk  ? "Connected" : "Not connected",
+      olOk  ? "#4ade80"   : "#6b7280");
+    updateItem("cs-calendar", calOk ? true : false,
+      calOk ? "Connected" : "Not connected",
+      calOk ? "#4ade80"   : "#6b7280");
+  } catch(e) {
+    updateItem("cs-ibkr",     false, "Checking…", "#6b7280");
+    updateItem("cs-outlook",  false, "Checking…", "#6b7280");
+    updateItem("cs-calendar", false, "Checking…", "#6b7280");
+  }
+
+  // Update trust badge timestamp
+  const ts = qs("trust-last-sync");
+  if (ts) ts.textContent = "Sync: " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+}
+
+/* ── Golf Performance Home Card ──────────────────────────── */
+async function _loadHomeGolfCard() {
+  try {
+    const bag = await safeFetch("/api/golf/bag", {}, 5000, null);
+    if (!bag) return;
+    const card = qs("home-golf-card");
+    if (!card) return;
+    const profile = bag.profile || bag.golfer || {};
+    const handicap = profile.handicap ?? profile.index ?? "—";
+    const rounds   = profile.rounds_played ?? profile.total_rounds ?? "—";
+    const el_h = qs("golf-home-handicap");
+    const el_r = qs("golf-home-rounds");
+    const el_i = qs("golf-home-insight");
+    if (el_h) el_h.textContent = handicap;
+    if (el_r) el_r.textContent = rounds;
+    if (el_i) el_i.textContent = "Tap to view";
+    card.style.display = "block";
+  } catch(e) { /* silently skip — golf may not be configured */ }
+}
+
+/* ── Capability Card auto-dismiss ───────────────────────── */
+(function() {
+  if (localStorage.getItem("jarvis_cap_dismissed") === "1") {
+    // Defer until DOM ready
+    setTimeout(() => { const el = qs("capability-card"); if (el) el.style.display = "none"; }, 50);
+  }
+})();
+
+/* ── Action Receipt Helper ───────────────────────────────── */
+function showActionReceipt(container, { action, source, safety, confidence, time }) {
+  if (!container) return;
+  const el = document.createElement("div");
+  el.className = "action-receipt";
+  el.innerHTML = `
+    <div class="ar-header">✅ Action Complete</div>
+    <div class="ar-row"><span>${action || "Operation"}</span></div>
+    ${source     ? `<div class="ar-row"><span>Source</span><span class="ar-val">${_esc(source)}</span></div>` : ""}
+    ${safety     ? `<div class="ar-row"><span>Safety</span><span class="ar-val" style="color:#4ade80">${_esc(safety)}</span></div>` : ""}
+    ${confidence ? `<div class="ar-row"><span>Confidence</span><span class="ar-val">${_esc(confidence)}</span></div>` : ""}
+    ${time       ? `<div class="ar-row"><span>Time</span><span class="ar-val">${_esc(time)}</span></div>` : ""}
+  `;
+  container.appendChild(el);
+  setTimeout(() => { try { el.remove(); } catch(_) {} }, 8000);
+}
+
+/* ── Wizard Navigation (7-step onboarding) ───────────────── */
+let _wizStep = 1;
+
+function wizGoTo(step) {
+  if (step < 1 || step > 7) return;
+  // Mark steps
+  for (let i = 1; i <= 7; i++) {
+    const s = qs("wiz-s" + i);
+    if (s) {
+      s.classList.remove("active", "done");
+      if (i < step) s.classList.add("done");
+      else if (i === step) s.classList.add("active");
+    }
+  }
+  // Show screen
+  document.querySelectorAll(".wizard-screen").forEach(sc => sc.classList.remove("active"));
+  const screen = qs("wiz-screen-" + step);
+  if (screen) screen.classList.add("active");
+  _wizStep = step;
+
+  // Sync goal options with legacy module-card on step 2
+  if (step === 2) {
+    const saved = JSON.parse(localStorage.getItem("jarvis_modules") || "[]");
+    document.querySelectorAll("#wizGoalsGrid .wizard-option").forEach(o => {
+      const mod = o.dataset.module;
+      if (saved.length > 0) o.classList.toggle("selected", saved.includes(mod));
+    });
+  }
+}
+function wizNext() { wizGoTo(_wizStep + 1); }
+function wizBack() { wizGoTo(_wizStep - 1); }
+
+// Wire wizard option clicks
+document.querySelectorAll("#wizGoalsGrid .wizard-option").forEach(o => {
+  o.addEventListener("click", () => o.classList.toggle("selected"));
+});
+
+// Override saveOnboarding to read from wizard goals if on step 7
+const _origSaveOnboarding = saveOnboarding;
+function saveOnboarding() {
+  // Sync wizard selections to legacy module-card
+  const wizSel = document.querySelectorAll("#wizGoalsGrid .wizard-option.selected");
+  if (wizSel.length > 0) {
+    document.querySelectorAll(".module-card").forEach(c => c.classList.remove("selected"));
+    wizSel.forEach(o => {
+      const mod = o.dataset.module;
+      const card = document.querySelector(`.module-card[data-module="${mod}"]`);
+      if (card) card.classList.add("selected");
+    });
+  }
+  _origSaveOnboarding();
+}
+
+/* ── Section memory restore on page load ────────────────── */
+(function _restoreSection() {
+  const saved = sessionStorage.getItem("jarvis_section");
+  if (saved && _SECTION_DEFAULTS[saved]) {
+    // Defer after boot
+    setTimeout(() => switchSection(saved), 200);
+  }
+})();
+
+/* ── Patch boot to run experience init ───────────────────── */
+const _origBoot = boot;
+// loadConnectionStatus and _loadHomeGolfCard are called after boot completes
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    try { loadConnectionStatus(); } catch(e) {}
+    try { _loadHomeGolfCard(); } catch(e) {}
+    // Refresh connection status every 5 minutes
+    setInterval(() => { try { loadConnectionStatus(); } catch(e) {} }, 300000);
+  }, 2500);
+});
 </script>
 </body>
 </html>

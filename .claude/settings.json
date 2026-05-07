@@ -23,7 +23,9 @@
       "Read(//mnt/c/Users/juanc/**)",
       "PowerShell(New-Item -ItemType Directory -Path C:\\\\Users\\\\juanc\\\\JARVIS\\\\reports -Force)",
       "Bash(powershell.exe -Command \"\\(Get-Content 'C:\\\\Users\\\\juanc\\\\JARVIS\\\\dashboard\\\\jarvis_futuristic.html'\\).Count\")",
-      "Bash(node --check \"c:/Users/juanc/JARVIS/tmp_check.js\")"
+      "Bash(node --check \"c:/Users/juanc/JARVIS/tmp_check.js\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('opsx/bridge/production_guard.py'\\).read\\(\\)\\); print\\('production_guard.py: OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('opsx/bridge/watchdog.py'\\).read\\(\\)\\); print\\('watchdog.py: OK'\\)\")"
     ],
     "additionalDirectories": [
       "\\dev"

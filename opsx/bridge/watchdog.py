@@ -29,22 +29,29 @@ import httpx
 
 log = logging.getLogger("jarvis.watchdog")
 
-_STALE_THRESHOLD_SECS = int(os.getenv("WATCHDOG_STALE_THRESHOLD", "120"))
-_POLL_INTERVAL_SECS   = int(os.getenv("WATCHDOG_POLL_INTERVAL",   "60"))
-_HEARTBEAT_TIMEOUT    = int(os.getenv("WATCHDOG_HEARTBEAT_TIMEOUT", "8"))
+_STALE_THRESHOLD_SECS      = int(os.getenv("WATCHDOG_STALE_THRESHOLD",    "120"))
+_POLL_INTERVAL_SECS        = int(os.getenv("WATCHDOG_POLL_INTERVAL",       "60"))
+_HEARTBEAT_TIMEOUT         = int(os.getenv("WATCHDOG_HEARTBEAT_TIMEOUT",    "8"))
+_MAX_BACKOFF_SECS          = int(os.getenv("WATCHDOG_MAX_BACKOFF",          "120"))
+_CIRCUIT_BREAKER_THRESHOLD = int(os.getenv("WATCHDOG_CIRCUIT_THRESHOLD",    "5"))
+_CIRCUIT_RESET_SECS        = int(os.getenv("WATCHDOG_CIRCUIT_RESET",        "300"))
 
 _watchdog_state: Dict = {
-    "running":          False,
-    "bridge_reachable": False,
-    "ibkr_connected":   False,
-    "account_mode":     "UNKNOWN",
-    "last_checked_at":  None,
-    "last_healthy_at":  None,
-    "stale_detected":   False,
-    "cache_age_seconds": None,
+    "running":              False,
+    "bridge_reachable":     False,
+    "ibkr_connected":       False,
+    "account_mode":         "UNKNOWN",
+    "last_checked_at":      None,
+    "last_healthy_at":      None,
+    "stale_detected":       False,
+    "cache_age_seconds":    None,
     "consecutive_failures": 0,
-    "check_count":      0,
-    "real_trade":       False,
+    "check_count":          0,
+    "circuit_open":         False,
+    "circuit_open_since":   None,
+    "current_backoff_secs": _POLL_INTERVAL_SECS,
+    "next_check_in_secs":   _POLL_INTERVAL_SECS,
+    "real_trade":           False,
 }
 
 
@@ -57,15 +64,73 @@ async def watchdog_loop(bridge_url: str, bridge_token: str) -> None:
     """
     Async loop that runs as a FastAPI background task.
     Polls the bridge /health endpoint and updates _watchdog_state.
+
+    Backoff strategy:
+      - Healthy: poll at _POLL_INTERVAL_SECS (default 60s)
+      - 1 failure: 1s backoff
+      - N failures: min(2^(N-1), _MAX_BACKOFF_SECS) exponential backoff
+      - >= _CIRCUIT_BREAKER_THRESHOLD failures: circuit open, _MAX_BACKOFF_SECS wait
+      - After _CIRCUIT_RESET_SECS with open circuit: attempt half-open reset
     """
     global _watchdog_state
     _watchdog_state["running"] = True
-    log.info("Watchdog started — bridge=%s  poll=%ds  stale_threshold=%ds",
-             bridge_url, _POLL_INTERVAL_SECS, _STALE_THRESHOLD_SECS)
+    log.info(
+        "Watchdog started — bridge=%s  poll=%ds  stale_threshold=%ds  "
+        "circuit_threshold=%d  max_backoff=%ds",
+        bridge_url, _POLL_INTERVAL_SECS, _STALE_THRESHOLD_SECS,
+        _CIRCUIT_BREAKER_THRESHOLD, _MAX_BACKOFF_SECS,
+    )
+
+    _circuit_open_since: Optional[float] = None
 
     while True:
         await _check_bridge(bridge_url, bridge_token)
-        await asyncio.sleep(_POLL_INTERVAL_SECS)
+        failures = _watchdog_state["consecutive_failures"]
+
+        if failures == 0:
+            # Healthy — normal cadence, reset circuit
+            _circuit_open_since = None
+            _watchdog_state["circuit_open"]         = False
+            _watchdog_state["circuit_open_since"]   = None
+            backoff = float(_POLL_INTERVAL_SECS)
+
+        elif failures >= _CIRCUIT_BREAKER_THRESHOLD:
+            # Circuit breaker logic
+            if _circuit_open_since is None:
+                _circuit_open_since = time.monotonic()
+                _watchdog_state["circuit_open_since"] = datetime.utcnow().isoformat()
+                log.error(
+                    "Watchdog: circuit breaker OPEN after %d consecutive failures — "
+                    "will retry in %ds, attempting reset after %ds",
+                    failures, _MAX_BACKOFF_SECS, _CIRCUIT_RESET_SECS,
+                )
+            _watchdog_state["circuit_open"] = True
+
+            elapsed = time.monotonic() - _circuit_open_since
+            if elapsed >= _CIRCUIT_RESET_SECS:
+                # Half-open: try a quick reset
+                log.info(
+                    "Watchdog: circuit half-open reset attempt after %ds", int(elapsed)
+                )
+                _circuit_open_since = None
+                backoff = 1.0
+            else:
+                backoff = float(_MAX_BACKOFF_SECS)
+
+        else:
+            # Exponential backoff: 1s → 2s → 4s → 8s → 16s → cap at _MAX_BACKOFF_SECS
+            _circuit_open_since = None
+            _watchdog_state["circuit_open"] = False
+            _watchdog_state["circuit_open_since"] = None
+            backoff = min(float(2 ** (failures - 1)), float(_MAX_BACKOFF_SECS))
+            log.warning(
+                "Watchdog: failure %d — exponential backoff, next check in %ds",
+                failures, int(backoff),
+            )
+
+        _watchdog_state["current_backoff_secs"] = int(backoff)
+        _watchdog_state["next_check_in_secs"]   = int(backoff)
+        await asyncio.sleep(backoff)
 
 
 async def _check_bridge(bridge_url: str, bridge_token: str) -> None:

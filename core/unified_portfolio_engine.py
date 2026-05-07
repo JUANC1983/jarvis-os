@@ -99,6 +99,11 @@ class UnifiedPortfolioEngine:
             brokers[broker_name] = {
                 "status":          data.get("status", "unknown"),
                 "account_id":      data.get("account_id", ""),
+                "account_type":    data.get("account_type", data.get("account_mode", "")),
+                "account_mode":    data.get("account_mode", data.get("account_type", "")),
+                "data_origin":     data.get("data_origin", ""),
+                "readonly_mode":   data.get("readonly_mode", True),
+                "execution_blocked": data.get("execution_blocked", True),
                 "positions":       positions,
                 "market_value":    round(broker_value, 2),
                 "cash":            round(broker_cash, 2),
