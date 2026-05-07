@@ -4263,6 +4263,44 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 <script>
 "use strict";
+/* ══════════════════════════════════════════════════════════════════
+   JARVIS RUNTIME GUARD — must be first, before all other JS
+   Parts 1, 4, 7: Safe bootloader + tab state + debug mode
+══════════════════════════════════════════════════════════════════ */
+window.JARVIS_RUNTIME = {
+  initialized: false,
+  modules: {},
+  errors: [],
+  loading: {}
+};
+window.JARVIS_TABS = {
+  active: "overview",
+  loaded: {},
+  loading: {}
+};
+window.JARVIS_DEBUG = {
+  failedModules: [],
+  pendingRequests: [],
+  runtimeErrors: [],
+  initializedModules: [],
+  loadingModules: []
+};
+
+window.onerror = function(msg, src, line, col, err) {
+  const entry = { msg: String(msg), src, line, col, time: Date.now() };
+  window.JARVIS_RUNTIME.errors.push(entry);
+  window.JARVIS_DEBUG.runtimeErrors.push(entry);
+  console.error("[JARVIS] Uncaught error:", msg, "at", (src||"") + ":" + line);
+  return false;
+};
+window.addEventListener("unhandledrejection", function(e) {
+  const msg = e.reason && e.reason.message ? e.reason.message : String(e.reason || "unknown");
+  const entry = { msg, type: "unhandledrejection", time: Date.now() };
+  window.JARVIS_RUNTIME.errors.push(entry);
+  window.JARVIS_DEBUG.runtimeErrors.push(entry);
+  console.warn("[JARVIS] Unhandled promise rejection:", msg);
+});
+
 /* ── Utils ──────────────────────────── */
 const qs   = id => document.getElementById(id);
 const safe = v  => (v != null && v !== "" && v !== undefined) ? String(v) : "--";
@@ -4310,6 +4348,9 @@ function switchTab(name) {
   const panel = qs("tab-" + name);
   if (panel) panel.classList.add("active");
   document.querySelectorAll(`[data-tab="${name}"]`).forEach(b => b.classList.add("active"));
+  // Track active tab in runtime state
+  window.JARVIS_TABS.active = name;
+  window.JARVIS_TABS.loaded[name] = true;
   // Debounce lazy-loads to prevent race conditions on rapid tab switching
   clearTimeout(_tabSwitchTimer);
   _tabSwitchTimer = setTimeout(() => {
@@ -4368,9 +4409,18 @@ async function loadHome() {
     if (d.strategic_insight  && qs("eb-intel"))  qs("eb-intel").textContent  = d.strategic_insight;
   } catch(e) {
     console.warn("loadHome:", e);
-    if (qs("greeting")    && qs("greeting").textContent    === "Loading…") qs("greeting").textContent    = "JARVIS";
-    if (qs("topPriority") && qs("topPriority").textContent === "Loading…") qs("topPriority").textContent = "Sin datos";
-    if (qs("nextMeeting") && qs("nextMeeting").textContent === "Loading…")  qs("nextMeeting").textContent = "Sin reuniones";
+    window.JARVIS_DEBUG.failedModules.push({ module: "loadHome", error: e.message, time: Date.now() });
+    // Part 5: Overview hydration fallback — clear every loading state to a safe value
+    const _safeSet = (id, val) => { const el = qs(id); if (el && (el.textContent === "Loading…" || el.textContent === "Loading..." || !el.textContent.trim())) el.textContent = val; };
+    _safeSet("greeting",    "JARVIS");
+    _safeSet("todayDate",   new Date().toLocaleDateString("es-CO", {weekday:"long",month:"long",day:"numeric"}));
+    _safeSet("topPriority", "—");
+    _safeSet("tasksOpen",   "—");
+    _safeSet("assetsCount", "—");
+    _safeSet("nextMeeting", "No meetings");
+    // Render empty state for tasks and meetings
+    const tl = qs("tasksList");
+    if (tl && !tl.children.length) tl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-title">Tasks unavailable</div><div class="empty-state-sub">Backend offline. <button class="btn-ol btn-sm" onclick="loadHome()">Retry</button></div></div>`;
   }
 }
 
@@ -4940,6 +4990,37 @@ async function _fetchWithTimeout(url, options = {}, ms = 8000) {
 async function safeFetch(url, options = {}, ms = 8000, fallback = null) {
   try { return await _fetchWithTimeout(url, options, ms); }
   catch(e) { console.warn("[safeFetch]", url, e.message); return fallback; }
+}
+
+/* safeApi — Part 6: retrying fetch, stale cache, structured logging, graceful degradation */
+const _safeApiCache = {};
+async function safeApi(url, fallback = null, { ms = 8000, retries = 1, cacheMs = 0 } = {}) {
+  if (cacheMs > 0 && _safeApiCache[url]) {
+    const c = _safeApiCache[url];
+    if (Date.now() - c.ts < cacheMs) return c.data;
+  }
+  window.JARVIS_RUNTIME.loading[url] = true;
+  const pendArr = window.JARVIS_DEBUG.pendingRequests;
+  if (!pendArr.includes(url)) pendArr.push(url);
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const data = await _fetchWithTimeout(url, {}, ms);
+      if (cacheMs > 0) _safeApiCache[url] = { data, ts: Date.now() };
+      delete window.JARVIS_RUNTIME.loading[url];
+      window.JARVIS_DEBUG.pendingRequests = pendArr.filter(u => u !== url);
+      return data;
+    } catch(e) {
+      lastErr = e;
+      if (attempt < retries) await new Promise(r => setTimeout(r, 600));
+    }
+  }
+  const errMsg = lastErr && lastErr.message ? lastErr.message : String(lastErr);
+  console.warn("[safeApi] FAILED:", url, errMsg);
+  delete window.JARVIS_RUNTIME.loading[url];
+  window.JARVIS_DEBUG.pendingRequests = pendArr.filter(u => u !== url);
+  window.JARVIS_DEBUG.failedModules.push({ url, error: errMsg, time: Date.now() });
+  return fallback;
 }
 
 async function loadMarketSnapshot() {
@@ -5628,8 +5709,7 @@ async function loadCockpit(btn) {
     const opps = intel.opportunities || [];
     _set("ck-opps", opps.length ? opps.map(o => `<div style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#4ade80">+</span><span>${_esc(o)}</span></div>`).join("") : '<span style="color:var(--soft)">Load data for insights</span>');
 
-    // Broker chips
-    const brokers = d.brokers || {};
+    // Broker chips (brokers already declared above from d.brokers)
     const brokerHtml = Object.entries(brokers).map(([name, b]) => {
       const connected = !["not_connected","disconnected","not_configured"].includes(b.status);
       const stale = b._stale;
@@ -9210,37 +9290,120 @@ let _PORTFOLIO_AVAILABLE_FLAG = false;
   } catch(_) {}
 })();
 
-/* ── Boot ───────────────────────────── */
-async function boot() {
-  initEvents(); initVoice(); initUpload(); initVoiceStatus();
-  initWeather();  // async geolocation — non-blocking
-  await checkAndSeedDemo();
-  await Promise.allSettled([loadHome(), loadAssets(), loadSystemMetrics(), loadPipeline()]);
-  await Promise.allSettled([analyzeTrader(), loadRecommendations(), loadMarketNews(), loadAgents(), loadNews(), loadGolf(), loadMarketSnapshot(), loadCoursesLibrary(), loadGolfBag(), loadProjects(), loadCalendarEvents('day'), loadAnalytics(), loadWow()]);
-  loadNotifications();
-  loadSwingHistory();
-  applyExecutiveMode();
-  loadUnifiedPriorities();
-  _registerInterval("marketSnapshot",    loadMarketSnapshot,    30000);
-  _registerInterval("recommendations",   loadRecommendations,   30000);
-  _registerInterval("unifiedPriorities", loadUnifiedPriorities, 300000);
-  _registerInterval("notifications",     loadNotifications,     60000);
-  _registerInterval("wow",               loadWow,               300000);
-  // Onboarding check — skip if already configured
-  checkOnboarding();
-  // Commander brief + command history
-  loadCommanderBrief();
-  loadCommandHistory();
-  setInterval(loadCommandHistory, 60000);
-  // Auto-switch to Outlook tab after OAuth callback
-  const _urlParams = new URLSearchParams(window.location.search);
-  if (_urlParams.get("outlook") === "connected") {
-    switchTab("outlook");
-    showToast("Outlook connected successfully!", "success");
-    history.replaceState(null, "", window.location.pathname);
+/* ── Safe module runner — Part 1 ────── */
+async function _bootModule(name, fn) {
+  window.JARVIS_RUNTIME.modules[name] = "loading";
+  const dbg = window.JARVIS_DEBUG;
+  if (!dbg.loadingModules.includes(name)) dbg.loadingModules.push(name);
+  try {
+    await fn();
+    window.JARVIS_RUNTIME.modules[name] = "ok";
+    if (!dbg.initializedModules.includes(name)) dbg.initializedModules.push(name);
+  } catch(e) {
+    window.JARVIS_RUNTIME.modules[name] = "error";
+    window.JARVIS_RUNTIME.errors.push({ module: name, error: e.message, time: Date.now() });
+    dbg.failedModules.push({ module: name, error: e.message, time: Date.now() });
+    console.warn("[JARVIS] Boot module failed:", name, e);
+  } finally {
+    dbg.loadingModules = dbg.loadingModules.filter(m => m !== name);
   }
 }
-boot();
+
+/* ── Loading state watchdog — Part 2 ── */
+function _loadingWatchdog() {
+  setTimeout(() => {
+    // Clear any spinner/loading text still stuck after 15s
+    document.querySelectorAll(".stat-val, .kpi-val, .metric-val, .stat-num").forEach(el => {
+      const t = el.textContent.trim();
+      if (t === "Loading…" || t === "Loading..." || t === "⏳") el.textContent = "--";
+    });
+    // Clear named loading targets
+    ["greeting","topPriority","nextMeeting"].forEach(id => {
+      const el = qs(id);
+      if (el && (el.textContent === "Loading…" || el.textContent === "Loading...")) {
+        el.textContent = id === "greeting" ? "JARVIS" : id === "topPriority" ? "—" : "No meetings";
+      }
+    });
+    console.log("[JARVIS] Boot complete. Modules:", JSON.stringify(window.JARVIS_RUNTIME.modules));
+    if (window.JARVIS_RUNTIME.errors.length) {
+      console.warn("[JARVIS] Runtime errors:", window.JARVIS_RUNTIME.errors.length);
+    }
+  }, 15000);
+}
+
+/* ── Boot ───────────────────────────── */
+async function boot() {
+  // Phase 0: event binding — must be synchronous before any async
+  try { initEvents(); }   catch(e) { console.warn("[JARVIS] initEvents failed:", e); }
+  try { initVoice(); }    catch(e) { console.warn("[JARVIS] initVoice failed:", e); }
+  try { initUpload(); }   catch(e) { console.warn("[JARVIS] initUpload failed:", e); }
+  try { initVoiceStatus(); } catch(e) { console.warn("[JARVIS] initVoiceStatus failed:", e); }
+  try { initWeather(); }  catch(e) { console.warn("[JARVIS] initWeather failed:", e); }
+
+  // Phase 1: seed check — non-crashing
+  await _bootModule("demo", checkAndSeedDemo);
+
+  // Phase 2: critical above-fold panels (parallel, isolated)
+  await Promise.allSettled([
+    _bootModule("home",          loadHome),
+    _bootModule("assets",        loadAssets),
+    _bootModule("systemMetrics", loadSystemMetrics),
+    _bootModule("pipeline",      loadPipeline),
+  ]);
+
+  // Phase 3: secondary panels (parallel, isolated)
+  await Promise.allSettled([
+    _bootModule("trader",        analyzeTrader),
+    _bootModule("recommendations", loadRecommendations),
+    _bootModule("marketNews",    loadMarketNews),
+    _bootModule("agents",        loadAgents),
+    _bootModule("news",          loadNews),
+    _bootModule("golf",          loadGolf),
+    _bootModule("marketSnapshot", loadMarketSnapshot),
+    _bootModule("coursesLibrary", loadCoursesLibrary),
+    _bootModule("golfBag",       loadGolfBag),
+    _bootModule("projects",      loadProjects),
+    _bootModule("calendar",      () => loadCalendarEvents("day")),
+    _bootModule("analytics",     loadAnalytics),
+    _bootModule("wow",           loadWow),
+  ]);
+
+  // Phase 4: background / non-critical
+  try { loadNotifications(); }    catch(e) {}
+  try { loadSwingHistory(); }     catch(e) {}
+  try { applyExecutiveMode(); }   catch(e) {}
+  try { loadUnifiedPriorities(); } catch(e) {}
+
+  // Phase 5: intervals — each independent
+  try { _registerInterval("marketSnapshot",    loadMarketSnapshot,    30000); } catch(e) {}
+  try { _registerInterval("recommendations",   loadRecommendations,   30000); } catch(e) {}
+  try { _registerInterval("unifiedPriorities", loadUnifiedPriorities, 300000); } catch(e) {}
+  try { _registerInterval("notifications",     loadNotifications,     60000); } catch(e) {}
+  try { _registerInterval("wow",               loadWow,               300000); } catch(e) {}
+
+  // Phase 6: deferred UI
+  try { checkOnboarding(); }      catch(e) {}
+  try { loadCommanderBrief(); }   catch(e) {}
+  try { loadCommandHistory(); }   catch(e) {}
+  try { setInterval(loadCommandHistory, 60000); } catch(e) {}
+
+  // Phase 7: OAuth redirect handling
+  try {
+    const _urlParams = new URLSearchParams(window.location.search);
+    if (_urlParams.get("outlook") === "connected") {
+      switchTab("outlook");
+      showToast("Outlook connected successfully!", "success");
+      history.replaceState(null, "", window.location.pathname);
+    }
+  } catch(e) {}
+
+  window.JARVIS_RUNTIME.initialized = true;
+  _loadingWatchdog();
+}
+boot().catch(e => {
+  console.error("[JARVIS] Boot sequence failed:", e);
+  window.JARVIS_RUNTIME.errors.push({ module: "boot", error: e.message, time: Date.now() });
+});
 
 /* ═══════════════════════════════════════════════════════════════
    GLOBAL COMMAND BAR
@@ -9274,11 +9437,11 @@ async function cmdSend() {
   qs("cmd-res-icon").textContent = "⏳";
 
   try {
-    const d = await fetch("/api/command/route", {
+    const d = await _fetchWithTimeout("/api/command/route", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ command: cmd }),
-    }).then(r => r.json());
+    }, 20000);
 
     const tabIcons = {
       productivity: "✅", markets: "📈", golf: "⛳", chat: "💬",

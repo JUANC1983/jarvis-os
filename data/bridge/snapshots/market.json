@@ -2,35 +2,35 @@
   "items": [
     {
       "symbol": "SPY",
-      "price": 733.83,
-      "change_pct": 1.39,
+      "price": 734.5,
+      "change_pct": 0.09,
       "direction": "up"
     },
     {
       "symbol": "QQQ",
-      "price": 695.77,
-      "change_pct": 2.08,
+      "price": 696.94,
+      "change_pct": 0.17,
       "direction": "up"
     },
     {
       "symbol": "IWM",
-      "price": 286.8,
-      "change_pct": 1.5,
-      "direction": "up"
+      "price": 285.59,
+      "change_pct": -0.42,
+      "direction": "down"
     },
     {
       "symbol": "GLD",
-      "price": 430.96,
-      "change_pct": 3.03,
+      "price": 436.21,
+      "change_pct": 1.22,
       "direction": "up"
     },
     {
       "symbol": "TLT",
-      "price": 86.08,
-      "change_pct": 0.76,
+      "price": 86.2,
+      "change_pct": 0.14,
       "direction": "up"
     }
   ],
-  "generated_at": "2026-05-07T12:52:58.220026",
-  "_cached_at": "2026-05-07T12:52:58.236123"
+  "generated_at": "2026-05-07T13:38:19.888754",
+  "_cached_at": "2026-05-07T13:38:19.888754"
 }

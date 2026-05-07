@@ -22,7 +22,8 @@
       "Bash(.venv/Scripts/python.exe -m uvicorn main:app --port 8765 --host 127.0.0.1)",
       "Read(//mnt/c/Users/juanc/**)",
       "PowerShell(New-Item -ItemType Directory -Path C:\\\\Users\\\\juanc\\\\JARVIS\\\\reports -Force)",
-      "Bash(powershell.exe -Command \"\\(Get-Content 'C:\\\\Users\\\\juanc\\\\JARVIS\\\\dashboard\\\\jarvis_futuristic.html'\\).Count\")"
+      "Bash(powershell.exe -Command \"\\(Get-Content 'C:\\\\Users\\\\juanc\\\\JARVIS\\\\dashboard\\\\jarvis_futuristic.html'\\).Count\")",
+      "Bash(node --check \"c:/Users/juanc/JARVIS/tmp_check.js\")"
     ],
     "additionalDirectories": [
       "\\dev"
