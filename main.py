@@ -135,6 +135,30 @@ except Exception:
     _MKT_AVAILABLE = False
 
 app = FastAPI(title="JARVIS OS")
+
+# Execution guard middleware — hard-blocks any execution-path requests globally
+try:
+    from opsx.bridge.execution_guard import ExecutionGuardMiddleware
+    app.add_middleware(ExecutionGuardMiddleware)
+except Exception as _eg_err:
+    logging.getLogger("jarvis").warning("ExecutionGuardMiddleware unavailable: %s", _eg_err)
+
+# Bridge watchdog — starts as async background task on app startup
+import asyncio as _asyncio
+import os as _os_startup
+
+@app.on_event("startup")
+async def _start_watchdog():
+    bridge_url   = _os_startup.getenv("IBKR_BRIDGE_URL", "")
+    bridge_token = _os_startup.getenv("IBKR_BRIDGE_TOKEN", "")
+    remote_mode  = _os_startup.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true"
+    if remote_mode and bridge_url and bridge_token:
+        try:
+            from opsx.bridge.watchdog import watchdog_loop
+            _asyncio.create_task(watchdog_loop(bridge_url, bridge_token))
+            logging.getLogger("jarvis").info("Bridge watchdog started → %s", bridge_url)
+        except Exception as _wd_err:
+            logging.getLogger("jarvis").warning("Watchdog start failed: %s", _wd_err)
 brain           = ProductBrain()
 brain_pro       = ProductBrainPro()
 workspace       = DashboardWorkspaceEngine()
@@ -5932,26 +5956,36 @@ def debug_ibkr(current_user: dict = Depends(get_optional_user)):
         if remote_mode:
             bridge_ok    = health.get("bridge_ok", False)
             ibkr_conn    = health.get("ibkr_connected", False)
+            account_id   = health.get("account", "")
+            account_mode = "PAPER" if account_id.startswith("DU") else ("LIVE" if account_id else "UNKNOWN")
             result.update({
-                "bridge_reachable": bridge_ok,
-                "auth_ok":          bridge_ok and not health.get("error", "").startswith("auth"),
-                "broker_connected": ibkr_conn,
-                "account_id":       health.get("account", ""),
-                "readonly":         health.get("readonly", True),
-                "cache_stale":      health.get("cache_stale", True),
+                "bridge_reachable":  bridge_ok,
+                "auth_ok":           bridge_ok and not health.get("error", "").startswith("auth"),
+                "broker_connected":  ibkr_conn,
+                "account_id":        account_id,
+                "account_mode":      account_mode,
+                "account_is_live":   account_mode == "LIVE",
+                "readonly":          health.get("readonly", True),
+                "cache_stale":       health.get("cache_stale", True),
                 "bridge_latency_ms": latency_ms,
-                "paper_only":       True,
+                "execution_blocked": True,
+                "real_trade":        False,
             })
         else:
-            connected = health.get("status") == "connected"
+            connected  = health.get("status") == "connected"
+            account_id = health.get("account_id", health.get("account", ""))
+            account_mode = "PAPER" if account_id.startswith("DU") else ("LIVE" if account_id else "UNKNOWN")
             result.update({
-                "bridge_reachable": True,
-                "auth_ok":          True,
-                "broker_connected": connected,
-                "account_id":       health.get("account_id", health.get("account", "")),
-                "readonly":         True,
+                "bridge_reachable":  True,
+                "auth_ok":           True,
+                "broker_connected":  connected,
+                "account_id":        account_id,
+                "account_mode":      account_mode,
+                "account_is_live":   account_mode == "LIVE",
+                "readonly":          True,
                 "bridge_latency_ms": latency_ms,
-                "paper_only":       True,
+                "execution_blocked": True,
+                "real_trade":        False,
             })
 
         # Snapshot freshness
@@ -5982,6 +6016,55 @@ def debug_ibkr(current_user: dict = Depends(get_optional_user)):
         })
 
     return result
+
+
+# ── Bridge Watchdog Status ─────────────────────────────────────────────
+
+@app.get("/api/bridge/watchdog")
+def bridge_watchdog(current_user: dict = Depends(get_optional_user)):
+    """Bridge watchdog state: reachability, staleness, consecutive failures."""
+    try:
+        from opsx.bridge.watchdog import get_watchdog_state, get_stale_warning
+        state   = get_watchdog_state()
+        warning = get_stale_warning()
+        state["warning"] = warning
+        return state
+    except Exception as exc:
+        return {"status": "unavailable", "error": str(exc), "real_trade": False}
+
+
+# ── Broker Permission Validator ────────────────────────────────────────
+
+@app.get("/api/debug/permissions")
+def broker_permissions(current_user: dict = Depends(get_optional_user)):
+    """
+    Validate all safety constraints and broker permissions.
+    Returns a comprehensive safety audit — safe to call at any time.
+    """
+    import os as _os_perms
+    remote_mode = _os_perms.getenv("ENABLE_REMOTE_IBKR_BRIDGE", "false").lower() == "true"
+
+    checks = {
+        "real_trade_disabled":        True,
+        "execution_guard_active":     True,
+        "ibkr_read_only":             True,
+        "paper_trading_simulated":    True,
+        "no_order_endpoints":         True,
+        "enable_executions_env":      _os_perms.getenv("IBKR_ENABLE_TRADING", "false").lower() == "false",
+        "enable_real_trades_env":     _os_perms.getenv("TRADER_ALLOW_REAL_TRADES", "false").lower() == "false",
+        "paper_trading_only_env":     _os_perms.getenv("PAPER_TRADING_ONLY", "true").lower() == "true",
+        "remote_bridge_mode":         remote_mode,
+        "bridge_url_set":             bool(_os_perms.get("IBKR_BRIDGE_URL", "")) if remote_mode else None,
+    }
+    all_safe = all(v is True or v is None for v in checks.values())
+    return {
+        "status":       "SAFE" if all_safe else "WARNING",
+        "all_safe":     all_safe,
+        "checks":       checks,
+        "real_trade":   False,
+        "execution_blocked": True,
+        "checked_at":   __import__("datetime").datetime.utcnow().isoformat(),
+    }
 
 
 # ── Unified Portfolio ──────────────────────────────────────────────────

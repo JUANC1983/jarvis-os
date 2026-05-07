@@ -2255,8 +2255,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   <!-- ══ JARVIS Portfolio OS — Premium Header ════════════════════════════ -->
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
     <div>
-      <div style="font-size:19px;font-weight:900;letter-spacing:-.4px;color:var(--white)">JARVIS Portfolio OS</div>
-      <div style="font-size:11px;color:var(--soft);margin-top:2px">Institutional Intelligence · <span style="color:#a78bfa">real_trade: false always</span> · Paper-safe</div>
+      <div style="font-size:19px;font-weight:900;letter-spacing:-.4px;color:var(--white)">JARVIS Portfolio OS <span id="mkt-account-mode-badge" style="font-size:10px;font-weight:600;background:rgba(68,240,255,.08);color:#6e9bb5;border:1px solid rgba(68,240,255,.15);padding:2px 7px;border-radius:4px;vertical-align:middle;letter-spacing:.3px"></span></div>
+      <div style="font-size:11px;color:var(--soft);margin-top:2px">Institutional Intelligence · <span style="color:#44f0ff;font-weight:700">LIVE READ-ONLY</span> · <span style="color:#a78bfa">real_trade: false always</span></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:5px">
@@ -2290,7 +2290,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <!-- Row 1: Net Worth Hero + Paper Hero -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="hero-card">
-        <div class="hero-label">Real Portfolio</div>
+        <div class="hero-label">Real Portfolio <span class="status-pill" style="background:rgba(68,240,255,.12);color:#44f0ff;border:1px solid rgba(68,240,255,.3);font-size:9px;vertical-align:middle;padding:2px 6px;border-radius:4px;font-weight:700;letter-spacing:.5px">LIVE READ-ONLY</span></div>
         <div class="hero-val" id="ck-real-total" style="color:var(--cyan)">—</div>
         <div class="hero-sub" id="ck-real-sub">Loading…</div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
@@ -2300,7 +2300,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
         </div>
       </div>
       <div class="hero-card" style="border-color:rgba(167,139,250,.2)">
-        <div class="hero-label">Paper Lab <span class="status-pill pill-sim" style="font-size:9px;vertical-align:middle">SIM</span></div>
+        <div class="hero-label">Paper Lab <span class="status-pill pill-sim" style="font-size:9px;vertical-align:middle">SIMULATED AI ENVIRONMENT</span></div>
         <div class="hero-val" id="ck-paper-total" style="color:#a78bfa">—</div>
         <div class="hero-sub" id="ck-paper-sub">Loading…</div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
@@ -2411,8 +2411,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div>
-        <div style="font-size:17px;font-weight:800">Paper Trading Lab</div>
-        <div style="font-size:11px;color:var(--soft);margin-top:2px">Simulated · Read-only · <span style="color:#a78bfa">real_trade: false always</span></div>
+        <div style="font-size:17px;font-weight:800">Paper Trading Lab <span style="font-size:11px;font-weight:600;background:rgba(167,139,250,.15);color:#c084fc;border:1px solid rgba(167,139,250,.3);padding:2px 8px;border-radius:4px;letter-spacing:.5px">SIMULATED AI ENVIRONMENT</span></div>
+        <div style="font-size:11px;color:var(--soft);margin-top:2px">AI-driven simulation · Independent from IBKR · <span style="color:#a78bfa">real_trade: false always</span></div>
       </div>
       <div style="display:flex;gap:6px">
         <button class="btn-ol btn-sm" onclick="paperImportReal()" style="font-size:11px">↓ Import Real</button>
@@ -5526,6 +5526,18 @@ async function loadCockpit(btn) {
 
     // Live indicator
     _setLiveIndicator(!fromCache);
+
+    // Account mode badge in header
+    const brokers  = d.brokers || {};
+    const ibkrData = brokers.ibkr || {};
+    const acctMode = ibkrData.account_mode || "LIVE";
+    const modeBadge = document.getElementById("mkt-account-mode-badge");
+    if (modeBadge) {
+      const isLive = acctMode === "LIVE";
+      modeBadge.textContent = isLive ? "IBKR LIVE" : (acctMode === "PAPER" ? "IBKR PAPER" : "");
+      modeBadge.style.color = isLive ? "#44f0ff" : "#facc15";
+      modeBadge.style.borderColor = isLive ? "rgba(68,240,255,.3)" : "rgba(250,204,21,.3)";
+    }
 
     // Hero cards
     _set("ck-real-total",    _fmtVal(real.total_value));

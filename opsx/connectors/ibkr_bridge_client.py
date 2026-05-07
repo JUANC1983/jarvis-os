@@ -1,12 +1,12 @@
 """
 IBKR Remote Bridge Client — reads live data from the local secure bridge
-via an ngrok HTTPS tunnel. For Railway deployments where localhost:4002 is
+via an ngrok HTTPS tunnel. For Railway deployments where localhost:4001 is
 unreachable; the correct data path is:
 
     Railway FastAPI
       └─► HTTPS (ngrok)
             └─► secure_bridge.py (localhost:7755)
-                  └─► IB Gateway (localhost:4002, readonly=True)
+                  └─► IB Gateway LIVE (localhost:4001, readonly=True)
 
 Required env vars (set in Railway dashboard):
   IBKR_BRIDGE_URL             e.g. https://abc123.ngrok.io
@@ -145,10 +145,20 @@ class IBKRBridgeClient:
         # Normalise position keys to what unified_portfolio_engine expects
         normalised = [self._normalise_position(p) for p in pos_list]
 
+        account_id   = summary.get("account", health.get("account", ""))
+        account_type = "PAPER" if account_id.startswith("DU") else ("LIVE" if account_id else "UNKNOWN")
+        data_origin  = "ibkr_live" if account_type == "LIVE" else ("ibkr_paper" if account_type == "PAPER" else "unknown")
+
         snapshot = {
             "broker":      "ibkr",
             "status":      "connected" if bridge_connected else "disconnected",
-            "account_id":  summary.get("account", health.get("account", "")),
+            "account_id":  account_id,
+            # ── Account separation metadata ──────────────────────────────
+            "account_type":      account_type,
+            "data_origin":       data_origin,
+            "readonly_mode":     True,
+            "execution_blocked": True,
+            # ────────────────────────────────────────────────────────────
             "positions":   normalised,
             "pnl": {
                 "daily_pnl":      pnl.get("daily_pnl", 0),
@@ -174,6 +184,16 @@ class IBKRBridgeClient:
             "fetched_at":     datetime.utcnow().isoformat(),
             "real_trade":     False,
         }
+        # Audit log
+        try:
+            from opsx.bridge.account_separation import audit_broker_interaction
+            audit_broker_interaction(
+                account_id, "get_full_portfolio",
+                account_type=account_type, data_origin=data_origin,
+                success=bridge_connected,
+            )
+        except Exception:
+            pass
         self._save_snapshot(snapshot)
         return snapshot
 

@@ -13,7 +13,7 @@ Architecture (after event-loop fix):
   ┌──────────────────▼──────────────────────────────────────────┐
   │  IBKRWorkerThread  (daemon OS thread)                       │
   │    asyncio.new_event_loop() → asyncio.set_event_loop()      │
-  │    ib_insync IB().connect(localhost:4002, readonly=True)     │
+  │    ib_insync IB().connect(localhost:4001, readonly=True)     │
   │    Poll loop: connect → _poll() → ib.sleep(30s) → repeat    │
   │    Writes to snapshot_cache on every successful poll        │
   └─────────────────────────────────────────────────────────────┘
@@ -47,7 +47,7 @@ Environment variables:
   BRIDGE_POLL_INTERVAL  default 30s  (IBKR data refresh interval)
   BRIDGE_MARKET_INTERVAL default 120s (market snapshot refresh)
   IBKR_HOST             default 127.0.0.1
-  IBKR_PORT             default 4002
+  IBKR_PORT             default 4001 (IB Gateway live); 7497 only for explicit paper mode
   IBKR_CLIENT_ID        default 10  (avoids clash with main app client 1)
 
 CRITICAL: This module NEVER imports placeOrder, cancelOrder, modifyOrder,
@@ -253,7 +253,7 @@ class IBKRWorkerThread(threading.Thread):
         Safe to call from this thread — asyncio.set_event_loop() was called in run().
         """
         ibkr_host = os.getenv("IBKR_HOST", "127.0.0.1")
-        ibkr_port = int(os.getenv("IBKR_PORT", "4002"))
+        ibkr_port = int(os.getenv("IBKR_PORT", "4001"))   # 4001=IB Gateway live, 7497=TWS paper (optional)
         client_id = int(os.getenv("IBKR_CLIENT_ID", "10"))
 
         try:
@@ -341,9 +341,12 @@ class IBKRWorkerThread(threading.Thread):
             except Exception:
                 pass
 
+            # Detect account mode: DU prefix = paper/demo, others = live
+            account_mode = "PAPER" if account.startswith("DU") else "LIVE"
             return {
                 "status":          "ok",
                 "account":         account,
+                "account_mode":    account_mode,
                 "net_liquidation": summary.get("NetLiquidation", 0),
                 "total_cash":      summary.get("TotalCashValue", 0),
                 "gross_position":  summary.get("GrossPositionValue", 0),
@@ -355,6 +358,7 @@ class IBKRWorkerThread(threading.Thread):
                 "positions":       positions,
                 "position_count":  len(positions),
                 "real_trade":      False,
+                "execution_blocked": True,
                 "fetched_at":      datetime.utcnow().isoformat(),
             }
 
@@ -488,8 +492,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="JARVIS Secure IBKR Bridge",
     description=(
-        "Local read-only bridge: Railway JARVIS → IB Gateway (paper). "
-        "Token-authenticated. No execution endpoints."
+        "Local read-only bridge: Railway JARVIS → IB Gateway (LIVE, readonly). "
+        "Token-authenticated. No execution endpoints. real_trade=false always."
     ),
     version="1.1.0",
     lifespan=lifespan,
@@ -503,6 +507,10 @@ app.add_middleware(
     allow_methods=["GET", "OPTIONS"],
     allow_headers=["Authorization", "X-Bridge-Token", "Content-Type"],
 )
+
+# Execution guard — hard-blocks any path that resembles a trade execution attempt
+from opsx.bridge.execution_guard import ExecutionGuardMiddleware
+app.add_middleware(ExecutionGuardMiddleware)
 
 
 @app.exception_handler(SecurityViolationError)
@@ -518,31 +526,46 @@ async def security_violation_handler(request, exc):
 @app.get("/health")
 async def health(_token: str = Depends(verify_token)):
     """Bridge health, IBKR connection state, cache stats, WS connections."""
-    connected = _worker_thread.connected if _worker_thread else False
-    account   = _worker_thread.account   if _worker_thread else ""
-    _, is_stale = snapshot_cache.get("portfolio")
+    connected    = _worker_thread.connected if _worker_thread else False
+    account      = _worker_thread.account   if _worker_thread else ""
+    account_mode = "PAPER" if account.startswith("DU") else ("LIVE" if account else "UNKNOWN")
+    _, is_stale  = snapshot_cache.get("portfolio")
+
+    # Snapshot freshness age
+    cached, _ = snapshot_cache.get("portfolio")
+    cache_age_sec = 0
+    if cached and cached.get("fetched_at"):
+        try:
+            from datetime import timezone as _tz
+            delta = datetime.utcnow() - datetime.fromisoformat(cached["fetched_at"].replace("Z", ""))
+            cache_age_sec = round(delta.total_seconds(), 1)
+        except Exception:
+            pass
 
     return {
         "status":         "ok",
         "bridge_version": "1.1.0",
         "ibkr": {
-            "connected":  connected,
-            "account":    account,
-            "host":       os.getenv("IBKR_HOST", "127.0.0.1"),
-            "port":       int(os.getenv("IBKR_PORT", "4002")),
-            "client_id":  int(os.getenv("IBKR_CLIENT_ID", "10")),
-            "readonly":   True,
+            "connected":    connected,
+            "account":      account,
+            "account_mode": account_mode,
+            "host":         os.getenv("IBKR_HOST", "127.0.0.1"),
+            "port":         int(os.getenv("IBKR_PORT", "4001")),
+            "client_id":    int(os.getenv("IBKR_CLIENT_ID", "10")),
+            "readonly":     True,
+            "ibkr_mode":    os.getenv("IBKR_MODE", "live").upper(),
         },
         "cache": {
-            "portfolio_stale": is_stale,
+            "portfolio_stale":    is_stale,
+            "cache_age_seconds":  cache_age_sec,
             **snapshot_cache.stats(),
         },
-        "websocket":       ws_manager.stats(),
-        "worker_thread":   _worker_thread.name if _worker_thread else None,
-        "poll_interval":   POLL_INTERVAL,
-        "execution_blocked": True,
-        "real_trade":      False,
-        "generated_at":    datetime.utcnow().isoformat(),
+        "websocket":          ws_manager.stats(),
+        "worker_thread":      _worker_thread.name if _worker_thread else None,
+        "poll_interval":      POLL_INTERVAL,
+        "execution_blocked":  True,
+        "real_trade":         False,
+        "generated_at":       datetime.utcnow().isoformat(),
     }
 
 
@@ -716,7 +739,7 @@ async def bridge_info(_token: str = Depends(verify_token)):
         "bridge_version":    "1.1.0",
         "token_prefix":      token[:8] + "…",
         "ibkr_host":         os.getenv("IBKR_HOST", "127.0.0.1"),
-        "ibkr_port":         int(os.getenv("IBKR_PORT", "4002")),
+        "ibkr_port":         int(os.getenv("IBKR_PORT", "4001")),
         "ibkr_client_id":    int(os.getenv("IBKR_CLIENT_ID", "10")),
         "poll_interval_sec": POLL_INTERVAL,
         "execution_blocked": True,
@@ -768,7 +791,8 @@ if __name__ == "__main__":
     )
     print(f"\nJARVIS Secure Bridge v1.1 — event-loop-safe")
     print(f"Listening: {BRIDGE_HOST}:{BRIDGE_PORT}")
-    print(f"IBKR target: {os.getenv('IBKR_HOST','127.0.0.1')}:{os.getenv('IBKR_PORT','4002')} (paper, readonly)")
+    ibkr_mode = os.getenv("IBKR_MODE", "live").upper()
+    print(f"IBKR target: {os.getenv('IBKR_HOST','127.0.0.1')}:{os.getenv('IBKR_PORT','4001')} ({ibkr_mode}, readonly)")
     print(f"Token: data/bridge/bridge_token.key")
     print(f"All execution methods: HARD BLOCKED\n")
 

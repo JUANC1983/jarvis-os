@@ -4,11 +4,10 @@ IBKR TWS / IB Gateway Connector — Phase 1.
 Read-only connection to Interactive Brokers via the TWS socket API (ib_insync).
 All trade-execution methods are HARD BLOCKED and raise SecurityViolationError.
 
-Connection targets:
-  - IB Gateway (paper): localhost:4002
-  - IB Gateway (live):  localhost:4001
-  - TWS (paper):        localhost:7497
-  - TWS (live):         localhost:7496
+Connection targets (JARVIS only uses IB Gateway, not TWS):
+  - IB Gateway (live):  localhost:4001  ← DEFAULT (required)
+  - IB Gateway (paper): localhost:4002  (explicit flag only)
+  - TWS (paper):        localhost:7497  (explicit flag only, not used by default)
 
 Rules:
   - NO live trading. NO order placement. ALL operations read-only.
@@ -32,7 +31,7 @@ _SNAPSHOT_PATH = Path("data/portfolio/ibkr_tws_snapshot.json")
 
 # ── Ports ─────────────────────────────────────────────────────────────────────
 _DEFAULT_HOST = os.getenv("IBKR_HOST", "127.0.0.1")
-_DEFAULT_PORT = int(os.getenv("IBKR_PORT", "4002"))   # IB Gateway paper
+_DEFAULT_PORT = int(os.getenv("IBKR_PORT", "4001"))   # 4001=IB Gateway live, 7497=TWS paper (optional)
 _DEFAULT_CLIENT_ID = int(os.getenv("IBKR_CLIENT_ID", "1"))
 
 _BLOCKED_METHODS = frozenset({
