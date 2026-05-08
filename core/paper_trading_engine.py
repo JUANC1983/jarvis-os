@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -46,6 +47,7 @@ class PaperTradingEngine:
     # ── Status ────────────────────────────────────────────────────────────────
 
     def get_status(self) -> Dict:
+        self.mark_to_market()
         positions = self._load_positions()
         trades    = self._load_trades()
         perf      = self._load_performance()
@@ -61,6 +63,8 @@ class PaperTradingEngine:
             "pnl_total":       round(perf.get("total_pnl", 0), 2),
             "pnl_pct":         round(perf.get("total_pnl_pct", 0), 2),
             "imported_from_real": perf.get("imported_from_real", False),
+            "last_simulation_tick": perf.get("last_simulation_tick"),
+            "data_origin":      "autonomous_sim",
             "real_trade":      False,
         }
 
@@ -247,6 +251,7 @@ class PaperTradingEngine:
     # ── Positions & performance ───────────────────────────────────────────────
 
     def get_positions(self) -> Dict:
+        self.mark_to_market()
         positions   = self._load_positions()
         perf        = self._load_performance()
         cash        = perf.get("cash", 100_000.0)
@@ -257,10 +262,13 @@ class PaperTradingEngine:
             "cash":        round(cash, 2),
             "total_value": round(total_value, 2),
             "total_portfolio": round(total_value + cash, 2),
+            "last_simulation_tick": perf.get("last_simulation_tick"),
+            "data_origin": "autonomous_sim",
             "real_trade":  False,
         }
 
     def get_performance(self) -> Dict:
+        self.mark_to_market()
         perf      = self._load_performance()
         positions = self._load_positions()
         trades    = self._load_trades()
@@ -283,8 +291,47 @@ class PaperTradingEngine:
             "open_positions":    len(positions),
             "imported_from_real": perf.get("imported_from_real", False),
             "import_timestamp":  perf.get("import_timestamp", ""),
+            "last_simulation_tick": perf.get("last_simulation_tick"),
+            "data_origin":        "autonomous_sim",
             "real_trade":        False,
         }
+
+    def mark_to_market(self) -> Dict:
+        """Advance simulated prices/PnL without touching any broker."""
+        with self._lock:
+            positions = self._load_positions()
+            if not positions:
+                return {"status": "no_positions", "real_trade": False}
+            bucket = int(time.time() // 60)
+            total_unrealized = 0.0
+            for pos in positions:
+                sym = (pos.get("symbol") or "").upper()
+                base = float(pos.get("current_price") or pos.get("avg_cost") or pos.get("import_price") or 1.0)
+                avg = float(pos.get("avg_cost") or base)
+                qty = float(pos.get("quantity") or 0)
+                seed = sum(ord(c) for c in sym) + bucket
+                pct_move = (((seed % 11) - 5) / 1000.0)
+                price = round(max(0.01, base * (1 + pct_move)), 4)
+                value = round(price * qty, 2)
+                unrealized = round((price - avg) * qty, 2)
+                pos["current_price"] = price
+                pos["current_value"] = value
+                pos["unrealized_pnl"] = unrealized
+                pos["unrealized_pnl_pct"] = round((price - avg) / avg * 100, 2) if avg else 0
+                pos["last_simulation_tick"] = _now()
+                total_unrealized += unrealized
+            perf = self._load_performance()
+            cash = float(perf.get("cash", 100_000.0))
+            current_total = sum(float(p.get("current_value", 0)) for p in positions) + cash
+            initial = float(perf.get("initial_value", current_total) or current_total)
+            perf["total_pnl"] = round(current_total - initial, 2)
+            perf["total_pnl_pct"] = round((current_total - initial) / initial * 100, 2) if initial else 0
+            perf["unrealized_pnl"] = round(total_unrealized, 2)
+            perf["last_simulation_tick"] = _now()
+            perf["data_origin"] = "autonomous_sim"
+            self._save_positions(positions)
+            self._save_performance(perf)
+            return {"status": "ok", "positions": len(positions), "real_trade": False}
 
     def get_history(self) -> Dict:
         return {"status": "ok", "trades": self._load_trades(), "real_trade": False}

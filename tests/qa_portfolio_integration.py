@@ -297,7 +297,7 @@ try:
     test_paths = [
         Path("data/learning/signal_outcomes.json"),
         Path("data/learning/learning_metrics.json"),
-        Path("data/portfolio/ibkr_tws_snapshot.json"),
+        Path("data/portfolio/ibkr_gateway_snapshot.json"),
         Path("data/portfolio/paper_positions.json"),
     ]
     for p in test_paths:

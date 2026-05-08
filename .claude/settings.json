@@ -41,7 +41,12 @@
       "Bash(python -m py_compile main.py opsx/bridge/secure_bridge.py opsx/stability/frontend_qa.py opsx/stability/api_contract_lock.py opsx/stability/production_rules.py opsx/stability/startup_validator.py opsx/stability/patch_engine.py scripts/deployment_guard.py)",
       "Bash(python -m py_compile scripts/deployment_guard.py opsx/stability/api_contract_lock.py)",
       "PowerShell(cd \"c:\\\\Users\\\\juanc\\\\JARVIS\"; $env:PYTHONIOENCODING=\"utf-8\"; python scripts/deployment_guard.py 2>&1)",
-      "Bash(PYTHONIOENCODING=utf-8 python scripts/deployment_guard.py)"
+      "Bash(PYTHONIOENCODING=utf-8 python scripts/deployment_guard.py)",
+      "Bash(xargs grep -l \"IB\\(\\)\\\\|ib_insync\\\\|ib\\\\.connect\\\\|connectAsync\\\\|4001\\\\|4002\\\\|7496\\\\|7497\\\\|host\\\\.docker\")",
+      "Bash(python -m py_compile opsx/connectors/ibkr_connection_manager.py)",
+      "Bash(python -m py_compile opsx/connectors/ibkr_connector.py)",
+      "Bash(python -m py_compile opsx/connectors/ibkr_bridge_client.py)",
+      "Bash(python tests/validate_ui_sync.py)"
     ],
     "additionalDirectories": [
       "\\dev"

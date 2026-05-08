@@ -27,7 +27,7 @@ from typing import Dict
 
 log = logging.getLogger("jarvis.production_guard")
 
-_LOCALHOST_PATTERNS = ("localhost", "127.0.0.1", "0.0.0.0", "::1")
+_LOCALHOST_PATTERNS = ("localhost", "127.0.0.1", "0.0.0.0", "::1", "host.docker.internal")
 
 
 class ProductionConfigError(RuntimeError):
@@ -62,6 +62,10 @@ def assert_no_localhost_in_production(url: str) -> None:
         return
     url_lower = url.lower()
     if any(pat in url_lower for pat in _LOCALHOST_PATTERNS):
+        if is_hosted_runtime():
+            raise ProductionConfigError(
+                "Hosted runtime cannot connect to local IBKR directly. Use IBKR_URL/ngrok bridge."
+            )
         if is_hosted_runtime():
             raise ProductionConfigError(
                 f"PRODUCTION SAFETY VIOLATION: IBKR_BRIDGE_URL '{url}' contains a "

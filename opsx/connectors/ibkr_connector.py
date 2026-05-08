@@ -1,13 +1,12 @@
 """
-IBKR TWS / IB Gateway Connector — Phase 1.
+IBKR IB Gateway Connector — Phase 1.
 
-Read-only connection to Interactive Brokers via the TWS socket API (ib_insync).
+Read-only connection to Interactive Brokers via ib_insync.
 All trade-execution methods are HARD BLOCKED and raise SecurityViolationError.
 
 Connection targets (JARVIS only uses IB Gateway, not TWS):
   - IB Gateway (live):  localhost:4001  ← DEFAULT (required)
   - IB Gateway (paper): localhost:4002  (explicit flag only)
-  - TWS (paper):        localhost:7497  (explicit flag only, not used by default)
 
 Rules:
   - NO live trading. NO order placement. ALL operations read-only.
@@ -16,7 +15,6 @@ Rules:
 """
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import os
@@ -24,15 +22,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from opsx.connectors.ibkr_connection_manager import get_ibkr_manager, resolve_ibkr_target, tcp_probe
+
 log = logging.getLogger("jarvis.ibkr_connector")
 
 _GUARDRAIL_LOG = Path("data/portfolio/trading_guardrail_log.json")
-_SNAPSHOT_PATH = Path("data/portfolio/ibkr_tws_snapshot.json")
+_SNAPSHOT_PATH = Path("data/portfolio/ibkr_gateway_snapshot.json")
 
 # ── Ports ─────────────────────────────────────────────────────────────────────
-_DEFAULT_HOST = os.getenv("IBKR_HOST", "127.0.0.1")
-_DEFAULT_PORT = int(os.getenv("IBKR_PORT", "4001"))   # 4001=IB Gateway live, 7497=TWS paper (optional)
-_DEFAULT_CLIENT_ID = int(os.getenv("IBKR_CLIENT_ID", "1"))
+_DEFAULT_TARGET = resolve_ibkr_target("connector")
+_DEFAULT_HOST = _DEFAULT_TARGET.host
+_DEFAULT_PORT = _DEFAULT_TARGET.port
+_DEFAULT_CLIENT_ID = _DEFAULT_TARGET.client_id
 
 _BLOCKED_METHODS = frozenset({
     "placeOrder", "cancelOrder", "modifyOrder",
@@ -58,14 +59,14 @@ class SecurityViolationError(Exception):
 
 
 class IBKRConnectionError(Exception):
-    """Raised when TWS/Gateway is unreachable."""
+    """Raised when IB Gateway is unreachable."""
 
 
 # ── Connector ─────────────────────────────────────────────────────────────────
 
 class IBKRConnector:
     """
-    Read-only IBKR connector using ib_insync (TWS socket API).
+    Read-only IBKR connector using ib_insync (IB Gateway socket API).
 
     All methods that would place, modify, or cancel orders raise
     SecurityViolationError before touching the network.
@@ -85,79 +86,76 @@ class IBKRConnector:
         self._ib: Optional[Any] = None
         self._connected = False
         self._account: str = ""
+        self._manager = get_ibkr_manager("connector")
+        self._explicit_local_target = (
+            not os.getenv("IBKR_URL")
+            and (host != _DEFAULT_HOST or int(port) != int(_DEFAULT_PORT) or int(client_id) != int(_DEFAULT_CLIENT_ID))
+        )
 
     # ── Connection lifecycle ───────────────────────────────────────────────────
 
     def connect(self, readonly: bool = True) -> Dict:
         """
-        Connect to TWS/IB Gateway.
+        Connect to IB Gateway.
         Always connects in read-only mode.
         """
+        if self._explicit_local_target:
+            probe = tcp_probe(self.host, self.port, timeout=min(self.timeout, 4.0))
+            if not probe.get("reachable"):
+                return {
+                    "status": "disconnected",
+                    "connected": False,
+                    "error": probe.get("error", "tcp probe failed"),
+                    "target_host": self.host,
+                    "target_port": self.port,
+                    "mode": "local",
+                    "transport": "tcp",
+                    "active_client_id": self.client_id,
+                    "retry_delay": 1,
+                    "readonly": True,
+                    "execution_blocked": True,
+                    "real_trade": False,
+                }
         try:
-            from ib_insync import IB
-        except ImportError:
-            return {
-                "status": "error",
-                "error": "ib_insync not installed — run: pip install ib_insync",
-                "real_trade": False,
-            }
-
-        try:
-            ib = IB()
-            ib.connect(
-                self.host,
-                self.port,
-                clientId=self.client_id,
-                readonly=True,
-                timeout=self.timeout,
-            )
-            self._ib = ib
-            self._connected = True
-
-            accounts = ib.managedAccounts()
-            self._account = accounts[0] if accounts else ""
-
-            log.info("IBKR TWS connected — account=%s port=%s", self._account, self.port)
-            return {
-                "status": "connected",
-                "host": self.host,
-                "port": self.port,
-                "account": self._account,
-                "readonly": True,
-                "real_trade": False,
-                "connected_at": datetime.utcnow().isoformat(),
-            }
+            result = self._manager.connect(timeout=self.timeout)
+            self._ib = self._manager.ib
+            self._connected = bool(result.get("connected"))
+            self._account = self._manager.account
+            self.host = result.get("host", result.get("target_host", self.host))
+            self.port = int(result.get("port", result.get("target_port", self.port)))
+            self.client_id = int(result.get("active_client_id", self.client_id))
+            return result
         except Exception as exc:
             self._connected = False
-            log.warning("IBKR TWS connect failed: %s", exc)
+            log.warning("IBKR manager connect failed: %s", exc)
             return {
                 "status": "error",
                 "error": str(exc),
                 "host": self.host,
                 "port": self.port,
+                "readonly": True,
+                "execution_blocked": True,
                 "real_trade": False,
             }
 
     def disconnect(self) -> Dict:
-        """Disconnect from TWS/IB Gateway."""
-        if self._ib and self._connected:
-            try:
-                self._ib.disconnect()
-            except Exception:
-                pass
+        """Disconnect from IB Gateway."""
+        result = self._manager.disconnect()
         self._ib = None
         self._connected = False
-        log.info("IBKR TWS disconnected")
-        return {"status": "disconnected", "real_trade": False}
+        log.info("IBKR Gateway disconnected")
+        return result
 
     # ── Health ────────────────────────────────────────────────────────────────
 
     def health_check(self) -> Dict:
-        """Check TWS/Gateway connectivity without requiring authentication."""
+        """Check IB Gateway connectivity without requiring authentication."""
+        manager_status = self._manager.status()
         if not self._connected or not self._ib:
             return {
                 "status": "disconnected",
                 "connected": False,
+                **manager_status,
                 "real_trade": False,
             }
         try:
@@ -168,13 +166,16 @@ class IBKRConnector:
                 "server_time": str(server_time),
                 "account": self._account,
                 "port": self.port,
+                **manager_status,
                 "real_trade": False,
             }
         except Exception as exc:
+            self._manager.mark_degraded(str(exc))
             return {
                 "status": "error",
                 "connected": False,
                 "error": str(exc),
+                **self._manager.status(),
                 "real_trade": False,
             }
 
@@ -340,7 +341,7 @@ class IBKRConnector:
             cached = self._load_cached_snapshot()
             if cached:
                 cached["_stale"] = True
-                cached["_stale_reason"] = "IBKR TWS not connected — cached data"
+                cached["_stale_reason"] = "IBKR Gateway not connected — cached data"
                 return cached
             return {
                 "status":        "not_connected",
@@ -447,7 +448,7 @@ class IBKRConnector:
         return {
             "status":   "disconnected",
             "method":   method,
-            "message":  "IBKR TWS not connected — call connect() first",
+            "message":  "IBKR Gateway not connected — call connect() first",
             "real_trade": False,
         }
 

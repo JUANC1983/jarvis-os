@@ -103,6 +103,14 @@ class IBKRBridgeClient:
             "ibkr_connected": connected,
             "account":      ibkr_section.get("account", ""),
             "readonly":     ibkr_section.get("readonly", True),
+            "target_host":  ibkr_section.get("host"),
+            "target_port":  ibkr_section.get("port"),
+            "transport":    ibkr_section.get("transport", "tcp"),
+            "mode":         ibkr_section.get("mode", "remote_bridge"),
+            "active_client_id": ibkr_section.get("client_id"),
+            "last_successful_connect": ibkr_section.get("last_successful_connect"),
+            "reconnect_attempts":      ibkr_section.get("reconnect_attempts", 0),
+            "circuit_state":           ibkr_section.get("circuit_state", "closed"),
             "latency_ms":   data.get("_latency_ms"),
             "cache_stale":  data.get("cache", {}).get("portfolio_stale", True),
             "real_trade":   False,
@@ -200,29 +208,37 @@ class IBKRBridgeClient:
     # ── Normalise bridge position format → unified format ──────────────────────
 
     def _normalise_position(self, raw: Dict) -> Dict:
-        mkt_val   = float(raw.get("market_value",  raw.get("mktValue",   0)) or 0)
-        avg_cost  = float(raw.get("avg_cost",      raw.get("avgCost",    0)) or 0)
-        mkt_price = float(raw.get("market_price",  raw.get("mktPrice",   0)) or avg_cost)
-        qty       = float(raw.get("quantity",      raw.get("position",   0)) or 0)
+        mkt_val    = float(raw.get("market_value",  raw.get("mktValue",   0)) or 0)
+        avg_cost   = float(raw.get("avg_cost",      raw.get("avgCost",    0)) or 0)
+        mkt_price  = float(raw.get("market_price",  raw.get("mktPrice",   0)) or avg_cost)
+        qty        = float(raw.get("quantity",      raw.get("position",   0)) or 0)
         unrealized = float(raw.get("unrealized_pnl", raw.get("unrealizedPnl", 0)) or 0)
         daily_pnl  = float(raw.get("daily_pnl",       raw.get("dailyPnl",     0)) or 0)
+
+        cost_basis        = round(qty * avg_cost, 2) if qty and avg_cost else 0
+        unrealized_pct    = round(unrealized / cost_basis * 100, 2) if cost_basis else 0
+        total_return_pct  = unrealized_pct  # realized not available from bridge snapshot
+
         return {
-            "symbol":         raw.get("symbol",  raw.get("ticker",  "")),
-            "name":           raw.get("name",    raw.get("companyName", "")),
-            "asset_class":    raw.get("asset_class", _classify_asset(raw.get("sec_type", ""))),
-            "quantity":       qty,
-            "avg_cost":       round(avg_cost, 4),
-            "market_price":   round(mkt_price, 4),
-            "market_value":   round(mkt_val, 2),
-            "daily_pnl":      round(daily_pnl, 2),
-            "daily_pnl_pct":  round(daily_pnl / mkt_val * 100, 2) if mkt_val else 0,
-            "unrealized_pnl": round(unrealized, 2),
-            "weight_pct":     0,
-            "currency":       raw.get("currency", "USD"),
-            "sector":         raw.get("sector",   "unknown"),
-            "theme":          raw.get("theme",    ""),
-            "risk_flags":     raw.get("risk_flags", []),
-            "broker":         "ibkr",
+            "symbol":            raw.get("symbol",  raw.get("ticker",  "")),
+            "name":              raw.get("name",    raw.get("companyName", "")),
+            "asset_class":       raw.get("asset_class", _classify_asset(raw.get("sec_type", ""))),
+            "quantity":          qty,
+            "avg_cost":          round(avg_cost, 4),
+            "market_price":      round(mkt_price, 4),
+            "market_value":      round(mkt_val, 2),
+            "cost_basis":        cost_basis,
+            "daily_pnl":         round(daily_pnl, 2),
+            "daily_pnl_pct":     round(daily_pnl / mkt_val * 100, 2) if mkt_val else 0,
+            "unrealized_pnl":    round(unrealized, 2),
+            "unrealized_pnl_pct": unrealized_pct,
+            "total_return_pct":  total_return_pct,
+            "weight_pct":        0,  # backfilled by UnifiedPortfolioEngine
+            "currency":          raw.get("currency", "USD"),
+            "sector":            raw.get("sector",   "unknown"),
+            "theme":             raw.get("theme",    ""),
+            "risk_flags":        raw.get("risk_flags", []),
+            "broker":            "ibkr",
         }
 
     # ── Snapshot persistence ───────────────────────────────────────────────────
@@ -230,6 +246,7 @@ class IBKRBridgeClient:
     def _save_snapshot(self, data: Dict) -> None:
         try:
             import json
+            _SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
             _SNAPSHOT_PATH.write_text(
                 json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
             )

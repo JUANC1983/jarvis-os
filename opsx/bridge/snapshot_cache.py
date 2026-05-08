@@ -153,12 +153,16 @@ class SnapshotCache:
     def _write_disk(self, key: str, data: Dict) -> None:
         path = _CACHE_DIR / f"{_safe_key(key)}.json"
         try:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 json.dumps(data, ensure_ascii=False, indent=2, default=str),
                 encoding="utf-8",
             )
         except Exception as exc:
-            log.warning("Cache disk write failed key=%s: %s", key, exc)
+            log.warning(
+                "Cache disk write failed",
+                extra={"cache_key": key, "cache_path": str(path), "error": str(exc)},
+            )
 
     def _read_disk(self, key: str) -> Tuple[Optional[Dict], float]:
         """Returns (data, age_seconds) or (None, inf)."""

@@ -1,25 +1,25 @@
 {
-  "total_outcomes": 10,
-  "wins": 8,
+  "total_outcomes": 13,
+  "wins": 11,
   "losses": 1,
   "neutrals": 1,
-  "overall_win_rate": 80.0,
-  "recent_win_rate_30": 80.0,
-  "loss_rate": 10.0,
-  "avg_confidence": 72.5,
-  "calibration_error": 7.5,
+  "overall_win_rate": 84.6,
+  "recent_win_rate_30": 84.6,
+  "loss_rate": 7.7,
+  "avg_confidence": 73.1,
+  "calibration_error": 11.5,
   "is_overconfident": false,
-  "is_underconfident": false,
-  "avg_return_pct": 1.67,
-  "return_std": 2.528,
+  "is_underconfident": true,
+  "avg_return_pct": 2.023,
+  "return_std": 2.29,
   "best_return_pct": 3.5,
   "worst_return_pct": -4.0,
   "avg_holding_days": 5,
   "max_consecutive_losses": 1,
   "signal_breakdown": {
     "BUY": {
-      "win_rate": 87.5,
-      "total": 8
+      "win_rate": 90.9,
+      "total": 11
     },
     "WATCH": {
       "win_rate": 0.0,
@@ -32,6 +32,6 @@
   },
   "learning_quality_score": 73,
   "learning_quality_label": "good",
-  "_outcome_count": 10,
-  "computed_at": "2026-05-06T21:49:33.066932"
+  "_outcome_count": 13,
+  "computed_at": "2026-05-08T18:38:44.563581"
 }

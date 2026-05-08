@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "real_trade": false,
-  "computed_at": "2026-05-06T21:49:33.003196",
+  "computed_at": "2026-05-08T18:38:44.376062",
   "total_market_value": 1820.0,
   "total_cash": 5000.0,
   "total_portfolio": 6820.0,
@@ -125,5 +125,5 @@
     "method": "unrealized_pnl_proxy"
   },
   "ai_summary": "Portafolio de $6,820 — ? posiciones activas. P&L diario positivo: $+12 (+0.18%). P&L no realizado: $+70 (+4.00%). Score: 46/100 (MEDIUM). Efectivo elevado (73.3%) — considerar deployment gradual en activos de calidad. Mayor exposición sectorial: Technology (100.0% del portafolio). Mejor posición: AAPL con P&L no realizado de $+70 (+4.0%). Alertas activas: Portafolio muy concentrado: 1 posiciones.",
-  "ai_generated_at": "2026-05-06T21:49:33.003196"
+  "ai_generated_at": "2026-05-08T18:38:44.376062"
 }

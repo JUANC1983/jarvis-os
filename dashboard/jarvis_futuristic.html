@@ -1755,6 +1755,85 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .mkt-subnav-btn.active{background:rgba(68,240,255,.12);color:var(--cyan);box-shadow:0 0 0 1px rgba(68,240,255,.18)}
 .mkt-subnav-btn:hover:not(.active){background:rgba(255,255,255,.05);color:var(--white)}
 .mkt-panel{display:none}.mkt-panel.active{display:block}
+
+/* ── AI Commander bar ─────────────────────────────────────────────── */
+.commander-bar{background:linear-gradient(90deg,rgba(7,19,32,.98) 0%,rgba(10,24,40,.98) 100%);border:1px solid rgba(68,240,255,.15);border-radius:10px;padding:0;margin-bottom:12px;overflow:hidden;position:relative}
+.commander-bar::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--cyan),rgba(68,240,255,.2));border-radius:3px 0 0 3px}
+.commander-label{font-size:9px;font-weight:800;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;padding:0 12px;margin-left:8px;flex-shrink:0}
+.commander-scroll{display:flex;align-items:center;gap:0;overflow:hidden;flex:1;padding:10px 0}
+.commander-insight{display:flex;align-items:center;gap:8px;padding:0 20px;border-right:1px solid rgba(255,255,255,.06);font-size:12px;white-space:nowrap;flex-shrink:0}
+.commander-insight .ci-icon{font-size:13px;flex-shrink:0}
+.commander-insight .ci-text{color:var(--soft2)}
+.commander-insight.ci-warn .ci-icon{color:var(--warn)}
+.commander-insight.ci-ok   .ci-icon{color:var(--ok)}
+.commander-insight.ci-ai   .ci-icon{color:var(--cyan)}
+.commander-insight.ci-info .ci-icon{color:var(--soft2)}
+@keyframes scroll-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.commander-ticker{display:flex;animation:scroll-ticker 40s linear infinite}
+.commander-ticker:hover{animation-play-state:paused}
+
+/* ── Smart Alert badges ───────────────────────────────────────────── */
+.alert-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;cursor:default}
+.alert-badge.ab-critical{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.25)}
+.alert-badge.ab-high{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+.alert-badge.ab-ok{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.alerts-panel{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.alert-item:last-child{border-bottom:none}
+.alert-item .ai-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.alert-item .ai-body{flex:1;min-width:0}
+.alert-item .ai-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.alert-item .ai-msg{font-size:11px;color:var(--soft);line-height:1.4}
+.alert-item .ai-action{font-size:10px;color:var(--cyan);margin-top:3px}
+.ai-level-critical .ai-title,.ai-level-critical .ai-icon{color:#f87171}
+.ai-level-high     .ai-title,.ai-level-high     .ai-icon{color:#fbbf24}
+.ai-level-medium   .ai-title,.ai-level-medium   .ai-icon{color:var(--soft2)}
+.ai-level-low      .ai-title,.ai-level-low      .ai-icon{color:var(--soft)}
+
+/* ── Market Radar ─────────────────────────────────────────────────── */
+.radar-tile{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;transition:border-color .2s}
+.radar-tile:hover{border-color:rgba(68,240,255,.15)}
+.radar-label{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.radar-price{font-size:16px;font-weight:800;color:var(--white);line-height:1}
+.radar-chg{font-size:12px;font-weight:700;margin-top:3px}
+.radar-up{color:#4ade80}.radar-dn{color:#f87171}.radar-fl{color:var(--soft)}
+.mover-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.mover-row:last-child{border-bottom:none}
+
+/* ── Portfolio Health dimensions ─────────────────────────────────── */
+.health-dim{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.health-dim-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin:6px 0}
+.health-dim-fill{height:4px;border-radius:2px;transition:width .4s ease}
+.dim-score-healthy{color:#4ade80}.dim-score-moderate{color:#facc15}
+.dim-score-elevated{color:#fb923c}.dim-score-poor,.dim-score-critical,.dim-score-concentrated,.dim-score-high{color:#f87171}
+.dim-score-low,.dim-score-balanced,.dim-score-good,.dim-score-tight{color:#4ade80}
+
+/* ── Portfolio Timeline ───────────────────────────────────────────── */
+.timeline-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.timeline-item:last-child{border-bottom:none}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.tl-dot-ok{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.4)}
+.tl-dot-warn{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,.4)}
+.tl-dot-bad{background:#f87171;box-shadow:0 0 6px rgba(248,113,113,.4)}
+.tl-dot-info{background:var(--cyan);box-shadow:0 0 6px rgba(68,240,255,.3)}
+.tl-body{flex:1;min-width:0}
+.tl-text{font-size:12px;color:var(--white);line-height:1.4}
+.tl-time{font-size:10px;color:var(--soft);margin-top:2px}
+
+/* ── Market Story ─────────────────────────────────────────────────── */
+.story-card{background:linear-gradient(135deg,rgba(8,20,34,.98) 0%,rgba(5,14,24,.98) 100%);border:1px solid rgba(68,240,255,.12);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.story-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(68,240,255,.3),transparent)}
+.story-text{font-size:13px;line-height:1.75;color:var(--soft2)}
+
+/* ── Pulse indicator ──────────────────────────────────────────────── */
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.2);opacity:0}}
+.pulse-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.pulse-ring{position:absolute;width:10px;height:10px;border-radius:50%;animation:pulse-ring 1.8s ease-out infinite}
+.pulse-core{width:7px;height:7px;border-radius:50%;position:relative;z-index:1}
+.pulse-green .pulse-ring{background:rgba(74,222,128,.4)}.pulse-green .pulse-core{background:#4ade80}
+.pulse-yellow .pulse-ring{background:rgba(251,191,36,.4)}.pulse-yellow .pulse-core{background:#fbbf24}
+.pulse-red .pulse-ring{background:rgba(248,113,113,.4)}.pulse-red .pulse-core{background:#f87171}
+
 /* Hero card */
 .hero-card{background:linear-gradient(135deg,rgba(8,19,30,.95) 0%,rgba(12,28,46,.9) 100%);border:1px solid rgba(68,240,255,.15);border-radius:14px;padding:20px 24px;position:relative;overflow:hidden}
 .hero-card::before{content:"";position:absolute;top:-50%;right:-10%;width:200px;height:200px;background:radial-gradient(ellipse at center,rgba(68,240,255,.06) 0%,transparent 70%);pointer-events:none}
@@ -2832,6 +2911,8 @@ body.mode-beginner .operator-only{display:none!important}
   <!-- ══ Sub-Navigation ═════════════════════════════════════════════════ -->
   <div class="mkt-subnav" role="tablist">
     <button class="mkt-subnav-btn active" id="mkt-nav-cockpit"  onclick="switchMarketPanel('cockpit')"  role="tab">Cockpit</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-radar"    onclick="switchMarketPanel('radar')"    role="tab">Market Radar</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-intel"    onclick="switchMarketPanel('intel')"    role="tab">Intelligence</button>
     <button class="mkt-subnav-btn"        id="mkt-nav-lab"      onclick="switchMarketPanel('lab')"      role="tab">Paper Lab</button>
     <button class="mkt-subnav-btn"        id="mkt-nav-learning" onclick="switchMarketPanel('learning')" role="tab">AI Learning</button>
     <button class="mkt-subnav-btn"        id="mkt-nav-analysis" onclick="switchMarketPanel('analysis')" role="tab">Analysis</button>
@@ -2846,6 +2927,31 @@ body.mode-beginner .operator-only{display:none!important}
       ⚡ Stale data — broker connection interrupted. Showing last known snapshot.
       <button class="btn-ol btn-sm" style="font-size:11px;margin-left:auto" onclick="loadCockpit(null)">Reconnect</button>
     </div>
+
+    <!-- AI Commander Bar -->
+    <div class="commander-bar" id="commander-bar">
+      <div style="display:flex;align-items:center;height:42px">
+        <div style="display:flex;align-items:center;gap:6px;padding:0 14px;border-right:1px solid rgba(68,240,255,.12);height:100%;flex-shrink:0">
+          <div class="pulse-wrap pulse-green" id="commander-pulse">
+            <div class="pulse-ring"></div><div class="pulse-core"></div>
+          </div>
+          <span class="commander-label">AI COMMANDER</span>
+        </div>
+        <div style="overflow:hidden;flex:1;position:relative">
+          <div class="commander-ticker" id="commander-ticker">
+            <div style="display:flex" id="commander-inner-a"></div>
+            <div style="display:flex" id="commander-inner-b" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div style="padding:0 10px;flex-shrink:0;display:flex;gap:6px;align-items:center">
+          <span id="commander-alert-badge" style="display:none"></span>
+          <button class="btn-ol btn-sm" style="font-size:9px;padding:2px 7px" onclick="loadCommander()">↻</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Alerts Strip -->
+    <div id="smart-alerts-strip" style="display:none;margin-bottom:10px"></div>
 
     <!-- Row 1: Net Worth Hero + Paper Hero -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
@@ -2936,9 +3042,17 @@ body.mode-beginner .operator-only{display:none!important}
 
     <!-- Row 5: Top Holdings -->
     <div class="card" style="padding:14px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:13px;font-weight:700">Top Holdings</span>
-        <span style="font-size:11px;color:var(--soft)">by market value</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:13px;font-weight:700">Holdings</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative">
+            <input id="asset-search-input" type="text" placeholder="Search symbol…"
+              style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--white);outline:none;width:150px"
+              oninput="assetSearchDebounce(this.value)" autocomplete="off" />
+            <div id="asset-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1f2e;border:1px solid rgba(255,255,255,.12);border-radius:0 0 6px 6px;z-index:200;max-height:200px;overflow-y:auto"></div>
+          </div>
+          <span style="font-size:11px;color:var(--soft)">click row to inspect</span>
+        </div>
       </div>
       <div id="port-holdings-table" style="font-size:12px"><div style="color:var(--soft);font-size:12px">No positions loaded.</div></div>
     </div>
@@ -2962,6 +3076,79 @@ body.mode-beginner .operator-only{display:none!important}
       <span style="margin-left:auto"><button class="btn-ol btn-sm" style="font-size:10px" onclick="loadCockpit(null)">↻ Refresh</button></span>
     </div>
   </div><!-- /cockpit -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- STOCK DETAIL DRAWER                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="asset-drawer" style="display:none;position:fixed;top:0;right:0;width:480px;max-width:100vw;height:100vh;background:#0d1117;border-left:1px solid rgba(255,255,255,.1);z-index:1000;overflow-y:auto;padding:20px 18px 40px;box-shadow:-8px 0 40px rgba(0,0,0,.6)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <span id="drawer-symbol" style="font-size:22px;font-weight:900;color:var(--cyan)">—</span>
+        <span id="drawer-name" style="font-size:12px;color:var(--soft);margin-left:8px"></span>
+      </div>
+      <button onclick="closeAssetDrawer()" style="background:none;border:none;color:var(--soft);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1">✕</button>
+    </div>
+
+    <!-- Price strip -->
+    <div style="display:flex;gap:16px;align-items:baseline;margin-bottom:14px;flex-wrap:wrap">
+      <div id="drawer-price" style="font-size:28px;font-weight:900;color:var(--white)">—</div>
+      <div id="drawer-change" style="font-size:14px;font-weight:700">—</div>
+      <div id="drawer-currency" style="font-size:11px;color:var(--soft)">USD</div>
+    </div>
+
+    <!-- Position context (only shown when holding) -->
+    <div id="drawer-position-box" style="display:none;background:rgba(68,240,255,.05);border:1px solid rgba(68,240,255,.15);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Your Position</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div><div style="color:var(--soft);font-size:10px">Qty</div><div id="drawer-pos-qty" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px">Avg Cost</div><div id="drawer-pos-cost" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px">Mkt Value</div><div id="drawer-pos-val" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px">Unrealized P&L</div><div id="drawer-pos-upnl" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px">Return %</div><div id="drawer-pos-ret" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px">Weight</div><div id="drawer-pos-wt" style="font-weight:700">—</div></div>
+      </div>
+    </div>
+
+    <!-- Timeframe tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--soft);align-self:center;margin-right:4px">Chart:</span>
+      <button id="chart-tf-1d"  class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('1d')">1D</button>
+      <button id="chart-tf-5d"  class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('5d')">5D</button>
+      <button id="chart-tf-1mo" class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('1mo')">1MO</button>
+      <button id="chart-tf-3mo" class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('3mo')">3MO</button>
+      <button id="chart-tf-6mo" class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('6mo')">6MO</button>
+      <button id="chart-tf-ytd" class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('ytd')">YTD</button>
+      <button id="chart-tf-1y"  class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('1y')">1Y</button>
+      <button id="chart-tf-5y"  class="btn-ol btn-sm" style="font-size:10px;padding:2px 7px" onclick="loadOHLC('5y')">5Y</button>
+    </div>
+
+    <!-- Candlestick chart canvas -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:6px;margin-bottom:14px;overflow:hidden">
+      <canvas id="asset-chart" style="width:100%;display:block" height="200"></canvas>
+      <div id="asset-chart-loader" style="padding:40px;text-align:center;color:var(--soft);font-size:12px">Loading chart…</div>
+    </div>
+
+    <!-- AI Brief -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">AI Asset Brief</div>
+      <div id="drawer-brief" style="font-size:12px;color:var(--soft);line-height:1.7">
+        <div class="skel" style="margin-bottom:5px"></div>
+        <div class="skel" style="width:85%;margin-bottom:5px"></div>
+        <div class="skel" style="width:70%"></div>
+      </div>
+    </div>
+
+    <!-- News -->
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Recent News</div>
+      <div id="drawer-news" style="font-size:12px;color:var(--soft)">
+        <div class="skel" style="margin-bottom:6px"></div>
+        <div class="skel" style="width:80%"></div>
+      </div>
+    </div>
+  </div>
+  <!-- backdrop -->
+  <div id="asset-drawer-backdrop" onclick="closeAssetDrawer()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999"></div>
 
   <!-- ─────────────────────────────────────────────────────────────────── -->
   <!-- PANEL 2: PAPER TRADING LABORATORY                                   -->
@@ -3276,6 +3463,127 @@ body.mode-beginner .operator-only{display:none!important}
     </div>
 
   </div><!-- /analysis -->
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- PANEL: MARKET RADAR                                                  -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <div id="mkt-panel-radar" class="mkt-panel">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:800">Market Radar <span id="radar-regime-badge" style="font-size:10px;font-weight:700;background:rgba(110,155,181,.1);color:var(--soft);border:1px solid rgba(110,155,181,.2);padding:2px 8px;border-radius:4px;margin-left:6px;vertical-align:middle">--</span></div>
+        <div style="font-size:11px;color:var(--soft);margin-top:2px">Live market instruments · <span style="color:#4ade80">READONLY DATA</span></div>
+      </div>
+      <button class="btn-ol btn-sm" onclick="loadRadar(this)" id="radar-refresh-btn" style="font-size:11px">↻ Refresh</button>
+    </div>
+
+    <!-- Market Story Card -->
+    <div class="story-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="pulse-wrap pulse-green"><div class="pulse-ring"></div><div class="pulse-core"></div></div>
+        <span style="font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan)">Today's Market Story</span>
+        <span style="font-size:10px;color:var(--soft);margin-left:auto" id="story-time"></span>
+      </div>
+      <div id="story-text" class="story-text">Loading market narrative…</div>
+    </div>
+
+    <!-- Instrument Grid -->
+    <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Key Instruments</div>
+    <div id="radar-instruments" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px">
+      <div class="radar-tile"><div class="radar-label">Loading…</div></div>
+    </div>
+
+    <!-- Top Movers -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Top Movers Today</div>
+        <div id="radar-movers"></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Volatility Context</div>
+        <div id="radar-vix-context"></div>
+      </div>
+    </div>
+
+    <!-- Radar timestamp -->
+    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:10px;color:var(--soft)">
+      <div class="pulse-wrap pulse-green" style="transform:scale(.8)"><div class="pulse-ring"></div><div class="pulse-core"></div></div>
+      <span>Data via Yahoo Finance · </span><span id="radar-fetched-at">—</span>
+    </div>
+  </div><!-- /radar -->
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- PANEL: AI INTELLIGENCE HUB                                          -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <div id="mkt-panel-intel" class="mkt-panel">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div style="font-size:17px;font-weight:800">Intelligence Hub</div>
+        <div style="font-size:11px;color:var(--soft);margin-top:2px">AI Commander · Risk Engine · Alerts · Timeline</div>
+      </div>
+      <button class="btn-ol btn-sm" onclick="loadIntelligence(this)" id="intel-refresh-btn" style="font-size:11px">↻ Refresh All</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:14px">
+      <!-- Left column: Commander + Risk + Timeline -->
+      <div>
+        <!-- AI Commander Full View -->
+        <div class="card" style="padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="pulse-wrap pulse-green"><div class="pulse-ring"></div><div class="pulse-core"></div></div>
+            <span style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan)">AI Commander</span>
+            <span style="font-size:10px;color:var(--soft);margin-left:auto" id="commander-gen-at"></span>
+          </div>
+          <div id="intel-commander-list" style="display:flex;flex-direction:column;gap:8px">
+            <div class="skel" style="margin-bottom:5px"></div>
+            <div class="skel" style="width:80%;margin-bottom:5px"></div>
+            <div class="skel" style="width:65%"></div>
+          </div>
+        </div>
+
+        <!-- Portfolio Health Dimensions -->
+        <div class="card" style="padding:16px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Portfolio Health</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="health-overall-score" style="font-size:22px;font-weight:900">—</span>
+              <span id="health-overall-label" style="font-size:11px;padding:2px 8px;border-radius:5px;font-weight:700">—</span>
+            </div>
+          </div>
+          <div id="health-dimensions"></div>
+        </div>
+
+        <!-- Operational Timeline -->
+        <div class="card" style="padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Operational Timeline</span>
+            <span style="font-size:10px;color:var(--soft)">session events</span>
+          </div>
+          <div id="intel-timeline" style="max-height:280px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- Right column: Smart Alerts + Story -->
+      <div>
+        <!-- Smart Alerts -->
+        <div class="card" style="padding:14px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Smart Alerts</span>
+            <div id="intel-alert-summary" style="display:flex;gap:4px"></div>
+          </div>
+          <div id="intel-alerts-list"></div>
+        </div>
+
+        <!-- Market Story sidebar -->
+        <div class="story-card">
+          <div style="font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px">Market Story</div>
+          <div id="intel-story-text" class="story-text" style="font-size:12px">Loading…</div>
+          <div style="font-size:10px;color:var(--soft);margin-top:8px" id="intel-story-time"></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /intel -->
 
   <!-- ── Legacy / hidden elements (keep IDs for existing JS compatibility) ─ -->
   <div style="display:none">
@@ -5979,37 +6287,692 @@ async function loadBrokerBreakdown() {
   }
 }
 
+// ── Holdings table (institutional grid) ──────────────────────────────────
+const _COLS = "55px 1fr 70px 70px 70px 64px 60px 60px 56px";
+const _HDRS = ["Symbol","Name","Price","Value","Unrealized","Return","Daily","Weight","Sector"];
+const _HDRR = [false,   false, true,   true,   true,        true,    true,   true,    false];
+
+let _holdingsData = [];
+
 async function loadTopHoldings() {
   try {
     const d = await _fetchWithTimeout("/api/portfolio/positions", {}, 10000);
-    const positions = (d.positions || []).slice(0, 10);
-    const tableEl   = document.getElementById("port-holdings-table");
-    if (!tableEl) return;
-    if (!positions.length) {
-      tableEl.innerHTML = '<div style="color:var(--soft);font-size:12px;padding:8px">No positions — connect IBKR or Hapi</div>';
-      return;
-    }
-    tableEl.innerHTML = `
-      <div style="display:grid;grid-template-columns:60px 1fr 80px 80px 80px 60px;gap:4px;font-size:10px;font-weight:700;color:var(--soft);padding:0 0 6px;border-bottom:1px solid rgba(255,255,255,.07);text-transform:uppercase;letter-spacing:.4px">
-        <div>Symbol</div><div>Name</div><div style="text-align:right">Value</div><div style="text-align:right">Daily P&L</div><div style="text-align:right">Unrealized</div><div style="text-align:right">Weight</div>
-      </div>
-      ${positions.map(p => {
-        const dpnlColor = (p.daily_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-        const upnlColor = (p.unrealized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-        return `<div style="display:grid;grid-template-columns:60px 1fr 80px 80px 80px 60px;gap:4px;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center">
-          <div style="font-weight:700">${_esc(p.symbol)}</div>
-          <div style="color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(p.name||p.asset_class||"")}</div>
-          <div style="text-align:right">${_fmtVal(p.market_value)}</div>
-          <div style="text-align:right;color:${dpnlColor}">${p.daily_pnl >= 0 ? "+" : ""}$${Math.abs(p.daily_pnl||0).toLocaleString("en-US",{maximumFractionDigits:0})}</div>
-          <div style="text-align:right;color:${upnlColor}">${p.unrealized_pnl >= 0 ? "+" : ""}$${Math.abs(p.unrealized_pnl||0).toLocaleString("en-US",{maximumFractionDigits:0})}</div>
-          <div style="text-align:right;color:var(--soft)">${p.weight_pct||0}%</div>
-        </div>`;
-      }).join("")}
-    `;
+    _holdingsData = (d.positions || []).slice(0, 20);
+    renderHoldingsTable(_holdingsData);
   } catch(e) {
     console.warn("loadTopHoldings:", e);
   }
 }
+
+function renderHoldingsTable(positions) {
+  const tableEl = document.getElementById("port-holdings-table");
+  if (!tableEl) return;
+  if (!positions.length) {
+    tableEl.innerHTML = '<div style="color:var(--soft);font-size:12px;padding:8px">No positions — connect IBKR or Hapi</div>';
+    return;
+  }
+  const headerCells = _HDRS.map((h,i) =>
+    `<div style="${_HDRR[i]?'text-align:right':''}">${h}</div>`
+  ).join("");
+
+  const rows = positions.map(p => {
+    const dpnlC = (p.daily_pnl||0) >= 0 ? "#4ade80" : "#f87171";
+    const upnlC = (p.unrealized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
+    const retC  = (p.total_return_pct||p.unrealized_pnl_pct||0) >= 0 ? "#4ade80" : "#f87171";
+    const ret   = (p.total_return_pct ?? p.unrealized_pnl_pct ?? null);
+    const sym   = _esc(p.symbol || "");
+    const sector = (p.sector && p.sector !== "unknown") ? _esc(p.sector) : "—";
+    const price = p.market_price ? "$"+p.market_price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
+    return `<div onclick="openAssetDrawer('${sym}',${JSON.stringify(p).replace(/"/g,"&quot;")})"
+      style="display:grid;grid-template-columns:${_COLS};gap:4px;font-size:11.5px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center;cursor:pointer;transition:background .15s"
+      onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background=''">
+      <div style="font-weight:800;color:var(--cyan)">${sym}</div>
+      <div style="color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${_esc(p.name||p.asset_class||"")}</div>
+      <div style="text-align:right;font-weight:600">${price}</div>
+      <div style="text-align:right">${_fmtVal(p.market_value)}</div>
+      <div style="text-align:right;color:${upnlC}">${_fmtPnl(p.unrealized_pnl)}</div>
+      <div style="text-align:right;color:${retC}">${ret !== null ? (ret>=0?"+":"")+ret.toFixed(2)+"%" : "—"}</div>
+      <div style="text-align:right;color:${dpnlC}">${_fmtPnl(p.daily_pnl)}</div>
+      <div style="text-align:right;color:var(--soft)">${(p.weight_pct||0).toFixed(1)}%</div>
+      <div style="font-size:10px;color:var(--soft)">${sector}</div>
+    </div>`;
+  }).join("");
+
+  tableEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:${_COLS};gap:4px;font-size:9.5px;font-weight:700;color:var(--soft);padding:0 0 6px;border-bottom:1px solid rgba(255,255,255,.1);text-transform:uppercase;letter-spacing:.5px">
+      ${headerCells}
+    </div>
+    ${rows}
+  `;
+}
+
+// ── Symbol search ─────────────────────────────────────────────────────────────
+let _searchTimer = null;
+function assetSearchDebounce(q) {
+  clearTimeout(_searchTimer);
+  const dd = document.getElementById("asset-search-dropdown");
+  if (!q || q.length < 1) { dd.style.display = "none"; return; }
+  _searchTimer = setTimeout(() => runAssetSearch(q), 280);
+}
+
+async function runAssetSearch(q) {
+  const dd = document.getElementById("asset-search-dropdown");
+  dd.style.display = "block";
+  dd.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:var(--soft)">Searching…</div>';
+  try {
+    const d = await fetch(`/api/assets/search?q=${encodeURIComponent(q)}`).then(r=>r.json());
+    const results = d.results || [];
+    if (!results.length) {
+      dd.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:var(--soft)">No results</div>';
+      return;
+    }
+    dd.innerHTML = results.map(r =>
+      `<div onclick="openAssetDrawer('${_esc(r.symbol)}',null);document.getElementById('asset-search-dropdown').style.display='none';document.getElementById('asset-search-input').value=''"
+        style="padding:7px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)"
+        onmouseenter="this.style.background='rgba(255,255,255,.07)'" onmouseleave="this.style.background=''">
+        <span style="font-weight:700;color:var(--cyan)">${_esc(r.symbol)}</span>
+        <span style="color:var(--soft);margin-left:8px;font-size:11px">${_esc(r.name)}</span>
+        <span style="float:right;font-size:10px;color:#666">${_esc(r.type||"")}</span>
+      </div>`
+    ).join("");
+  } catch(e) {
+    dd.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:#f87171">Search failed</div>';
+  }
+}
+
+// close dropdown on outside click
+document.addEventListener("click", e => {
+  if (!e.target.closest("#asset-search-input") && !e.target.closest("#asset-search-dropdown")) {
+    const dd = document.getElementById("asset-search-dropdown");
+    if (dd) dd.style.display = "none";
+  }
+});
+
+// ── Asset Detail Drawer ───────────────────────────────────────────────────────
+let _drawerSymbol = null;
+let _currentTf    = "1mo";
+
+function openAssetDrawer(symbol, posData) {
+  _drawerSymbol = symbol.toUpperCase();
+  _currentTf    = "1mo";
+
+  document.getElementById("drawer-symbol").textContent = _drawerSymbol;
+  document.getElementById("drawer-name").textContent   = posData?.name || "";
+  document.getElementById("drawer-price").textContent  = "—";
+  document.getElementById("drawer-change").textContent = "—";
+  document.getElementById("drawer-currency").textContent = posData?.currency || "USD";
+  document.getElementById("drawer-brief").innerHTML    = '<div class="skel" style="margin-bottom:5px"></div><div class="skel" style="width:80%"></div>';
+  document.getElementById("drawer-news").innerHTML     = '<div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:70%"></div>';
+  const canvas = document.getElementById("asset-chart");
+  const loader = document.getElementById("asset-chart-loader");
+  canvas.style.display = "none";
+  loader.style.display = "block";
+  loader.textContent   = "Loading chart…";
+
+  // Position context
+  const posBox = document.getElementById("drawer-position-box");
+  if (posData && posData.quantity) {
+    posBox.style.display = "block";
+    const upnlC = (posData.unrealized_pnl||0)>=0 ? "#4ade80" : "#f87171";
+    const retC  = (posData.total_return_pct||posData.unrealized_pnl_pct||0)>=0 ? "#4ade80" : "#f87171";
+    document.getElementById("drawer-pos-qty").textContent  = posData.quantity;
+    document.getElementById("drawer-pos-cost").textContent = posData.avg_cost ? "$"+posData.avg_cost.toFixed(2) : "—";
+    document.getElementById("drawer-pos-val").textContent  = posData.market_value ? "$"+posData.market_value.toLocaleString("en-US",{maximumFractionDigits:0}) : "—";
+    const upnlEl = document.getElementById("drawer-pos-upnl");
+    upnlEl.textContent = posData.unrealized_pnl != null ? (posData.unrealized_pnl>=0?"+$":"−$")+Math.abs(posData.unrealized_pnl).toLocaleString("en-US",{maximumFractionDigits:0}) : "—";
+    upnlEl.style.color = upnlC;
+    const ret = posData.total_return_pct ?? posData.unrealized_pnl_pct ?? null;
+    const retEl = document.getElementById("drawer-pos-ret");
+    retEl.textContent = ret !== null ? (ret>=0?"+":"")+ret.toFixed(2)+"%" : "—";
+    retEl.style.color = retC;
+    document.getElementById("drawer-pos-wt").textContent   = posData.weight_pct ? posData.weight_pct.toFixed(1)+"%" : "—";
+  } else {
+    posBox.style.display = "none";
+  }
+
+  // Highlight active TF btn
+  ["1d","5d","1mo","3mo","6mo","ytd","1y","5y"].forEach(tf => {
+    const btn = document.getElementById("chart-tf-"+tf);
+    if (btn) btn.style.opacity = tf === _currentTf ? "1" : "0.5";
+  });
+
+  document.getElementById("asset-drawer").style.display   = "block";
+  document.getElementById("asset-drawer-backdrop").style.display = "block";
+  document.body.style.overflow = "hidden";
+
+  // Fire parallel data loads
+  loadQuote(_drawerSymbol);
+  loadOHLC(_currentTf);
+  loadBrief(_drawerSymbol);
+  loadNewsDrawer(_drawerSymbol);
+}
+
+function closeAssetDrawer() {
+  document.getElementById("asset-drawer").style.display          = "none";
+  document.getElementById("asset-drawer-backdrop").style.display = "none";
+  document.body.style.overflow = "";
+  _drawerSymbol = null;
+}
+
+async function loadQuote(symbol) {
+  try {
+    const d = await fetch(`/api/assets/${encodeURIComponent(symbol)}/quote`).then(r=>r.json());
+    const priceEl  = document.getElementById("drawer-price");
+    const changeEl = document.getElementById("drawer-change");
+    if (d.price != null) {
+      priceEl.textContent  = "$"+d.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+      const chg = d.change_pct;
+      changeEl.textContent = chg != null ? (chg>=0?"+":"")+chg.toFixed(2)+"%" : "";
+      changeEl.style.color = chg != null ? (chg>=0?"#4ade80":"#f87171") : "var(--soft)";
+    }
+    document.getElementById("drawer-currency").textContent = d.currency || "USD";
+    document.getElementById("drawer-name").textContent = document.getElementById("drawer-name").textContent || "";
+  } catch(e) {}
+}
+
+async function loadOHLC(tf) {
+  if (!_drawerSymbol) return;
+  _currentTf = tf;
+  ["1d","5d","1mo","3mo","6mo","ytd","1y","5y"].forEach(t => {
+    const btn = document.getElementById("chart-tf-"+t);
+    if (btn) btn.style.opacity = t === tf ? "1" : "0.5";
+  });
+
+  const canvas = document.getElementById("asset-chart");
+  const loader = document.getElementById("asset-chart-loader");
+  canvas.style.display = "none";
+  loader.style.display = "block";
+  loader.textContent   = "Loading…";
+
+  try {
+    const d = await fetch(`/api/assets/${encodeURIComponent(_drawerSymbol)}/ohlc?timeframe=${tf}`).then(r=>r.json());
+    const bars = d.bars || [];
+    if (!bars.length) { loader.textContent = "No chart data available"; return; }
+    drawCandlestickChart(canvas, bars);
+    canvas.style.display = "block";
+    loader.style.display = "none";
+  } catch(e) {
+    loader.textContent = "Chart unavailable";
+  }
+}
+
+function drawCandlestickChart(canvas, bars) {
+  const dpr    = window.devicePixelRatio || 1;
+  const W      = canvas.parentElement.clientWidth || 440;
+  const H      = 200;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = { t:10, r:8, b:24, l:56 };
+  const cW  = W - PAD.l - PAD.r;
+  const cH  = H - PAD.t - PAD.b;
+
+  const closes = bars.map(b => b.c);
+  const highs  = bars.map(b => b.h);
+  const lows   = bars.map(b => b.l);
+  const minP   = Math.min(...lows);
+  const maxP   = Math.max(...highs);
+  const range  = maxP - minP || 1;
+
+  const toY = v => PAD.t + cH * (1 - (v - minP) / range);
+  const n   = bars.length;
+  const bW  = Math.max(1, Math.floor(cW / n) - 1);
+
+  // Grid lines
+  ctx.strokeStyle = "rgba(255,255,255,.05)";
+  ctx.lineWidth   = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.t + cH * i / 4;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + cW, y); ctx.stroke();
+    const price = maxP - (range * i / 4);
+    ctx.fillStyle = "rgba(255,255,255,.3)";
+    ctx.font      = "9px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText("$"+price.toFixed(2), PAD.l - 4, y + 3);
+  }
+
+  // Volume bars (bottom 20% of cH)
+  const volMax = Math.max(...bars.map(b => b.v)) || 1;
+  const volH   = cH * 0.18;
+  bars.forEach((b, i) => {
+    const x  = PAD.l + i * (cW / n);
+    const vh = (b.v / volMax) * volH;
+    ctx.fillStyle = b.c >= b.o ? "rgba(74,222,128,.18)" : "rgba(248,113,113,.18)";
+    ctx.fillRect(x, PAD.t + cH - vh, bW, vh);
+  });
+
+  // Candles
+  bars.forEach((b, i) => {
+    const x  = PAD.l + i * (cW / n) + bW / 2;
+    const xL = PAD.l + i * (cW / n);
+    const up = b.c >= b.o;
+    ctx.strokeStyle = up ? "#4ade80" : "#f87171";
+    ctx.fillStyle   = up ? "#4ade80" : "#f87171";
+    ctx.lineWidth   = 1;
+
+    // Wick
+    const wickY1 = toY(b.h);
+    const wickY2 = toY(b.l);
+    ctx.beginPath(); ctx.moveTo(x, wickY1); ctx.lineTo(x, wickY2); ctx.stroke();
+
+    // Body
+    const bodyY  = toY(Math.max(b.o, b.c));
+    const bodyH  = Math.max(1, Math.abs(toY(b.o) - toY(b.c)));
+    ctx.fillRect(xL, bodyY, bW, bodyH);
+  });
+
+  // X-axis time labels (5 evenly spaced)
+  ctx.fillStyle = "rgba(255,255,255,.3)";
+  ctx.font      = "9px monospace";
+  ctx.textAlign = "center";
+  const step    = Math.floor(n / 5) || 1;
+  for (let i = 0; i < n; i += step) {
+    const d   = new Date(bars[i].t);
+    const lbl = d.getMonth()+1 + "/" + d.getDate();
+    const x   = PAD.l + i * (cW / n) + bW / 2;
+    ctx.fillText(lbl, x, H - 6);
+  }
+}
+
+async function loadBrief(symbol) {
+  try {
+    const d = await fetch(`/api/assets/${encodeURIComponent(symbol)}/brief`).then(r=>r.json());
+    const el = document.getElementById("drawer-brief");
+    if (!el) return;
+    const bullets = d.brief || [];
+    if (!bullets.length) { el.innerHTML = '<span style="color:var(--soft)">No brief available.</span>'; return; }
+    el.innerHTML = bullets.map(b =>
+      `<div style="display:flex;gap:8px;margin-bottom:5px">
+        <span style="color:var(--cyan);flex-shrink:0">•</span>
+        <span style="color:var(--soft)">${_esc(b)}</span>
+      </div>`
+    ).join("");
+  } catch(e) {}
+}
+
+async function loadNewsDrawer(symbol) {
+  try {
+    const d = await fetch(`/api/assets/${encodeURIComponent(symbol)}/news?limit=6`).then(r=>r.json());
+    const el = document.getElementById("drawer-news");
+    if (!el) return;
+    const items = d.news || [];
+    if (!items.length) { el.innerHTML = '<span style="color:var(--soft)">No recent news.</span>'; return; }
+    el.innerHTML = items.map(n =>
+      `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.05)">
+        <a href="${n.url||"#"}" target="_blank" rel="noopener" style="color:var(--white);font-weight:600;font-size:12px;text-decoration:none;line-height:1.4;display:block;margin-bottom:3px">${_esc(n.title)}</a>
+        <div style="font-size:10px;color:var(--soft)">${_esc(n.source||"")}${n.published ? " · "+String(n.published).slice(0,10) : ""}</div>
+      </div>`
+    ).join("");
+  } catch(e) {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AI COMMANDER
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadCommander() {
+  try {
+    const d = await fetch("/api/intelligence/commander").then(r => r.json());
+    const insights = d.insights || [];
+
+    // Update cockpit ticker
+    const tickerA = document.getElementById("commander-inner-a");
+    const tickerB = document.getElementById("commander-inner-b");
+    if (tickerA && insights.length) {
+      const html = insights.map(ins => {
+        const cls = ins.severity === "warn" ? "ci-warn" : ins.severity === "ok" ? "ci-ok" : ins.severity === "ai" ? "ci-ai" : "ci-info";
+        return `<div class="commander-insight ${cls}">
+          <span class="ci-icon">${_esc(ins.icon||"◆")}</span>
+          <span class="ci-text">${_esc(ins.text)}</span>
+        </div>`;
+      }).join("");
+      tickerA.innerHTML = html;
+      if (tickerB) tickerB.innerHTML = html; // duplicate for seamless loop
+    }
+
+    // Update Intelligence Hub commander list
+    const listEl = document.getElementById("intel-commander-list");
+    if (listEl && insights.length) {
+      listEl.innerHTML = insights.map(ins => {
+        const clr = ins.severity === "warn" ? "#fbbf24" : ins.severity === "ok" ? "#4ade80" : ins.severity === "ai" ? "var(--cyan)" : "var(--soft2)";
+        return `<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+          <span style="color:${clr};font-size:13px;flex-shrink:0;margin-top:1px">${_esc(ins.icon||"◆")}</span>
+          <span style="font-size:12px;color:var(--soft2);line-height:1.5">${_esc(ins.text)}</span>
+        </div>`;
+      }).join("");
+    }
+
+    // Alert badge on commander bar
+    const critical = (d.insights||[]).filter(i=>i.severity==="warn").length;
+    const badgeEl  = document.getElementById("commander-alert-badge");
+    if (badgeEl) {
+      if (critical > 0) {
+        badgeEl.style.display = "inline-flex";
+        badgeEl.className = "alert-badge ab-high";
+        badgeEl.textContent = critical + " alert" + (critical > 1 ? "s" : "");
+      } else {
+        badgeEl.style.display = "none";
+      }
+    }
+
+    const genAt = document.getElementById("commander-gen-at");
+    if (genAt && d.generated_at) {
+      const t = new Date(d.generated_at + "Z");
+      genAt.textContent = t.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}) + " UTC";
+    }
+  } catch(e) {
+    console.warn("loadCommander:", e);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SMART ALERTS
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadSmartAlerts() {
+  try {
+    const d = await fetch("/api/alerts/smart").then(r => r.json());
+    const alerts = d.alerts || [];
+
+    // Cockpit strip (critical + high only)
+    const stripEl = document.getElementById("smart-alerts-strip");
+    const urgent  = alerts.filter(a => a.level === "critical" || a.level === "high");
+    if (stripEl) {
+      if (urgent.length) {
+        stripEl.style.display = "flex";
+        stripEl.style.gap = "8px";
+        stripEl.style.flexWrap = "wrap";
+        stripEl.innerHTML = urgent.map(a => {
+          const cls = a.level === "critical" ? "ab-critical" : "ab-high";
+          return `<span class="alert-badge ${cls}" title="${_esc(a.message)}">${_esc(a.icon||"⚠")} ${_esc(a.title)}</span>`;
+        }).join("");
+      } else {
+        stripEl.style.display = "none";
+      }
+    }
+
+    // Intelligence Hub alerts list
+    const listEl = document.getElementById("intel-alerts-list");
+    if (listEl) {
+      if (!alerts.length) {
+        listEl.innerHTML = '<div style="font-size:12px;color:var(--soft);padding:8px 0">No active alerts — portfolio health looks good.</div>';
+      } else {
+        listEl.innerHTML = alerts.map(a =>
+          `<div class="alert-item ai-level-${a.level}">
+            <div class="ai-icon">${_esc(a.icon||"◆")}</div>
+            <div class="ai-body">
+              <div class="ai-title">${_esc(a.title)}</div>
+              <div class="ai-msg">${_esc(a.message)}</div>
+              ${a.action ? `<div class="ai-action">→ ${_esc(a.action)}</div>` : ""}
+            </div>
+          </div>`
+        ).join("");
+      }
+    }
+
+    // Summary badges
+    const summaryEl = document.getElementById("intel-alert-summary");
+    if (summaryEl) {
+      const parts = [];
+      if (d.critical > 0) parts.push(`<span class="alert-badge ab-critical">${d.critical} critical</span>`);
+      if (d.high > 0)     parts.push(`<span class="alert-badge ab-high">${d.high} high</span>`);
+      if (!d.critical && !d.high) parts.push(`<span class="alert-badge ab-ok">All clear</span>`);
+      summaryEl.innerHTML = parts.join("");
+    }
+  } catch(e) {
+    console.warn("loadSmartAlerts:", e);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PORTFOLIO HEALTH ENGINE
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadHealthEngine() {
+  try {
+    const d = await fetch("/api/portfolio/health").then(r => r.json());
+
+    const scoreEl = document.getElementById("health-overall-score");
+    const labelEl = document.getElementById("health-overall-label");
+    if (scoreEl) {
+      scoreEl.textContent = d.health_score ?? "—";
+      scoreEl.style.color = d.health_color || "var(--soft)";
+    }
+    if (labelEl) {
+      labelEl.textContent  = d.health_level || "—";
+      labelEl.style.color  = d.health_color || "var(--soft)";
+      labelEl.style.background = (d.health_color || "rgba(110,155,181,.1)").replace("#","rgba(").replace(/^rgba\((..)(..)(..)/, (m,r,g,b) => "rgba("+parseInt(r,16)+","+parseInt(g,16)+","+parseInt(b,16)) + ",.12)";
+    }
+
+    const dimsEl = document.getElementById("health-dimensions");
+    if (dimsEl && d.dimensions) {
+      const scoreColor = s => s >= 75 ? "#4ade80" : s >= 50 ? "#facc15" : s >= 30 ? "#fb923c" : "#f87171";
+      dimsEl.innerHTML = d.dimensions.map(dim => `
+        <div class="health-dim">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px">${_esc(dim.icon||"◆")}</span>
+              <span style="font-size:12px;font-weight:700">${_esc(dim.label)}</span>
+            </div>
+            <span style="font-size:14px;font-weight:800;color:${scoreColor(dim.score)}">${dim.score}</span>
+          </div>
+          <div class="health-dim-bar">
+            <div class="health-dim-fill" style="width:${dim.score}%;background:${scoreColor(dim.score)}"></div>
+          </div>
+          <div style="font-size:11px;color:var(--soft);line-height:1.4">${_esc(dim.text)}</div>
+        </div>`
+      ).join("");
+    }
+  } catch(e) {
+    console.warn("loadHealthEngine:", e);
+    const dimsEl = document.getElementById("health-dimensions");
+    if (dimsEl) dimsEl.innerHTML = '<div style="color:var(--soft);font-size:12px">Connect broker to see health dimensions.</div>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MARKET RADAR
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadRadar(btn) {
+  if (btn) { btn.textContent = "⏳"; btn.disabled = true; }
+  try {
+    const [radarRes, storyRes] = await Promise.allSettled([
+      fetch("/api/market/radar").then(r => r.json()),
+      fetch("/api/market/story").then(r => r.json()),
+    ]);
+
+    const radar = radarRes.status === "fulfilled" ? radarRes.value : null;
+    const story = storyRes.status === "fulfilled" ? storyRes.value : null;
+
+    if (radar) {
+      // Regime badge
+      const regimeBadge = document.getElementById("radar-regime-badge");
+      if (regimeBadge) {
+        const regime = radar.regime || "--";
+        const rClr   = regime.includes("RISK_ON") ? "#4ade80" : regime.includes("HIGH_VOLATILITY") || regime.includes("RISK_OFF") ? "#f87171" : "#fbbf24";
+        regimeBadge.textContent = regime.replace("_"," ");
+        regimeBadge.style.color = rClr;
+        regimeBadge.style.borderColor = rClr.replace(")"," ,.3)").replace("rgb","rgba");
+      }
+
+      // Also update main header regime badge
+      const mainBadge = document.getElementById("mkt-regime-badge");
+      if (mainBadge) {
+        const regime = radar.regime || "NEUTRAL";
+        mainBadge.textContent = "REGIME: " + regime.replace("_"," ");
+        mainBadge.className   = "badge " + (regime.includes("RISK_ON") ? "b-ok" : regime.includes("HIGH_VOLATILITY") || regime.includes("RISK_OFF") ? "b-bad" : "b-warn");
+      }
+
+      // Instrument tiles
+      const instrEl = document.getElementById("radar-instruments");
+      if (instrEl) {
+        const instruments = radar.instruments || {};
+        instrEl.innerHTML = Object.values(instruments).map(inst => {
+          const chg  = inst.change_pct ?? 0;
+          const cls  = chg > 0 ? "radar-up" : chg < 0 ? "radar-dn" : "radar-fl";
+          const sign = chg >= 0 ? "+" : "";
+          const price = inst.price != null ? inst.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
+          return `<div class="radar-tile">
+            <div class="radar-label">${_esc(inst.label||inst.symbol)}</div>
+            <div class="radar-price">${price}</div>
+            <div class="radar-chg ${cls}">${sign}${chg.toFixed(2)}%</div>
+          </div>`;
+        }).join("");
+      }
+
+      // Movers
+      const moversEl = document.getElementById("radar-movers");
+      if (moversEl) {
+        const movers = radar.movers || [];
+        if (!movers.length) { moversEl.innerHTML = '<div style="color:var(--soft);font-size:12px">No data</div>'; }
+        else {
+          moversEl.innerHTML = movers.map(m => {
+            const chg = m.change_pct ?? 0;
+            const cls = chg >= 0 ? "radar-up" : "radar-dn";
+            const sign = chg >= 0 ? "+" : "";
+            return `<div class="mover-row">
+              <span style="font-weight:800;color:var(--cyan);width:56px;flex-shrink:0">${_esc(m.symbol)}</span>
+              <span style="flex:1;color:var(--soft);font-size:11px">$${(m.price||0).toFixed(2)}</span>
+              <span class="${cls}" style="font-weight:700">${sign}${chg.toFixed(2)}%</span>
+            </div>`;
+          }).join("");
+        }
+      }
+
+      // VIX context
+      const vixEl = document.getElementById("radar-vix-context");
+      if (vixEl) {
+        const vix = radar.vix ?? 20;
+        const vixLevel = vix > 30 ? "Extreme Fear" : vix > 20 ? "Elevated Risk" : vix > 15 ? "Normal" : "Complacency";
+        const vixColor = vix > 30 ? "#f87171" : vix > 20 ? "#fbbf24" : "#4ade80";
+        vixEl.innerHTML = `
+          <div style="text-align:center;padding:10px 0">
+            <div style="font-size:42px;font-weight:900;color:${vixColor}">${vix.toFixed(1)}</div>
+            <div style="font-size:11px;color:${vixColor};font-weight:700;margin-top:4px">${vixLevel}</div>
+            <div style="font-size:11px;color:var(--soft);margin-top:8px;line-height:1.6">
+              VIX measures 30-day implied volatility of S&amp;P 500 options.<br>
+              ${vix > 25 ? "Current level indicates institutional hedging demand is elevated." : vix < 14 ? "Low VIX suggests market complacency — monitor for sudden reversal." : "VIX in normal range."}
+            </div>
+          </div>`;
+      }
+
+      const fetchedAt = document.getElementById("radar-fetched-at");
+      if (fetchedAt && radar.fetched_at) {
+        const t = new Date(radar.fetched_at + "Z");
+        fetchedAt.textContent = t.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) + " UTC";
+      }
+    }
+
+    if (story) {
+      const stEl   = document.getElementById("story-text");
+      const stTime = document.getElementById("story-time");
+      if (stEl) stEl.textContent = story.story || "Market story unavailable.";
+      if (stTime && story.generated_at) {
+        const t = new Date(story.generated_at + "Z");
+        stTime.textContent = t.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}) + " UTC";
+      }
+      // also update intel panel
+      const istEl   = document.getElementById("intel-story-text");
+      const istTime = document.getElementById("intel-story-time");
+      if (istEl)   istEl.textContent   = story.story || "Market story unavailable.";
+      if (istTime && story.generated_at) {
+        const t = new Date(story.generated_at + "Z");
+        istTime.textContent = t.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}) + " UTC";
+      }
+    }
+  } catch(e) {
+    console.warn("loadRadar:", e);
+  } finally {
+    if (btn) { btn.textContent = "↻ Refresh"; btn.disabled = false; }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PORTFOLIO TIMELINE (in-memory event log)
+   ══════════════════════════════════════════════════════════════ */
+
+const _timeline = [];
+
+function _timelineEvent(text, type = "info") {
+  const now = new Date();
+  _timeline.unshift({
+    text,
+    type,
+    time: now.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"}),
+  });
+  if (_timeline.length > 50) _timeline.pop();
+  _renderTimeline();
+}
+
+function _renderTimeline() {
+  const el = document.getElementById("intel-timeline");
+  if (!el) return;
+  if (!_timeline.length) {
+    el.innerHTML = '<div style="color:var(--soft);font-size:12px">No events yet this session.</div>';
+    return;
+  }
+  el.innerHTML = _timeline.map(e => {
+    const dotCls = e.type === "ok" ? "tl-dot-ok" : e.type === "warn" ? "tl-dot-warn" : e.type === "bad" ? "tl-dot-bad" : "tl-dot-info";
+    return `<div class="timeline-item">
+      <div class="tl-dot ${dotCls}"></div>
+      <div class="tl-body">
+        <div class="tl-text">${_esc(e.text)}</div>
+        <div class="tl-time">${e.time}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INTELLIGENCE PANEL LOADER
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadIntelligence(btn) {
+  if (btn) { btn.textContent = "⏳"; btn.disabled = true; }
+  try {
+    await Promise.allSettled([
+      loadCommander(),
+      loadSmartAlerts(),
+      loadHealthEngine(),
+      loadRadar(null),
+    ]);
+    _renderTimeline();
+  } finally {
+    if (btn) { btn.textContent = "↻ Refresh All"; btn.disabled = false; }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   switchMarketPanel — extend to support new panels
+   ══════════════════════════════════════════════════════════════ */
+const _origSwitchMarketPanel = typeof switchMarketPanel === "function" ? switchMarketPanel : null;
+function switchMarketPanel(p) {
+  document.querySelectorAll(".mkt-panel").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".mkt-subnav-btn").forEach(el => el.classList.remove("active"));
+  const panel = document.getElementById("mkt-panel-" + p);
+  const btn   = document.getElementById("mkt-nav-" + p);
+  if (panel) panel.classList.add("active");
+  if (btn)   btn.classList.add("active");
+
+  if (p === "radar" && !_radarLoaded) {
+    _radarLoaded = true;
+    _timelineEvent("Market Radar panel opened");
+    loadRadar(null);
+  }
+  if (p === "intel" && !_intelLoaded) {
+    _intelLoaded = true;
+    _timelineEvent("Intelligence Hub opened");
+    loadIntelligence(null);
+  }
+}
+let _radarLoaded = false;
+let _intelLoaded = false;
 
 /* ── Paper Trading Lab ─────────────────────────────────────── */
 
@@ -6521,9 +7484,19 @@ async function loadCockpit(btn) {
     // Also load holdings
     await loadTopHoldings();
 
+    // Fire AI Commander + smart alerts in background (non-blocking)
+    loadCommander().then(() => {
+      _timelineEvent("AI Commander insights refreshed", "info");
+    });
+    loadSmartAlerts().then(data => {
+      _timelineEvent("Smart alerts evaluated", "info");
+    });
+    _timelineEvent(fromCache ? "Portfolio snapshot loaded (cached)" : "Portfolio snapshot loaded (live)", fromCache ? "warn" : "ok");
+
   } catch(e) {
     console.warn("loadCockpit:", e);
     _setLiveIndicator(false);
+    _timelineEvent("Cockpit load error: " + e.message, "bad");
     showToast("Cockpit load error: " + e.message, "error");
   } finally {
     _panelLoading.cockpit = false;
@@ -11970,6 +12943,8 @@ async function olSendReply(mid) {
     if (d.status === "ok") {
       showToast("Reply sent ✅", "success");
       await loadOutlookInbox();
+      try { await loadCalendarEvents(_cal.range || "day"); } catch(_) {}
+      try { await loadConnectionStatus(); } catch(_) {}
       await loadOutlookStatus();
     } else if (d.status === "expired" || d.requires_reauth) {
       showToast("Session expired — reconnect Outlook to send replies", "error");
@@ -12065,6 +13040,8 @@ async function olCreateEvent(mid) {
     if (d.success) {
       showToast("Calendar event prepared 📅", "success");
       await loadOutlookInbox();
+      try { await loadCalendarEvents(_cal.range || "day"); } catch(_) {}
+      try { await loadConnectionStatus(); } catch(_) {}
     }
   } catch(e) { showToast("Error: " + e.message, "error"); }
 }

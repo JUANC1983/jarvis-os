@@ -128,5 +128,44 @@
     "source": "qa_test",
     "context": {},
     "recorded_at": "2026-05-06T21:49:33.066932"
+  },
+  {
+    "id": "lo_20260508183023_AAPL",
+    "symbol": "AAPL",
+    "signal_type": "BUY",
+    "confidence": 0.75,
+    "predicted_direction": "up",
+    "actual_return_pct": 3.2,
+    "holding_days": 5,
+    "outcome": "win",
+    "source": "qa_test",
+    "context": {},
+    "recorded_at": "2026-05-08T18:30:23.313115"
+  },
+  {
+    "id": "lo_20260508183054_AAPL",
+    "symbol": "AAPL",
+    "signal_type": "BUY",
+    "confidence": 0.75,
+    "predicted_direction": "up",
+    "actual_return_pct": 3.2,
+    "holding_days": 5,
+    "outcome": "win",
+    "source": "qa_test",
+    "context": {},
+    "recorded_at": "2026-05-08T18:30:54.442065"
+  },
+  {
+    "id": "lo_20260508183844_AAPL",
+    "symbol": "AAPL",
+    "signal_type": "BUY",
+    "confidence": 0.75,
+    "predicted_direction": "up",
+    "actual_return_pct": 3.2,
+    "holding_days": 5,
+    "outcome": "win",
+    "source": "qa_test",
+    "context": {},
+    "recorded_at": "2026-05-08T18:38:44.558024"
   }
 ]

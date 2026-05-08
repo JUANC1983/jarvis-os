@@ -1,6 +1,6 @@
 [
   {
-    "id": "pp_ba3f7ebc",
+    "id": "pp_b40c8af8",
     "symbol": "NVDA",
     "name": "NVDA",
     "broker_source": "paper",
@@ -8,13 +8,14 @@
     "sector": "unknown",
     "quantity": 5,
     "import_price": 500.0,
-    "current_price": 500.0,
-    "current_value": 2500.0,
+    "current_price": 501.0,
+    "current_value": 2505.0,
     "avg_cost": 500.0,
-    "unrealized_pnl": 0,
-    "unrealized_pnl_pct": 0,
-    "imported_at": "2026-05-06T21:49:33.035972",
+    "unrealized_pnl": 5.0,
+    "unrealized_pnl_pct": 0.2,
+    "imported_at": "2026-05-08T18:38:44.440432",
     "thesis": "test thesis",
-    "paper_only": true
+    "paper_only": true,
+    "last_simulation_tick": "2026-05-08T18:38:44.468968"
   }
 ]

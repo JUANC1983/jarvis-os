@@ -190,6 +190,8 @@ async def _start_watchdog():
         validate_production_config(bridge_url, bridge_token, hosted)
     except Exception as _guard_err:
         _log.critical("IBKR PRODUCTION SAFETY VIOLATION at startup: %s", _guard_err)
+        if hosted:
+            raise EnvironmentError(str(_guard_err))
         # Do not crash server — but the violation is logged loudly and connector
         # selection will also reject it below at portfolio module import time.
 
@@ -5784,7 +5786,25 @@ async def outlook_create_task(message_id: str, current_user: dict = Depends(get_
 @app.post("/api/outlook/email/{message_id}/create-event")
 async def outlook_create_event(message_id: str, current_user: dict = Depends(get_optional_user)):
     _outlook_guard()
-    return {"status": "ok", **(await _ms_event_from_email(message_id))}
+    result = await _ms_event_from_email(message_id)
+    if result.get("success") and result.get("event"):
+        try:
+            from datetime import datetime as _dt, timedelta as _td
+            ev_src = result["event"]
+            start = ev_src.get("start") or (_dt.utcnow() + _td(hours=1)).strftime("%Y-%m-%d %H:%M")
+            ev = _cal(current_user["user_id"]).create_event(
+                title=ev_src.get("title", "Outlook event"),
+                start=start,
+                duration_minutes=int(ev_src.get("duration_minutes", 60) or 60),
+                description=ev_src.get("notes", ev_src.get("description", "")),
+                participants=[ev_src.get("contact")] if ev_src.get("contact") else [],
+            )
+            result["calendar_event"] = ev
+            result["calendar_refreshed"] = True
+        except Exception as exc:
+            result["calendar_refreshed"] = False
+            result["calendar_error"] = str(exc)
+    return {"status": "ok", **result}
 
 
 # ── Observability ─────────────────────────────────────────────────────
@@ -6077,7 +6097,8 @@ try:
     )
     if _remote_bridge_enabled or _hosted_runtime:
         # PRODUCTION / REMOTE BRIDGE MODE
-        # NEVER fall back to localhost:5000 — it is unreachable inside Railway.
+        # Architecture: Railway → HTTPS IBKR_BRIDGE_URL → secure_bridge.py → IB Gateway :4001
+        # Railway NEVER connects directly to IB Gateway socket.
         _bridge_url   = _os_env.getenv("IBKR_BRIDGE_URL", "")
         _bridge_token = _os_env.getenv("IBKR_BRIDGE_TOKEN", "")
         from opsx.connectors.ibkr_bridge_client import TradingBlockedError as _TradingBlockedError
@@ -6092,7 +6113,7 @@ try:
             logging.getLogger("jarvis").critical(
                 "IBKR: Railway/production mode detected but IBKR_BRIDGE_URL is not set. "
                 "Using not-configured stub — portfolio data unavailable. "
-                "Fix: add IBKR_BRIDGE_URL to Railway environment variables."
+                "Fix: add IBKR_BRIDGE_URL=https://<ngrok-id>.ngrok.io to Railway env vars."
             )
         else:
             from opsx.connectors.ibkr_bridge_client import ibkr_bridge as _ibkr
@@ -6195,11 +6216,9 @@ def debug_ibkr(current_user: dict = Depends(get_current_user)):
     )
 
     # Determine effective connector mode
+    # Railway always uses remote bridge — never direct TCP to Gateway
     if hosted or remote_mode:
-        if not bridge_url:
-            connector_mode = "not_configured"
-        else:
-            connector_mode = "remote_bridge"
+        connector_mode = "remote_bridge" if bridge_url else "not_configured"
     else:
         connector_mode = "local_dev"
 
@@ -6211,8 +6230,24 @@ def debug_ibkr(current_user: dict = Depends(get_current_user)):
     except Exception:
         pass
 
+    # Target info only available in local dev mode (connection manager is local-only)
+    _ibkr_target_info: Dict = {}
+    if not (hosted or remote_mode):
+        try:
+            from opsx.connectors.ibkr_connection_manager import resolve_ibkr_target
+            _ibkr_target_info = resolve_ibkr_target("connector").as_dict()
+        except Exception as _target_err:
+            _ibkr_target_info = {"error": str(_target_err)}
+
     result: Dict = {
         "mode":              connector_mode,
+        "target_host":       _ibkr_target_info.get("host"),
+        "target_port":       _ibkr_target_info.get("port"),
+        "transport":         _ibkr_target_info.get("transport", "tcp"),
+        "active_client_id":  _ibkr_target_info.get("client_id"),
+        "last_successful_connect": None,
+        "reconnect_attempts": 0,
+        "circuit_state":     "closed",
         "bridge_enabled":    remote_mode or hosted,
         "bridge_url":        bridge_url or "(not set)",
         "token_set":         token_set,
@@ -6265,6 +6300,15 @@ def debug_ibkr(current_user: dict = Depends(get_current_user)):
     try:
         health = _ibkr.health_check()
         latency_ms = round((_time.monotonic() - t0) * 1000, 1)
+        result.update({
+            "target_host": health.get("target_host", health.get("host", result.get("target_host"))),
+            "target_port": health.get("target_port", health.get("port", result.get("target_port"))),
+            "transport": health.get("transport", result.get("transport", "tcp")),
+            "active_client_id": health.get("active_client_id", result.get("active_client_id")),
+            "last_successful_connect": health.get("last_successful_connect", result.get("last_successful_connect")),
+            "reconnect_attempts": health.get("reconnect_attempts", result.get("reconnect_attempts", 0)),
+            "circuit_state": health.get("circuit_state", result.get("circuit_state", "closed")),
+        })
 
         if connector_mode in ("remote_bridge", "not_configured"):
             bridge_ok    = health.get("bridge_ok", False)
@@ -6350,6 +6394,13 @@ def debug_ibkr(current_user: dict = Depends(get_current_user)):
             "bridge_latency_ms": round((_time.monotonic() - t0) * 1000, 1),
         })
 
+    result["connected"] = bool(result.get("broker_connected"))
+    result["last_successful_connect"] = (
+        result.get("last_successful_connect")
+        or result.get("last_successful_sync")
+        or result.get("watchdog", {}).get("last_healthy_at")
+    )
+    result["circuit_state"] = "open" if result.get("watchdog", {}).get("circuit_open") else result.get("circuit_state", "closed")
     return result
 
 
@@ -7630,3 +7681,764 @@ async def ws_system_events(websocket: WebSocket):
     finally:
         if _TELEMETRY_AVAILABLE:
             _system_events.unregister_ws_listener(_on_event)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# ASSET INTELLIGENCE — /api/assets — market quotes, OHLC, news, AI brief
+# Backed by yfinance (Yahoo Finance). No credentials required.
+# All endpoints are READ-ONLY. real_trade: False always.
+# ══════════════════════════════════════════════════════════════════════
+
+def _yf_ticker(symbol: str):
+    import yfinance as _yf
+    return _yf.Ticker(symbol.upper().strip())
+
+
+@app.get("/api/assets/search")
+def assets_search(q: str = "", current_user: dict = Depends(get_optional_user)):
+    """
+    Symbol search — returns up to 10 matching tickers.
+    Uses yfinance search; falls back to local portfolio positions if bridge is up.
+    """
+    q = (q or "").strip().upper()
+    if not q or len(q) < 1:
+        return {"results": [], "real_trade": False}
+    try:
+        import yfinance as _yf
+        results = _yf.Search(q, max_results=10)
+        quotes = getattr(results, "quotes", []) or []
+        out = []
+        for item in quotes[:10]:
+            sym  = item.get("symbol", "")
+            name = item.get("longname") or item.get("shortname") or ""
+            typ  = item.get("quoteType", "")
+            exch = item.get("exchange", "")
+            if sym:
+                out.append({"symbol": sym, "name": name, "type": typ, "exchange": exch})
+        return {"results": out, "query": q, "real_trade": False}
+    except Exception as exc:
+        return {"results": [], "query": q, "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/assets/{symbol}/quote")
+def assets_quote(symbol: str, current_user: dict = Depends(get_optional_user)):
+    """
+    Current quote for a symbol — price, change, volume, market cap, 52w range.
+    """
+    try:
+        t    = _yf_ticker(symbol)
+        info = t.fast_info
+        hist = t.history(period="2d", interval="1d")
+        prev_close = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else None
+        price      = float(info.last_price) if hasattr(info, "last_price") and info.last_price else None
+        if price is None and len(hist):
+            price = float(hist["Close"].iloc[-1])
+        change     = round(price - prev_close, 4) if price and prev_close else None
+        change_pct = round(change / prev_close * 100, 2) if change and prev_close else None
+        return {
+            "symbol":        symbol.upper(),
+            "price":         price,
+            "prev_close":    round(prev_close, 4) if prev_close else None,
+            "change":        change,
+            "change_pct":    change_pct,
+            "volume":        getattr(info, "three_month_average_volume", None),
+            "market_cap":    getattr(info, "market_cap", None),
+            "fifty_two_week_high": getattr(info, "year_high", None),
+            "fifty_two_week_low":  getattr(info, "year_low",  None),
+            "currency":      getattr(info, "currency", "USD"),
+            "real_trade":    False,
+        }
+    except Exception as exc:
+        return {"symbol": symbol.upper(), "error": str(exc), "real_trade": False}
+
+
+_OHLC_PERIOD_MAP = {
+    "1d":  ("1d",  "5m"),
+    "5d":  ("5d",  "15m"),
+    "1mo": ("1mo", "1h"),
+    "3mo": ("3mo", "1d"),
+    "6mo": ("6mo", "1d"),
+    "ytd": ("ytd", "1d"),
+    "1y":  ("1y",  "1wk"),
+    "5y":  ("5y",  "1mo"),
+}
+
+
+@app.get("/api/assets/{symbol}/ohlc")
+def assets_ohlc(
+    symbol: str,
+    timeframe: str = "1mo",
+    current_user: dict = Depends(get_optional_user),
+):
+    """
+    OHLCV bars for candlestick charts.
+    timeframe: 1d | 5d | 1mo | 3mo | 6mo | ytd | 1y | 5y
+    Returns: [{t, o, h, l, c, v}] sorted ascending by time.
+    """
+    tf = timeframe if timeframe in _OHLC_PERIOD_MAP else "1mo"
+    period, interval = _OHLC_PERIOD_MAP[tf]
+    try:
+        t    = _yf_ticker(symbol)
+        hist = t.history(period=period, interval=interval)
+        if hist.empty:
+            return {"symbol": symbol.upper(), "timeframe": tf, "bars": [], "real_trade": False}
+        bars = []
+        for ts, row in hist.iterrows():
+            bars.append({
+                "t": int(ts.timestamp() * 1000),
+                "o": round(float(row["Open"]),   4),
+                "h": round(float(row["High"]),   4),
+                "l": round(float(row["Low"]),    4),
+                "c": round(float(row["Close"]),  4),
+                "v": int(row["Volume"]),
+            })
+        return {
+            "symbol":    symbol.upper(),
+            "timeframe": tf,
+            "interval":  interval,
+            "bars":      bars,
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"symbol": symbol.upper(), "timeframe": tf, "bars": [], "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/assets/{symbol}/news")
+def assets_news(
+    symbol: str,
+    limit: int = 8,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Latest news headlines for a symbol via yfinance."""
+    try:
+        t = _yf_ticker(symbol)
+        raw_news = t.news or []
+        items = []
+        for n in raw_news[:limit]:
+            content = n.get("content", {})
+            title   = content.get("title") or n.get("title", "")
+            summary = content.get("summary") or ""
+            pub_ts  = content.get("pubDate") or n.get("providerPublishTime", "")
+            link    = (content.get("canonicalUrl", {}) or {}).get("url") or ""
+            provider = (content.get("provider", {}) or {}).get("displayName") or n.get("publisher", "")
+            if title:
+                items.append({
+                    "title":    title,
+                    "summary":  summary,
+                    "published": pub_ts,
+                    "url":      link,
+                    "source":   provider,
+                })
+        return {"symbol": symbol.upper(), "news": items, "count": len(items), "real_trade": False}
+    except Exception as exc:
+        return {"symbol": symbol.upper(), "news": [], "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/assets/{symbol}/brief")
+def assets_brief(
+    symbol: str,
+    current_user: dict = Depends(get_optional_user),
+):
+    """
+    AI-generated asset brief: 3–4 bullet points covering business model,
+    recent performance narrative, key risks, and analyst consensus.
+    Uses OpenAI. Falls back to a structured summary if unavailable.
+    """
+    try:
+        t    = _yf_ticker(symbol)
+        info = t.info or {}
+        name    = info.get("longName") or info.get("shortName") or symbol.upper()
+        sector  = info.get("sector", "")
+        industry = info.get("industry", "")
+        summary = info.get("longBusinessSummary", "")[:600] if info.get("longBusinessSummary") else ""
+        rec     = info.get("recommendationKey", "")
+        target  = info.get("targetMeanPrice")
+        price   = info.get("currentPrice") or info.get("regularMarketPrice")
+
+        # Build a concise prompt
+        context = (
+            f"{name} ({symbol.upper()})"
+            + (f", {sector} / {industry}" if sector else "")
+            + (f". Business: {summary}" if summary else "")
+            + (f" Current price: ${price}." if price else "")
+            + (f" Analyst consensus: {rec}, mean target ${target}." if rec else "")
+        )
+
+        openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+        openai_model = __import__("os").getenv("OPENAI_MODEL", "gpt-4o-mini")
+        if not openai_key:
+            return {
+                "symbol": symbol.upper(),
+                "name": name,
+                "brief": [
+                    f"Business: {summary[:200]}..." if summary else f"{name} — no description available.",
+                    f"Sector: {sector or 'N/A'} | Industry: {industry or 'N/A'}",
+                    f"Analyst consensus: {rec or 'N/A'}, mean target: {'$'+str(target) if target else 'N/A'}",
+                ],
+                "source": "yfinance",
+                "real_trade": False,
+            }
+
+        from openai import OpenAI as _OAI
+        client  = _OAI(api_key=openai_key)
+        resp    = client.chat.completions.create(
+            model=openai_model,
+            messages=[
+                {"role": "system", "content": (
+                    "You are a concise financial analyst. Given asset info, produce exactly 4 bullet points "
+                    "(start each with •) covering: 1) Business model in one sentence, "
+                    "2) Recent performance narrative, 3) Key risks, 4) Analyst view. "
+                    "No headers. Plain text only. Maximum 30 words per bullet."
+                )},
+                {"role": "user", "content": context},
+            ],
+            max_tokens=200,
+            temperature=0.3,
+        )
+        text = resp.choices[0].message.content.strip()
+        bullets = [line.lstrip("•·-– ").strip() for line in text.splitlines() if line.strip()]
+        return {
+            "symbol":    symbol.upper(),
+            "name":      name,
+            "brief":     bullets,
+            "source":    "openai",
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"symbol": symbol.upper(), "brief": [], "error": str(exc), "real_trade": False}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MARKET RADAR — live multi-instrument snapshot
+# ══════════════════════════════════════════════════════════════════════
+
+_RADAR_SYMBOLS = {
+    "SPY":   "S&P 500",
+    "QQQ":   "NASDAQ",
+    "^VIX":  "VIX",
+    "^DXY":  "DXY",
+    "^TNX":  "10Y Yield",
+    "BTC-USD": "Bitcoin",
+    "ETH-USD": "Ethereum",
+    "GLD":   "Gold",
+    "USO":   "Oil",
+    "TLT":   "Long Bond",
+}
+
+_RADAR_MOVERS = ["AAPL","MSFT","NVDA","GOOGL","META","AMZN","TSLA","AMD","PLTR","CRM"]
+
+
+@app.get("/api/market/radar")
+def market_radar(current_user: dict = Depends(get_optional_user)):
+    """
+    Live multi-instrument snapshot: indices, volatility, crypto, commodities, top movers.
+    """
+    from datetime import datetime as _dt
+    import yfinance as _yf
+
+    def _safe_ticker(sym: str):
+        try:
+            t = _yf.Ticker(sym)
+            fi = t.fast_info
+            h  = t.history(period="2d", interval="1d")
+            price      = float(fi.last_price) if hasattr(fi, "last_price") and fi.last_price else None
+            if price is None and len(h):
+                price = float(h["Close"].iloc[-1])
+            prev_close = float(h["Close"].iloc[-2]) if len(h) >= 2 else None
+            if price is None:
+                return None
+            change     = round(price - prev_close, 4) if prev_close else None
+            change_pct = round(change / prev_close * 100, 2) if change and prev_close else 0
+            return {
+                "symbol":     sym,
+                "price":      round(price, 4),
+                "prev_close": round(prev_close, 4) if prev_close else None,
+                "change":     change,
+                "change_pct": change_pct,
+                "trend":      "up" if (change_pct or 0) > 0 else ("down" if (change_pct or 0) < 0 else "flat"),
+            }
+        except Exception:
+            return None
+
+    instruments = {}
+    for sym, label in _RADAR_SYMBOLS.items():
+        d = _safe_ticker(sym)
+        if d:
+            d["label"] = label
+            instruments[sym] = d
+
+    movers = []
+    for sym in _RADAR_MOVERS:
+        d = _safe_ticker(sym)
+        if d:
+            d["label"] = sym
+            movers.append(d)
+    movers.sort(key=lambda x: abs(x.get("change_pct", 0)), reverse=True)
+
+    # Market regime inference from VIX + SPY
+    vix_val  = instruments.get("^VIX", {}).get("price", 20)
+    spy_chg  = instruments.get("SPY",  {}).get("change_pct", 0)
+    qqq_chg  = instruments.get("QQQ",  {}).get("change_pct", 0)
+    if vix_val > 30:
+        regime = "HIGH_VOLATILITY"
+    elif vix_val > 20:
+        regime = "ELEVATED_RISK" if spy_chg < 0 else "CAUTIOUS"
+    elif spy_chg > 0.5 and qqq_chg > 0.5:
+        regime = "RISK_ON"
+    elif spy_chg < -0.5:
+        regime = "RISK_OFF"
+    else:
+        regime = "NEUTRAL"
+
+    return {
+        "instruments":  instruments,
+        "movers":       movers[:8],
+        "regime":       regime,
+        "vix":          vix_val,
+        "fetched_at":   _dt.utcnow().isoformat(),
+        "real_trade":   False,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════
+# AI COMMANDER — portfolio intelligence insights
+# ══════════════════════════════════════════════════════════════════════
+
+@app.get("/api/intelligence/commander")
+def intelligence_commander(current_user: dict = Depends(get_optional_user)):
+    """
+    AI Commander: 4-6 concise operational portfolio insights.
+    Derived from live portfolio snapshot — no hallucinations.
+    Falls back to rule-based insights if OpenAI unavailable.
+    """
+    from datetime import datetime as _dt
+
+    insights = []
+    portfolio_context = ""
+    positions = []
+
+    if _PORTFOLIO_AVAILABLE and _unified_portfolio:
+        try:
+            snap = _build_unified_snapshot()
+            positions = snap.get("all_positions", [])
+            total_val  = snap.get("total_market_value", 0)
+            total_cash = snap.get("total_cash", 0)
+            daily_pnl  = snap.get("total_daily_pnl", 0)
+            unrealized = snap.get("total_unrealized_pnl", 0)
+            pos_count  = snap.get("position_count", 0)
+            sectors    = snap.get("sector_exposure", [])
+            warnings   = snap.get("concentration_warnings", [])
+            stale      = snap.get("_from_cache", False)
+
+            # ── Rule-based insights (always generated, no LLM risk) ──
+            if stale:
+                insights.append({"text": "Portfolio data is cached — broker connection may be interrupted.", "severity": "warn", "icon": "⚠"})
+
+            if total_val > 0:
+                cash_pct = (total_cash / (total_val + total_cash) * 100) if (total_val + total_cash) > 0 else 0
+                if cash_pct < 3:
+                    insights.append({"text": f"Cash reserves are critically low at {cash_pct:.1f}% of portfolio. Limited flexibility for new positions.", "severity": "warn", "icon": "⚠"})
+                elif cash_pct > 30:
+                    insights.append({"text": f"Cash allocation is elevated at {cash_pct:.1f}%. Portfolio may be under-deployed in current environment.", "severity": "info", "icon": "ℹ"})
+
+                if daily_pnl > 0:
+                    insights.append({"text": f"Portfolio gained {daily_pnl:+,.0f} today across {pos_count} positions.", "severity": "ok", "icon": "▲"})
+                elif daily_pnl < 0:
+                    insights.append({"text": f"Portfolio down {abs(daily_pnl):,.0f} today. Monitor for continued weakness.", "severity": "warn", "icon": "▼"})
+
+            for w in warnings[:2]:
+                sym   = w.get("symbol", "")
+                wt    = w.get("weight_pct", 0)
+                insights.append({"text": f"{sym} represents {wt:.1f}% of total exposure — single-name concentration risk elevated.", "severity": "warn", "icon": "⚠"})
+
+            if sectors:
+                top_sector = sectors[0]
+                if top_sector.get("pct", 0) > 40:
+                    insights.append({"text": f"{top_sector['label']} sector accounts for {top_sector['pct']:.1f}% of portfolio. Sector concentration is elevated.", "severity": "warn", "icon": "◉"})
+
+            # Sort largest positions by weight
+            sorted_pos = sorted(positions, key=lambda p: p.get("weight_pct", 0), reverse=True)
+            if sorted_pos:
+                top = sorted_pos[0]
+                insights.append({"text": f"{top.get('symbol','')} is the largest holding at {top.get('weight_pct',0):.1f}% of invested capital.", "severity": "info", "icon": "◉"})
+
+            # ── OpenAI-enhanced narrative (optional) ──
+            openai_key   = __import__("os").getenv("OPENAI_API_KEY", "")
+            openai_model = __import__("os").getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+            if openai_key and positions and total_val > 0:
+                try:
+                    pos_summary = "; ".join(
+                        f"{p.get('symbol','')} {p.get('weight_pct',0):.1f}% ({p.get('sector','unknown')})"
+                        for p in sorted_pos[:8]
+                    )
+                    portfolio_context = (
+                        f"Portfolio: ${total_val:,.0f} invested, ${total_cash:,.0f} cash, "
+                        f"daily P&L ${daily_pnl:+,.0f}, unrealized ${unrealized:+,.0f}. "
+                        f"Top holdings: {pos_summary}."
+                    )
+                    from openai import OpenAI as _OAI
+                    client = _OAI(api_key=openai_key)
+                    resp   = client.chat.completions.create(
+                        model=openai_model,
+                        messages=[
+                            {"role": "system", "content": (
+                                "You are an institutional AI portfolio analyst. Given portfolio data, "
+                                "generate exactly 3 concise operational observations (start each with a bullet •). "
+                                "Each observation: factual, data-driven, maximum 20 words. "
+                                "Focus on: exposure concentration, performance narrative, or risk signals. "
+                                "No generic advice. No speculation. Only what the data shows."
+                            )},
+                            {"role": "user", "content": portfolio_context},
+                        ],
+                        max_tokens=200,
+                        temperature=0.2,
+                    )
+                    text = resp.choices[0].message.content.strip()
+                    ai_bullets = [l.lstrip("•·-– ").strip() for l in text.splitlines() if l.strip()]
+                    for b in ai_bullets[:3]:
+                        insights.append({"text": b, "severity": "ai", "icon": "◆"})
+                except Exception:
+                    pass
+
+        except Exception as exc:
+            insights.append({"text": "Portfolio data currently unavailable.", "severity": "warn", "icon": "⚠"})
+
+    if not insights:
+        insights.append({"text": "Connect IBKR or Hapi to activate AI portfolio intelligence.", "severity": "info", "icon": "◉"})
+
+    return {
+        "insights":      insights[:8],
+        "insight_count": len(insights),
+        "generated_at":  __import__("datetime").datetime.utcnow().isoformat(),
+        "real_trade":    False,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PORTFOLIO HEALTH ENGINE
+# ══════════════════════════════════════════════════════════════════════
+
+@app.get("/api/portfolio/health")
+def portfolio_health(current_user: dict = Depends(get_optional_user)):
+    """
+    Multi-dimensional portfolio health score with explanations.
+    Dimensions: diversification, concentration, cash flexibility,
+    sector balance, volatility proxy, drawdown sensitivity.
+    """
+    _portfolio_guard()
+    from datetime import datetime as _dt
+
+    try:
+        snap      = _build_unified_snapshot()
+        positions = snap.get("all_positions", [])
+        total_val = snap.get("total_market_value", 0)
+        total_cash = snap.get("total_cash", 0)
+        sectors   = snap.get("sector_exposure", [])
+        warnings  = snap.get("concentration_warnings", [])
+
+        dimensions = []
+
+        # 1 — Diversification
+        n = len(positions)
+        if n == 0:
+            div_score, div_level = 0, "critical"
+            div_text = "No positions — portfolio is empty."
+        elif n < 5:
+            div_score, div_level = 30, "poor"
+            div_text = f"Only {n} positions. Diversify across at least 10–15 names to reduce idiosyncratic risk."
+        elif n < 10:
+            div_score, div_level = 60, "moderate"
+            div_text = f"{n} positions provide some diversification. Consider expanding to 15+ for lower volatility."
+        else:
+            div_score, div_level = 85, "good"
+            div_text = f"{n} positions indicate healthy diversification across holdings."
+        dimensions.append({"id": "diversification", "label": "Diversification", "score": div_score,
+                            "level": div_level, "text": div_text, "icon": "⎈"})
+
+        # 2 — Concentration
+        max_wt = max((p.get("weight_pct", 0) for p in positions), default=0)
+        if max_wt > 40:
+            con_score, con_level = 20, "critical"
+            con_text = f"Largest position is {max_wt:.1f}% of portfolio — severe single-name concentration."
+        elif max_wt > 25:
+            con_score, con_level = 45, "elevated"
+            con_text = f"Largest holding represents {max_wt:.1f}% of portfolio. Consider trimming to below 20%."
+        elif max_wt > 15:
+            con_score, con_level = 70, "moderate"
+            con_text = f"Top position at {max_wt:.1f}%. Reasonable but monitor for drift."
+        else:
+            con_score, con_level = 90, "healthy"
+            con_text = f"Position sizing is well-balanced. No single name exceeds {max_wt:.1f}%."
+        dimensions.append({"id": "concentration", "label": "Concentration Risk", "score": con_score,
+                            "level": con_level, "text": con_text, "icon": "◎"})
+
+        # 3 — Cash flexibility
+        total = total_val + total_cash
+        cash_pct = (total_cash / total * 100) if total > 0 else 0
+        if cash_pct < 2:
+            cash_score, cash_level = 25, "low"
+            cash_text = f"Cash is only {cash_pct:.1f}%. No dry powder for opportunities or drawdown protection."
+        elif cash_pct < 8:
+            cash_score, cash_level = 60, "tight"
+            cash_text = f"Cash at {cash_pct:.1f}%. Tight but functional. Aim for 5–10% as a minimum buffer."
+        elif cash_pct < 25:
+            cash_score, cash_level = 88, "healthy"
+            cash_text = f"Cash at {cash_pct:.1f}%. Good flexibility for rebalancing and new opportunities."
+        else:
+            cash_score, cash_level = 65, "elevated"
+            cash_text = f"High cash ({cash_pct:.1f}%) indicates under-deployment. Review allocation targets."
+        dimensions.append({"id": "cash", "label": "Cash Flexibility", "score": cash_score,
+                            "level": cash_level, "text": cash_text, "icon": "◫"})
+
+        # 4 — Sector balance
+        if not sectors or all(s.get("pct", 0) == 0 for s in sectors):
+            sec_score, sec_level = 50, "unknown"
+            sec_text = "Sector data unavailable — connect broker for full exposure analysis."
+        else:
+            top_sec_pct = sectors[0].get("pct", 0) if sectors else 0
+            n_sectors   = len([s for s in sectors if s.get("pct", 0) > 2])
+            if top_sec_pct > 60 or n_sectors < 2:
+                sec_score, sec_level = 25, "concentrated"
+                sec_text = f"Portfolio is {top_sec_pct:.0f}% in one sector. Severe sector concentration risk."
+            elif top_sec_pct > 40:
+                sec_score, sec_level = 55, "moderate"
+                sec_text = f"Largest sector is {sectors[0].get('label','')} at {top_sec_pct:.0f}%. Consider broadening exposure."
+            else:
+                sec_score, sec_level = 82, "balanced"
+                sec_text = f"Sector exposure is reasonably balanced across {n_sectors} sectors."
+        dimensions.append({"id": "sector", "label": "Sector Balance", "score": sec_score,
+                            "level": sec_level, "text": sec_text, "icon": "⊟"})
+
+        # 5 — Crypto exposure (risk flag)
+        crypto_val = sum(p.get("market_value", 0) for p in positions if p.get("asset_class") == "crypto" or "crypto" in (p.get("sector","")).lower() or "BTC" in (p.get("symbol","")) or "ETH" in (p.get("symbol","")) or "-USD" in (p.get("symbol","")))
+        crypto_pct = (crypto_val / total_val * 100) if total_val > 0 else 0
+        if crypto_pct > 20:
+            cry_score, cry_level = 30, "high"
+            cry_text = f"Crypto represents {crypto_pct:.1f}% of portfolio — significant volatility exposure."
+        elif crypto_pct > 5:
+            cry_score, cry_level = 65, "moderate"
+            cry_text = f"Crypto at {crypto_pct:.1f}% adds meaningful volatility. Monitor drawdown sensitivity."
+        else:
+            cry_score, cry_level = 90, "low"
+            cry_text = f"Minimal crypto exposure ({crypto_pct:.1f}%). Portfolio volatility profile is traditional."
+        dimensions.append({"id": "crypto", "label": "Crypto Exposure", "score": cry_score,
+                            "level": cry_level, "text": cry_text, "icon": "₿"})
+
+        # Overall health score (weighted average)
+        weights = [0.25, 0.25, 0.18, 0.18, 0.14]
+        scores  = [div_score, con_score, cash_score, sec_score, cry_score]
+        overall = round(sum(w * s for w, s in zip(weights, scores)))
+        if overall >= 75:
+            overall_level, overall_color = "Healthy", "#4ade80"
+        elif overall >= 55:
+            overall_level, overall_color = "Moderate", "#facc15"
+        elif overall >= 35:
+            overall_level, overall_color = "Elevated Risk", "#fb923c"
+        else:
+            overall_level, overall_color = "Critical", "#f87171"
+
+        return {
+            "health_score":  overall,
+            "health_level":  overall_level,
+            "health_color":  overall_color,
+            "dimensions":    dimensions,
+            "warnings_count": len(warnings),
+            "generated_at":  _dt.utcnow().isoformat(),
+            "real_trade":    False,
+        }
+    except Exception as exc:
+        return {"health_score": 0, "health_level": "unknown", "dimensions": [], "error": str(exc), "real_trade": False}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MARKET STORY ENGINE
+# ══════════════════════════════════════════════════════════════════════
+
+@app.get("/api/market/story")
+def market_story(current_user: dict = Depends(get_optional_user)):
+    """
+    AI-generated macro market narrative for today.
+    Grounded in real market data from yfinance — no hallucinations.
+    """
+    from datetime import datetime as _dt
+    import yfinance as _yf
+
+    try:
+        def _q(sym):
+            try:
+                t = _yf.Ticker(sym)
+                h = t.history(period="2d", interval="1d")
+                if len(h) < 2:
+                    return None
+                price = float(h["Close"].iloc[-1])
+                prev  = float(h["Close"].iloc[-2])
+                chg   = round((price - prev) / prev * 100, 2)
+                return {"price": round(price, 2), "change_pct": chg}
+            except Exception:
+                return None
+
+        spy = _q("SPY");   qqq = _q("QQQ");    vix_d = _q("^VIX")
+        btc = _q("BTC-USD"); tlt = _q("TLT");   dxy = _q("^DXY")
+
+        facts = []
+        if spy:
+            facts.append(f"S&P 500 {'gained' if spy['change_pct']>=0 else 'fell'} {abs(spy['change_pct']):.2f}%")
+        if qqq:
+            facts.append(f"NASDAQ {'rose' if qqq['change_pct']>=0 else 'declined'} {abs(qqq['change_pct']):.2f}%")
+        if vix_d:
+            vix_level = "elevated" if vix_d["price"] > 25 else ("moderate" if vix_d["price"] > 18 else "low")
+            facts.append(f"VIX at {vix_d['price']:.1f} ({vix_level} volatility)")
+        if dxy:
+            facts.append(f"DXY dollar index at {dxy['price']:.2f}")
+        if tlt:
+            facts.append(f"Long-duration bonds {'rallied' if tlt['change_pct']>=0 else 'sold off'} {abs(tlt['change_pct']):.2f}%")
+        if btc:
+            facts.append(f"Bitcoin {'up' if btc['change_pct']>=0 else 'down'} {abs(btc['change_pct']):.2f}% at ${btc['price']:,.0f}")
+
+        openai_key   = __import__("os").getenv("OPENAI_API_KEY", "")
+        openai_model = __import__("os").getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+        if openai_key and facts:
+            facts_str = ". ".join(facts) + "."
+            from openai import OpenAI as _OAI
+            client = _OAI(api_key=openai_key)
+            resp   = client.chat.completions.create(
+                model=openai_model,
+                messages=[
+                    {"role": "system", "content": (
+                        "You are an institutional macro analyst. Given today's market data, "
+                        "write a single paragraph of 2-3 sentences summarizing the market environment. "
+                        "Tone: factual, concise, institutional. No bullet points. No headers. "
+                        "Reference specific data provided. No speculation beyond the data."
+                    )},
+                    {"role": "user", "content": f"Today's market data: {facts_str}"},
+                ],
+                max_tokens=120,
+                temperature=0.3,
+            )
+            story = resp.choices[0].message.content.strip()
+        elif facts:
+            story = " ".join(facts) + "."
+        else:
+            story = "Market data temporarily unavailable."
+
+        return {
+            "story":      story,
+            "data_points": facts,
+            "generated_at": _dt.utcnow().isoformat(),
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"story": "Market story unavailable.", "error": str(exc), "real_trade": False}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# SMART ALERTS ENGINE
+# ══════════════════════════════════════════════════════════════════════
+
+@app.get("/api/alerts/smart")
+def smart_alerts(current_user: dict = Depends(get_optional_user)):
+    """
+    Priority-sorted intelligent alerts.
+    Sources: portfolio concentration, stale data, broker connectivity,
+    volatility events, cash level warnings.
+    """
+    from datetime import datetime as _dt
+
+    alerts = []
+    priority = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+    if _PORTFOLIO_AVAILABLE and _unified_portfolio:
+        try:
+            snap      = _build_unified_snapshot()
+            positions = snap.get("all_positions", [])
+            total_val = snap.get("total_market_value", 0)
+            total_cash = snap.get("total_cash", 0)
+            daily_pnl = snap.get("total_daily_pnl", 0)
+            warnings  = snap.get("concentration_warnings", [])
+            stale     = snap.get("_from_cache", False)
+            brokers   = snap.get("brokers", {})
+            sectors   = snap.get("sector_exposure", [])
+
+            if stale:
+                alerts.append({
+                    "id": "stale_data",
+                    "level": "high",
+                    "icon": "⚡",
+                    "title": "Stale Portfolio Data",
+                    "message": "Portfolio snapshot is from cache. Broker connection may be interrupted.",
+                    "action": "Check bridge connection",
+                })
+
+            for broker_name, bdata in brokers.items():
+                if bdata.get("status") in ("not_connected", "disconnected"):
+                    alerts.append({
+                        "id": f"broker_{broker_name}_offline",
+                        "level": "high",
+                        "icon": "⚡",
+                        "title": f"{broker_name.upper()} Offline",
+                        "message": f"{broker_name.upper()} broker is disconnected. Portfolio data may be incomplete.",
+                        "action": "Restart bridge",
+                    })
+
+            for w in warnings:
+                sym = w.get("symbol", "")
+                wt  = w.get("weight_pct", 0)
+                alerts.append({
+                    "id": f"concentration_{sym}",
+                    "level": "critical" if wt > 35 else "high",
+                    "icon": "◎",
+                    "title": f"Concentration Risk: {sym}",
+                    "message": w.get("message", f"{sym} at {wt:.1f}% of portfolio"),
+                    "action": "Review position sizing",
+                })
+
+            if sectors:
+                top_sec = sectors[0]
+                if top_sec.get("pct", 0) > 45:
+                    alerts.append({
+                        "id": "sector_concentration",
+                        "level": "critical",
+                        "icon": "⊟",
+                        "title": f"Sector Overweight: {top_sec['label']}",
+                        "message": f"{top_sec['label']} represents {top_sec['pct']:.0f}% of portfolio.",
+                        "action": "Diversify sector exposure",
+                    })
+
+            total = total_val + total_cash
+            if total > 0:
+                cash_pct = total_cash / total * 100
+                if cash_pct < 2:
+                    alerts.append({
+                        "id": "cash_critical",
+                        "level": "critical",
+                        "icon": "◫",
+                        "title": "Cash Critically Low",
+                        "message": f"Only {cash_pct:.1f}% cash remaining. No buffer for drawdowns or opportunities.",
+                        "action": "Review position sizing",
+                    })
+
+            if total_val > 0 and daily_pnl < -total_val * 0.03:
+                alerts.append({
+                    "id": "drawdown_alert",
+                    "level": "high",
+                    "icon": "▼",
+                    "title": "Intraday Drawdown Alert",
+                    "message": f"Portfolio down {abs(daily_pnl/total_val*100):.1f}% today. Monitor for continuation.",
+                    "action": "Review risk exposure",
+                })
+
+        except Exception:
+            pass
+
+    alerts.sort(key=lambda a: priority.get(a["level"], 9))
+
+    return {
+        "alerts":      alerts[:10],
+        "alert_count": len(alerts),
+        "critical":    sum(1 for a in alerts if a["level"] == "critical"),
+        "high":        sum(1 for a in alerts if a["level"] == "high"),
+        "generated_at": __import__("datetime").datetime.utcnow().isoformat(),
+        "real_trade":  False,
+    }

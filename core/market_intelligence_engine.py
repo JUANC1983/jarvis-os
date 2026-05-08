@@ -119,6 +119,9 @@ class MarketIntelligenceEngine:
         result: Dict[str, Any] = {
             "timestamp": datetime.utcnow().isoformat(),
             "items": [],
+            "data_origin": "yfinance",
+            "realtime": False,
+            "delayed": True,
         }
 
         for label, ticker in self.core_watchlist.items():
@@ -140,6 +143,9 @@ class MarketIntelligenceEngine:
                     "price":      round(latest_close, 2),
                     "change":     round(change, 2),
                     "change_pct": round(change_pct, 2),
+                    "data_origin": "yfinance",
+                    "realtime": False,
+                    "delayed": True,
                 })
             except Exception:
                 continue
