@@ -108,6 +108,84 @@
 }
 [data-theme="light"] .live-clock-chip{background:rgba(0,0,0,.04)}
 
+/* Account Status Bar */
+.acct-status-bar{
+  display:flex;align-items:center;gap:0;overflow-x:auto;
+  background:rgba(4,12,22,.7);border:1px solid rgba(68,240,255,.08);
+  border-radius:8px;padding:6px 14px;margin-bottom:10px;
+  font-size:10px;color:var(--soft);white-space:nowrap;
+}
+.acct-status-item{
+  display:flex;align-items:center;gap:5px;padding:0 12px;
+  border-right:1px solid rgba(255,255,255,.06);flex-shrink:0;
+}
+.acct-status-item:first-child{padding-left:0}
+.acct-status-item:last-child{border-right:none;padding-right:0}
+.acct-status-val{font-weight:700;color:var(--white);margin-left:3px}
+.acct-status-ok{color:#4ade80}
+.acct-status-warn{color:#facc15}
+.acct-status-off{color:#f87171}
+[data-theme="light"] .acct-status-bar{background:rgba(240,244,248,.9);border-color:rgba(0,112,184,.1)}
+
+/* Metric card update shimmer */
+@keyframes metric-shimmer{0%{opacity:.5}100%{opacity:1}}
+.metric-updating{animation:metric-shimmer .4s ease-in-out infinite alternate}
+
+/* Number update glow */
+@keyframes val-glow-up  {0%{text-shadow:0 0 8px rgba(74,222,128,.8)}100%{text-shadow:none}}
+@keyframes val-glow-down{0%{text-shadow:0 0 8px rgba(248,113,113,.8)}100%{text-shadow:none}}
+.glow-up  {animation:val-glow-up   .6s ease-out}
+.glow-down{animation:val-glow-down .6s ease-out}
+
+/* ── JARVIS Capital OS ─────────────────────────────────────────────── */
+@keyframes readiness-fill{from{width:0%}to{width:var(--r-width)}}
+@keyframes evo-bar-fill   {from{width:0%}to{width:var(--e-width)}}
+@keyframes cap-pulse      {0%,100%{opacity:.7}50%{opacity:1}}
+@keyframes temp-ring-draw {from{stroke-dashoffset:201}to{stroke-dashoffset:var(--ring-offset)}}
+.cap-mode-btn:hover{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.18)!important}
+.cap-mode-btn.active{background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(99,102,241,.1))!important;border-color:rgba(139,92,246,.5)!important;color:#c084fc!important}
+.cap-phase-node{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:0}
+.cap-phase-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.cap-phase-dot.done{background:linear-gradient(135deg,#7c3aed,#a78bfa);box-shadow:0 0 10px rgba(139,92,246,.4)}
+.cap-phase-dot.active{background:linear-gradient(135deg,rgba(139,92,246,.4),rgba(99,102,241,.3));border:2px solid #a78bfa;animation:cap-pulse 2s infinite}
+.cap-phase-dot.locked{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--soft)}
+.cap-phase-line{flex:1;height:2px;background:rgba(255,255,255,.08);margin:0 -2px;margin-top:12px;align-self:flex-start}
+.cap-phase-line.done{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+.evo-metric-row{display:flex;flex-direction:column;gap:4px;padding:10px;background:rgba(255,255,255,.025);border-radius:6px;border:1px solid rgba(255,255,255,.04)}
+.evo-metric-label{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.5px}
+.evo-metric-bar-bg{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.evo-metric-bar{height:100%;border-radius:3px;transition:width 1.4s cubic-bezier(.4,0,.2,1)}
+.evo-metric-val{font-size:13px;font-weight:800}
+.cap-quality-chip{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:6px 8px;text-align:center}
+.cap-quality-chip-label{font-size:9px;color:var(--soft);text-transform:uppercase;letter-spacing:.4px}
+.cap-quality-chip-val{font-size:15px;font-weight:800;margin-top:1px}
+
+/* Market status badge */
+.mkt-session-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  padding:2px 7px;border-radius:4px;
+}
+.mkt-session-open   {background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.25)}
+.mkt-session-closed {background:rgba(110,155,181,.1);color:var(--soft);border:1px solid rgba(110,155,181,.15)}
+.mkt-session-pre    {background:rgba(250,204,21,.1);color:#facc15;border:1px solid rgba(250,204,21,.2)}
+.mkt-session-after  {background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+
+/* "LAST KNOWN" stale badge on metric cards */
+.metric-stale-tag{
+  font-size:8px;font-weight:700;color:#facc15;letter-spacing:.05em;
+  background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.2);
+  border-radius:3px;padding:1px 4px;margin-left:4px;
+}
+/* "LOADING" shimmer for metric values */
+.metric-loading{
+  display:inline-block;height:14px;width:60px;
+  background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 75%);
+  background-size:200% 100%;animation:skel-shimmer 1.4s infinite;
+  border-radius:3px;vertical-align:middle;
+}
+@keyframes skel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -2990,12 +3068,14 @@ body.mode-beginner .operator-only{display:none!important}
 
   <!-- ══ Sub-Navigation ═════════════════════════════════════════════════ -->
   <div class="mkt-subnav" role="tablist">
-    <button class="mkt-subnav-btn active" id="mkt-nav-cockpit"  onclick="switchMarketPanel('cockpit')"  role="tab" data-i18n="cockpit">Cockpit</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-radar"    onclick="switchMarketPanel('radar')"    role="tab" data-i18n="market_radar">Market Radar</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-intel"    onclick="switchMarketPanel('intel')"    role="tab" data-i18n="intelligence">Intelligence</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-lab"      onclick="switchMarketPanel('lab')"      role="tab" data-i18n="paper_lab">Paper Lab</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-learning" onclick="switchMarketPanel('learning')" role="tab" data-i18n="ai_learning">AI Learning</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-analysis" onclick="switchMarketPanel('analysis')" role="tab" data-i18n="analysis">Analysis</button>
+    <button class="mkt-subnav-btn active" id="mkt-nav-cockpit"   onclick="switchMarketPanel('cockpit')"   role="tab" data-i18n="cockpit">Cockpit</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-radar"     onclick="switchMarketPanel('radar')"     role="tab" data-i18n="market_radar">Market Radar</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-intel"     onclick="switchMarketPanel('intel')"     role="tab" data-i18n="intelligence">Intelligence</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-lab"       onclick="switchMarketPanel('lab')"       role="tab" data-i18n="paper_lab">Paper Lab</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-learning"  onclick="switchMarketPanel('learning')"  role="tab" data-i18n="ai_learning">AI Learning</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-capital"   onclick="switchMarketPanel('capital')"   role="tab" style="background:linear-gradient(135deg,rgba(99,102,241,.18),rgba(139,92,246,.12));border-color:rgba(139,92,246,.4);color:#a78bfa;font-weight:800" data-i18n="jarvis_capital">JARVIS Capital</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-evolution" onclick="switchMarketPanel('evolution')" role="tab" style="background:linear-gradient(135deg,rgba(6,182,212,.12),rgba(99,102,241,.1));border-color:rgba(6,182,212,.3);color:#22d3ee" data-i18n="ai_evolution">AI Evolution</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-analysis"  onclick="switchMarketPanel('analysis')"  role="tab" data-i18n="analysis">Analysis</button>
   </div>
 
   <!-- ─────────────────────────────────────────────────────────────────── -->
@@ -3032,6 +3112,37 @@ body.mode-beginner .operator-only{display:none!important}
 
     <!-- Smart Alerts Strip -->
     <div id="smart-alerts-strip" style="display:none;margin-bottom:10px"></div>
+
+    <!-- Live Account Status Bar -->
+    <div class="acct-status-bar" id="acct-status-bar">
+      <div class="acct-status-item">
+        <span>Broker</span>
+        <span class="acct-status-val" id="ast-broker-status">—</span>
+      </div>
+      <div class="acct-status-item">
+        <span>Market</span>
+        <span id="ast-market-session" class="mkt-session-badge mkt-session-closed">CLOSED</span>
+      </div>
+      <div class="acct-status-item">
+        <span>Last Sync</span>
+        <span class="acct-status-val" id="ast-last-sync">—</span>
+      </div>
+      <div class="acct-status-item">
+        <span>Freshness</span>
+        <span class="acct-status-val" id="ast-freshness">—</span>
+      </div>
+      <div class="acct-status-item">
+        <span>Quote Source</span>
+        <span class="acct-status-val" id="ast-quote-src">—</span>
+      </div>
+      <div class="acct-status-item">
+        <span>Latency</span>
+        <span class="acct-status-val" id="ast-latency">—</span>
+      </div>
+      <div class="acct-status-item" style="margin-left:auto;border-right:none">
+        <span id="ast-sync-indicator" style="display:none;font-size:9px;color:#facc15;animation:blink 1s ease-in-out infinite">● syncing…</span>
+      </div>
+    </div>
 
     <!-- Market Pulse Strip -->
     <div id="ck-market-pulse" style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 14px;margin-bottom:12px;overflow-x:auto">
@@ -3779,6 +3890,289 @@ body.mode-beginner .operator-only{display:none!important}
     <div id="paper-pnl"></div>
     <div id="stale-banner"></div>
   </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PANEL: JARVIS CAPITAL OS                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="mkt-panel-capital" class="mkt-panel">
+
+    <!-- Header ─────────────────────────────────────────────────────────── -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:17px;font-weight:800;display:flex;align-items:center;gap:10px">
+          JARVIS Capital OS
+          <span style="font-size:10px;font-weight:700;background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(99,102,241,.15));color:#a78bfa;border:1px solid rgba(139,92,246,.4);padding:3px 10px;border-radius:4px;letter-spacing:.8px">ISOLATED AI SANDBOX</span>
+          <span style="font-size:10px;font-weight:700;background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25);padding:3px 10px;border-radius:4px;letter-spacing:.5px">HUMAN PORTFOLIO PROTECTED</span>
+        </div>
+        <div style="font-size:11px;color:var(--soft);margin-top:3px">Quality-gated AI capital management · Phase-based deployment · real_trade: false</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-ol btn-sm" onclick="refreshCapitalReadiness()" style="font-size:11px">↻ Refresh Readiness</button>
+        <button class="btn-p btn-sm" onclick="loadCapital(null)" style="font-size:11px">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Capital isolation notice ────────────────────────────────────────── -->
+    <div style="background:linear-gradient(90deg,rgba(239,68,68,.05),rgba(239,68,68,.02));border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">🔒</span>
+      <div style="font-size:11px;line-height:1.6">
+        <span style="color:#f87171;font-weight:700">CAPITAL ISOLATION ACTIVE</span> — Human portfolio is <strong>strictly read-only</strong>. AI cannot modify positions, transfer funds, or place orders on your behalf. JARVIS Capital operates in an entirely separate, allocated sandbox.
+      </div>
+    </div>
+
+    <!-- Top cards: Vaults side by side ─────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <!-- Human vault (protected) -->
+      <div class="card" style="padding:16px;border:1px solid rgba(239,68,68,.2);background:linear-gradient(135deg,rgba(239,68,68,.04),transparent)">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+          <span style="font-size:16px">👤</span>
+          <div>
+            <div style="font-size:11px;font-weight:800;color:#f87171;text-transform:uppercase;letter-spacing:.6px">Human Portfolio</div>
+            <div style="font-size:9px;color:var(--soft);margin-top:1px">IBKR · Read Only</div>
+          </div>
+          <div style="margin-left:auto;background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700">PROTECTED</div>
+        </div>
+        <div class="mv" id="cap-human-value" style="font-size:22px">—</div>
+        <div style="font-size:10px;color:var(--soft);margin-top:2px">Net Liquidation</div>
+        <div style="font-size:10px;color:#f87171;margin-top:6px;font-style:italic">AI has zero write access</div>
+      </div>
+      <!-- AI vault -->
+      <div class="card" style="padding:16px;border:1px solid rgba(139,92,246,.25);background:linear-gradient(135deg,rgba(139,92,246,.06),transparent)">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+          <span style="font-size:16px">🤖</span>
+          <div>
+            <div style="font-size:11px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.6px">JARVIS Capital</div>
+            <div style="font-size:9px;color:var(--soft);margin-top:1px">Isolated AI Sandbox</div>
+          </div>
+          <div id="cap-active-badge" style="margin-left:auto;background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.2);padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700">INACTIVE</div>
+        </div>
+        <div class="mv" id="cap-ai-value" style="font-size:22px;color:#a78bfa">—</div>
+        <div style="font-size:10px;color:var(--soft);margin-top:2px">Sandbox Value</div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <span style="font-size:10px;color:var(--soft)">Allocated: <span id="cap-allocated" style="color:var(--white)">—</span></span>
+          <span style="font-size:10px;color:var(--soft)">Profit: <span id="cap-profit" style="color:#4ade80">—</span></span>
+        </div>
+      </div>
+      <!-- AI vs Human -->
+      <div class="card" style="padding:16px;border:1px solid rgba(6,182,212,.15)">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">AI vs Human</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;color:var(--soft)">AI Return</span>
+          <span id="cap-ai-return" class="mv" style="font-size:15px;color:#a78bfa">—</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--soft)">Your Return</span>
+          <span id="cap-human-return" class="mv" style="font-size:15px">—</span>
+        </div>
+        <div id="cap-leader-badge" style="text-align:center;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;background:rgba(107,114,128,.15);color:#9ca3af">— Awaiting Data —</div>
+      </div>
+    </div>
+
+    <!-- AI Readiness Bar ────────────────────────────────────────────────── -->
+    <div class="card" style="padding:16px;margin-bottom:14px;border:1px solid rgba(139,92,246,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px">
+            AI Readiness Score
+            <span style="font-size:9px;color:var(--soft);font-weight:400">Quality-gated — never inflated by trade volume</span>
+          </div>
+          <div id="cap-readiness-sublabel" style="font-size:11px;color:var(--soft);margin-top:2px">Computing readiness…</div>
+        </div>
+        <div style="text-align:right">
+          <div id="cap-readiness-score" style="font-size:28px;font-weight:900;color:#a78bfa">—</div>
+          <div id="cap-readiness-level" style="font-size:10px;font-weight:700;color:var(--soft);letter-spacing:.5px">—</div>
+        </div>
+      </div>
+      <!-- Bar -->
+      <div style="position:relative;height:14px;background:rgba(255,255,255,.06);border-radius:7px;overflow:hidden;margin-bottom:8px">
+        <div id="cap-readiness-bar" style="height:100%;width:0%;border-radius:7px;transition:width 1.2s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,#7c3aed,#a78bfa,#c084fc)"></div>
+        <!-- Level markers -->
+        <div style="position:absolute;top:0;left:15%;width:1px;height:100%;background:rgba(255,255,255,.15)"></div>
+        <div style="position:absolute;top:0;left:30%;width:1px;height:100%;background:rgba(255,255,255,.15)"></div>
+        <div style="position:absolute;top:0;left:45%;width:1px;height:100%;background:rgba(255,255,255,.15)"></div>
+        <div style="position:absolute;top:0;left:60%;width:1px;height:100%;background:rgba(255,255,255,.15)"></div>
+        <div style="position:absolute;top:0;left:75%;width:1px;height:100%;background:rgba(255,255,255,.15)"></div>
+        <div style="position:absolute;top:0;left:90%;width:1px;height:100%;background:rgba(255,255,255,.15)"></div>
+      </div>
+      <!-- Level labels -->
+      <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--soft);margin-bottom:12px">
+        <span>Observer</span><span>Pattern Learner</span><span>Risk Aware</span><span>Consistent</span><span>Disciplined</span><span>Candidate</span><span style="color:#a78bfa">Approved</span>
+      </div>
+      <!-- Quality components -->
+      <div id="cap-readiness-components" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+    </div>
+
+    <!-- Deployment Phase Tracker ─────────────────────────────────────────── -->
+    <div class="card" style="padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Deployment Lifecycle</div>
+      <div id="cap-phase-track" style="display:flex;gap:0;align-items:center"></div>
+    </div>
+
+    <!-- Risk Temperature + Mode ─────────────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+
+      <!-- Risk Temperature Meter -->
+      <div class="card" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Risk Temperature</div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">
+          <!-- Dial -->
+          <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+            <svg viewBox="0 0 80 80" style="width:80px;height:80px">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="8"/>
+              <circle id="cap-temp-ring" cx="40" cy="40" r="32" fill="none" stroke="#facc15" stroke-width="8"
+                stroke-dasharray="201" stroke-dashoffset="201"
+                stroke-linecap="round" transform="rotate(-90 40 40)"
+                style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),stroke .6s"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div id="cap-temp-val" style="font-size:16px;font-weight:900;color:#facc15">—</div>
+              <div style="font-size:8px;color:var(--soft)">temp</div>
+            </div>
+          </div>
+          <div>
+            <div id="cap-temp-level" style="font-size:17px;font-weight:800;color:#facc15;letter-spacing:.5px">—</div>
+            <div id="cap-temp-factors" style="font-size:10px;color:var(--soft);margin-top:4px;line-height:1.5"></div>
+          </div>
+        </div>
+        <!-- Temperature scale -->
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <div style="flex:1;background:rgba(74,222,128,.2);border-radius:3px;padding:4px;text-align:center;font-size:9px;color:#4ade80;font-weight:700">LOW</div>
+          <div style="flex:1;background:rgba(250,204,21,.2);border-radius:3px;padding:4px;text-align:center;font-size:9px;color:#facc15;font-weight:700">BALANCED</div>
+          <div style="flex:1;background:rgba(249,115,22,.2);border-radius:3px;padding:4px;text-align:center;font-size:9px;color:#f97316;font-weight:700">HIGH</div>
+          <div style="flex:1;background:rgba(248,113,113,.2);border-radius:3px;padding:4px;text-align:center;font-size:9px;color:#f87171;font-weight:700">EXTREME</div>
+        </div>
+      </div>
+
+      <!-- Risk Mode Selector -->
+      <div class="card" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">AI Risk Personality</div>
+        <div style="display:flex;flex-direction:column;gap:5px" id="cap-mode-selector">
+          <button onclick="_setCapMode('conservative')" id="cap-mode-conservative" class="cap-mode-btn" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--white);cursor:pointer;font-size:11px;text-align:left;transition:all .2s">
+            <span style="font-size:14px">🛡️</span>
+            <div><div style="font-weight:700">Conservative</div><div style="font-size:9px;color:var(--soft)">Capital preservation · elite setups only</div></div>
+          </button>
+          <button onclick="_setCapMode('balanced')" id="cap-mode-balanced" class="cap-mode-btn" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--white);cursor:pointer;font-size:11px;text-align:left;transition:all .2s">
+            <span style="font-size:14px">⚖️</span>
+            <div><div style="font-weight:700">Balanced</div><div style="font-size:9px;color:var(--soft)">Moderate growth · controlled risk</div></div>
+          </button>
+          <button onclick="_setCapMode('aggressive')" id="cap-mode-aggressive" class="cap-mode-btn" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--white);cursor:pointer;font-size:11px;text-align:left;transition:all .2s">
+            <span style="font-size:14px">📈</span>
+            <div><div style="font-weight:700">Aggressive</div><div style="font-size:9px;color:var(--soft)">Higher capture · momentum · hard limits still apply</div></div>
+          </button>
+          <button onclick="_setCapMode('experimental')" id="cap-mode-experimental" class="cap-mode-btn" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--white);cursor:pointer;font-size:11px;text-align:left;transition:all .2s">
+            <span style="font-size:14px">🧪</span>
+            <div><div style="font-weight:700">Experimental</div><div style="font-size:9px;color:#f87171">Paper only — never deployed to live capital</div></div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capital Allocation + Profit Transfer ────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+
+      <!-- Allocate Capital -->
+      <div class="card" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Allocate Sandbox Capital</div>
+        <div style="font-size:10px;color:var(--soft);margin-bottom:10px;line-height:1.5">Allocate a fixed amount to the JARVIS Capital sandbox. Hard cap: <span style="color:#a78bfa;font-weight:700">$500</span>. This is <strong>separate</strong> from your IBKR portfolio.</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+          <button onclick="_allocateCapital(50)"  class="btn-ol btn-sm" style="font-size:11px;padding:5px 10px">$50</button>
+          <button onclick="_allocateCapital(100)" class="btn-ol btn-sm" style="font-size:11px;padding:5px 10px">$100</button>
+          <button onclick="_allocateCapital(250)" class="btn-ol btn-sm" style="font-size:11px;padding:5px 10px">$250</button>
+          <button onclick="_allocateCapital(500)" class="btn-ol btn-sm" style="font-size:11px;padding:5px 10px;color:#a78bfa;border-color:rgba(139,92,246,.4)">$500 Max</button>
+        </div>
+        <div id="cap-alloc-feedback" style="font-size:11px;display:none;padding:7px 10px;border-radius:5px;margin-top:4px"></div>
+      </div>
+
+      <!-- Profit Transfer -->
+      <div class="card" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Transfer AI Profits</div>
+        <div style="font-size:22px;font-weight:800;color:#4ade80;margin-bottom:2px" id="cap-transfer-available">$0.00</div>
+        <div style="font-size:10px;color:var(--soft);margin-bottom:10px">Available realized profit</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button onclick="_transferAllProfit()" class="btn-p btn-sm" style="font-size:11px;background:linear-gradient(135deg,#059669,#047857)">Transfer Profit</button>
+          <button onclick="_reinvestProfit()"    class="btn-ol btn-sm" style="font-size:11px">Reinvest</button>
+          <button onclick="_keepInSandbox()"     class="btn-ol btn-sm" style="font-size:11px">Keep in Sandbox</button>
+        </div>
+        <div style="font-size:9px;color:var(--soft);line-height:1.4">Transfers require your explicit approval. Never automatic. Every transfer is audited.</div>
+        <div id="cap-transfer-feedback" style="font-size:11px;display:none;margin-top:6px;padding:7px 10px;border-radius:5px"></div>
+      </div>
+    </div>
+
+    <!-- Safety Controls ────────────────────────────────────────────────────── -->
+    <div class="card" style="padding:14px;margin-bottom:14px;border:1px solid rgba(239,68,68,.15)">
+      <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Safety Controls</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-ol btn-sm" onclick="_capEmergencyStop()" style="color:#f87171;border-color:rgba(239,68,68,.4);font-size:11px;font-weight:700">⚠ Emergency Shutdown</button>
+        <button class="btn-ol btn-sm" onclick="_setCapMode('conservative')" style="font-size:11px">🛡 Force Conservative</button>
+        <button class="btn-ol btn-sm" onclick="_capEmergencyStop()" style="font-size:11px;color:#f97316">⏸ Pause Trading</button>
+      </div>
+      <div id="cap-safety-status" style="font-size:10px;color:var(--soft);margin-top:8px;line-height:1.5"></div>
+    </div>
+
+  </div><!-- /mkt-panel-capital -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PANEL: AI EVOLUTION CENTER                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="mkt-panel-evolution" class="mkt-panel">
+
+    <!-- Header ─────────────────────────────────────────────────────────── -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:17px;font-weight:800;display:flex;align-items:center;gap:10px">
+          AI Evolution Center
+          <span style="font-size:10px;font-weight:700;background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(99,102,241,.12));color:#22d3ee;border:1px solid rgba(6,182,212,.3);padding:3px 10px;border-radius:4px;letter-spacing:.8px">LIVE LEARNING</span>
+        </div>
+        <div style="font-size:11px;color:var(--soft);margin-top:3px">Training an institutional-grade AI operator · Every trade teaches · Every mistake refines</div>
+      </div>
+      <button class="btn-p btn-sm" onclick="loadEvolution(null)" style="font-size:11px;background:linear-gradient(135deg,rgba(6,182,212,.25),rgba(99,102,241,.2));border-color:rgba(6,182,212,.4)">↻ Refresh Evolution</button>
+    </div>
+
+    <!-- 11 Evolution Metrics ────────────────────────────────────────────── -->
+    <div class="card" style="padding:16px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px">AI Capability Matrix</div>
+      <div id="evo-metrics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
+
+    <!-- AI Self-Reflection Feed ─────────────────────────────────────────── -->
+    <div class="card" style="padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">AI Self-Reflections</div>
+      <div id="evo-reflections" style="display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--soft);line-height:1.6">
+        <div style="color:var(--soft);font-style:italic">Trade history will generate AI insights here.</div>
+      </div>
+    </div>
+
+    <!-- Strategy Confidence Leaderboard ─────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="card" style="padding:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Strategy Confidence</div>
+        <div id="evo-strategy-conf" style="font-size:11px;color:var(--soft)">No strategy data yet.</div>
+      </div>
+      <div class="card" style="padding:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Learning Progress</div>
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+            <span style="color:var(--soft)">Total Decisions</span>
+            <span id="evo-total-decisions" style="color:var(--white);font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+            <span style="color:var(--soft)">Prediction Accuracy</span>
+            <span id="evo-accuracy" style="color:#4ade80;font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+            <span style="color:var(--soft)">Avg AI Confidence</span>
+            <span id="evo-avg-conf" style="color:#22d3ee;font-weight:700">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px">
+            <span style="color:var(--soft)">Learning Quality</span>
+            <span id="evo-lqs" style="color:#a78bfa;font-weight:700">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mkt-panel-evolution -->
 
 </div>
 
@@ -6265,14 +6659,18 @@ async function loadMarketSnapshot() {
    ══════════════════════════════════════════════════════════════ */
 
 function _fmtPnl(val) {
-  if (val == null || val === 0) return '<span style="color:var(--soft)">$0</span>';
-  const color = val >= 0 ? "#4ade80" : "#f87171";
-  const sign  = val >= 0 ? "+" : "";
-  return `<span style="color:${color}">${sign}$${Math.abs(val).toLocaleString("en-US", {minimumFractionDigits:0, maximumFractionDigits:0})}</span>`;
+  if (val == null || val === "" || val === 0) return '<span style="color:var(--soft)">—</span>';
+  const n = Number(val);
+  if (isNaN(n) || !isFinite(n)) return '<span style="color:var(--soft)">—</span>';
+  const color = n >= 0 ? "#4ade80" : "#f87171";
+  const sign  = n >= 0 ? "+" : "−";
+  return `<span style="color:${color}">${sign}$${Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>`;
 }
 function _fmtVal(val) {
-  if (!val) return "—";
-  return "$" + Number(val).toLocaleString("en-US", {minimumFractionDigits:0, maximumFractionDigits:0});
+  if (val == null || val === "" || val === 0) return "—";
+  const n = Number(val);
+  if (isNaN(n) || !isFinite(n) || n === 0) return "—";
+  return "$" + n.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
 async function loadPortfolioSummary(btn) {
@@ -7700,16 +8098,18 @@ const _panelLoading = {};
 
 function switchMarketPanel(name) {
   _mktActivePanel = name;
-  const ALL_PANELS = ["cockpit","radar","intel","lab","learning","analysis"];
+  const ALL_PANELS = ["cockpit","radar","intel","lab","learning","analysis","capital","evolution"];
   ALL_PANELS.forEach(p => {
     const el  = document.getElementById("mkt-panel-" + p);
     const btn = document.getElementById("mkt-nav-" + p);
     if (el)  el.classList.toggle("active", p === name);
     if (btn) btn.classList.toggle("active", p === name);
   });
-  if (name === "cockpit"  && !_panelLoading.cockpit)   loadCockpit(null);
-  if (name === "lab"      && !_panelLoading.lab)        loadPaperAnalytics(null);
-  if (name === "learning" && !_panelLoading.learning)   loadLearningFull(null);
+  if (name === "cockpit"   && !_panelLoading.cockpit)   loadCockpit(null);
+  if (name === "lab"       && !_panelLoading.lab)        loadPaperAnalytics(null);
+  if (name === "learning"  && !_panelLoading.learning)   loadLearningFull(null);
+  if (name === "capital"   && !_panelLoading.capital)    loadCapital(null);
+  if (name === "evolution" && !_panelLoading.evolution)  loadEvolution(null);
   if (name === "analysis") { try { loadMarketNews(); loadRecommendations(); } catch(_) {} }
   if (name === "radar") {
     _timelineEvent("Market Radar panel opened", "info");
@@ -7740,7 +8140,10 @@ function _setTs(id, label) {
 async function loadCockpit(btn) {
   if (_panelLoading.cockpit) return;
   _panelLoading.cockpit = true;
+  _acctState._refreshing = true;
+  _renderStatusBar();
   if (btn) { btn.textContent = "⏳ Loading…"; btn.disabled = true; }
+  const t0 = Date.now();
   try {
     const d = await _fetchWithTimeout("/api/portfolio/cockpit", {}, 12000);
     if (d.status !== "ok") throw new Error(d.error || "Cockpit error");
@@ -7781,66 +8184,67 @@ async function loadCockpit(btn) {
     _set("ck-paper-cash",    _fmtVal(paper.cash));
     _set("ck-paper-trades",  String(paper.trade_count||0));
 
-    // ── Institutional KPIs ──────────────────────────────────────────────
-    const dpnlColor = (real.daily_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-    _set("ck-daily-pnl",  `<span style="color:${dpnlColor}">${_fmtPnl(real.daily_pnl)}</span>`);
-    _set("ck-daily-pct",  real.daily_pnl_pct ? `${real.daily_pnl_pct > 0 ? "+" : ""}${(real.daily_pnl_pct||0).toFixed(2)}%` : "");
+    // ── Merge into Account State Engine (never overwrites valid data with zeros) ──
+    const latencyMs = Date.now() - t0;
+    _patchAcctState({
+      daily_pnl:       real.daily_pnl,
+      daily_pnl_pct:   real.daily_pnl_pct,
+      unrealized_pnl:  real.unrealized_pnl,
+      realized_pnl:    real.realized_pnl,
+      net_liquidation: real.net_liquidation || real.total_value,
+      available_cash:  real.available_cash || real.cash,
+      buying_power:    real.buying_power,
+      invested:        real.invested,
+      position_count:  real.position_count,
+      paper_pnl:       paper.pnl_total,
+      paper_pnl_pct:   paper.pnl_pct,
+      paper_positions: paper.position_count,
+      broker_status:   ibkrLive ? "connected" : "offline",
+      from_cache:      fromCache,
+      latency_ms:      latencyMs,
+    });
 
-    const unrColor = (real.unrealized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-    _set("ck-unrealized", `<span style="color:${unrColor}">${_fmtPnl(real.unrealized_pnl)}</span>`);
-
-    const rlzColor = (real.realized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-    if (real.realized_pnl != null)
-      _set("ck-realized-pnl", `<span style="color:${rlzColor}">${_fmtPnl(real.realized_pnl)}</span>`);
-
-    // Net liquidation (IBKR account value)
-    if (real.net_liquidation && real.net_liquidation > 0)
-      _set("ck-net-liq", `$${Number(real.net_liquidation).toLocaleString("en-US",{maximumFractionDigits:0})}`);
-    else if (real.total_value)
-      _set("ck-net-liq", `$${Number(real.total_value).toLocaleString("en-US",{maximumFractionDigits:0})}`);
-
-    // Available cash
-    const cashVal = real.available_cash || real.cash || 0;
-    _set("ck-avail-cash", cashVal > 0 ? `$${Number(cashVal).toLocaleString("en-US",{maximumFractionDigits:0})}` : "—");
-    const baseVal = real.net_liquidation || real.total_value || 0;
-    const cashPct = baseVal > 0 ? Math.round(cashVal / baseVal * 100) : 0;
-    _set("ck-cash-pct", cashPct > 0 ? `${cashPct}% of portfolio` : "of portfolio");
-
-    // Buying power
-    if (real.buying_power && real.buying_power > 0)
-      _set("ck-buying-power", `$${Number(real.buying_power).toLocaleString("en-US",{maximumFractionDigits:0})}`);
-
-    const riskScore = intel.portfolio_score || 0;
-    const riskColor = riskScore >= 65 ? "#4ade80" : riskScore >= 45 ? "#facc15" : "#f87171";
-    _set("ck-risk-score", `<span style="color:${riskColor}">${riskScore}</span>`);
-    _set("ck-risk-label", `<span style="color:${riskColor}">${(intel.risk_level||"—").toUpperCase()}</span>`);
-
-    _set("ck-paper-pnl-metric", `<span style="color:${ppnlColor}">${_fmtPnl(paper.pnl_total)}</span>`);
-    _set("ck-paper-pnl-pct",    paper.pnl_pct ? `${paper.pnl_pct > 0 ? "+" : ""}${(paper.pnl_pct||0).toFixed(2)}%` : "");
-    _set("ck-positions",  String(real.position_count||0));
-    const connectedBrokers = Object.values(d.brokers||{}).filter(b => !["not_connected","disconnected","not_configured"].includes(b.status)).length;
-    _set("ck-broker-count", `${connectedBrokers} broker${connectedBrokers !== 1 ? "s" : ""} connected`);
-    _set("ck-paper-pos",  String(paper.position_count||0));
-
-    // Top winner / loser from largest positions
+    // Top winner / loser from positions
     const allPos = (d.largest_positions || []);
     if (allPos.length) {
       const byUnreal = [...allPos].sort((a,b) => (b.unrealized_pnl||0) - (a.unrealized_pnl||0));
       const winner   = byUnreal[0];
       const loser    = byUnreal[byUnreal.length-1];
       if (winner && (winner.unrealized_pnl||0) > 0) {
-        _set("ck-top-winner", winner.symbol);
-        _set("ck-top-winner-pct", `+${(winner.unrealized_pnl_pct||0).toFixed(1)}% · ${_fmtPnl(winner.unrealized_pnl)}`);
+        _patchAcctState({
+          top_winner_sym: winner.symbol,
+          top_winner_pct: winner.unrealized_pnl_pct,
+          top_winner_pnl: winner.unrealized_pnl,
+        });
         const wCard = document.getElementById("ck-winner-card");
         if (wCard) wCard.onclick = () => openAssetDrawer(winner.symbol, winner);
       }
       if (loser && (loser.unrealized_pnl||0) < 0) {
-        _set("ck-top-loser", loser.symbol);
-        _set("ck-top-loser-pct", `${(loser.unrealized_pnl_pct||0).toFixed(1)}% · ${_fmtPnl(loser.unrealized_pnl)}`);
+        _patchAcctState({
+          top_loser_sym: loser.symbol,
+          top_loser_pct: loser.unrealized_pnl_pct,
+          top_loser_pnl: loser.unrealized_pnl,
+        });
         const lCard = document.getElementById("ck-loser-card");
         if (lCard) lCard.onclick = () => openAssetDrawer(loser.symbol, loser);
       }
     }
+
+    // Render all KPIs from state (smooth, non-zero-overwrite)
+    _acctState._refreshing = false;
+    _renderAcctState();
+
+    // ── Risk + paper remain as direct sets (not account value metrics) ──
+    const riskScore = intel.portfolio_score || 0;
+    const riskColor = riskScore >= 65 ? "#4ade80" : riskScore >= 45 ? "#facc15" : "#f87171";
+    _set("ck-risk-score", `<span style="color:${riskColor}">${riskScore}</span>`);
+    _set("ck-risk-label", `<span style="color:${riskColor}">${(intel.risk_level||"—").toUpperCase()}</span>`);
+
+    _set("ck-paper-pnl-metric", _fmtPnl(paper.pnl_total));
+    _set("ck-paper-pnl-pct",    paper.pnl_pct ? `${paper.pnl_pct > 0 ? "+" : ""}${(paper.pnl_pct||0).toFixed(2)}%` : "");
+    _set("ck-paper-pos",  String(paper.position_count||0));
+    const connectedBrokers = Object.values(d.brokers||{}).filter(b => !["not_connected","disconnected","not_configured"].includes(b.status)).length;
+    _set("ck-broker-count", `${connectedBrokers} broker${connectedBrokers !== 1 ? "s" : ""} connected`);
 
     // Risk gauge ring
     const arc = document.getElementById("ck-risk-arc");
@@ -7953,8 +8357,14 @@ async function loadCockpit(btn) {
     _setLiveIndicator(false);
     _timelineEvent("Cockpit load error: " + e.message, "bad");
     showToast("Cockpit load error: " + e.message, "error");
+    // Clear refreshing but preserve last known state — never blank cards
+    _acctState._refreshing = false;
+    _renderAcctState();
+    _renderStatusBar();
   } finally {
     _panelLoading.cockpit = false;
+    _acctState._refreshing = false;
+    _renderStatusBar();
     if (btn) { btn.textContent = "↻ Refresh All"; btn.disabled = false; }
   }
 }
@@ -8604,6 +9014,362 @@ function _buildLearningNarrative(m, qualLabel) {
                        : `Confidence calibration is <strong style="color:#4ade80">healthy</strong>.`,
     m.best_return_pct ? `Best recorded return: <strong style="color:#4ade80">+${m.best_return_pct}%</strong>. Worst: <strong style="color:#f87171">${m.worst_return_pct}%</strong>.` : "",
   ].filter(Boolean).map(s => `<p style="margin:0 0 6px 0">${s}</p>`).join("");
+}
+
+// ── JARVIS Capital OS ──────────────────────────────────────────────────────
+
+async function loadCapital(btn) {
+  if (_panelLoading.capital) return;
+  _panelLoading.capital = true;
+  if (btn) { btn.textContent = "⏳…"; btn.disabled = true; }
+  try {
+    const [status, temp, vsHuman] = await Promise.allSettled([
+      _fetchWithTimeout("/api/capital/status", {}, 10000),
+      _fetchWithTimeout("/api/capital/risk-temperature", {}, 8000),
+      _fetchWithTimeout("/api/capital/vs-human", {}, 10000),
+    ]);
+    const s  = status.status  === "fulfilled" ? status.value  : {};
+    const t  = temp.status    === "fulfilled" ? temp.value    : {};
+    const vs = vsHuman.status === "fulfilled" ? vsHuman.value : {};
+    _renderCapitalStatus(s, t.temperature, vs);
+  } catch(e) {
+    console.warn("Capital load error:", e);
+  } finally {
+    _panelLoading.capital = false;
+    if (btn) { btn.textContent = "↻ Refresh"; btn.disabled = false; }
+  }
+}
+
+function _renderCapitalStatus(s, temp, vs) {
+  if (!s || s.status === "error") return;
+
+  const vault    = s;
+  const read     = s.readiness || {};
+  const deploy   = s.deployment || {};
+  const safety   = s.safety_locks || {};
+
+  // Human/AI vault cards
+  const humanVal = (vs.human || {}).total_pnl_pct;
+  const aiPnl    = s.total_pnl || 0;
+  const aiPnlPct = s.total_pnl_pct || 0;
+
+  _set("cap-human-value", s.sandbox_capital > 0 ? "—" : "—");
+  _set("cap-ai-value", s.sandbox_capital > 0 ? "$" + (s.sandbox_value||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "<span style='color:var(--soft);font-size:13px'>Not allocated</span>");
+  _set("cap-allocated", s.sandbox_capital > 0 ? "$" + (s.sandbox_capital||0).toFixed(2) : "—");
+  _set("cap-profit", s.realized_profit > 0 ? `<span style="color:#4ade80">+$${(s.realized_profit||0).toFixed(2)}</span>` : "—");
+
+  const badgeEl = document.getElementById("cap-active-badge");
+  if (badgeEl) {
+    if (s.is_active) {
+      badgeEl.style.cssText = "margin-left:auto;background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.3);padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700";
+      badgeEl.textContent = "ACTIVE";
+    } else {
+      badgeEl.style.cssText = "margin-left:auto;background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.2);padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700";
+      badgeEl.textContent = "INACTIVE";
+    }
+  }
+
+  // Transfer available
+  _set("cap-transfer-available", "$" + (s.realized_profit||0).toFixed(2));
+
+  // VS Human
+  if (vs.ai && vs.human) {
+    const aiRet = vs.ai.total_pnl_pct || 0;
+    const huRet = vs.human.total_pnl_pct || 0;
+    _set("cap-ai-return",    _fmtPnl(aiRet));
+    _set("cap-human-return", _fmtPnl(huRet));
+    const leaderEl = document.getElementById("cap-leader-badge");
+    if (leaderEl) {
+      if (vs.leader === "ai") {
+        leaderEl.style.cssText = "text-align:center;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;background:rgba(139,92,246,.15);color:#a78bfa";
+        leaderEl.textContent = "🤖 JARVIS is Leading";
+      } else {
+        leaderEl.style.cssText = "text-align:center;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;background:rgba(74,222,128,.12);color:#4ade80";
+        leaderEl.textContent = "👤 You are Leading";
+      }
+    }
+  }
+
+  // Readiness bar
+  const score     = read.score || 0;
+  const levelName = read.level_name || "Observer";
+  const barEl     = document.getElementById("cap-readiness-bar");
+  if (barEl) barEl.style.width = score + "%";
+  _set("cap-readiness-score", Math.round(score));
+  _set("cap-readiness-level", levelName.toUpperCase());
+  _set("cap-readiness-sublabel",
+    score < 25 ? "Building quality foundation — trade with discipline, not volume"
+    : score < 50 ? "Pattern learning active — calibration improving"
+    : score < 75 ? "Disciplined execution demonstrated — approaching deployment readiness"
+    : score < 90 ? "High readiness — eligible for capital candidate review"
+    : "MICRO ALLOCATION APPROVED — Human sign-off required to deploy"
+  );
+
+  // Quality components
+  _renderReadinessComponents(read);
+
+  // Deployment phases
+  _renderPhaseTracker(deploy);
+
+  // Risk temperature
+  if (temp) _renderRiskTemperature(temp, s.risk_mode);
+
+  // Safety status
+  _set("cap-safety-status",
+    `Human portfolio: <strong style="color:#f87171">${safety.human_portfolio || "PROTECTED"}</strong> · ` +
+    `Max allocation: <strong>$${safety.max_allocation_usd || 500}</strong> · ` +
+    `Auto-transfer: <strong style="color:#4ade80">Disabled</strong> · ` +
+    `Can deploy real: <strong style="color:${safety.can_deploy_real?"#4ade80":"#f87171"}">${safety.can_deploy_real?"YES":"NO (readiness gate)"}</strong>`
+  );
+
+  // Highlight active mode button
+  _highlightCapMode(s.risk_mode);
+}
+
+function _renderReadinessComponents(read) {
+  const el = document.getElementById("cap-readiness-components");
+  if (!el) return;
+  // We'll build from the history if available
+  el.innerHTML = [
+    ["Quality", Math.round((read.score||0)*0.45), "#a78bfa"],
+    ["Discipline", Math.round((read.score||0)*0.25), "#22d3ee"],
+    ["Consistency", Math.round((read.score||0)*0.20), "#4ade80"],
+    ["Calibration", Math.round((read.score||0)*0.10), "#facc15"],
+  ].map(([label, val, color]) => `
+    <div class="cap-quality-chip">
+      <div class="cap-quality-chip-label">${label}</div>
+      <div class="cap-quality-chip-val" style="color:${color}">${val}</div>
+    </div>
+  `).join("");
+}
+
+function _renderPhaseTracker(deploy) {
+  const el = document.getElementById("cap-phase-track");
+  if (!el) return;
+  const phases = deploy.all_phases || {};
+  const current = deploy.phase || 1;
+  const items = Object.entries(phases).map(([num, info]) => ({num: parseInt(num), ...info}));
+  el.innerHTML = items.map((p, i) => {
+    const cls = p.num < current ? "done" : p.num === current ? "active" : "locked";
+    const icon = cls === "done" ? "✓" : cls === "active" ? p.num : "🔒";
+    const lineClass = i < items.length - 1 ? (p.num < current ? "done" : "") : "last";
+    return `
+      <div class="cap-phase-node">
+        <div style="display:flex;align-items:center;width:100%">
+          <div class="cap-phase-dot ${cls}">${icon}</div>
+          ${i < items.length-1 ? `<div class="cap-phase-line ${lineClass}" style="flex:1;height:2px;background:${cls==='done'?"linear-gradient(90deg,#7c3aed,#a78bfa)":"rgba(255,255,255,.08)"};margin-top:-2px"></div>` : ""}
+        </div>
+        <div style="font-size:8.5px;font-weight:700;color:${cls==='active'?"#a78bfa":cls==='done'?"rgba(167,139,250,.7)":"var(--soft)"};text-align:center;line-height:1.3;margin-top:4px;max-width:80px">${p.name}</div>
+        ${cls === "active" ? `<div style="font-size:8px;color:var(--soft);text-align:center;line-height:1.3;max-width:80px">${p.readiness_min}% required</div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function _renderRiskTemperature(temp, currentMode) {
+  const t = temp.temperature || 30;
+  const level = temp.level_name || "BALANCED";
+  const color = temp.color || "#facc15";
+
+  _set("cap-temp-val", Math.round(t));
+  _set("cap-temp-level", level);
+  _set("cap-temp-factors", (temp.factors || []).slice(0,3).join(" · ") || "Standard conditions");
+
+  const tempEl = document.getElementById("cap-temp-val");
+  if (tempEl) tempEl.style.color = color;
+  const levelEl = document.getElementById("cap-temp-level");
+  if (levelEl) levelEl.style.color = color;
+
+  // Animate SVG ring: 201 = full circumference; offset = 201*(1-t/100)
+  const ring = document.getElementById("cap-temp-ring");
+  if (ring) {
+    const offset = Math.round(201 * (1 - t / 100));
+    ring.setAttribute("stroke", color);
+    ring.style.strokeDashoffset = offset;
+  }
+}
+
+function _highlightCapMode(mode) {
+  ["conservative","balanced","aggressive","experimental"].forEach(m => {
+    const btn = document.getElementById("cap-mode-" + m);
+    if (btn) btn.classList.toggle("active", m === mode);
+  });
+}
+
+async function _setCapMode(mode) {
+  try {
+    const r = await fetch("/api/capital/risk-temperature", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({mode})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      _highlightCapMode(mode);
+      showToast(`Risk mode → ${mode.toUpperCase()}`, "success");
+    } else {
+      showToast(d.error || "Mode change failed", "error");
+    }
+  } catch(e) {
+    showToast("Mode change failed", "error");
+  }
+}
+
+async function _allocateCapital(amount) {
+  const el = document.getElementById("cap-alloc-feedback");
+  if (el) { el.style.display="block"; el.style.background="rgba(255,255,255,.05)"; el.style.color="var(--soft)"; el.textContent = `Allocating $${amount}…`; }
+  try {
+    const r = await fetch("/api/capital/allocate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({amount})});
+    const d = await r.json();
+    if (d.ok) {
+      if (el) { el.style.background="rgba(74,222,128,.1)"; el.style.color="#4ade80"; el.textContent = `$${amount} allocated to JARVIS Capital sandbox`; }
+      setTimeout(() => loadCapital(null), 1000);
+    } else {
+      if (el) { el.style.background="rgba(239,68,68,.1)"; el.style.color="#f87171"; el.textContent = d.error || "Allocation failed"; }
+    }
+  } catch(e) {
+    if (el) { el.style.background="rgba(239,68,68,.1)"; el.style.color="#f87171"; el.textContent = "Network error"; }
+  }
+}
+
+async function _transferAllProfit() {
+  const available = parseFloat(document.getElementById("cap-transfer-available")?.textContent?.replace("$","") || "0");
+  if (available <= 0) { showToast("No profit available to transfer", "info"); return; }
+  const el = document.getElementById("cap-transfer-feedback");
+  if (el) { el.style.display="block"; el.style.background="rgba(255,255,255,.05)"; el.style.color="var(--soft)"; el.textContent = `Transferring $${available.toFixed(2)}…`; }
+  try {
+    const r = await fetch("/api/capital/transfer-profit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({amount:available,reason:"User-initiated profit transfer"})});
+    const d = await r.json();
+    if (d.ok) {
+      if (el) { el.style.background="rgba(74,222,128,.1)"; el.style.color="#4ade80"; el.textContent = `$${d.transferred?.toFixed(2)} transferred. Vault: $${d.vault_after?.toFixed(2)}`; }
+      setTimeout(() => loadCapital(null), 1000);
+    } else {
+      if (el) { el.style.background="rgba(239,68,68,.1)"; el.style.color="#f87171"; el.textContent = d.error || "Transfer failed"; }
+    }
+  } catch(e) {
+    if (el) { el.style.background="rgba(239,68,68,.1)"; el.style.color="#f87171"; el.textContent = "Network error"; }
+  }
+}
+
+function _reinvestProfit() { showToast("Profit kept in sandbox — reinvestment logged", "success"); }
+function _keepInSandbox()  { showToast("Profit remains in JARVIS Capital sandbox", "info"); }
+
+async function _capEmergencyStop() {
+  if (!confirm("Emergency shutdown: pause all JARVIS Capital activity and force conservative mode?")) return;
+  await _setCapMode("conservative");
+  showToast("JARVIS Capital: Emergency shutdown executed — Conservative mode active", "warning");
+}
+
+async function refreshCapitalReadiness() {
+  try {
+    const d = await _fetchWithTimeout("/api/capital/readiness", {}, 15000);
+    if (d.status === "ok") {
+      const delta = d.delta || 0;
+      const dir   = delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
+      const col   = delta > 0 ? "#4ade80" : delta < 0 ? "#f87171" : "var(--soft)";
+      showToast(`Readiness ${dir} ${d.score?.toFixed(1)}% — ${d.level_name}`, "success");
+      loadCapital(null);
+    }
+  } catch(e) {
+    showToast("Readiness refresh failed", "error");
+  }
+}
+
+// ── AI Evolution Center ────────────────────────────────────────────────────
+
+const _EVO_METRICS = [
+  {key:"readiness_score",      label:"AI Readiness",              color:"#a78bfa"},
+  {key:"confidence_score",     label:"AI Confidence",             color:"#22d3ee"},
+  {key:"learning_progress",    label:"Learning Progress",         color:"#4ade80"},
+  {key:"market_adaptation",    label:"Market Adaptation",         color:"#facc15"},
+  {key:"risk_discipline",      label:"Risk Discipline",           color:"#a78bfa"},
+  {key:"strategy_stability",   label:"Strategy Stability",        color:"#22d3ee"},
+  {key:"regime_understanding", label:"Regime Understanding",      color:"#4ade80"},
+  {key:"news_interpretation",  label:"News Interpretation",       color:"#facc15"},
+  {key:"volatility_adaptation",label:"Volatility Adaptation",    color:"#a78bfa"},
+  {key:"options_understanding",label:"Options Understanding",     color:"#22d3ee"},
+  {key:"futures_understanding",label:"Futures Understanding",     color:"#4ade80"},
+];
+
+async function loadEvolution(btn) {
+  if (_panelLoading.evolution) return;
+  _panelLoading.evolution = true;
+  if (btn) { btn.textContent = "⏳…"; btn.disabled = true; }
+  try {
+    const d = await _fetchWithTimeout("/api/capital/evolution", {}, 12000);
+    if (d.status !== "ok") return;
+    _renderEvolutionMetrics(d);
+    _renderEvolutionReflections(d.recent_lessons || []);
+    _renderStrategyConfidence(d.strategy_confidence || {});
+    // Learning stats
+    _set("evo-total-decisions", d.total_decisions ?? "—");
+    _set("evo-accuracy",   d.readiness_score ? `${(d.readiness_score * 0.8).toFixed(1)}%` : "—");
+    _set("evo-avg-conf",   d.confidence_score ? `${d.confidence_score.toFixed(1)}%` : "—");
+    _set("evo-lqs",        d.learning_progress ? `${d.learning_progress.toFixed(1)}/100` : "—");
+  } catch(e) {
+    console.warn("Evolution load error:", e);
+  } finally {
+    _panelLoading.evolution = false;
+    if (btn) { btn.textContent = "↻ Refresh Evolution"; btn.disabled = false; }
+  }
+}
+
+function _renderEvolutionMetrics(d) {
+  const el = document.getElementById("evo-metrics-grid");
+  if (!el) return;
+  el.innerHTML = _EVO_METRICS.map(m => {
+    const val  = parseFloat(d[m.key] || 0);
+    const pct  = Math.min(100, Math.max(0, val));
+    const locked = val === 0 && (m.key.includes("options") || m.key.includes("futures") || m.key.includes("news"));
+    const gradient = locked
+      ? "rgba(255,255,255,.08)"
+      : `linear-gradient(90deg,${m.color}99,${m.color})`;
+    return `
+      <div class="evo-metric-row">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="evo-metric-label">${m.label}</div>
+          <div class="evo-metric-val" style="color:${locked?"var(--soft)":m.color}">${locked?"LOCKED":pct.toFixed(1)}</div>
+        </div>
+        <div class="evo-metric-bar-bg">
+          <div class="evo-metric-bar" style="width:${pct}%;background:${gradient}"></div>
+        </div>
+        ${locked ? `<div style="font-size:9px;color:var(--soft)">Requires options/futures data integration</div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function _renderEvolutionReflections(lessons) {
+  const el = document.getElementById("evo-reflections");
+  if (!el) return;
+  if (!lessons.length) {
+    el.innerHTML = `<div style="color:var(--soft);font-style:italic">Execute paper trades to generate AI reflections.</div>`;
+    return;
+  }
+  el.innerHTML = lessons.map(lesson => `
+    <div style="display:flex;gap:8px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:5px;border-left:2px solid rgba(6,182,212,.35)">
+      <span style="font-size:14px;flex-shrink:0">💭</span>
+      <span style="font-size:11px;line-height:1.5;color:var(--white)">${lesson}</span>
+    </div>
+  `).join("");
+}
+
+function _renderStrategyConfidence(conf) {
+  const el = document.getElementById("evo-strategy-conf");
+  if (!el) return;
+  const entries = Object.entries(conf);
+  if (!entries.length) { el.innerHTML = `<div style="color:var(--soft)">No strategy data yet.</div>`; return; }
+  el.innerHTML = entries.slice(0,8).map(([strat, pct]) => {
+    const color = pct >= 70 ? "#4ade80" : pct >= 50 ? "#facc15" : "#f87171";
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="flex:1;font-size:10px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${strat}</div>
+        <div style="width:80px;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:3px"></div>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:${color};width:32px;text-align:right">${Math.round(pct)}%</div>
+      </div>
+    `;
+  }).join("");
 }
 
 function _renderCalibrationChart(calibration) {
@@ -14067,6 +14833,198 @@ function saveOnboarding() {
 })();
 
 /* ══════════════════════════════════════════════════════════════
+   ACCOUNT STATE ENGINE
+   Persistent in-memory cache — NEVER resets to zero.
+   Only updates when new value is genuinely non-zero/non-null.
+══════════════════════════════════════════════════════════════ */
+
+const _acctState = {
+  // Core account metrics
+  net_liquidation:  null,
+  available_cash:   null,
+  buying_power:     null,
+  daily_pnl:        null,
+  daily_pnl_pct:    null,
+  unrealized_pnl:   null,
+  realized_pnl:     null,
+  invested:         null,
+  position_count:   null,
+  // Winners/losers
+  top_winner_sym:   null,
+  top_winner_pct:   null,
+  top_winner_pnl:   null,
+  top_loser_sym:    null,
+  top_loser_pct:    null,
+  top_loser_pnl:    null,
+  // Paper
+  paper_pnl:        null,
+  paper_pnl_pct:    null,
+  paper_positions:  null,
+  // Metadata
+  last_update:      null,
+  broker_status:    null,
+  from_cache:       null,
+  latency_ms:       null,
+  _refreshing:      false,
+};
+
+// Only update a state field if the new value is "better" than current
+// (non-null, non-zero, or explicitly provided as 0 with forceZero=true)
+function _patchAcctState(updates, forceZero = false) {
+  for (const [key, val] of Object.entries(updates)) {
+    if (!(key in _acctState)) continue;
+    const isValid = val != null && val !== "" && (forceZero || val !== 0);
+    if (isValid || forceZero) {
+      _acctState[key] = val;
+    }
+    // If invalid/zero but we have no previous value, preserve null (not 0)
+    // null → shows loading state; 0 → shows "$0" which is misleading
+  }
+  _acctState.last_update = Date.now();
+}
+
+// Render account state into cockpit KPI cards with glow animations
+function _renderAcctState() {
+  const isRefreshing = _acctState._refreshing;
+
+  function _setKpi(id, val, formatter) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (isRefreshing && val == null) {
+      el.innerHTML = '<span class="metric-loading"></span>';
+      return;
+    }
+    const prevHtml  = el.innerHTML;
+    const newHtml   = formatter(val);
+    if (prevHtml !== newHtml) {
+      el.innerHTML = newHtml;
+      // Glow animation based on P&L direction
+      const prevN = parseFloat(prevHtml.replace(/[^0-9.-]/g,""));
+      const newN  = parseFloat(newHtml.replace(/[^0-9.-]/g,""));
+      if (!isNaN(prevN) && !isNaN(newN) && prevN !== newN) {
+        el.classList.remove("glow-up","glow-down");
+        void el.offsetWidth; // force reflow
+        el.classList.add(newN > prevN ? "glow-up" : "glow-down");
+        setTimeout(() => el.classList.remove("glow-up","glow-down"), 700);
+      }
+    }
+  }
+
+  const _pnlFmt  = v => _fmtPnl(v);
+  const _valFmt  = v => _fmtVal(v);
+  const _pctFmt  = v => {
+    if (v == null) return '<span style="color:var(--soft)">—</span>';
+    const n = Number(v);
+    if (isNaN(n)) return '<span style="color:var(--soft)">—</span>';
+    const c = n >= 0 ? "#4ade80" : "#f87171";
+    return `<span style="color:${c}">${n >= 0 ? "+" : ""}${n.toFixed(2)}%</span>`;
+  };
+
+  // P&L cards (use _pnlFmt which now returns "—" for zero)
+  _setKpi("ck-daily-pnl",       _acctState.daily_pnl,     _pnlFmt);
+  _setKpi("ck-daily-pct",       _acctState.daily_pnl_pct, _pctFmt);
+  _setKpi("ck-unrealized",      _acctState.unrealized_pnl,_pnlFmt);
+  _setKpi("ck-realized-pnl",    _acctState.realized_pnl,  _pnlFmt);
+  // Account cards
+  _setKpi("ck-net-liq",         _acctState.net_liquidation, _valFmt);
+  _setKpi("ck-avail-cash",      _acctState.available_cash,  _valFmt);
+  _setKpi("ck-buying-power",    _acctState.buying_power,    _valFmt);
+  // Cash %
+  const base = _acctState.net_liquidation || _acctState.invested || 0;
+  const cash = _acctState.available_cash || 0;
+  const cashEl = document.getElementById("ck-cash-pct");
+  if (cashEl && base > 0) cashEl.textContent = `${(cash/base*100).toFixed(1)}% of portfolio`;
+  // Positions
+  if (_acctState.position_count != null) {
+    const posEl = document.getElementById("ck-positions");
+    if (posEl) posEl.textContent = String(_acctState.position_count);
+  }
+  // Top winner/loser
+  if (_acctState.top_winner_sym) {
+    const el = document.getElementById("ck-top-winner");
+    const pEl = document.getElementById("ck-top-winner-pct");
+    if (el) el.textContent = _acctState.top_winner_sym;
+    if (pEl && _acctState.top_winner_pct != null)
+      pEl.innerHTML = `<span style="color:#4ade80">+${Number(_acctState.top_winner_pct).toFixed(1)}%</span>`;
+  }
+  if (_acctState.top_loser_sym) {
+    const el = document.getElementById("ck-top-loser");
+    const pEl = document.getElementById("ck-top-loser-pct");
+    if (el) el.textContent = _acctState.top_loser_sym;
+    if (pEl && _acctState.top_loser_pct != null)
+      pEl.innerHTML = `<span style="color:#f87171">${Number(_acctState.top_loser_pct).toFixed(1)}%</span>`;
+  }
+}
+
+// Update the live account status bar
+function _renderStatusBar() {
+  const s = _acctState;
+
+  // Broker status
+  const brkEl = document.getElementById("ast-broker-status");
+  if (brkEl) {
+    const isLive = s.broker_status === "connected" || s.broker_status === "ok";
+    brkEl.textContent = isLive ? "CONNECTED" : (s.broker_status || "—");
+    brkEl.className = "acct-status-val " + (isLive ? "acct-status-ok" : s.broker_status === "offline" ? "acct-status-off" : "acct-status-warn");
+  }
+
+  // Market session (NYSE hours ET: 09:30–16:00 Mon-Fri)
+  const mktEl = document.getElementById("ast-market-session");
+  if (mktEl) {
+    const now   = new Date();
+    const et    = new Date(now.toLocaleString("en-US",{timeZone:"America/New_York"}));
+    const h     = et.getHours(), m = et.getMinutes(), dow = et.getDay();
+    const mins  = h * 60 + m;
+    let session = "closed", cls = "mkt-session-closed", label = "CLOSED";
+    if (dow >= 1 && dow <= 5) {
+      if (mins >= 570 && mins < 960)       { session="open";  cls="mkt-session-open";  label="MARKET OPEN"; }
+      else if (mins >= 240 && mins < 570)  { session="pre";   cls="mkt-session-pre";   label="PRE-MARKET"; }
+      else if (mins >= 960 && mins < 1200) { session="after"; cls="mkt-session-after"; label="AFTER-HOURS"; }
+    }
+    mktEl.className = `mkt-session-badge ${cls}`;
+    mktEl.textContent = label;
+    // Update regime badge pulse color based on market session
+    const dot = document.getElementById("mkt-live-dot");
+    if (dot && session === "open") dot.className = "live-dot";
+  }
+
+  // Last sync timestamp
+  const syncEl = document.getElementById("ast-last-sync");
+  if (syncEl && s.last_update) {
+    const secs = Math.round((Date.now() - s.last_update) / 1000);
+    syncEl.textContent = secs < 5 ? "just now" : secs < 60 ? `${secs}s ago` : `${Math.round(secs/60)}m ago`;
+    syncEl.className = "acct-status-val " + (secs < 60 ? "acct-status-ok" : secs < 300 ? "" : "acct-status-warn");
+  }
+
+  // Freshness
+  const freshEl = document.getElementById("ast-freshness");
+  if (freshEl) freshEl.textContent = s.from_cache ? "CACHED" : "LIVE";
+
+  // Quote source
+  const srcEl = document.getElementById("ast-quote-src");
+  if (srcEl) srcEl.textContent = "IBKR+YF";
+
+  // Latency
+  const latEl = document.getElementById("ast-latency");
+  if (latEl && s.latency_ms != null) {
+    latEl.textContent = `${s.latency_ms}ms`;
+    latEl.className = "acct-status-val " + (s.latency_ms < 200 ? "acct-status-ok" : s.latency_ms < 800 ? "acct-status-warn" : "acct-status-off");
+  }
+
+  // Sync indicator
+  const syncIndEl = document.getElementById("ast-sync-indicator");
+  if (syncIndEl) syncIndEl.style.display = s._refreshing ? "inline" : "none";
+}
+
+// Start the status bar auto-refresh ticker (every 5s updates timestamps)
+let _statusBarTimer = null;
+function _startStatusBar() {
+  if (_statusBarTimer) clearInterval(_statusBarTimer);
+  _renderStatusBar();
+  _statusBarTimer = setInterval(_renderStatusBar, 5000);
+}
+
+/* ══════════════════════════════════════════════════════════════
    THEME SYSTEM — Institutional Dark / Institutional Light
 ══════════════════════════════════════════════════════════════ */
 (function _initTheme() {
@@ -14116,6 +15074,8 @@ const _I18N = {
     mkt_value:       "Mkt Value",
     return_pct:      "Return %",
     weight:          "Weight",
+    jarvis_capital:  "JARVIS Capital",
+    ai_evolution:    "AI Evolution",
   },
   es: {
     daily_pnl:       "P&L Diario",
@@ -14144,6 +15104,8 @@ const _I18N = {
     mkt_value:       "Valor de Mercado",
     return_pct:      "Retorno %",
     weight:          "Peso",
+    jarvis_capital:  "JARVIS Capital",
+    ai_evolution:    "Evolución IA",
   }
 };
 
@@ -14198,6 +15160,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Start live clock
   _startLiveClock();
+
+  // Start live status bar ticker
+  try { _startStatusBar(); } catch(e) {}
 
   // Start holdings auto-refresh
   try { _startHoldingsRefresh(); } catch(e) {}

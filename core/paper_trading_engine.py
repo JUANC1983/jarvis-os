@@ -5,7 +5,8 @@ CRITICAL SAFETY RULE:
   All responses include "real_trade": false.
   No external API calls to brokers.
   No order placement of any kind.
-  This is a pure simulation engine backed by local JSON files.
+  This is a pure simulation engine backed by local JSON files
+  AND a SQLite persistent store for durability across restarts.
 """
 from __future__ import annotations
 
@@ -19,6 +20,14 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 log = logging.getLogger("jarvis.paper_trading")
+
+try:
+    from opsx.database.paperlab_store import store as _paperlab_store
+    _STORE_AVAILABLE = True
+except Exception as _store_err:
+    _paperlab_store = None
+    _STORE_AVAILABLE = False
+    log.warning("PaperLab SQLite store unavailable: %s", _store_err)
 
 _POSITIONS_PATH    = Path("data/portfolio/paper_positions.json")
 _TRADES_PATH       = Path("data/portfolio/paper_trades.json")
@@ -145,6 +154,8 @@ class PaperTradingEngine:
         if quantity <= 0 or price <= 0:
             return {"status": "error", "message": "quantity and price must be positive", "real_trade": False}
 
+        _closed_trade_meta = None
+
         with self._lock:
             positions = self._load_positions()
             perf      = self._load_performance()
@@ -204,6 +215,8 @@ class PaperTradingEngine:
                         "real_trade": False,
                     }
                 realized_pnl = round((price - existing["avg_cost"]) * quantity, 2)
+                avg_cost = existing["avg_cost"]
+                realized_pnl_pct = round((price - avg_cost) / avg_cost * 100, 2) if avg_cost else 0
                 existing["quantity"] = round(existing["quantity"] - quantity, 6)
                 existing["current_price"] = price
                 if existing["quantity"] <= 0:
@@ -214,6 +227,12 @@ class PaperTradingEngine:
                     existing["unrealized_pnl_pct"] = round((price - existing["avg_cost"]) / existing["avg_cost"] * 100, 2) if existing["avg_cost"] else 0
                 cash = round(cash + trade_value, 2)
                 perf["total_pnl"] = round(perf.get("total_pnl", 0) + realized_pnl, 2)
+                _closed_trade_meta = {
+                    "symbol": symbol.upper(), "side": action,
+                    "pnl": realized_pnl, "pnl_pct": realized_pnl_pct,
+                    "strategy": thesis or "manual",
+                }
+
 
             # Record trade
             trade_record = {
@@ -239,6 +258,41 @@ class PaperTradingEngine:
             self._save_positions(positions)
             self._save_trades(trades)
             self._save_performance(perf)
+
+        # Persist to SQLite store
+        if _STORE_AVAILABLE:
+            try:
+                _paperlab_store.record_trade({
+                    "id":          trade_record["id"],
+                    "symbol":      trade_record["symbol"],
+                    "side":        trade_record["action"],
+                    "quantity":    trade_record["quantity"],
+                    "entry_price": trade_record["price"],
+                    "market_value": trade_record["value"],
+                    "strategy":    thesis or "manual",
+                    "ai_rationale": thesis,
+                    "status":      "open" if action in ("buy", "add") else "closed",
+                    "opened_at":   trade_record["timestamp"],
+                    "real_trade":  False,
+                })
+            except Exception as _exc:
+                log.debug("SQLite record_trade failed (non-fatal): %s", _exc)
+
+        # Trigger AI learning evaluation for closed trades
+        if action in ("sell", "trim") and _closed_trade_meta is not None:
+            try:
+                from opsx.memory.paperlab_memory import learning_memory as _lm
+                _lm.evaluate_closed_trade({
+                    "id":       trade_record["id"],
+                    "symbol":   trade_record["symbol"],
+                    "side":     action,
+                    "pnl":      _closed_trade_meta["pnl"],
+                    "pnl_pct":  _closed_trade_meta["pnl_pct"],
+                    "strategy": thesis or "manual",
+                    "confidence": 0.5,
+                })
+            except Exception as _exc:
+                log.debug("Learning memory evaluation failed (non-fatal): %s", _exc)
 
         return {
             "status":      "ok",
@@ -331,7 +385,23 @@ class PaperTradingEngine:
             perf["data_origin"] = "autonomous_sim"
             self._save_positions(positions)
             self._save_performance(perf)
-            return {"status": "ok", "positions": len(positions), "real_trade": False}
+
+        # Persist snapshot to SQLite (every mark-to-market tick)
+        if _STORE_AVAILABLE:
+            try:
+                _paperlab_store.save_snapshot({
+                    "net_liquidation": round(current_total, 2),
+                    "unrealized_pnl":  round(total_unrealized, 2),
+                    "realized_pnl":    round(perf.get("total_pnl", 0) - total_unrealized, 2),
+                    "cash":            round(cash, 2),
+                    "buying_power":    round(cash, 2),
+                    "position_count":  len(positions),
+                    "positions":       [{"symbol": p.get("symbol"), "value": p.get("current_value", 0)} for p in positions],
+                })
+            except Exception as _exc:
+                log.debug("SQLite save_snapshot failed (non-fatal): %s", _exc)
+
+        return {"status": "ok", "positions": len(positions), "real_trade": False}
 
     def get_history(self) -> Dict:
         return {"status": "ok", "trades": self._load_trades(), "real_trade": False}

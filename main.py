@@ -6997,6 +6997,278 @@ def paper_analytics(current_user: dict = Depends(get_optional_user)):
         return {"status": "error", "error": str(exc), "real_trade": False}
 
 
+# ── PaperLab SQLite-backed endpoints ──────────────────────────────────
+
+try:
+    from opsx.database.paperlab_store import store as _paperlab_store
+    _PAPERLAB_STORE_AVAILABLE = True
+except Exception as _pls_err:
+    _paperlab_store = None
+    _PAPERLAB_STORE_AVAILABLE = False
+    logging.getLogger("jarvis").warning("PaperLab store unavailable: %s", _pls_err)
+
+try:
+    from opsx.memory.paperlab_memory import learning_memory as _paperlab_learning
+    _LEARNING_MEMORY_AVAILABLE = True
+except Exception as _lm_err:
+    _paperlab_learning = None
+    _LEARNING_MEMORY_AVAILABLE = False
+    logging.getLogger("jarvis").warning("PaperLab learning memory unavailable: %s", _lm_err)
+
+
+@app.get("/api/paper/equity-curve")
+def paper_equity_curve(
+    limit: int = 500,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Portfolio equity curve from persistent SQLite snapshots."""
+    _portfolio_guard()
+    if not _PAPERLAB_STORE_AVAILABLE:
+        return {"status": "unavailable", "curve": [], "real_trade": False}
+    try:
+        curve = _paperlab_store.get_equity_curve()
+        return {
+            "status":    "ok",
+            "curve":     curve[-limit:],
+            "count":     len(curve),
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/paper/strategy-stats")
+def paper_strategy_stats(current_user: dict = Depends(get_optional_user)):
+    """Per-strategy win rate, avg P&L, profit factor from SQLite."""
+    _portfolio_guard()
+    if not _PAPERLAB_STORE_AVAILABLE:
+        return {"status": "unavailable", "strategies": [], "real_trade": False}
+    try:
+        stats = _paperlab_store.get_strategy_stats()
+        analytics = _paperlab_store.get_analytics()
+        confidence_map: Dict[str, float] = {}
+        if _LEARNING_MEMORY_AVAILABLE and _paperlab_learning:
+            try:
+                confidence_map = _paperlab_learning.get_all_confidences()
+            except Exception:
+                pass
+        for row in stats:
+            strat_key = row.get("strategy", "")
+            row["ai_confidence"] = round(confidence_map.get(strat_key, 0.5) * 100, 1)
+        return {
+            "status":        "ok",
+            "strategies":    stats,
+            "summary":       analytics,
+            "real_trade":    False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/paper/learning-metrics")
+def paper_learning_metrics(current_user: dict = Depends(get_optional_user)):
+    """AI decision accuracy, confidence calibration, recent lessons."""
+    _portfolio_guard()
+    if not _LEARNING_MEMORY_AVAILABLE or not _paperlab_learning:
+        return {"status": "unavailable", "real_trade": False}
+    try:
+        metrics = _paperlab_learning.get_metrics()
+        return {"status": "ok", **metrics}
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+# ── JARVIS Capital OS ──────────────────────────────────────────────────
+
+try:
+    from opsx.capital.jarvis_capital import jarvis_capital as _jarvis_capital
+    from opsx.capital.risk_temperature import compute_temperature, should_auto_adjust
+    _CAPITAL_AVAILABLE = True
+except Exception as _cap_err:
+    _jarvis_capital = None
+    compute_temperature = None
+    should_auto_adjust  = None
+    _CAPITAL_AVAILABLE  = False
+    logging.getLogger("jarvis").warning("JARVIS Capital unavailable: %s", _cap_err)
+
+
+def _cap_guard():
+    if not _CAPITAL_AVAILABLE or not _jarvis_capital:
+        from fastapi import HTTPException
+        raise HTTPException(503, "JARVIS Capital module not available")
+
+
+class _CapAllocateReq(BaseModel):
+    amount: float
+
+
+class _CapTransferReq(BaseModel):
+    amount: float
+    reason: str = "Manual profit transfer"
+
+
+class _CapRiskModeReq(BaseModel):
+    mode: str
+    trigger: str = "user"
+
+
+class _CapPhaseApproveReq(BaseModel):
+    phase: int
+    approved: bool = True
+
+
+@app.get("/api/capital/status")
+def capital_status(current_user: dict = Depends(get_optional_user)):
+    """JARVIS Capital vault status — readiness, phase, risk mode, safety locks."""
+    _cap_guard()
+    try:
+        return _jarvis_capital.get_status()
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/capital/readiness")
+def capital_readiness(current_user: dict = Depends(get_optional_user)):
+    """Recompute AI readiness from current learning data and persist."""
+    _cap_guard()
+    try:
+        return _jarvis_capital.refresh_readiness()
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/capital/risk-temperature")
+def capital_risk_temperature(current_user: dict = Depends(get_optional_user)):
+    """Compute current market risk temperature from VIX + regime data."""
+    _cap_guard()
+    try:
+        vix = None
+        regime = None
+        macro  = None
+        # Pull VIX from market radar if available
+        try:
+            snap = _portfolio_engine.get_unified_snapshot() if _PORTFOLIO_AVAILABLE else {}
+            intel = snap.get("intelligence", {}) if snap else {}
+            regime = intel.get("market_regime")
+            macro  = intel.get("macro_context")
+        except Exception:
+            pass
+        try:
+            import yfinance as _yf
+            vf = _yf.Ticker("^VIX").fast_info
+            vix = float(getattr(vf, "last_price", None) or 0) or None
+        except Exception:
+            pass
+        temp = compute_temperature(vix=vix, market_regime=regime, macro_context=macro)
+        vault_status = _jarvis_capital.get_status()
+        current_mode = vault_status.get("risk_mode", "balanced")
+        readiness    = vault_status.get("readiness", {}).get("score", 0)
+        auto_suggest = should_auto_adjust(current_mode, temp, readiness)
+        return {
+            "status":          "ok",
+            "temperature":     temp,
+            "current_mode":    current_mode,
+            "auto_suggest":    auto_suggest,
+            "real_trade":      False,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.post("/api/capital/risk-temperature")
+def capital_set_risk_mode(body: _CapRiskModeReq, current_user: dict = Depends(get_optional_user)):
+    """Set AI risk personality mode."""
+    _cap_guard()
+    try:
+        return _jarvis_capital.set_risk_mode(mode=body.mode, trigger=body.trigger)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@app.post("/api/capital/allocate")
+def capital_allocate(body: _CapAllocateReq, current_user: dict = Depends(get_optional_user)):
+    """
+    Allocate sandbox capital to JARVIS Capital.
+    Hard cap: $500. Standard tiers: $50 / $100 / $250 / $500.
+    Human portfolo is NEVER touched.
+    """
+    _cap_guard()
+    try:
+        return _jarvis_capital.allocate_capital(amount=body.amount)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@app.post("/api/capital/transfer-profit")
+def capital_transfer_profit(body: _CapTransferReq, current_user: dict = Depends(get_optional_user)):
+    """
+    Transfer realized AI profit → human portfolio record.
+    ALWAYS requires explicit human call — never automatic.
+    """
+    _cap_guard()
+    try:
+        return _jarvis_capital.request_transfer(amount=body.amount, reason=body.reason)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@app.post("/api/capital/approve-phase")
+def capital_approve_phase(body: _CapPhaseApproveReq, current_user: dict = Depends(get_optional_user)):
+    """Human approval to advance JARVIS to deployment phases 4–6."""
+    _cap_guard()
+    if body.phase not in (4, 5, 6):
+        return {"ok": False, "error": "Manual approval only required for phases 4-6"}
+    if not body.approved:
+        return {"ok": False, "error": "Approval explicitly denied"}
+    from opsx.capital.capital_store import capital_store as _cs
+    vault   = _cs.get_vault()
+    current = int(vault.get("deployment_phase", 1))
+    readiness_rec = _cs.get_latest_readiness()
+    readiness = float(readiness_rec["score"]) if readiness_rec else 0
+    from opsx.capital.jarvis_capital import DEPLOYMENT_PHASES
+    required = DEPLOYMENT_PHASES.get(body.phase, {}).get("readiness_min", 999)
+    if readiness < required:
+        return {"ok": False, "error": f"Readiness {readiness:.0f}% < required {required}% for phase {body.phase}"}
+    if current >= body.phase:
+        return {"ok": False, "error": f"Already at phase {current}"}
+    _cs.update_vault({"deployment_phase": body.phase})
+    return {"ok": True, "phase": body.phase, "name": DEPLOYMENT_PHASES[body.phase]["name"]}
+
+
+@app.get("/api/capital/evolution")
+def capital_evolution(current_user: dict = Depends(get_optional_user)):
+    """11 AI evolution metrics for the Evolution Center."""
+    _cap_guard()
+    try:
+        return {"status": "ok", **_jarvis_capital.get_evolution_metrics()}
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/capital/vs-human")
+def capital_vs_human(current_user: dict = Depends(get_optional_user)):
+    """AI vs Human performance comparison."""
+    _cap_guard()
+    try:
+        snapshot = {}
+        if _PORTFOLIO_AVAILABLE:
+            try:
+                snapshot = _portfolio_engine.get_unified_snapshot() or {}
+            except Exception:
+                pass
+        return _jarvis_capital.get_vs_human(snapshot)
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "real_trade": False}
+
+
+@app.get("/api/capital/transfers")
+def capital_transfers(current_user: dict = Depends(get_optional_user)):
+    """Audit log of all profit transfers."""
+    _cap_guard()
+    from opsx.capital.capital_store import capital_store as _cs
+    return {"status": "ok", "transfers": _cs.get_transfers(), "real_trade": False}
+
+
 # ── Autonomous Paper Trader ────────────────────────────────────────────
 
 try:
