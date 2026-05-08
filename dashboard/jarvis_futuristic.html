@@ -1977,6 +1977,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 
 /* ── Pulse indicator ──────────────────────────────────────────────── */
 @keyframes pulse-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.2);opacity:0}}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 .pulse-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
 .pulse-ring{position:absolute;width:10px;height:10px;border-radius:50%;animation:pulse-ring 1.8s ease-out infinite}
 .pulse-core{width:7px;height:7px;border-radius:50%;position:relative;z-index:1}
@@ -4098,6 +4099,50 @@ body.mode-beginner .operator-only{display:none!important}
       </div>
     </div>
 
+    <!-- AI Brain ───────────────────────────────────────────────────────────── -->
+    <div class="card" style="padding:14px;margin-bottom:14px;border:1px solid rgba(99,102,241,.2);background:linear-gradient(135deg,rgba(99,102,241,.05),transparent)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;display:flex;align-items:center;gap:8px">
+          AI Brain
+          <span id="train-pulse" style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:pulse-dot 1.5s ease-in-out infinite"></span>
+          <span id="train-state-badge" style="font-size:9px;color:#4ade80;font-weight:700;letter-spacing:.6px">INITIALIZING</span>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button onclick="_trainStart()" class="btn-ol btn-sm" id="btn-train-start" style="font-size:10px;color:#4ade80;border-color:rgba(74,222,128,.3)">▶ Start</button>
+          <button onclick="_trainStop()"  class="btn-ol btn-sm" id="btn-train-stop"  style="font-size:10px;color:#f87171;border-color:rgba(248,113,113,.3)">■ Stop</button>
+          <button onclick="_trainCycle()" class="btn-ol btn-sm" style="font-size:10px">⚡ Force Cycle</button>
+        </div>
+      </div>
+      <!-- Brain metrics row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+        <div style="background:rgba(99,102,241,.08);border-radius:6px;padding:8px;text-align:center">
+          <div id="brain-regime" style="font-size:13px;font-weight:800;color:#a78bfa">—</div>
+          <div style="font-size:9px;color:var(--soft);margin-top:2px">REGIME</div>
+        </div>
+        <div style="background:rgba(99,102,241,.08);border-radius:6px;padding:8px;text-align:center">
+          <div id="brain-cycles" style="font-size:13px;font-weight:800;color:#818cf8">0</div>
+          <div style="font-size:9px;color:var(--soft);margin-top:2px">CYCLES</div>
+        </div>
+        <div style="background:rgba(99,102,241,.08);border-radius:6px;padding:8px;text-align:center">
+          <div id="brain-decisions" style="font-size:13px;font-weight:800;color:#22d3ee">0</div>
+          <div style="font-size:9px;color:var(--soft);margin-top:2px">DECISIONS</div>
+        </div>
+        <div style="background:rgba(99,102,241,.08);border-radius:6px;padding:8px;text-align:center">
+          <div id="brain-accuracy" style="font-size:13px;font-weight:800;color:#4ade80">—%</div>
+          <div style="font-size:9px;color:var(--soft);margin-top:2px">ACCURACY</div>
+        </div>
+      </div>
+      <!-- Live activity feed -->
+      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Live Activity Feed</div>
+      <div id="cap-activity-feed" style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:8px;max-height:200px;overflow-y:auto;font-family:monospace;font-size:10px;line-height:1.8"></div>
+    </div>
+
+    <!-- Asset Class Performance Matrix ───────────────────────────────────── -->
+    <div class="card" style="padding:14px;margin-bottom:14px;border:1px solid rgba(34,211,238,.15)">
+      <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">AI Performance by Asset Class</div>
+      <div id="cap-asset-perf" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></div>
+    </div>
+
     <!-- Safety Controls ────────────────────────────────────────────────────── -->
     <div class="card" style="padding:14px;margin-bottom:14px;border:1px solid rgba(239,68,68,.15)">
       <div style="font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Safety Controls</div>
@@ -4170,6 +4215,33 @@ body.mode-beginner .operator-only{display:none!important}
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Market Replay Scenarios ────────────────────────────────────────────── -->
+    <div class="card" style="padding:16px;margin-bottom:14px;border:1px solid rgba(251,191,36,.15)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px">Historical Market Replay</div>
+        <button onclick="loadReplayResults()" class="btn-ol btn-sm" style="font-size:10px">↻ Results</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px" id="replay-scenario-grid">
+        <button onclick="_runReplay('2008_gfc')"        class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">💥</span>2008 GFC</button>
+        <button onclick="_runReplay('covid_crash')"     class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">🦠</span>COVID</button>
+        <button onclick="_runReplay('fed_tightening')"  class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">🏦</span>Fed Hike</button>
+        <button onclick="_runReplay('ai_rally_2023')"   class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">🤖</span>AI Rally</button>
+        <button onclick="_runReplay('meme_frenzy')"     class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">🚀</span>Meme Rally</button>
+        <button onclick="_runReplay('inflation_peak')"  class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">🔥</span>Inflation</button>
+        <button onclick="_runReplay('crypto_bull_2021')" class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">₿</span>Crypto Bull</button>
+        <button onclick="_runReplay('crypto_winter')"   class="btn-ol btn-sm replay-btn" style="font-size:10px;flex-direction:column;height:52px;display:flex;align-items:center;justify-content:center;gap:2px"><span style="font-size:14px">❄️</span>Crypto Bear</button>
+      </div>
+      <div id="replay-status" style="font-size:10px;color:var(--soft);font-style:italic;margin-bottom:10px"></div>
+      <!-- Replay results -->
+      <div id="replay-results-list" style="display:flex;flex-direction:column;gap:7px"></div>
+    </div>
+
+    <!-- Style Performance Matrix ─────────────────────────────────────────── -->
+    <div class="card" style="padding:16px;margin-bottom:0">
+      <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Trading Style Performance</div>
+      <div id="evo-style-perf" style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px"></div>
     </div>
 
   </div><!-- /mkt-panel-evolution -->
@@ -9032,6 +9104,10 @@ async function loadCapital(btn) {
     const t  = temp.status    === "fulfilled" ? temp.value    : {};
     const vs = vsHuman.status === "fulfilled" ? vsHuman.value : {};
     _renderCapitalStatus(s, t.temperature, vs);
+    // Load brain data in parallel (non-blocking)
+    loadTrainingStatus();
+    loadAssetPerf();
+    startFeedPolling();
   } catch(e) {
     console.warn("Capital load error:", e);
   } finally {
@@ -9305,6 +9381,9 @@ async function loadEvolution(btn) {
     _set("evo-accuracy",   d.readiness_score ? `${(d.readiness_score * 0.8).toFixed(1)}%` : "—");
     _set("evo-avg-conf",   d.confidence_score ? `${d.confidence_score.toFixed(1)}%` : "—");
     _set("evo-lqs",        d.learning_progress ? `${d.learning_progress.toFixed(1)}/100` : "—");
+    // Load additional data in parallel
+    loadStylePerf();
+    loadReplayResults();
   } catch(e) {
     console.warn("Evolution load error:", e);
   } finally {
@@ -9369,6 +9448,158 @@ function _renderStrategyConfidence(conf) {
         <div style="font-size:10px;font-weight:700;color:${color};width:32px;text-align:right">${Math.round(pct)}%</div>
       </div>
     `;
+  }).join("");
+}
+
+// ── Training Engine Controls ──────────────────────────────────────────────
+
+async function _trainStart() {
+  const r = await _fetchWithTimeout("/api/capital/training/start", {method:"POST"}, 8000).catch(()=>null);
+  if (r) { _set("train-state-badge", r.status?.toUpperCase() || "STARTED"); loadTrainingStatus(); }
+}
+
+async function _trainStop() {
+  const r = await _fetchWithTimeout("/api/capital/training/stop", {method:"POST"}, 8000).catch(()=>null);
+  if (r) { _set("train-state-badge", "STOPPED"); }
+}
+
+async function _trainCycle() {
+  await _fetchWithTimeout("/api/capital/training/cycle", {method:"POST"}, 8000).catch(()=>null);
+  setTimeout(pollActivityFeed, 1200);
+}
+
+async function loadTrainingStatus() {
+  const d = await _fetchWithTimeout("/api/capital/training/status", {}, 6000).catch(()=>null);
+  if (!d) return;
+  const running = d.running || d.status === "running";
+  _set("train-state-badge", running ? "LEARNING..." : (d.status || "IDLE").toUpperCase());
+  const pulse = document.getElementById("train-pulse");
+  if (pulse) pulse.style.background = running ? "#4ade80" : "#6b7280";
+  if (d.cycle_count !== undefined) _set("brain-cycles", d.cycle_count);
+  if (d.current_regime) _set("brain-regime", d.current_regime.replace(/_/g," ").toUpperCase());
+}
+
+// ── Activity Feed Polling ─────────────────────────────────────────────────
+
+let _feedPollTimer = null;
+const _FEED_CATEGORY_COLOR = {
+  signal:"#4ade80", regime:"#a78bfa", crypto:"#f59e0b",
+  futures:"#22d3ee", replay:"#fb923c", risk:"#f87171",
+  training:"#818cf8", equity:"#4ade80"
+};
+
+async function pollActivityFeed() {
+  const el = document.getElementById("cap-activity-feed");
+  if (!el) return;
+  const d = await _fetchWithTimeout("/api/capital/activity-feed?limit=25", {}, 6000).catch(()=>null);
+  if (!d || !d.feed?.length) {
+    if (!el.children.length) el.innerHTML = `<span style="color:var(--soft);font-style:italic">Waiting for training engine signals...</span>`;
+    return;
+  }
+  el.innerHTML = d.feed.slice(0,20).map(entry => {
+    const color = _FEED_CATEGORY_COLOR[entry.category] || "#94a3b8";
+    const ts    = entry.timestamp ? new Date(entry.timestamp + "Z").toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "";
+    return `<div style="border-bottom:1px solid rgba(255,255,255,.04);padding:3px 0;display:flex;gap:6px;align-items:baseline">
+      <span style="color:#475569;font-size:9px;flex-shrink:0;width:50px">${ts}</span>
+      <span style="color:${color};font-size:9px;flex-shrink:0;width:48px;font-weight:700">[${(entry.category||"info").toUpperCase()}]</span>
+      <span style="color:#cbd5e1">${entry.message || ""}</span>
+    </div>`;
+  }).join("");
+}
+
+function startFeedPolling() {
+  pollActivityFeed();
+  if (_feedPollTimer) clearInterval(_feedPollTimer);
+  _feedPollTimer = setInterval(pollActivityFeed, 5000);
+}
+
+// ── Asset Class Performance ───────────────────────────────────────────────
+
+async function loadAssetPerf() {
+  const d = await _fetchWithTimeout("/api/capital/asset-performance", {}, 8000).catch(()=>null);
+  if (!d?.asset_classes) return;
+  const el = document.getElementById("cap-asset-perf");
+  if (!el) return;
+  if (!d.asset_classes.length) { el.innerHTML = `<div style="color:var(--soft);font-size:11px;grid-column:1/-1">Training in progress — asset-class data accumulating...</div>`; return; }
+  el.innerHTML = d.asset_classes.map(ac => {
+    const acc = parseFloat(ac.accuracy_pct || 0);
+    const color = acc >= 60 ? "#4ade80" : acc >= 50 ? "#facc15" : "#f87171";
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:7px;padding:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;color:var(--white);text-transform:capitalize">${ac.asset_class}</div>
+        <div style="font-size:12px;font-weight:800;color:${color}">${acc.toFixed(1)}%</div>
+      </div>
+      <div style="width:100%;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:5px">
+        <div style="height:100%;width:${Math.min(acc,100)}%;background:${color};border-radius:2px;transition:width .4s ease"></div>
+      </div>
+      <div style="font-size:9px;color:var(--soft)">${ac.decisions||0} decisions · avg quality ${parseFloat(ac.avg_quality||0).toFixed(0)}</div>
+    </div>`;
+  }).join("");
+  // update brain totals
+  const totDecisions = d.asset_classes.reduce((s,ac)=>s+(ac.decisions||0),0);
+  const avgAcc = d.asset_classes.length ? d.asset_classes.reduce((s,ac)=>s+parseFloat(ac.accuracy_pct||0),0)/d.asset_classes.length : 0;
+  _set("brain-decisions", totDecisions);
+  if (avgAcc) _set("brain-accuracy", avgAcc.toFixed(1)+"%");
+}
+
+// ── Style Performance (Evolution panel) ──────────────────────────────────
+
+async function loadStylePerf() {
+  const d = await _fetchWithTimeout("/api/capital/strategy-styles", {}, 8000).catch(()=>null);
+  const el = document.getElementById("evo-style-perf");
+  if (!el) return;
+  if (!d?.styles?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:11px;grid-column:1/-1">Training in progress — style data accumulating...</div>`; return; }
+  el.innerHTML = d.styles.map(s => {
+    const acc   = parseFloat(s.accuracy_pct || 0);
+    const color = acc >= 60 ? "#4ade80" : acc >= 50 ? "#facc15" : "#f87171";
+    return `<div style="background:rgba(255,255,255,.03);border-radius:6px;padding:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:10px;font-weight:700;color:var(--white);text-transform:capitalize">${s.style}</span>
+        <span style="font-size:10px;font-weight:800;color:${color}">${acc.toFixed(0)}%</span>
+      </div>
+      <div style="height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${Math.min(acc,100)}%;background:${color};transition:width .4s"></div>
+      </div>
+      <div style="font-size:9px;color:var(--soft);margin-top:3px">${s.decisions||0} signals</div>
+    </div>`;
+  }).join("");
+}
+
+// ── Market Replay ─────────────────────────────────────────────────────────
+
+async function _runReplay(scenario) {
+  const statusEl = document.getElementById("replay-status");
+  if (statusEl) statusEl.textContent = `Running ${scenario.replace(/_/g," ")} replay...`;
+  const btns = document.querySelectorAll(".replay-btn");
+  btns.forEach(b => b.disabled = true);
+  const r = await _fetchWithTimeout(`/api/capital/replay/${scenario}`, {method:"POST"}, 10000).catch(()=>null);
+  if (statusEl) statusEl.textContent = r?.status === "started"
+    ? `${scenario.replace(/_/g," ")} replay started — results in ~30s`
+    : "Replay unavailable (training engine not running)";
+  btns.forEach(b => b.disabled = false);
+  setTimeout(loadReplayResults, 35000);
+}
+
+async function loadReplayResults() {
+  const el = document.getElementById("replay-results-list");
+  if (!el) return;
+  const d = await _fetchWithTimeout("/api/capital/replay/results", {}, 8000).catch(()=>null);
+  if (!d?.results?.length) { el.innerHTML = `<div style="color:var(--soft);font-size:10px;font-style:italic">No replay results yet. Select a scenario to begin.</div>`; return; }
+  el.innerHTML = d.results.slice(0,8).map(r => {
+    const wr  = parseFloat(r.win_rate||0)*100;
+    const ret = parseFloat(r.total_return||0)*100;
+    const wrc = wr >= 60 ? "#4ade80" : wr >= 50 ? "#facc15" : "#f87171";
+    const retc = ret >= 0 ? "#4ade80" : "#f87171";
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:5px;border-left:2px solid rgba(251,191,36,.3)">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--white)">${r.scenario?.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</div>
+        <div style="font-size:9px;color:var(--soft);margin-top:2px">${r.lessons?.slice(0,1)[0]||""}</div>
+      </div>
+      <div style="display:flex;gap:12px;text-align:right">
+        <div><div style="font-size:11px;font-weight:700;color:${wrc}">${wr.toFixed(0)}%</div><div style="font-size:9px;color:var(--soft)">Win Rate</div></div>
+        <div><div style="font-size:11px;font-weight:700;color:${retc}">${ret>=0?"+":""}${ret.toFixed(1)}%</div><div style="font-size:9px;color:var(--soft)">Return</div></div>
+      </div>
+    </div>`;
   }).join("");
 }
 

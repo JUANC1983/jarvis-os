@@ -4936,6 +4936,18 @@ async def _start_autonomous_trader() -> None:
         _log.warning("Autonomous paper trader auto-start failed: %s", exc)
 
 
+@app.on_event("startup")
+async def _start_training_engine() -> None:
+    """Auto-start the 24/7 JARVIS training engine on server startup."""
+    _log = logging.getLogger("jarvis.training_engine")
+    try:
+        from core.jarvis_training_engine import training_engine as _te
+        result = _te.start()
+        _log.info("JARVIS training engine auto-started: %s", result.get("status"))
+    except Exception as exc:
+        _log.warning("JARVIS training engine auto-start failed: %s", exc)
+
+
 # ══════════════════════════════════════════════════════════════════════
 # FAMILY AGENT ENDPOINTS  (Phase 6Z-6)
 # ══════════════════════════════════════════════════════════════════════
@@ -7267,6 +7279,114 @@ def capital_transfers(current_user: dict = Depends(get_optional_user)):
     _cap_guard()
     from opsx.capital.capital_store import capital_store as _cs
     return {"status": "ok", "transfers": _cs.get_transfers(), "real_trade": False}
+
+
+# ── JARVIS Training Engine ─────────────────────────────────────────────
+
+try:
+    from core.jarvis_training_engine import (
+        training_engine  as _training_engine,
+        replay_engine    as _replay_engine,
+    )
+    from opsx.memory.ai_memory_store import (
+        get_activity_feed      as _get_activity_feed,
+        get_asset_class_perf   as _get_asset_class_perf,
+        get_strategy_style_perf as _get_strategy_style_perf,
+        get_replay_results     as _get_replay_results,
+    )
+    _TRAINING_AVAILABLE = True
+except Exception as _te_err:
+    _training_engine    = None
+    _replay_engine      = None
+    _TRAINING_AVAILABLE = False
+    logging.getLogger("jarvis").warning("Training engine unavailable: %s", _te_err)
+
+
+def _train_guard():
+    if not _TRAINING_AVAILABLE or not _training_engine:
+        raise HTTPException(status_code=503, detail="Training engine unavailable")
+
+
+@app.get("/api/capital/activity-feed")
+def capital_activity_feed(limit: int = 30, current_user: dict = Depends(get_optional_user)):
+    """Live AI activity feed — recent decisions, regime changes, signals."""
+    if not _TRAINING_AVAILABLE:
+        return {"feed": [], "total": 0, "real_trade": False}
+    feed = _get_activity_feed(limit=min(limit, 100))
+    return {"feed": feed, "total": len(feed), "real_trade": False}
+
+
+@app.post("/api/capital/training/start")
+def training_start(current_user: dict = Depends(get_optional_user)):
+    """Start the 24/7 JARVIS training engine daemon."""
+    _train_guard()
+    result = _training_engine.start()
+    return {**result, "real_trade": False}
+
+
+@app.post("/api/capital/training/stop")
+def training_stop(current_user: dict = Depends(get_optional_user)):
+    """Stop the training engine daemon."""
+    _train_guard()
+    result = _training_engine.stop()
+    return {**result, "real_trade": False}
+
+
+@app.get("/api/capital/training/status")
+def training_status(current_user: dict = Depends(get_optional_user)):
+    """Training engine runtime status, cycle count, current regime."""
+    if not _TRAINING_AVAILABLE or not _training_engine:
+        return {"status": "unavailable", "real_trade": False}
+    return {**_training_engine.get_status(), "real_trade": False}
+
+
+@app.post("/api/capital/training/cycle")
+def training_cycle(current_user: dict = Depends(get_optional_user)):
+    """Trigger an immediate training cycle (non-blocking)."""
+    _train_guard()
+    result = _training_engine.trigger_cycle()
+    return {**result, "real_trade": False}
+
+
+@app.post("/api/capital/replay/{scenario_key}")
+def capital_replay(scenario_key: str, current_user: dict = Depends(get_optional_user)):
+    """Run a historical market replay scenario.  Non-blocking — queues background run."""
+    _train_guard()
+    import threading
+    def _run():
+        try:
+            _replay_engine.run_replay(scenario_key)
+        except Exception as exc:
+            logging.getLogger("jarvis").warning("Replay %s failed: %s", scenario_key, exc)
+    threading.Thread(target=_run, daemon=True, name=f"replay-{scenario_key}").start()
+    return {"status": "started", "scenario": scenario_key, "real_trade": False}
+
+
+@app.get("/api/capital/replay/results")
+def capital_replay_results(current_user: dict = Depends(get_optional_user)):
+    """Historical replay results for all completed scenarios."""
+    if not _TRAINING_AVAILABLE:
+        return {"results": [], "real_trade": False}
+    results = _get_replay_results()
+    return {"results": results, "total": len(results), "real_trade": False}
+
+
+@app.get("/api/capital/asset-performance")
+def capital_asset_performance(current_user: dict = Depends(get_optional_user)):
+    """Per-asset-class AI performance breakdown (equity, ETF, crypto, futures)."""
+    if not _TRAINING_AVAILABLE:
+        return {"asset_classes": [], "real_trade": False}
+    rows = _get_asset_class_perf()
+    return {"asset_classes": rows, "total_classes": len(rows), "real_trade": False}
+
+
+@app.get("/api/capital/strategy-styles")
+def capital_strategy_styles(current_user: dict = Depends(get_optional_user)):
+    """Per-style AI performance breakdown (momentum, swing, breakout, etc.)."""
+    if not _TRAINING_AVAILABLE:
+        return {"styles": [], "real_trade": False}
+    rows = _get_strategy_style_perf()
+    return {"styles": rows, "total_styles": len(rows), "real_trade": False}
 
 
 # ── Autonomous Paper Trader ────────────────────────────────────────────
