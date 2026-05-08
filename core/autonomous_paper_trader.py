@@ -302,7 +302,7 @@ class AutonomousPaperTrader:
         return ranked
 
     def _check_exits(self, engine: Any, alpha: Any, learning: Any) -> None:
-        """Exit positions where signal has turned SELL or AVOID."""
+        """Exit positions where signal has turned SELL or AVOID, then record outcome for learning."""
         try:
             positions_data = engine.get_positions()
             positions      = positions_data.get("positions", [])
@@ -315,8 +315,9 @@ class AutonomousPaperTrader:
                     action = result.get("action", "NEUTRAL")
                     score  = float(result.get("score", 50))
                     if action in ("SELL", "STRONG_SELL", "AVOID") or score < 35:
-                        qty   = int(pos.get("quantity", 0))
-                        price = self._get_price(alpha, sym) or float(pos.get("avg_cost", 0))
+                        qty      = int(pos.get("quantity", 0))
+                        avg_cost = float(pos.get("avg_cost", 0))
+                        price    = self._get_price(alpha, sym) or avg_cost
                         if qty > 0 and price > 0:
                             r = engine.simulate_trade(sym, "sell", qty, price)
                             if r.get("status") == "ok":
@@ -329,6 +330,24 @@ class AutonomousPaperTrader:
                                 })
                                 with self._lock:
                                     self._trades_this_session += 1
+                                # Feed outcome to learning engine
+                                if avg_cost > 0:
+                                    try:
+                                        actual_return = (price - avg_cost) / avg_cost * 100
+                                        learning.record_outcome(
+                                            symbol=sym,
+                                            signal_type="BUY",
+                                            confidence=min(score / 100.0, 1.0),
+                                            predicted_direction="up",
+                                            actual_return_pct=round(actual_return, 4),
+                                            holding_days=1,
+                                            source="paper",
+                                            context={"regime": self._current_regime,
+                                                     "exit_signal": action,
+                                                     "exit_score": score},
+                                        )
+                                    except Exception as le:
+                                        log.debug("APT learning record failed: %s", le)
                 except Exception:
                     pass
         except Exception as exc:

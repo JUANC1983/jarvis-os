@@ -2527,21 +2527,68 @@ class _EventUpdate(BaseModel):
 
 @app.get("/api/calendar/status")
 def cal_status(current_user: dict = Depends(get_optional_user)):
-    """Return calendar connection status. Always returns connected since local calendar is always available."""
+    """
+    Calendar status. Reports local storage as always available.
+    Also checks whether Google Calendar OAuth tokens are present to report sync capability.
+    """
+    import os as _cal_os
     uid = current_user["user_id"]
     try:
         events = _cal(uid).list_events(range_name="day")
+
+        # Check if Google Calendar tokens are present
+        google_synced = False
+        google_write  = False
+        google_configured = bool(
+            _cal_os.getenv("GOOGLE_CLIENT_ID") and _cal_os.getenv("GOOGLE_CLIENT_SECRET")
+        )
+        if google_configured:
+            try:
+                ts = _tok(uid)
+                gc_record = ts.load("google_calendar")
+                if gc_record and gc_record.get("access_token"):
+                    google_synced = True
+                    # google_calendar integration only has readonly scope currently
+                    google_write = False
+            except Exception:
+                pass
+
+        # Check Outlook tokens
+        outlook_synced = False
+        if _OUTLOOK_AVAILABLE:
+            try:
+                outlook_synced = _ms_token_store.is_authenticated(uid)
+            except Exception:
+                pass
+
+        provider = "local_storage"
+        write_mode = "local_only"
+        sync_label = "JARVIS Local Calendar"
+        if google_synced:
+            provider  = "local_storage+google_calendar"
+            sync_label = "JARVIS + Google (read)"
+        if outlook_synced:
+            provider  = "local_storage+outlook"
+            sync_label = "JARVIS + Outlook"
+
         return {
-            "status":   "connected",
-            "provider": "local",
-            "source":   "local",
-            "message":  "Calendar connected",
-            "events_today": len(events),
+            "status":           "connected",
+            "provider":         provider,
+            "source":           "local_storage",
+            "write_mode":       write_mode,
+            "sync_label":       sync_label,
+            "local_storage_ok": True,
+            "google_configured": google_configured,
+            "google_synced":    google_synced,
+            "google_write":     google_write,
+            "outlook_synced":   outlook_synced,
+            "message":          "Events stored in JARVIS local calendar. External calendar sync requires OAuth.",
+            "events_today":     len(events),
         }
     except Exception as e:
         return {
-            "status":   "disconnected",
-            "provider": None,
+            "status":   "error",
+            "provider": "local_storage",
             "source":   None,
             "message":  f"Calendar error: {e}",
         }
@@ -2590,7 +2637,13 @@ def cal_create(body: _EventCreate, current_user: dict = Depends(get_optional_use
             linked_task_id=body.linked_task_id,
             reminder_minutes=body.reminder_minutes,
         )
-        return {"status": "ok", "event": ev}
+        return {
+            "status":            "ok",
+            "event":             ev,
+            "provider_event_id": ev.get("id"),
+            "storage":           "local_jarvis",
+            "note":              "Event saved to JARVIS local calendar. Connect Google Calendar or Outlook to sync.",
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -4869,6 +4922,18 @@ async def _stop_outlook_services() -> None:
     await _ms_event_queue.stop()
 
 
+@app.on_event("startup")
+async def _start_autonomous_trader() -> None:
+    """Auto-start the autonomous paper trader on every app startup."""
+    _log = logging.getLogger("jarvis.autonomous_trader")
+    try:
+        from core.autonomous_paper_trader import autonomous_trader as _atp
+        result = _atp.start()
+        _log.info("Autonomous paper trader auto-started: %s", result.get("status"))
+    except Exception as exc:
+        _log.warning("Autonomous paper trader auto-start failed: %s", exc)
+
+
 # ══════════════════════════════════════════════════════════════════════
 # FAMILY AGENT ENDPOINTS  (Phase 6Z-6)
 # ══════════════════════════════════════════════════════════════════════
@@ -5779,6 +5844,106 @@ def markets_overview():
                 "timestamp": datetime.now().isoformat()}
 
 
+@app.get("/api/markets/live-prices")
+def markets_live_prices(
+    symbols: str = "SPY,QQQ,AAPL,MSFT,NVDA,TSLA,AMZN,META",
+    current_user: dict = Depends(get_optional_user),
+):
+    """
+    Live/delayed market prices. Source priority:
+      1. IBKR bridge (live or delayed, if connected)
+      2. yfinance fallback
+
+    Returns per-symbol: price, bid, ask, last, source, delayed, timestamp, stale.
+    Always includes real_trade=false.
+    """
+    import time as _time
+    sym_list = [s.strip().upper() for s in symbols.split(",") if s.strip()][:20]
+    results  = []
+    ts       = datetime.utcnow().isoformat()
+
+    # Try IBKR bridge first
+    ibkr_prices: dict = {}
+    try:
+        if _ibkr and hasattr(_ibkr, "bridge_url") and _ibkr.bridge_url:
+            raw = _ibkr._get("/market/snapshot")
+            if "_bridge_error" not in raw:
+                for item in raw.get("items", raw.get("prices", [])):
+                    sym = (item.get("symbol") or item.get("ticker") or "").upper()
+                    if sym:
+                        ibkr_prices[sym] = item
+    except Exception:
+        pass
+
+    for sym in sym_list:
+        if sym in ibkr_prices:
+            p = ibkr_prices[sym]
+            results.append({
+                "symbol":    sym,
+                "price":     p.get("last") or p.get("price") or p.get("close"),
+                "bid":       p.get("bid"),
+                "ask":       p.get("ask"),
+                "last":      p.get("last") or p.get("price"),
+                "change":    p.get("change"),
+                "change_pct": p.get("change_pct") or p.get("changePct"),
+                "source":    "ibkr_live" if not p.get("delayed") else "ibkr_delayed",
+                "delayed":   bool(p.get("delayed")),
+                "stale":     False,
+                "timestamp": ts,
+                "real_trade": False,
+            })
+        else:
+            # yfinance fallback
+            try:
+                import yfinance as _yf
+                t = _yf.Ticker(sym)
+                info = t.fast_info
+                price = float(getattr(info, "last_price", 0) or 0)
+                if price <= 0:
+                    hist = t.history(period="1d", interval="1m")
+                    if not hist.empty:
+                        price = float(hist["Close"].iloc[-1])
+                prev  = float(getattr(info, "previous_close", price) or price)
+                chg   = round(price - prev, 4) if prev else 0
+                chg_p = round(chg / prev * 100, 2) if prev else 0
+                results.append({
+                    "symbol":    sym,
+                    "price":     round(price, 4) if price else None,
+                    "bid":       None,
+                    "ask":       None,
+                    "last":      round(price, 4) if price else None,
+                    "change":    chg,
+                    "change_pct": chg_p,
+                    "source":    "yfinance",
+                    "delayed":   True,
+                    "stale":     price <= 0,
+                    "timestamp": ts,
+                    "real_trade": False,
+                })
+            except Exception as exc:
+                results.append({
+                    "symbol":    sym,
+                    "price":     None,
+                    "source":    "error",
+                    "error":     str(exc),
+                    "delayed":   True,
+                    "stale":     True,
+                    "timestamp": ts,
+                    "real_trade": False,
+                })
+
+    ibkr_ok = bool(ibkr_prices)
+    return {
+        "status":       "ok",
+        "count":        len(results),
+        "ibkr_source":  ibkr_ok,
+        "prices":       results,
+        "data_source":  "ibkr" if ibkr_ok else "yfinance",
+        "timestamp":    ts,
+        "real_trade":   False,
+    }
+
+
 @app.get("/api/markets/recommended")
 def markets_recommended():
     """Return recommended stocks from the brain/product engine."""
@@ -6066,6 +6231,30 @@ def debug_ibkr(current_user: dict = Depends(get_current_user)):
             "warning":              _watchdog_info.get("warning"),
         },
     }
+
+    # Build exact blocker list so the dashboard can show actionable steps
+    blockers = []
+    if not (remote_mode or hosted):
+        if not bridge_url:
+            blockers.append({
+                "blocker": "NOT_IN_PRODUCTION_MODE",
+                "detail": "Set ENABLE_REMOTE_IBKR_BRIDGE=true or deploy to Railway to activate remote bridge mode",
+            })
+    if hosted or remote_mode:
+        if not bridge_url:
+            blockers.append({
+                "blocker": "IBKR_BRIDGE_URL_MISSING",
+                "detail": "Set IBKR_BRIDGE_URL=https://<ngrok-id>.ngrok.io in Railway environment variables",
+                "action": "Run ngrok http 7755 on your local machine, copy the https URL",
+            })
+        if not token_set:
+            blockers.append({
+                "blocker": "IBKR_BRIDGE_TOKEN_MISSING",
+                "detail": "Set IBKR_BRIDGE_TOKEN=<token> in Railway environment variables",
+                "action": "Token is printed by secure_bridge.py on startup",
+            })
+    result["setup_required"] = blockers
+    result["ibkr_ready"] = len(blockers) == 0
 
     if not _PORTFOLIO_AVAILABLE or not _ibkr:
         result.update({"bridge_reachable": False, "auth_ok": False,
@@ -6961,22 +7150,64 @@ def trader_audit(current_user: dict = Depends(get_optional_user)):
 
 @app.get("/api/trader/learning")
 def trader_learning_metrics(current_user: dict = Depends(get_optional_user)):
-    """Adaptive learning metrics — win rate, calibration, signal performance."""
+    """Adaptive learning metrics — win rate, calibration, signal performance, data_origin."""
     if not _PORTFOLIO_AVAILABLE or not _trader_learning:
         return {
             "status":          "unavailable",
             "message":         "Learning engine not loaded",
             "total_outcomes":  0,
+            "data_origin":     "none",
             "real_trade":      False,
         }
     try:
-        metrics = _trader_learning.get_metrics()
+        metrics     = _trader_learning.get_metrics()
         signal_perf = _trader_learning.get_signal_performance()
+        n = metrics.get("total_outcomes", 0)
+
+        # Determine data origin from outcome records
+        from pathlib import Path as _LPath
+        import json as _ljson
+        outcomes_path = _LPath("data/learning/signal_outcomes.json")
+        sources: dict = {}
+        if outcomes_path.exists():
+            try:
+                _oc = _ljson.loads(outcomes_path.read_text(encoding="utf-8"))
+                for o in _oc:
+                    src = o.get("source", "unknown")
+                    sources[src] = sources.get(src, 0) + 1
+            except Exception:
+                pass
+
+        last_paper_update = None
+        last_real_market_update = None
+        paper_count = sources.get("paper", 0)
+        try:
+            if _AUTO_TRADER_AVAILABLE and _auto_trader:
+                st = _auto_trader.get_status()
+                last_paper_update = st.get("last_trade_at")
+        except Exception:
+            pass
+
+        data_origin = "none"
+        if paper_count > 0:
+            data_origin = "paper_trades"
+        if sources.get("recommendation", 0) > 0:
+            data_origin = "paper_trades+recommendations"
+        if sources.get("audit", 0) > 0:
+            data_origin = "paper_trades+audit"
+
         return {
-            "status":      "ok",
-            "metrics":     metrics,
-            "by_signal":   signal_perf.get("by_signal", {}),
-            "real_trade":  False,
+            "status":                  "ok",
+            "metrics":                 metrics,
+            "by_signal":               signal_perf.get("by_signal", {}),
+            "sample_count":            n,
+            "data_origin":             data_origin,
+            "sources":                 sources,
+            "last_paper_trade_update": last_paper_update,
+            "last_real_market_update": last_real_market_update,
+            "confidence_source":       "paper_outcomes" if paper_count > 0 else "no_data",
+            "note":                    "Learning improves as autonomous paper trader closes positions.",
+            "real_trade":              False,
         }
     except Exception as exc:
         return {"status": "error", "error": str(exc), "real_trade": False}
@@ -7190,3 +7421,212 @@ async def outlook_webhook_canonical(request: Request, validationToken: str = "")
                 _wlog.info("Enqueued new_email message_id=%s user=%s", msg_id, user_id)
 
     return JSONResponse({"queued": queued}, status_code=202)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PHASE 8 — SYSTEM TRUST LAYER
+# Health Monitor · Event Stream · Trust Score · Resource Telemetry
+# ══════════════════════════════════════════════════════════════════════
+
+_TELEMETRY_AVAILABLE = False
+try:
+    from opsx.telemetry.health_monitor import system_health as _system_health
+    from opsx.telemetry.event_stream   import system_events as _system_events
+    from opsx.telemetry.trust_score    import trust_score   as _trust_score
+    from opsx.telemetry.resource_monitor import resource_monitor as _resource_monitor
+    _TELEMETRY_AVAILABLE = True
+except Exception as _tel_exc:
+    logging.getLogger("jarvis.telemetry").warning(
+        "Telemetry layer failed to import: %s", _tel_exc
+    )
+
+
+@app.on_event("startup")
+async def _start_telemetry() -> None:
+    """Start the health monitor background thread and wire up event emission."""
+    if not _TELEMETRY_AVAILABLE:
+        return
+    _tlog = logging.getLogger("jarvis.telemetry")
+    try:
+        # Wire event emitter into health monitor (avoids circular import at module level)
+        _system_health.set_event_emitter(_system_events.emit)
+
+        # Register in-process probes so health monitor gets live state
+        try:
+            from core.autonomous_paper_trader import autonomous_trader as _atp
+            def _atp_probe():
+                st = _atp.get_status()
+                return {
+                    "state":          "healthy" if st.get("running") else "offline",
+                    "source":         "in_process",
+                    "last_heartbeat": st.get("last_scan_at"),
+                    "metadata":       {
+                        "regime":      st.get("current_regime"),
+                        "scan_count":  st.get("scan_count", 0),
+                        "trades":      st.get("trades_this_session", 0),
+                    },
+                }
+            _system_health.register_probe("autonomous_trader", _atp_probe)
+        except Exception:
+            pass
+
+        _system_health.start()
+        _system_events.emit(
+            "JARVIS System Trust Layer started",
+            severity="SYSTEM", category="system", source="telemetry",
+            details={"poll_interval": 30},
+        )
+        _tlog.info("Phase 8 telemetry started")
+    except Exception as exc:
+        _tlog.error("Telemetry startup error: %s", exc)
+
+
+# ── Health endpoints ──────────────────────────────────────────────────────────
+
+@app.get("/api/system/health")
+def system_health_all(current_user: dict = Depends(get_optional_user)):
+    """Full health snapshot of all monitored services."""
+    if not _TELEMETRY_AVAILABLE:
+        return {"status": "unavailable", "message": "Telemetry module not loaded"}
+    snap = _system_health.snapshot()
+    ts_data = _trust_score.compute(snap["services"])
+    return {
+        "status":      "ok",
+        "trust_score": ts_data,
+        "health":      snap,
+        "real_trade":  False,
+    }
+
+
+@app.get("/api/system/health/{service_id}")
+def system_health_service(service_id: str, current_user: dict = Depends(get_optional_user)):
+    """Health detail for a single service."""
+    if not _TELEMETRY_AVAILABLE:
+        return {"status": "unavailable"}
+    svc = _system_health.get_service(service_id)
+    if svc is None:
+        raise HTTPException(404, f"Service '{service_id}' not registered")
+    return {"status": "ok", "service": svc, "real_trade": False}
+
+
+@app.get("/api/system/trust-score")
+def system_trust_score(current_user: dict = Depends(get_optional_user)):
+    """Compute and return the current system trust score."""
+    if not _TELEMETRY_AVAILABLE:
+        return {"status": "unavailable", "score": 0, "label": "Telemetry offline"}
+    snap = _system_health.get_all()
+    result = _trust_score.compute(snap)
+    return {"status": "ok", "trust": result, "real_trade": False}
+
+
+# ── Event stream endpoints ────────────────────────────────────────────────────
+
+@app.get("/api/system/events")
+def system_events_list(
+    limit:    int            = 100,
+    severity: Optional[str] = None,
+    category: Optional[str] = None,
+    source:   Optional[str] = None,
+    search:   Optional[str] = None,
+    since:    Optional[str] = None,
+    current_user: dict = Depends(get_optional_user),
+):
+    """Paginated / filtered event stream."""
+    if not _TELEMETRY_AVAILABLE:
+        return {"status": "unavailable", "events": []}
+    events = _system_events.events(
+        limit=min(limit, 500),
+        severity=severity, category=category,
+        source=source, search=search, since=since,
+    )
+    return {
+        "status":  "ok",
+        "count":   len(events),
+        "events":  events,
+        "summary": _system_events.summary(),
+        "real_trade": False,
+    }
+
+
+@app.post("/api/system/events/emit")
+def system_events_emit(
+    message:  str,
+    severity: str = "INFO",
+    category: str = "system",
+    source:   str = "operator",
+    current_user: dict = Depends(get_current_user),
+):
+    """Manually emit a system event (operator use)."""
+    if not _TELEMETRY_AVAILABLE:
+        return {"status": "unavailable"}
+    ev = _system_events.emit(
+        message=message, severity=severity,
+        category=category, source=source,
+    )
+    return {"status": "ok", "event": ev}
+
+
+@app.get("/api/system/events/export")
+def system_events_export(current_user: dict = Depends(get_current_user)):
+    """Export the full event log as JSON."""
+    if not _TELEMETRY_AVAILABLE:
+        return Response(content="[]", media_type="application/json")
+    return Response(
+        content=_system_events.export_json(),
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="jarvis_events.json"'},
+    )
+
+
+# ── Resource telemetry ────────────────────────────────────────────────────────
+
+@app.get("/api/system/telemetry")
+def system_telemetry(current_user: dict = Depends(get_optional_user)):
+    """CPU, RAM, disk, API call counters."""
+    if not _TELEMETRY_AVAILABLE:
+        return {"status": "unavailable"}
+    return {
+        "status":   "ok",
+        "telemetry": _resource_monitor.snapshot(),
+        "real_trade": False,
+    }
+
+
+# ── WebSocket event stream ────────────────────────────────────────────────────
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+@app.websocket("/ws/system/events")
+async def ws_system_events(websocket: WebSocket):
+    """Live tail of system events. Sends JSON event objects as they arrive."""
+    await websocket.accept()
+    import asyncio as _aio
+    import json    as _json
+    loop = _aio.get_event_loop()
+
+    def _on_event(ev: dict) -> None:
+        _aio.run_coroutine_threadsafe(
+            websocket.send_text(_json.dumps(ev)),
+            loop,
+        )
+
+    if _TELEMETRY_AVAILABLE:
+        _system_events.register_ws_listener(_on_event)
+
+    # Send last 50 events on connect
+    try:
+        if _TELEMETRY_AVAILABLE:
+            recent = _system_events.events(limit=50)
+            for ev in reversed(recent):
+                await websocket.send_text(_json.dumps(ev))
+        while True:
+            # Keep connection alive; actual events pushed via _on_event
+            await _aio.sleep(30)
+            await websocket.send_text(_json.dumps({"type": "ping"}))
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        if _TELEMETRY_AVAILABLE:
+            _system_events.unregister_ws_listener(_on_event)

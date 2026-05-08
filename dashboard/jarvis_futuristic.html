@@ -2431,6 +2431,7 @@ body.mode-beginner .operator-only{display:none!important}
     <button class="tab-btn" data-tab="outlook" id="outlook-tab-btn">Outlook <span class="tab-dot" id="outlook-unread-dot" style="display:none;background:#f59e0b"></span></button>
     <button class="tab-btn" data-tab="automations">Automations</button>
     <button class="tab-btn" data-tab="memory">Memory</button>
+    <button class="tab-btn" data-tab="infra">Infrastructure</button>
     <button class="tab-btn" data-tab="system">System</button>
     <button class="tab-btn" data-tab="chat">Chat</button>
   </nav>
@@ -2447,6 +2448,10 @@ body.mode-beginner .operator-only{display:none!important}
     <span class="trust-badge trust-blocked">🚫 EXECUTION BLOCKED</span>
     <span class="trust-badge trust-ai">🤖 AI ACTIVE</span>
     <span class="trust-badge trust-sim">🧪 PAPER SIMULATED</span>
+    <span class="trust-badge" id="home-trust-score-badge"
+      style="cursor:pointer;background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.3)"
+      onclick="switchSection('system');setTimeout(()=>switchTab('infra'),80)"
+      title="System Trust Score — click for details">TRUST: —%</span>
     <span class="trust-badge trust-ts" id="trust-last-sync">Sync: —</span>
   </div>
 
@@ -2972,6 +2977,21 @@ body.mode-beginner .operator-only{display:none!important}
       <div style="display:flex;gap:6px">
         <button class="btn-ol btn-sm" onclick="paperImportReal()" style="font-size:11px">↓ Import Real</button>
         <button class="btn-p btn-sm" onclick="loadPaperAnalytics(null)" style="font-size:11px">↻ Refresh Lab</button>
+      </div>
+    </div>
+
+    <!-- Autonomous Trader Status Bar -->
+    <div id="apt-status-bar" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.15);border-radius:6px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div id="apt-dot" class="cs-dot cs-idle"></div>
+        <span style="font-size:11px;font-weight:700;color:var(--white)">Autonomous Trader</span>
+        <span id="apt-state-label" style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:8px;background:rgba(107,114,128,.2);color:#9ca3af;margin-left:2px">Loading…</span>
+      </div>
+      <span id="apt-detail" style="font-size:10px;color:var(--soft);flex:1">—</span>
+      <div style="display:flex;gap:5px">
+        <button class="btn-ol btn-sm" style="font-size:10px" onclick="_aptStart()">▶ Start</button>
+        <button class="btn-ol btn-sm" style="font-size:10px" onclick="_aptStop()">■ Stop</button>
+        <button class="btn-ol btn-sm" style="font-size:10px" onclick="_aptScan()">⚡ Scan Now</button>
       </div>
     </div>
 
@@ -3743,6 +3763,85 @@ body.mode-beginner .operator-only{display:none!important}
       <div id="an-system-stats"></div>
     </div>
   </div>
+</div>
+
+<!-- ══════════════ INFRASTRUCTURE / SYSTEM TRUST ══════════════ -->
+<div id="tab-infra" class="tab-panel">
+
+  <!-- Trust Score Header -->
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--soft);margin-bottom:4px">System Trust Score</div>
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span id="infra-trust-score" style="font-size:42px;font-weight:900;line-height:1;color:#4ade80">—</span>
+          <span id="infra-trust-label" style="font-size:13px;font-weight:600;color:#4ade80">Loading…</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap" id="infra-trust-pills"></div>
+      </div>
+      <div id="infra-trust-bar" style="flex:2;min-width:200px;height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden">
+        <div id="infra-trust-bar-fill" style="height:100%;width:0%;background:#4ade80;transition:width .6s ease,background .4s"></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-ol btn-sm" style="font-size:11px" onclick="loadInfraPanel()">↻ Refresh</button>
+        <span id="infra-checked-at" style="font-size:10px;color:var(--soft)">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Health Grid -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch">
+      <span class="ct">Service Health</span>
+      <span class="cs" id="infra-health-summary">—</span>
+    </div>
+    <div id="infra-health-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:8px">
+      <div style="color:var(--soft);font-size:12px;padding:12px">Loading health data…</div>
+    </div>
+  </div>
+
+  <!-- Event Stream -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch" style="flex-wrap:wrap;gap:8px">
+      <span class="ct">Event Stream</span>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="infra-ev-severity" style="background:rgba(255,255,255,.05);color:var(--white);border:1px solid var(--border2);border-radius:4px;font-size:11px;padding:2px 6px" onchange="loadInfraEvents()">
+          <option value="">All severities</option>
+          <option value="INFO">INFO</option>
+          <option value="WARNING">WARNING</option>
+          <option value="CRITICAL">CRITICAL</option>
+          <option value="SYSTEM">SYSTEM</option>
+          <option value="SECURITY">SECURITY</option>
+          <option value="TRADING">TRADING</option>
+          <option value="AI">AI</option>
+          <option value="NETWORK">NETWORK</option>
+        </select>
+        <input id="infra-ev-search" type="text" placeholder="Search events…"
+          style="background:rgba(255,255,255,.05);color:var(--white);border:1px solid var(--border2);border-radius:4px;font-size:11px;padding:2px 8px;width:140px"
+          oninput="loadInfraEvents()">
+        <button class="btn-ol btn-sm" style="font-size:11px" onclick="loadInfraEvents()">↻</button>
+        <button class="btn-ol btn-sm" style="font-size:11px" onclick="window.open('/api/system/events/export')">⬇ Export</button>
+        <span id="infra-ws-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280" title="WebSocket live tail"></span>
+      </div>
+    </div>
+    <div id="infra-event-log" style="font-family:monospace;font-size:11px;max-height:320px;overflow-y:auto;margin-top:8px;background:rgba(0,0,0,.2);border-radius:6px;padding:8px">
+      <span style="color:var(--soft)">Loading events…</span>
+    </div>
+  </div>
+
+  <!-- Resource Telemetry -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct">Resource Telemetry</span>
+      <span class="cs">CPU · RAM · API call counters</span>
+    </div>
+    <div id="infra-resource-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px">
+      <div style="color:var(--soft);font-size:12px;padding:8px">Loading…</div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--soft)">Top API endpoints (this session):</div>
+    <div id="infra-top-endpoints" style="margin-top:6px;font-size:11px"></div>
+  </div>
+
 </div>
 
 <div id="tab-system" class="tab-panel">
@@ -4954,7 +5053,7 @@ function switchTab(name) {
     outlook:"work", automations:"work", markets:"markets", life:"life",
     golf:"life", running:"life", cycling:"life", gym:"life", tennis:"life",
     agents:"intelligence", intelligence:"intelligence", analytics:"intelligence",
-    memory:"intelligence", system:"system", chat:"system"
+    memory:"intelligence", system:"system", chat:"system", infra:"system"
   };
   const _sec = _tabSectionMap[name];
   if (_sec) {
@@ -4982,6 +5081,7 @@ function switchTab(name) {
       if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
       if (name === "golf") { _loadSwingDrills(); }
       if (name === "markets")  { try { _initMarketsTab(); } catch(_) { try { loadPortfolioSummary(null); } catch(__) {} } }
+      if (name === "infra")    { try { loadInfraPanel(); } catch(_) {} }
     } finally {
       delete window.JARVIS_TABS.loading[name];
       if (_tabSwitchPendingName === name) _tabSwitchPendingName = null;
@@ -5660,7 +5760,8 @@ async function loadMarketSnapshot() {
 
     if (timeEl && d.timestamp) {
       const t = new Date(d.timestamp);
-      timeEl.textContent = t.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}) + " UTC";
+      const srcLabel = d.data_source ? ` · ${d.data_source}` : "";
+      timeEl.textContent = t.toLocaleTimeString("es-CO", {hour:"2-digit",minute:"2-digit"}) + " UTC" + srcLabel;
     }
     if (regimeBadge) {
       const regime = d.regime || "unknown";
@@ -6243,11 +6344,11 @@ function switchMarketPanel(name) {
 
 // ── Live indicator helpers ───────────────────────────────────────────────
 
-function _setLiveIndicator(live) {
+function _setLiveIndicator(live, sourceLabel) {
   const dot   = document.getElementById("mkt-live-dot");
   const label = document.getElementById("mkt-connection-label");
   if (dot)   { dot.className   = live ? "live-dot" : "live-dot stale-dot"; }
-  if (label) { label.textContent = live ? "live" : "stale"; }
+  if (label) { label.textContent = sourceLabel || (live ? "live" : "stale"); }
 }
 
 function _setTs(id, label) {
@@ -6270,12 +6371,14 @@ async function loadCockpit(btn) {
     const intel  = d.intelligence || {};
     const fromCache = real._from_cache;
 
-    // Live indicator
-    _setLiveIndicator(!fromCache);
-
-    // Account mode badge in header
+    // Live indicator with data source label
     const brokers  = d.brokers || {};
     const ibkrData = brokers.ibkr || {};
+    const ibkrLive = ["connected","ok"].includes(ibkrData.status) || ibkrData.connected === true;
+    const srcLabel = fromCache ? "stale · cached" : (ibkrLive ? "ibkr live" : "fallback data");
+    _setLiveIndicator(!fromCache, srcLabel);
+
+    // Account mode badge in header
     const acctMode = ibkrData.account_mode || "LIVE";
     const modeBadge = document.getElementById("mkt-account-mode-badge");
     if (modeBadge) {
@@ -6514,6 +6617,12 @@ async function loadPaperAnalytics(btn) {
     // Render signal chart with learning data
     await _loadAndRenderSignalChart();
 
+    // Autonomous trader status bar
+    try {
+      const aptData = await _fetchWithTimeout("/api/paper/autonomous/status", {}, 6000);
+      _updateAptBar(aptData);
+    } catch(_) {}
+
   } catch(e) {
     console.warn("loadPaperAnalytics:", e);
     _set("lab-strategy-table", '<span style="color:var(--soft);font-size:12px">Paper analytics unavailable. <button class="btn-ol btn-sm" onclick="loadPaperAnalytics(null)">Retry</button></span>');
@@ -6523,6 +6632,326 @@ async function loadPaperAnalytics(btn) {
     _panelLoading.lab = false;
     if (btn) { btn.textContent = "↻ Refresh Lab"; btn.disabled = false; }
   }
+}
+
+function _updateAptBar(apt) {
+  const dot    = document.getElementById("apt-dot");
+  const label  = document.getElementById("apt-state-label");
+  const detail = document.getElementById("apt-detail");
+  if (!dot || !label) return;
+  const running  = apt.running === true;
+  const unavail  = apt.status === "unavailable";
+  dot.className  = "cs-dot " + (running ? "cs-ok" : unavail ? "cs-err" : "cs-warn");
+  label.textContent = running ? "RUNNING" : unavail ? "UNAVAILABLE" : "NOT STARTED";
+  label.style.background = running ? "rgba(74,222,128,.15)" : unavail ? "rgba(248,113,113,.15)" : "rgba(250,204,21,.15)";
+  label.style.color      = running ? "#4ade80" : unavail ? "#f87171" : "#facc15";
+  if (detail) {
+    const parts = [];
+    if (apt.current_regime) parts.push("Regime: " + apt.current_regime.toUpperCase());
+    if (apt.scan_count)     parts.push("Scans: " + apt.scan_count);
+    if (apt.trades_this_session) parts.push("Trades: " + apt.trades_this_session);
+    if (apt.scan_interval_secs)  parts.push("Interval: " + apt.scan_interval_secs + "s");
+    detail.textContent = parts.join(" · ") || (unavail ? "Module not available" : "No scan data yet");
+  }
+}
+
+async function _aptStart() {
+  try {
+    const r = await fetch("/api/paper/autonomous/start", { method: "POST" }).then(r => r.json());
+    showToast(r.status === "started" ? "Autonomous trader started" : (r.message || r.status), r.status === "started" ? "ok" : "warn");
+    setTimeout(() => _fetchWithTimeout("/api/paper/autonomous/status",{},5000).then(_updateAptBar).catch(()=>{}), 800);
+  } catch(e) { showToast("Start failed: " + e.message, "error"); }
+}
+async function _aptStop() {
+  try {
+    const r = await fetch("/api/paper/autonomous/stop", { method: "POST" }).then(r => r.json());
+    showToast(r.status === "stopped" ? "Autonomous trader stopped" : (r.message || r.status), "warn");
+    setTimeout(() => _fetchWithTimeout("/api/paper/autonomous/status",{},5000).then(_updateAptBar).catch(()=>{}), 800);
+  } catch(e) { showToast("Stop failed: " + e.message, "error"); }
+}
+async function _aptScan() {
+  try {
+    const r = await fetch("/api/paper/autonomous/scan", { method: "POST" }).then(r => r.json());
+    showToast("Scan triggered", "ok");
+  } catch(e) { showToast("Scan failed: " + e.message, "error"); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PHASE 8 — INFRASTRUCTURE / SYSTEM TRUST PANEL
+   ══════════════════════════════════════════════════════════════ */
+
+let _infraWs = null;
+let _infraRefreshTimer = null;
+
+const _STATE_EMOJI = {
+  healthy:"🟢", degraded:"🟡", fallback:"🟠",
+  offline:"🔴", starting:"🔵", unknown:"⚫"
+};
+const _STATE_COLOR = {
+  healthy:"#4ade80", degraded:"#facc15", fallback:"#f97316",
+  offline:"#f87171", starting:"#60a5fa", unknown:"#6b7280"
+};
+const _SEV_COLOR = {
+  INFO:"#60a5fa", WARNING:"#facc15", CRITICAL:"#f87171",
+  SYSTEM:"#a78bfa", SECURITY:"#f87171", TRADING:"#34d399",
+  EXECUTION:"#34d399", AI:"#c084fc", NETWORK:"#f97316"
+};
+
+async function loadInfraPanel() {
+  try {
+    const [healthRes, eventsRes, telRes] = await Promise.allSettled([
+      safeFetch("/api/system/health",     {}, 8000, null),
+      safeFetch("/api/system/events?limit=80", {}, 6000, null),
+      safeFetch("/api/system/telemetry",  {}, 6000, null),
+    ]);
+
+    // Trust Score
+    const health = healthRes.status === "fulfilled" ? healthRes.value : null;
+    if (health && health.trust_score) {
+      _renderTrustScore(health.trust_score);
+    } else {
+      _renderTrustScore(null);
+    }
+
+    // Health Grid
+    if (health && health.health && health.health.services) {
+      _renderHealthGrid(health.health.services, health.health.counts);
+    } else {
+      document.getElementById("infra-health-grid").innerHTML =
+        '<span style="color:var(--soft);font-size:12px">Health data unavailable — telemetry module may not be loaded.</span>';
+    }
+
+    // Events
+    const evData = eventsRes.status === "fulfilled" ? eventsRes.value : null;
+    _renderEventLog(evData ? evData.events : null);
+
+    // Telemetry
+    const tel = telRes.status === "fulfilled" ? telRes.value : null;
+    _renderResourceGrid(tel ? tel.telemetry : null);
+
+    // Checked-at
+    const tsEl = document.getElementById("infra-checked-at");
+    if (tsEl) tsEl.textContent = "Updated: " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+
+    // Auto-refresh every 30s
+    clearTimeout(_infraRefreshTimer);
+    _infraRefreshTimer = setTimeout(loadInfraPanel, 30000);
+
+    // Connect WebSocket for live tail
+    _infraConnectWs();
+
+  } catch(e) {
+    console.warn("loadInfraPanel:", e);
+  }
+}
+
+function _renderTrustScore(ts) {
+  const scoreEl = document.getElementById("infra-trust-score");
+  const labelEl = document.getElementById("infra-trust-label");
+  const barFill  = document.getElementById("infra-trust-bar-fill");
+  const pillsEl  = document.getElementById("infra-trust-pills");
+  const badgeEl  = document.getElementById("home-trust-score-badge");
+
+  if (!ts) {
+    if (scoreEl) scoreEl.textContent = "—";
+    if (labelEl) labelEl.textContent = "Telemetry offline";
+    if (badgeEl) { badgeEl.textContent = "TRUST: OFFLINE"; badgeEl.style.color="#f87171"; }
+    return;
+  }
+  const score = ts.score ?? 0;
+  const color = ts.color || "#4ade80";
+
+  if (scoreEl) { scoreEl.textContent = score + "%"; scoreEl.style.color = color; }
+  if (labelEl) { labelEl.textContent = ts.label || ""; labelEl.style.color = color; }
+  if (barFill) { barFill.style.width = score + "%"; barFill.style.background = color; }
+  if (badgeEl) {
+    badgeEl.textContent = "TRUST: " + score + "%";
+    badgeEl.style.color = color;
+    badgeEl.style.borderColor = color + "55";
+    badgeEl.style.background = color + "18";
+  }
+
+  const pills = [];
+  if (ts.critical_failures && ts.critical_failures.length)
+    pills.push(`<span style="background:rgba(248,113,113,.15);color:#f87171;font-size:10px;padding:1px 8px;border-radius:8px;border:1px solid rgba(248,113,113,.3)">🔴 ${ts.critical_failures.length} offline</span>`);
+  if (ts.active_fallbacks && ts.active_fallbacks.length)
+    pills.push(`<span style="background:rgba(249,115,22,.15);color:#f97316;font-size:10px;padding:1px 8px;border-radius:8px;border:1px solid rgba(249,115,22,.3)">🟠 ${ts.active_fallbacks.length} fallback</span>`);
+  if (ts.degraded_services && ts.degraded_services.length)
+    pills.push(`<span style="background:rgba(250,204,21,.15);color:#facc15;font-size:10px;padding:1px 8px;border-radius:8px;border:1px solid rgba(250,204,21,.3)">🟡 ${ts.degraded_services.length} degraded</span>`);
+  const healthy = ts.healthy_count || 0;
+  const total   = ts.total_services || 0;
+  pills.push(`<span style="background:rgba(74,222,128,.12);color:#4ade80;font-size:10px;padding:1px 8px;border-radius:8px;border:1px solid rgba(74,222,128,.25)">🟢 ${healthy}/${total} healthy</span>`);
+  if (pillsEl) pillsEl.innerHTML = pills.join("");
+
+  const summEl = document.getElementById("infra-health-summary");
+  if (summEl) summEl.textContent = `${healthy} healthy · ${(ts.degraded_services||[]).length} degraded · ${(ts.critical_failures||[]).length} offline`;
+}
+
+function _renderHealthGrid(services, counts) {
+  const grid = document.getElementById("infra-health-grid");
+  if (!grid) return;
+  const cards = Object.values(services).map(svc => {
+    const state   = svc.state || "unknown";
+    const emoji   = _STATE_EMOJI[state] || "⚫";
+    const color   = _STATE_COLOR[state] || "#6b7280";
+    const lat     = svc.latency_ms != null ? `<div style="color:var(--soft);font-size:10px">Latency: ${svc.latency_ms}ms</div>` : "";
+    const hb      = svc.last_heartbeat
+      ? `<div style="color:var(--soft);font-size:10px">❤ ${_relTime(svc.last_heartbeat)}</div>` : "";
+    const err     = svc.last_error
+      ? `<div style="color:#f87171;font-size:10px;margin-top:2px;word-break:break-word">${_esc(svc.last_error.slice(0,60))}</div>` : "";
+    const fallback = svc.fallback_active
+      ? `<div style="color:#f97316;font-size:10px">⬇ ${_esc(svc.fallback_mode || "fallback")}</div>` : "";
+    const src     = svc.source ? `<div style="color:#64748b;font-size:10px">${_esc(svc.source)}</div>` : "";
+    return `
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;border-left:3px solid ${color}">
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+        <span style="font-size:13px">${emoji}</span>
+        <span style="font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.08em">${state}</span>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:4px">${_esc(svc.display_name)}</div>
+      ${lat}${hb}${src}${fallback}${err}
+    </div>`;
+  });
+  grid.innerHTML = cards.join("");
+}
+
+function _renderEventLog(events) {
+  const el = document.getElementById("infra-event-log");
+  if (!el) return;
+  if (!events || events.length === 0) {
+    el.innerHTML = '<span style="color:var(--soft)">No events recorded.</span>';
+    return;
+  }
+  el.innerHTML = events.map(ev => {
+    const sev   = ev.severity || "INFO";
+    const color = _SEV_COLOR[sev] || "#9ca3af";
+    const ts    = ev.timestamp ? ev.timestamp.substring(11, 19) : "—";
+    const cnt   = ev.count > 1 ? ` <span style="color:#64748b">(×${ev.count})</span>` : "";
+    const src   = ev.source ? `<span style="color:#475569;margin-left:6px">${_esc(ev.source)}</span>` : "";
+    return `<div style="display:flex;gap:8px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span style="color:#475569;white-space:nowrap">[${ts}]</span>
+      <span style="color:${color};min-width:68px;font-weight:700">${sev}</span>
+      <span style="color:var(--white);flex:1">${_esc(ev.message)}${cnt}</span>
+      ${src}
+    </div>`;
+  }).join("");
+  el.scrollTop = 0;
+}
+
+async function loadInfraEvents() {
+  const severity = document.getElementById("infra-ev-severity")?.value || "";
+  const search   = document.getElementById("infra-ev-search")?.value   || "";
+  const params   = new URLSearchParams({limit: 80});
+  if (severity) params.set("severity", severity);
+  if (search)   params.set("search", search);
+  try {
+    const d = await _fetchWithTimeout(`/api/system/events?${params}`, {}, 5000);
+    _renderEventLog(d.events || []);
+  } catch(e) { console.warn("loadInfraEvents:", e); }
+}
+
+function _renderResourceGrid(tel) {
+  const grid = document.getElementById("infra-resource-grid");
+  const epEl = document.getElementById("infra-top-endpoints");
+  if (!tel) {
+    if (grid) grid.innerHTML = '<span style="color:var(--soft);font-size:12px">Telemetry unavailable</span>';
+    return;
+  }
+  const sys = tel.system || {};
+  const api = tel.api   || {};
+  const tiles = [
+    { label:"CPU",          val: sys.cpu_pct  != null ? sys.cpu_pct + "%" : "—" },
+    { label:"RAM",          val: sys.ram_pct   != null ? sys.ram_pct + "%" : "—" },
+    { label:"RAM Used",     val: sys.ram_used_mb != null ? sys.ram_used_mb + " MB" : "—" },
+    { label:"Disk",         val: sys.disk_pct  != null ? sys.disk_pct + "%" : "—" },
+    { label:"Threads",      val: sys.active_threads ?? "—" },
+    { label:"Uptime",       val: sys.uptime_secs != null ? _fmtUptime(sys.uptime_secs) : "—" },
+    { label:"API Requests", val: api.total_requests ?? "—" },
+    { label:"Error Rate",   val: api.error_rate_pct != null ? api.error_rate_pct + "%" : "—" },
+    { label:"Avg Latency",  val: api.avg_latency_ms != null ? api.avg_latency_ms + "ms" : "—" },
+    { label:"P95 Latency",  val: api.p95_latency_ms != null ? api.p95_latency_ms + "ms" : "—" },
+    { label:"Req/min",      val: api.requests_per_min ?? "—" },
+  ];
+  if (grid) grid.innerHTML = tiles.map(t =>
+    `<div class="metric-card"><div class="ml">${t.label}</div><div class="mv" style="font-size:16px">${t.val}</div></div>`
+  ).join("");
+
+  const endpoints = api.top_endpoints || [];
+  if (epEl) epEl.innerHTML = endpoints.length
+    ? endpoints.map(([ep, cnt]) =>
+        `<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+          <span style="color:var(--soft)">${_esc(ep)}</span>
+          <span style="color:var(--white);font-weight:700">${cnt}</span>
+        </div>`
+      ).join("")
+    : '<span style="color:var(--soft)">No API call data yet</span>';
+}
+
+function _fmtUptime(secs) {
+  if (secs < 60)   return secs + "s";
+  if (secs < 3600) return Math.floor(secs/60) + "m " + (secs%60) + "s";
+  const h = Math.floor(secs/3600);
+  const m = Math.floor((secs%3600)/60);
+  return h + "h " + m + "m";
+}
+
+function _relTime(isoStr) {
+  try {
+    const secs = Math.round((Date.now() - new Date(isoStr).getTime()) / 1000);
+    if (secs < 5)   return "just now";
+    if (secs < 60)  return secs + "s ago";
+    if (secs < 3600) return Math.floor(secs/60) + "m ago";
+    return Math.floor(secs/3600) + "h ago";
+  } catch(_) { return "—"; }
+}
+
+function _infraConnectWs() {
+  if (_infraWs && _infraWs.readyState <= 1) return;
+  try {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    _infraWs = new WebSocket(`${proto}://${location.host}/ws/system/events`);
+    const dot = document.getElementById("infra-ws-dot");
+    _infraWs.onopen = () => {
+      if (dot) { dot.style.background = "#4ade80"; dot.title = "Live tail connected"; }
+    };
+    _infraWs.onclose = () => {
+      if (dot) { dot.style.background = "#6b7280"; dot.title = "Live tail disconnected"; }
+      _infraWs = null;
+    };
+    _infraWs.onerror = () => {
+      if (dot) { dot.style.background = "#f87171"; dot.title = "WebSocket error"; }
+    };
+    _infraWs.onmessage = (msg) => {
+      try {
+        const ev = JSON.parse(msg.data);
+        if (ev.type === "ping") return;
+        const log = document.getElementById("infra-event-log");
+        if (!log) return;
+        const sev   = ev.severity || "INFO";
+        const color = _SEV_COLOR[sev] || "#9ca3af";
+        const ts    = (ev.timestamp || "").substring(11, 19);
+        const row   = document.createElement("div");
+        row.style.cssText = "display:flex;gap:8px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)";
+        row.innerHTML = `<span style="color:#475569;white-space:nowrap">[${ts}]</span>
+          <span style="color:${color};min-width:68px;font-weight:700">${sev}</span>
+          <span style="color:var(--white);flex:1">${_esc(ev.message || "")}</span>
+          <span style="color:#475569">${_esc(ev.source || "")}</span>`;
+        log.insertBefore(row, log.firstChild);
+        // Keep max 150 rows
+        while (log.children.length > 150) log.removeChild(log.lastChild);
+      } catch(_) {}
+    };
+  } catch(e) {
+    console.warn("InfraWS:", e);
+  }
+}
+
+// Load trust score on home overview section load
+async function _loadHomeTrustScore() {
+  try {
+    const d = await safeFetch("/api/system/trust-score", {}, 6000, null);
+    if (d && d.trust) _renderTrustScore(d.trust);
+  } catch(_) {}
 }
 
 function _renderEquityChart(curve, initialValue) {
@@ -10048,6 +10477,7 @@ async function boot() {
   // Phase 4: background / non-critical
   try { loadNotifications(); }    catch(e) {}
   try { loadSwingHistory(); }     catch(e) {}
+  try { _loadHomeTrustScore(); }  catch(e) {}
   try { applyExecutiveMode(); }   catch(e) {}
   try { loadUnifiedPriorities(); } catch(e) {}
 
@@ -11887,8 +12317,9 @@ const _SUB_NAV_CONFIG = {
     { tab:"memory",        label:"🧠 Memory"      },
   ],
   system: [
-    { tab:"system",        label:"⚙️ System"      },
-    { tab:"chat",          label:"💬 AI Chat"     },
+    { tab:"infra",         label:"🛡️ Infrastructure" },
+    { tab:"system",        label:"⚙️ System"          },
+    { tab:"chat",          label:"💬 AI Chat"         },
   ],
 };
 
@@ -11973,6 +12404,9 @@ _restoreMode();
 
 /* ── Connection Status Loader ────────────────────────────── */
 async function loadConnectionStatus() {
+  // Refresh trust score badge on every connection status check
+  try { _loadHomeTrustScore(); } catch(_) {}
+
   const updateItem = (id, connected, statusText, statusColor) => {
     const el = qs(id);
     if (!el) return;
@@ -11988,13 +12422,15 @@ async function loadConnectionStatus() {
 
   // Async health checks — portfolio calls debug endpoint for richer IBKR state
   try {
-    const [ibkrDebug, portfolioStatus, outlookStatus, calendarEvents, watchdogState] =
+    const [ibkrDebug, portfolioStatus, outlookStatus, calendarEvents, watchdogState, calendarStatus, paperAptStatus] =
       await Promise.allSettled([
         safeFetch("/api/debug/ibkr",                   {}, 6000, {}),
         safeFetch("/api/portfolio/status",             {}, 5000, {}),
         safeFetch("/api/outlook/status",               {}, 5000, {}),
         safeFetch("/api/calendar/events?view=today",   {}, 5000, {}),
         safeFetch("/api/bridge/watchdog",              {}, 4000, {}),
+        safeFetch("/api/calendar/status",              {}, 5000, {}),
+        safeFetch("/api/paper/autonomous/status",      {}, 5000, {}),
       ]);
 
     // ── IBKR status (rich: CONNECTED / RECONNECTING / DEGRADED / STALE / BRIDGE OFFLINE) ──
@@ -12015,8 +12451,13 @@ async function loadConnectionStatus() {
     const notConfigured    = connectorMode === "not_configured" || dbg.status === "not_configured";
 
     if (notConfigured) {
+      const blockers = dbg.setup_required || [];
+      const firstBlocker = blockers.length > 0 ? blockers[0].blocker : "";
       ibkrDot   = "warn";
-      ibkrText  = "Not configured";
+      ibkrText  = firstBlocker === "IBKR_BRIDGE_URL_MISSING"    ? "Bridge URL missing"
+                : firstBlocker === "IBKR_BRIDGE_TOKEN_MISSING"  ? "Bridge token missing"
+                : firstBlocker === "NOT_IN_PRODUCTION_MODE"      ? "Enable remote bridge"
+                : "Not configured";
       ibkrColor = "#f59e0b";
     } else if (circuitOpen) {
       ibkrDot   = false;
@@ -12049,17 +12490,32 @@ async function loadConnectionStatus() {
 
     updateItem("cs-ibkr", ibkrDot, ibkrText, ibkrColor);
 
-    // ── Outlook + Calendar ────────────────────────────────────────────────────
+    // ── Outlook ───────────────────────────────────────────────────────────────
     const o   = outlookStatus.status === "fulfilled" ? (outlookStatus.value || {}) : {};
     const olOk = o.connected === true || ["connected","ok"].includes(o.status);
-    const calOk = calendarEvents.status === "fulfilled" && !!calendarEvents.value;
-
     updateItem("cs-outlook",  olOk  ? true : false,
       olOk  ? "Connected" : "Not connected",
       olOk  ? "#4ade80"   : "#6b7280");
-    updateItem("cs-calendar", calOk ? true : false,
-      calOk ? "Connected" : "Not connected",
-      calOk ? "#4ade80"   : "#6b7280");
+
+    // ── Calendar: show real storage mode, not just "Connected" ───────────────
+    const calSt = calendarStatus.status === "fulfilled" ? (calendarStatus.value || {}) : {};
+    const calStorageOk   = calSt.local_storage_ok !== false && calendarEvents.status === "fulfilled";
+    const calProvider    = calSt.provider || "local_storage";
+    const calExternalSync = calProvider !== "local_storage" && calStorageOk;
+    const calSyncLabel   = calSt.sync_label || (calStorageOk ? "Local Calendar" : "Not connected");
+    updateItem("cs-calendar",
+      calStorageOk ? (calExternalSync ? true : "warn") : false,
+      calSyncLabel,
+      calExternalSync ? "#4ade80" : (calStorageOk ? "#f59e0b" : "#6b7280"));
+
+    // ── Paper Lab: dynamic RUNNING / NOT STARTED / UNAVAILABLE ───────────────
+    const aptSt      = paperAptStatus.status === "fulfilled" ? (paperAptStatus.value || {}) : {};
+    const aptRunning  = aptSt.running === true;
+    const aptUnavail  = aptSt.status === "unavailable";
+    updateItem("cs-paper",
+      aptRunning ? true : (aptUnavail ? false : "warn"),
+      aptRunning ? "Running" : (aptUnavail ? "Unavailable" : "Not started"),
+      aptRunning ? "#4ade80" : (aptUnavail ? "#6b7280" : "#c084fc"));
   } catch(e) {
     updateItem("cs-ibkr",     false, "Checking…", "#6b7280");
     updateItem("cs-outlook",  false, "Checking…", "#6b7280");
