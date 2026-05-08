@@ -47,13 +47,21 @@ Environment variables:
   BRIDGE_POLL_INTERVAL  default 30s  (IBKR data refresh interval)
   BRIDGE_MARKET_INTERVAL default 120s (market snapshot refresh)
   IBKR_HOST             default 127.0.0.1
-  IBKR_PORT             default 4001 (IB Gateway live); 7497 only for explicit paper mode
+  IBKR_PORT             default 4001 (IB Gateway live); 4002 for IB Gateway paper
   IBKR_CLIENT_ID        default 10  (avoids clash with main app client 1)
 
 CRITICAL: This module NEVER imports placeOrder, cancelOrder, modifyOrder,
           reqGlobalCancel, or any execution-related IBKR methods.
 """
 from __future__ import annotations
+
+# Load .env FIRST — override=True so .env always beats any inherited OS env vars.
+# This must run before module-level os.getenv() calls and before IBKR manager init.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(override=True)
+except ImportError:
+    pass
 
 import asyncio
 import json
@@ -74,6 +82,11 @@ from fastapi.responses import JSONResponse
 from opsx.bridge.auth import verify_token, get_bridge_token
 from opsx.bridge.snapshot_cache import snapshot_cache
 from opsx.bridge.websocket_manager import ws_manager
+from opsx.connectors.ibkr_connection_manager import (
+    HOSTED_ERROR,
+    get_ibkr_manager,
+    resolve_ibkr_target,
+)
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -163,6 +176,7 @@ class IBKRWorkerThread(threading.Thread):
         self._connected_val = False
         self._account_val   = ""
         self._stop_event    = threading.Event()
+        self._manager       = get_ibkr_manager("worker")
 
     # ── Thread-safe properties ────────────────────────────────────────────────
 
@@ -180,6 +194,13 @@ class IBKRWorkerThread(threading.Thread):
         with self._lock:
             self._connected_val = connected
             self._account_val   = account
+
+    def runtime_status(self) -> Dict[str, Any]:
+        status = self._manager.status()
+        with self._lock:
+            status["connected"] = self._connected_val
+            status["account"] = self._account_val or status.get("account", "")
+        return status
 
     def stop(self) -> None:
         """Signal the worker to exit cleanly after the current sleep."""
@@ -208,8 +229,9 @@ class IBKRWorkerThread(threading.Thread):
                 ib = self._try_connect()
                 if ib is None:
                     # Wait before next attempt — check stop_event so shutdown is fast
-                    log.info("IBKR worker waiting %ds before reconnect", RECONNECT_WAIT)
-                    self._stop_event.wait(RECONNECT_WAIT)
+                    delay = self._manager.reconnect_delay()
+                    log.info("IBKR worker waiting %.2fs before reconnect", delay)
+                    self._stop_event.wait(delay)
                     continue
 
             # ── Poll data ─────────────────────────────────────────────────
@@ -227,7 +249,7 @@ class IBKRWorkerThread(threading.Thread):
                 ib = None
                 continue
 
-            # ── ib.sleep() — processes TWS messages for POLL_INTERVAL s ──
+            # ── ib.sleep() — processes IB Gateway messages for POLL_INTERVAL s ──
             # This is the ib_insync message pump; it must run in THIS thread.
             # It will raise if the connection drops during the sleep.
             try:
@@ -252,34 +274,31 @@ class IBKRWorkerThread(threading.Thread):
         Attempt ib_insync connection.
         Safe to call from this thread — asyncio.set_event_loop() was called in run().
         """
-        ibkr_host = os.getenv("IBKR_HOST", "127.0.0.1")
-        ibkr_port = int(os.getenv("IBKR_PORT", "4001"))   # 4001=IB Gateway live, 7497=TWS paper (optional)
-        client_id = int(os.getenv("IBKR_CLIENT_ID", "10"))
-
-        try:
-            from ib_insync import IB, util
-            util.logToConsole(logging.WARNING)
-
-            ib = IB()
-            ib.connect(
-                ibkr_host,
-                ibkr_port,
-                clientId=client_id,
-                readonly=True,
-                timeout=10,
-            )
-            accounts = ib.managedAccounts()
-            account  = accounts[0] if accounts else ""
+        result = self._manager.connect(timeout=10)
+        if result.get("connected"):
+            account = result.get("account", "")
             self._set_state(True, account)
             log.info(
-                "IBKR worker connected: %s:%d account=%s clientId=%d",
-                ibkr_host, ibkr_port, account, client_id,
+                "IBKR worker connected: %s:%s account=%s clientId=%s mode=%s",
+                result.get("host", result.get("target_host")),
+                result.get("port", result.get("target_port")),
+                account,
+                result.get("active_client_id"),
+                result.get("mode"),
             )
-            return ib
+            return self._manager.ib
 
-        except Exception as exc:
-            log.warning("IBKR worker connect failed: %s", exc)
-            return None
+        self._set_state(False)
+        log.warning(
+            "IBKR worker connect skipped/failed: status=%s target=%s:%s mode=%s retry=%ss error=%s",
+            result.get("status"),
+            result.get("target_host"),
+            result.get("target_port"),
+            result.get("mode"),
+            result.get("retry_delay"),
+            result.get("error"),
+        )
+        return None
 
     # ── Poll helper ───────────────────────────────────────────────────────────
 
@@ -365,6 +384,7 @@ class IBKRWorkerThread(threading.Thread):
         except Exception as exc:
             log.error("IBKR worker poll failed: %s", exc)
             self._set_state(False)
+            self._manager.mark_degraded(str(exc))
             return None
 
 
@@ -388,10 +408,13 @@ def _fetch_market_snapshot() -> Dict:
                     "price":      round(close, 2),
                     "change_pct": chg,
                     "direction":  "up" if chg > 0 else ("down" if chg < 0 else "flat"),
+                    "data_origin": "yfinance",
+                    "realtime":   False,
+                    "delayed":    True,
                 })
             except Exception:
                 pass
-        return {"items": items, "generated_at": datetime.utcnow().isoformat()}
+        return {"items": items, "data_origin": "yfinance", "realtime": False, "delayed": True, "generated_at": datetime.utcnow().isoformat()}
     except Exception as exc:
         return {"items": [], "error": str(exc), "generated_at": datetime.utcnow().isoformat()}
 
@@ -550,6 +573,8 @@ async def health(_token: str = Depends(verify_token)):
         except Exception:
             pass
 
+    runtime = _worker_thread.runtime_status() if _worker_thread else {}
+
     return {
         "status":         "ok",
         "bridge_version": "1.1.0",
@@ -557,9 +582,17 @@ async def health(_token: str = Depends(verify_token)):
             "connected":    connected,
             "account":      account,
             "account_mode": account_mode,
-            "host":         os.getenv("IBKR_HOST", "127.0.0.1"),
-            "port":         int(os.getenv("IBKR_PORT", "4001")),
-            "client_id":    int(os.getenv("IBKR_CLIENT_ID", "10")),
+            "host":         runtime.get("target_host", os.getenv("IBKR_HOST", "127.0.0.1")),
+            "port":         runtime.get("target_port", int(os.getenv("IBKR_PORT", "4001"))),
+            "client_id":    runtime.get("active_client_id", int(os.getenv("IBKR_WORKER_CLIENT_ID", "10"))),
+            "mode":         runtime.get("mode", "local"),
+            "transport":    runtime.get("transport", "tcp"),
+            "state":        runtime.get("state", "disconnected"),
+            "last_successful_connect": runtime.get("last_successful_connect"),
+            "reconnect_attempts":      runtime.get("reconnect_attempts", 0),
+            "circuit_state":           runtime.get("circuit_state", "closed"),
+            "retry_delay":             runtime.get("retry_delay"),
+            "last_probe":              runtime.get("last_probe", {}),
             "readonly":     True,
             "ibkr_mode":    os.getenv("IBKR_MODE", "live").upper(),
         },
@@ -748,7 +781,7 @@ async def bridge_info(_token: str = Depends(verify_token)):
         "token_prefix":      token[:8] + "…",
         "ibkr_host":         os.getenv("IBKR_HOST", "127.0.0.1"),
         "ibkr_port":         int(os.getenv("IBKR_PORT", "4001")),
-        "ibkr_client_id":    int(os.getenv("IBKR_CLIENT_ID", "10")),
+        "ibkr_client_id":    int(os.getenv("IBKR_WORKER_CLIENT_ID", os.getenv("IBKR_CLIENT_ID", "10"))),
         "poll_interval_sec": POLL_INTERVAL,
         "execution_blocked": True,
         "real_trade":        False,
@@ -799,8 +832,29 @@ if __name__ == "__main__":
     )
     print(f"\nJARVIS Secure Bridge v1.1 — event-loop-safe")
     print(f"Listening: {BRIDGE_HOST}:{BRIDGE_PORT}")
-    ibkr_mode = os.getenv("IBKR_MODE", "live").upper()
-    print(f"IBKR target: {os.getenv('IBKR_HOST','127.0.0.1')}:{os.getenv('IBKR_PORT','4001')} ({ibkr_mode}, readonly)")
+
+    _ibkr_mode = os.getenv("IBKR_MODE", "live").upper()
+    _ibkr_host = os.getenv("IBKR_HOST", "127.0.0.1")
+    _ibkr_port = int(os.getenv("IBKR_PORT", "4001"))
+    _worker_id = int(os.getenv("IBKR_WORKER_CLIENT_ID", os.getenv("IBKR_CLIENT_ID", "10")))
+    _conn_id   = int(os.getenv("IBKR_CONNECTOR_CLIENT_ID", os.getenv("IBKR_CLIENT_ID", "1")))
+    print(f"\nIBKR CONFIG RESOLVED:")
+    print(f"  mode               = {_ibkr_mode}")
+    print(f"  host               = {_ibkr_host}")
+    print(f"  port               = {_ibkr_port}")
+    print(f"  worker_client_id   = {_worker_id}")
+    print(f"  connector_client_id= {_conn_id}")
+    if _ibkr_port in (7497, 7496):
+        print(f"\n  FATAL: port={_ibkr_port} is a TWS port — JARVIS uses IB Gateway only.")
+        print(f"  Set IBKR_PORT=4001 (live) or IBKR_PORT=4002 (paper) in .env and restart.")
+        sys.exit(1)
+    if _ibkr_mode == "LIVE" and _ibkr_port != 4001:
+        print(f"  WARNING: mode=LIVE but port={_ibkr_port} (expected 4001)")
+    elif _ibkr_mode == "PAPER" and _ibkr_port != 4002:
+        print(f"  WARNING: mode=PAPER but port={_ibkr_port} (expected 4002)")
+    print()
+
+    print(f"IBKR target: {_ibkr_host}:{_ibkr_port} ({_ibkr_mode}, readonly)")
     print(f"Token: data/bridge/bridge_token.key")
     print(f"All execution methods: HARD BLOCKED\n")
 
