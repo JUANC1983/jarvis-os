@@ -2953,6 +2953,20 @@ body.mode-beginner .operator-only{display:none!important}
     <!-- Smart Alerts Strip -->
     <div id="smart-alerts-strip" style="display:none;margin-bottom:10px"></div>
 
+    <!-- Market Pulse Strip -->
+    <div id="ck-market-pulse" style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 14px;margin-bottom:12px;overflow-x:auto">
+      <div style="display:flex;align-items:center;gap:20px;min-width:max-content">
+        <span style="font-size:9px;font-weight:800;letter-spacing:.15em;color:var(--soft);text-transform:uppercase;flex-shrink:0">MARKET PULSE</span>
+        <div id="ck-pulse-items" style="display:flex;gap:20px;align-items:center">
+          <span style="font-size:11px;color:var(--soft)">Loading…</span>
+        </div>
+        <div style="margin-left:auto;flex-shrink:0;display:flex;gap:12px;align-items:center">
+          <div id="ck-portfolio-vs-spy" style="font-size:11px;color:var(--soft)"></div>
+          <span id="ck-pulse-time" style="font-size:9px;color:var(--soft)"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 1: Net Worth Hero + Paper Hero -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="hero-card">
@@ -3098,7 +3112,7 @@ body.mode-beginner .operator-only{display:none!important}
 
     <!-- Position context (only shown when holding) -->
     <div id="drawer-position-box" style="display:none;background:rgba(68,240,255,.05);border:1px solid rgba(68,240,255,.15);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px">
-      <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Your Position</div>
+      <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:flex;align-items:center;gap:6px">Your Position<span id="drawer-pos-source"></span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         <div><div style="color:var(--soft);font-size:10px">Qty</div><div id="drawer-pos-qty" style="font-weight:700">—</div></div>
         <div><div style="color:var(--soft);font-size:10px">Avg Cost</div><div id="drawer-pos-cost" style="font-weight:700">—</div></div>
@@ -6304,6 +6318,28 @@ async function loadTopHoldings() {
   }
 }
 
+function _safe$(v, decimals=0) {
+  if (v == null || v === 0 || v === "") return "—";
+  const n = Number(v);
+  if (isNaN(n) || !isFinite(n)) return "—";
+  return "$" + Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+}
+function _safePnl(v) {
+  if (v == null || v === "" || v === 0) return '<span style="color:var(--soft)">—</span>';
+  const n = Number(v);
+  if (isNaN(n) || !isFinite(n)) return '<span style="color:var(--soft)">—</span>';
+  const color = n >= 0 ? "#4ade80" : "#f87171";
+  const sign  = n >= 0 ? "+" : "−";
+  return `<span style="color:${color}">${sign}$${Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>`;
+}
+function _safePct(v) {
+  if (v == null || v === "") return '<span style="color:var(--soft)">—</span>';
+  const n = Number(v);
+  if (isNaN(n) || !isFinite(n)) return '<span style="color:var(--soft)">—</span>';
+  const color = n >= 0 ? "#4ade80" : "#f87171";
+  return `<span style="color:${color}">${n >= 0 ? "+" : ""}${n.toFixed(2)}%</span>`;
+}
+
 function renderHoldingsTable(positions) {
   const tableEl = document.getElementById("port-holdings-table");
   if (!tableEl) return;
@@ -6311,38 +6347,72 @@ function renderHoldingsTable(positions) {
     tableEl.innerHTML = '<div style="color:var(--soft);font-size:12px;padding:8px">No positions — connect IBKR or Hapi</div>';
     return;
   }
-  const headerCells = _HDRS.map((h,i) =>
-    `<div style="${_HDRR[i]?'text-align:right':''}">${h}</div>`
+
+  // Columns: Symbol | Name | Qty | Avg Cost | Price | Value | Unrealized | Return% | Daily | Wt% | Sector
+  const COL = "52px 1fr 44px 68px 70px 72px 72px 60px 68px 46px 62px";
+  const HDR = ["Sym","Name","Qty","Avg Cost","Price","Value","Unreal","Ret%","Daily","Wt","Sector"];
+  const RIGHT = [false,false,true,true,true,true,true,true,true,true,false];
+
+  const headerCells = HDR.map((h,i) =>
+    `<div style="${RIGHT[i]?'text-align:right':''}">${h}</div>`
   ).join("");
 
   const rows = positions.map(p => {
-    const dpnlC = (p.daily_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-    const upnlC = (p.unrealized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
-    const retC  = (p.total_return_pct||p.unrealized_pnl_pct||0) >= 0 ? "#4ade80" : "#f87171";
-    const ret   = (p.total_return_pct ?? p.unrealized_pnl_pct ?? null);
-    const sym   = _esc(p.symbol || "");
-    const sector = (p.sector && p.sector !== "unknown") ? _esc(p.sector) : "—";
-    const price = p.market_price ? "$"+p.market_price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
-    return `<div onclick="openAssetDrawer('${sym}',${JSON.stringify(p).replace(/"/g,"&quot;")})"
-      style="display:grid;grid-template-columns:${_COLS};gap:4px;font-size:11.5px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center;cursor:pointer;transition:background .15s"
+    const sym     = _esc(p.symbol || "");
+    const src     = p.data_source || "";
+    const srcBadge = src === "ibkr_live"
+      ? `<span style="font-size:8px;background:rgba(68,240,255,.1);color:var(--cyan);border:1px solid rgba(68,240,255,.2);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:middle">LIVE</span>`
+      : src ? `<span style="font-size:8px;background:rgba(110,155,181,.1);color:var(--soft);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:middle">${_esc(src.toUpperCase().slice(0,5))}</span>` : "";
+
+    const sector  = (p.sector && p.sector !== "unknown") ? _esc(p.sector) : "—";
+    const qty     = p.quantity != null ? Number(p.quantity).toLocaleString("en-US") : "—";
+    const avgCost = p.avg_cost  ? "$"+Number(p.avg_cost).toFixed(2) : "—";
+    const price   = (p.market_price && p.market_price > 0) ? "$"+Number(p.market_price).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
+    const val     = (p.market_value && p.market_value > 0) ? "$"+Number(p.market_value).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0}) : "—";
+
+    // Unrealized P&L — prefer IBKR-provided, fallback to calculated
+    let upnl = p.unrealized_pnl;
+    let upnlSrc = p.data_source || "";
+    if ((upnl == null || upnl === 0) && p.avg_cost && p.market_price && p.quantity && p.market_price > 0) {
+      upnl = (p.market_price - p.avg_cost) * p.quantity;
+      upnlSrc = "calc";
+    }
+
+    // Return % — unrealized_pnl_pct from enriched backend, else calculate
+    let ret = p.unrealized_pnl_pct ?? p.total_return_pct;
+    if ((ret == null || ret === 0) && p.avg_cost && p.market_price && p.market_price > 0) {
+      ret = (p.market_price - p.avg_cost) / p.avg_cost * 100;
+    }
+
+    const wt = p.weight_pct != null ? Number(p.weight_pct).toFixed(1)+"%" : "—";
+    const name = _esc(p.name || p.asset_class || "");
+
+    const posJson = JSON.stringify(p).replace(/"/g,"&quot;");
+    return `<div onclick="openAssetDrawer('${sym}',${posJson})"
+      style="display:grid;grid-template-columns:${COL};gap:3px;font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center;cursor:pointer"
       onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background=''">
-      <div style="font-weight:800;color:var(--cyan)">${sym}</div>
-      <div style="color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${_esc(p.name||p.asset_class||"")}</div>
+      <div style="font-weight:800;color:var(--cyan)">${sym}${srcBadge}</div>
+      <div style="color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px">${name}</div>
+      <div style="text-align:right;color:var(--soft2)">${qty}</div>
+      <div style="text-align:right;color:var(--soft)">${avgCost}</div>
       <div style="text-align:right;font-weight:600">${price}</div>
-      <div style="text-align:right">${_fmtVal(p.market_value)}</div>
-      <div style="text-align:right;color:${upnlC}">${_fmtPnl(p.unrealized_pnl)}</div>
-      <div style="text-align:right;color:${retC}">${ret !== null ? (ret>=0?"+":"")+ret.toFixed(2)+"%" : "—"}</div>
-      <div style="text-align:right;color:${dpnlC}">${_fmtPnl(p.daily_pnl)}</div>
-      <div style="text-align:right;color:var(--soft)">${(p.weight_pct||0).toFixed(1)}%</div>
+      <div style="text-align:right">${val}</div>
+      <div style="text-align:right">${_safePnl(upnl)}${upnlSrc==="calc"?'<span style="font-size:8px;color:var(--soft);margin-left:2px">~</span>':""}</div>
+      <div style="text-align:right">${_safePct(ret)}</div>
+      <div style="text-align:right">${_safePnl(p.daily_pnl)}</div>
+      <div style="text-align:right;color:var(--soft)">${wt}</div>
       <div style="font-size:10px;color:var(--soft)">${sector}</div>
     </div>`;
   }).join("");
 
   tableEl.innerHTML = `
-    <div style="display:grid;grid-template-columns:${_COLS};gap:4px;font-size:9.5px;font-weight:700;color:var(--soft);padding:0 0 6px;border-bottom:1px solid rgba(255,255,255,.1);text-transform:uppercase;letter-spacing:.5px">
+    <div style="display:grid;grid-template-columns:${COL};gap:3px;font-size:9px;font-weight:700;color:var(--soft);padding:0 0 5px;border-bottom:1px solid rgba(255,255,255,.1);text-transform:uppercase;letter-spacing:.4px">
       ${headerCells}
     </div>
     ${rows}
+    <div style="font-size:9px;color:var(--soft);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.04)">
+      ~ = calculated from avg cost · LIVE = IBKR live data · Click row for full analysis
+    </div>
   `;
 }
 
@@ -6413,19 +6483,53 @@ function openAssetDrawer(symbol, posData) {
   const posBox = document.getElementById("drawer-position-box");
   if (posData && posData.quantity) {
     posBox.style.display = "block";
-    const upnlC = (posData.unrealized_pnl||0)>=0 ? "#4ade80" : "#f87171";
-    const retC  = (posData.total_return_pct||posData.unrealized_pnl_pct||0)>=0 ? "#4ade80" : "#f87171";
-    document.getElementById("drawer-pos-qty").textContent  = posData.quantity;
-    document.getElementById("drawer-pos-cost").textContent = posData.avg_cost ? "$"+posData.avg_cost.toFixed(2) : "—";
-    document.getElementById("drawer-pos-val").textContent  = posData.market_value ? "$"+posData.market_value.toLocaleString("en-US",{maximumFractionDigits:0}) : "—";
+
+    // Compute unrealized P&L — prefer IBKR-provided, fallback to calculated
+    let upnl     = posData.unrealized_pnl;
+    let upnlCalc = false;
+    if ((upnl == null || upnl === 0) && posData.avg_cost && posData.market_price && posData.market_price > 0) {
+      upnl     = (posData.market_price - posData.avg_cost) * posData.quantity;
+      upnlCalc = true;
+    }
+
+    // Return %
+    let ret = posData.total_return_pct ?? posData.unrealized_pnl_pct;
+    let retCalc = false;
+    if ((ret == null || ret === 0) && posData.avg_cost && posData.market_price && posData.market_price > 0) {
+      ret     = (posData.market_price - posData.avg_cost) / posData.avg_cost * 100;
+      retCalc = true;
+    }
+
+    // Data source badge
+    const srcLabel = posData.data_source === "ibkr_live" ? "IBKR LIVE" : posData.data_source ? posData.data_source.toUpperCase() : "";
+    const srcBadge = srcLabel
+      ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;margin-left:6px;font-weight:700;${srcLabel.includes("LIVE") ? "background:rgba(68,240,255,.1);color:var(--cyan);border:1px solid rgba(68,240,255,.25)" : "background:rgba(110,155,181,.1);color:var(--soft)"}">${_esc(srcLabel)}</span>`
+      : "";
+
+    const labelEl = document.getElementById("drawer-pos-source");
+    if (labelEl) labelEl.innerHTML = srcBadge;
+
+    document.getElementById("drawer-pos-qty").textContent  = posData.quantity != null ? posData.quantity : "—";
+    document.getElementById("drawer-pos-cost").innerHTML   = posData.avg_cost ? `$${Number(posData.avg_cost).toFixed(2)}` : "—";
+    document.getElementById("drawer-pos-val").innerHTML    = (posData.market_value && posData.market_value > 0) ? `$${Number(posData.market_value).toLocaleString("en-US",{maximumFractionDigits:0})}` : "—";
+
     const upnlEl = document.getElementById("drawer-pos-upnl");
-    upnlEl.textContent = posData.unrealized_pnl != null ? (posData.unrealized_pnl>=0?"+$":"−$")+Math.abs(posData.unrealized_pnl).toLocaleString("en-US",{maximumFractionDigits:0}) : "—";
-    upnlEl.style.color = upnlC;
-    const ret = posData.total_return_pct ?? posData.unrealized_pnl_pct ?? null;
+    if (upnl != null && upnl !== 0) {
+      const clr = upnl >= 0 ? "#4ade80" : "#f87171";
+      upnlEl.innerHTML = `<span style="color:${clr}">${upnl>=0?"+$":"−$"}${Math.abs(upnl).toLocaleString("en-US",{maximumFractionDigits:0})}</span>${upnlCalc?'<span style="font-size:8px;color:var(--soft);margin-left:3px">~calc</span>':""}`;
+    } else {
+      upnlEl.textContent = "—";
+    }
+
     const retEl = document.getElementById("drawer-pos-ret");
-    retEl.textContent = ret !== null ? (ret>=0?"+":"")+ret.toFixed(2)+"%" : "—";
-    retEl.style.color = retC;
-    document.getElementById("drawer-pos-wt").textContent   = posData.weight_pct ? posData.weight_pct.toFixed(1)+"%" : "—";
+    if (ret != null) {
+      const clr = ret >= 0 ? "#4ade80" : "#f87171";
+      retEl.innerHTML = `<span style="color:${clr}">${ret>=0?"+":""}${ret.toFixed(2)}%</span>${retCalc?'<span style="font-size:8px;color:var(--soft);margin-left:3px">~calc</span>':""}`;
+    } else {
+      retEl.textContent = "—";
+    }
+
+    document.getElementById("drawer-pos-wt").textContent = posData.weight_pct ? `${Number(posData.weight_pct).toFixed(1)}%` : "—";
   } else {
     posBox.style.display = "none";
   }
@@ -6609,6 +6713,65 @@ async function loadNewsDrawer(symbol) {
       </div>`
     ).join("");
   } catch(e) {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MARKET PULSE STRIP (cockpit header)
+   ══════════════════════════════════════════════════════════════ */
+
+async function loadMarketPulse(portfolioDailyPct) {
+  const el = document.getElementById("ck-pulse-items");
+  if (!el) return;
+  try {
+    const d = await fetch("/api/market/radar").then(r => r.json());
+    const instruments = d.instruments || {};
+    const SHOW = ["SPY","QQQ","DIA","IWM","^VIX","BTC-USD"];
+    const LABELS = {"SPY":"SPY","QQQ":"QQQ","DIA":"DIA","IWM":"IWM","^VIX":"VIX","BTC-USD":"BTC"};
+
+    const items = SHOW.map(sym => {
+      const inst = instruments[sym];
+      if (!inst) return null;
+      const chg    = inst.change_pct ?? 0;
+      const clr    = chg >= 0 ? "#4ade80" : "#f87171";
+      const sign   = chg >= 0 ? "+" : "";
+      const price  = inst.price != null ? inst.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
+      const lbl    = LABELS[sym] || sym;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;min-width:44px">
+        <span style="font-size:9px;font-weight:700;color:var(--soft);letter-spacing:.05em">${_esc(lbl)}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--white)">${price}</span>
+        <span style="font-size:10px;font-weight:700;color:${clr}">${sign}${chg.toFixed(2)}%</span>
+      </div>`;
+    }).filter(Boolean);
+
+    el.innerHTML = items.join(`<div style="width:1px;height:28px;background:rgba(255,255,255,.07)"></div>`);
+
+    // Portfolio vs SPY strip
+    const vsEl = document.getElementById("ck-portfolio-vs-spy");
+    if (vsEl) {
+      const spyChg = instruments["SPY"]?.change_pct ?? null;
+      const portChg = portfolioDailyPct;
+      if (spyChg !== null && portChg) {
+        const diff     = portChg - spyChg;
+        const diffClr  = diff >= 0 ? "#4ade80" : "#f87171";
+        const diffSign = diff >= 0 ? "▲" : "▼";
+        vsEl.innerHTML = `<span style="font-size:10px;color:var(--soft)">Portfolio vs SPY: </span><span style="font-size:10px;font-weight:700;color:${diffClr}">${diffSign} ${Math.abs(diff).toFixed(2)}%</span>`;
+      }
+    }
+
+    // Regime badge
+    if (d.regime) {
+      const badge = document.getElementById("mkt-regime-badge");
+      if (badge) {
+        badge.textContent = "REGIME: " + d.regime.replace(/_/g," ");
+        badge.className   = "badge " + (d.regime.includes("RISK_ON") ? "b-ok" : d.regime.includes("HIGH_VOLATILITY") || d.regime.includes("RISK_OFF") ? "b-bad" : "b-warn");
+      }
+    }
+
+    const timeEl = document.getElementById("ck-pulse-time");
+    if (timeEl) timeEl.textContent = "~15min delay · " + new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"});
+  } catch(e) {
+    if (el) el.innerHTML = '<span style="font-size:11px;color:var(--soft)">Market data unavailable</span>';
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -6948,32 +7111,6 @@ async function loadIntelligence(btn) {
   }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   switchMarketPanel — extend to support new panels
-   ══════════════════════════════════════════════════════════════ */
-const _origSwitchMarketPanel = typeof switchMarketPanel === "function" ? switchMarketPanel : null;
-function switchMarketPanel(p) {
-  document.querySelectorAll(".mkt-panel").forEach(el => el.classList.remove("active"));
-  document.querySelectorAll(".mkt-subnav-btn").forEach(el => el.classList.remove("active"));
-  const panel = document.getElementById("mkt-panel-" + p);
-  const btn   = document.getElementById("mkt-nav-" + p);
-  if (panel) panel.classList.add("active");
-  if (btn)   btn.classList.add("active");
-
-  if (p === "radar" && !_radarLoaded) {
-    _radarLoaded = true;
-    _timelineEvent("Market Radar panel opened");
-    loadRadar(null);
-  }
-  if (p === "intel" && !_intelLoaded) {
-    _intelLoaded = true;
-    _timelineEvent("Intelligence Hub opened");
-    loadIntelligence(null);
-  }
-}
-let _radarLoaded = false;
-let _intelLoaded = false;
-
 /* ── Paper Trading Lab ─────────────────────────────────────── */
 
 async function loadPaperStatus() {
@@ -7293,7 +7430,8 @@ const _panelLoading = {};
 
 function switchMarketPanel(name) {
   _mktActivePanel = name;
-  ["cockpit","lab","learning","analysis"].forEach(p => {
+  const ALL_PANELS = ["cockpit","radar","intel","lab","learning","analysis"];
+  ALL_PANELS.forEach(p => {
     const el  = document.getElementById("mkt-panel-" + p);
     const btn = document.getElementById("mkt-nav-" + p);
     if (el)  el.classList.toggle("active", p === name);
@@ -7303,6 +7441,14 @@ function switchMarketPanel(name) {
   if (name === "lab"      && !_panelLoading.lab)        loadPaperAnalytics(null);
   if (name === "learning" && !_panelLoading.learning)   loadLearningFull(null);
   if (name === "analysis") { try { loadMarketNews(); loadRecommendations(); } catch(_) {} }
+  if (name === "radar") {
+    _timelineEvent("Market Radar panel opened", "info");
+    loadRadar(null);
+  }
+  if (name === "intel") {
+    _timelineEvent("Intelligence Hub opened", "info");
+    loadIntelligence(null);
+  }
 }
 
 // ── Live indicator helpers ───────────────────────────────────────────────
@@ -7484,13 +7630,10 @@ async function loadCockpit(btn) {
     // Also load holdings
     await loadTopHoldings();
 
-    // Fire AI Commander + smart alerts in background (non-blocking)
-    loadCommander().then(() => {
-      _timelineEvent("AI Commander insights refreshed", "info");
-    });
-    loadSmartAlerts().then(data => {
-      _timelineEvent("Smart alerts evaluated", "info");
-    });
+    // Fire non-blocking background loads
+    loadCommander().then(() => _timelineEvent("AI Commander insights refreshed", "info"));
+    loadSmartAlerts().then(() => _timelineEvent("Smart alerts evaluated", "info"));
+    loadMarketPulse(real.daily_pnl_pct ?? 0);
     _timelineEvent(fromCache ? "Portfolio snapshot loaded (cached)" : "Portfolio snapshot loaded (live)", fromCache ? "warn" : "ok");
 
   } catch(e) {

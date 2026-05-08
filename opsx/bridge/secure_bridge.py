@@ -330,22 +330,36 @@ class IBKRWorkerThread(threading.Thread):
                     except (TypeError, ValueError):
                         summary[item.tag] = item.value
 
-            # Positions ───────────────────────────────────────────────────
-            raw_positions = ib.positions(account)
+            # Positions — use ib.portfolio() for live market data ───────────
+            # portfolio() returns PortfolioItem with marketPrice, marketValue,
+            # unrealizedPNL populated directly by IB Gateway — no estimates.
+            portfolio_items = ib.portfolio(account)
             positions: List[Dict] = []
-            for pos in raw_positions:
-                contract = pos.contract
-                qty      = float(pos.position or 0)
-                avg_cost = float(pos.avgCost or 0)
-                mkt_val  = round(avg_cost * qty, 2)
+            for item in portfolio_items:
+                contract    = item.contract
+                qty         = float(item.position or 0)
+                avg_cost    = float(item.averageCost or 0)
+                mkt_price   = float(item.marketPrice or 0)
+                mkt_val     = float(item.marketValue or 0)
+                unreal_pnl  = float(item.unrealizedPNL or 0)
+                real_pnl    = float(item.realizedPNL or 0)
+                # Fallback: if gateway hasn't populated marketValue yet, estimate
+                if mkt_val == 0 and qty and avg_cost:
+                    mkt_val = round(avg_cost * qty, 2)
+                # Fallback: if marketPrice is 0 but avg_cost is populated, use avg_cost
+                if mkt_price == 0 and avg_cost:
+                    mkt_price = avg_cost
                 positions.append({
                     "symbol":         contract.symbol,
                     "sec_type":       contract.secType,
                     "quantity":       qty,
                     "avg_cost":       round(avg_cost, 4),
-                    "market_value":   mkt_val,
-                    "unrealized_pnl": 0.0,
+                    "market_price":   round(mkt_price, 4),
+                    "market_value":   round(mkt_val, 2),
+                    "unrealized_pnl": round(unreal_pnl, 2),
+                    "realized_pnl":   round(real_pnl, 2),
                     "currency":       contract.currency,
+                    "data_source":    "ibkr_live",
                     "real_trade":     False,
                 })
 
