@@ -6571,6 +6571,95 @@ def portfolio_positions(current_user: dict = Depends(get_optional_user)):
         return {"status": "error", "positions": [], "real_trade": False, "error": str(exc)}
 
 
+@app.get("/api/portfolio/positions/enriched")
+def portfolio_positions_enriched(current_user: dict = Depends(get_optional_user)):
+    """
+    Positions enriched with live yfinance quotes.
+    Adds market_price (live), daily_change_pct, daily_pnl_est for every holding.
+    Uses ~15min delayed quotes from yfinance. Never modifies IBKR data.
+    """
+    _portfolio_guard()
+    try:
+        import yfinance as _yf
+        snapshot  = _build_unified_snapshot()
+        positions = list(snapshot.get("all_positions", []))
+        if not positions:
+            return {"status": "ok", "positions": [], "count": 0, "real_trade": False}
+
+        # Batch fetch — one Tickers() call is cheaper than N individual calls
+        symbols   = list({p["symbol"] for p in positions if p.get("symbol")})
+        quotes: dict = {}
+        try:
+            tickers = _yf.Tickers(" ".join(symbols))
+            for sym in symbols:
+                try:
+                    t  = tickers.tickers.get(sym)
+                    if t is None:
+                        continue
+                    fi = t.fast_info
+                    lp = getattr(fi, "last_price", None)
+                    pc = getattr(fi, "previous_close", None)
+                    if lp and pc and pc > 0:
+                        chg_pct = round((lp - pc) / pc * 100, 2)
+                        quotes[sym] = {
+                            "live_price":     round(float(lp), 4),
+                            "prev_close":     round(float(pc), 4),
+                            "daily_chg_pct":  chg_pct,
+                            "day_low":        round(float(getattr(fi, "day_low",  lp) or lp), 2),
+                            "day_high":       round(float(getattr(fi, "day_high", lp) or lp), 2),
+                            "volume":         int(getattr(fi, "last_volume", 0) or 0),
+                        }
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        enriched = []
+        for pos in positions:
+            p   = dict(pos)
+            sym = p.get("symbol", "")
+            q   = quotes.get(sym)
+            if q:
+                # Prefer live yfinance price over IBKR bridge price when available
+                live_price = q["live_price"]
+                qty        = float(p.get("quantity", 0))
+                avg_cost   = float(p.get("avg_cost", 0))
+
+                p["yf_price"]       = live_price
+                p["yf_prev_close"]  = q["prev_close"]
+                p["daily_chg_pct"]  = q["daily_chg_pct"]
+                p["day_low"]        = q["day_low"]
+                p["day_high"]       = q["day_high"]
+                p["volume"]         = q["volume"]
+
+                # Estimate position daily P&L from yfinance change %
+                mkt_val = qty * live_price if qty and live_price else p.get("market_value", 0)
+                if mkt_val and q["daily_chg_pct"]:
+                    daily_open_val = mkt_val / (1 + q["daily_chg_pct"] / 100)
+                    p["daily_pnl_est"]     = round(mkt_val - daily_open_val, 2)
+                    p["daily_pnl_est_pct"] = q["daily_chg_pct"]
+                    p["daily_pnl_source"]  = "yfinance"
+
+                # Recompute unrealized from live price if IBKR unrealized is 0
+                if (p.get("unrealized_pnl", 0) == 0) and qty and avg_cost and live_price:
+                    p["unrealized_pnl"]     = round((live_price - avg_cost) * qty, 2)
+                    p["unrealized_pnl_pct"] = round((live_price - avg_cost) / avg_cost * 100, 2) if avg_cost else 0
+                    p["unrealized_source"]  = "yfinance_calc"
+
+            enriched.append(p)
+
+        return {
+            "status":     "ok",
+            "positions":  enriched,
+            "count":      len(enriched),
+            "enriched_count": len(quotes),
+            "data_source":    "ibkr+yfinance",
+            "real_trade": False,
+        }
+    except Exception as exc:
+        return {"status": "error", "positions": [], "real_trade": False, "error": str(exc)}
+
+
 @app.get("/api/portfolio/brokers")
 def portfolio_brokers(current_user: dict = Depends(get_optional_user)):
     """Per-broker breakdown with positions and P&L."""
@@ -7017,17 +7106,35 @@ def portfolio_cockpit(current_user: dict = Depends(get_optional_user)):
         paper_status = _paper_trading.get_status()
         paper_total  = float(paper_status.get("total_portfolio", 0))
         real_total   = float(snapshot.get("total_portfolio_value", 0))
+
+        # Extract IBKR account detail (net_liquidation, buying_power, realized, available_cash)
+        ibkr_summary: dict = {}
+        ibkr_cash: dict    = {}
+        ibkr_pnl: dict     = {}
+        if _PORTFOLIO_AVAILABLE and _ibkr:
+            try:
+                ibkr_raw     = _ibkr.get_full_portfolio()
+                ibkr_summary = ibkr_raw.get("summary", {})
+                ibkr_cash    = ibkr_raw.get("cash", {})
+                ibkr_pnl     = ibkr_raw.get("pnl", {})
+            except Exception:
+                pass
+
         return {
             "status": "ok",
             "real": {
-                "total_value":     real_total,
-                "invested":        snapshot.get("total_market_value", 0),
-                "cash":            snapshot.get("total_cash", 0),
-                "daily_pnl":       snapshot.get("total_daily_pnl", 0),
-                "daily_pnl_pct":   snapshot.get("total_daily_pnl_pct", 0),
-                "unrealized_pnl":  snapshot.get("total_unrealized_pnl", 0),
-                "position_count":  snapshot.get("position_count", 0),
-                "_from_cache":     snapshot.get("_from_cache", False),
+                "total_value":       real_total,
+                "invested":          snapshot.get("total_market_value", 0),
+                "cash":              snapshot.get("total_cash", 0),
+                "daily_pnl":         snapshot.get("total_daily_pnl", 0),
+                "daily_pnl_pct":     snapshot.get("total_daily_pnl_pct", 0),
+                "unrealized_pnl":    snapshot.get("total_unrealized_pnl", 0),
+                "realized_pnl":      float(ibkr_pnl.get("realized_pnl") or ibkr_summary.get("realized_pnl") or 0),
+                "net_liquidation":   float(ibkr_summary.get("net_liquidation") or ibkr_cash.get("net_liquidation") or real_total or 0),
+                "buying_power":      float(ibkr_summary.get("buying_power") or 0),
+                "available_cash":    float(ibkr_cash.get("total_cash") or ibkr_summary.get("total_cash") or snapshot.get("total_cash") or 0),
+                "position_count":    snapshot.get("position_count", 0),
+                "_from_cache":       snapshot.get("_from_cache", False),
             },
             "paper": {
                 "total_value":     paper_total,
@@ -7913,16 +8020,19 @@ def assets_brief(
 # ══════════════════════════════════════════════════════════════════════
 
 _RADAR_SYMBOLS = {
-    "SPY":   "S&P 500",
-    "QQQ":   "NASDAQ",
-    "^VIX":  "VIX",
-    "^DXY":  "DXY",
-    "^TNX":  "10Y Yield",
+    "SPY":     "S&P 500",
+    "QQQ":     "NASDAQ 100",
+    "DIA":     "Dow Jones",
+    "IWM":     "Russell 2K",
+    "^IXIC":   "NASDAQ Comp",
+    "^VIX":    "Volatility",
+    "^DXY":    "Dollar",
+    "^TNX":    "10Y Yield",
     "BTC-USD": "Bitcoin",
     "ETH-USD": "Ethereum",
-    "GLD":   "Gold",
-    "USO":   "Oil",
-    "TLT":   "Long Bond",
+    "GLD":     "Gold",
+    "USO":     "Oil",
+    "TLT":     "Long Bond",
 }
 
 _RADAR_MOVERS = ["AAPL","MSFT","NVDA","GOOGL","META","AMZN","TSLA","AMD","PLTR","CRM"]

@@ -36,6 +36,78 @@
   --rl:22px;
   --rll:30px;
 }
+/* ═══════════════════════════════════════════
+   LIGHT MODE THEME TOKENS
+═══════════════════════════════════════════ */
+[data-theme="light"]{
+  --bg:#f0f4f8;
+  --s1:#e8edf3;
+  --s2:#dde4ed;
+  --s3:#d0dae6;
+  --s4:#c3cfde;
+  --border:rgba(15,100,180,.18);
+  --border2:rgba(0,0,0,.1);
+  --border3:rgba(0,0,0,.05);
+  --cyan:#0070b8;
+  --cyan2:#005fa0;
+  --cyan-lo:rgba(0,112,184,.1);
+  --cyan-hi:rgba(0,112,184,.2);
+  --white:#12253a;
+  --soft:#4a6782;
+  --soft2:#3a5570;
+  --ok:#0a8a5a;
+  --warn:#b06000;
+  --bad:#c0392b;
+  --purple:#6b21d4;
+  --orange:#c05000;
+  --shadow:0 8px 32px rgba(0,0,0,.12);
+  --shadow2:0 4px 16px rgba(0,0,0,.1);
+}
+[data-theme="light"] body{background:var(--bg);color:var(--white)}
+[data-theme="light"] .card,.light-card{background:var(--s1)!important;border-color:var(--border2)!important}
+[data-theme="light"] .metric-card{background:var(--s1)!important;border-color:var(--border2)!important}
+[data-theme="light"] ::-webkit-scrollbar-thumb{background:rgba(0,112,184,.2)}
+[data-theme="light"] .nav-glass{background:rgba(240,244,248,.97)!important;border-bottom-color:rgba(0,112,184,.15)!important}
+[data-theme="light"] .tab-btn{color:var(--soft)}
+[data-theme="light"] .tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,112,184,.06)}
+[data-theme="light"] .btn-g{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12);color:var(--white)}
+[data-theme="light"] .btn-g:hover{background:rgba(0,0,0,.1)}
+[data-theme="light"] .btn-p{background:var(--cyan);color:#fff}
+[data-theme="light"] .btn-ol{border-color:var(--border2);color:var(--soft)}
+[data-theme="light"] .mode-pill{background:rgba(0,0,0,.05);color:var(--soft)}
+[data-theme="light"] .mode-pill.active{background:var(--cyan);color:#fff}
+[data-theme="light"] .commander-bar{background:rgba(240,248,255,.97)!important;border-color:rgba(0,112,184,.2)!important}
+[data-theme="light"] #asset-drawer{background:#f7fafd;border-left-color:var(--border2)}
+[data-theme="light"] .holdings-header{background:var(--s2);border-color:var(--border2)}
+[data-theme="light"] .holdings-row:hover{background:rgba(0,112,184,.06)}
+[data-theme="light"] #ck-market-pulse{background:rgba(0,0,0,.04)!important;border-color:var(--border2)!important}
+[data-theme="light"] .notif-dropdown{background:var(--s1);border-color:var(--border2)}
+[data-theme="light"] .skel{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%}
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select{background:rgba(0,0,0,.04);border-color:var(--border2);color:var(--white)}
+[data-theme="light"] .mkt-subnav-btn{color:var(--soft)}
+[data-theme="light"] .mkt-subnav-btn.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+[data-theme="light"] #theme-toggle-btn::before{content:"🌙 "}
+[data-theme="dark"]  #theme-toggle-btn::before{content:"☀ "}
+
+/* Live tick flash animations */
+@keyframes tick-up{0%{background:rgba(74,222,128,.25)}100%{background:transparent}}
+@keyframes tick-down{0%{background:rgba(248,113,113,.25)}100%{background:transparent}}
+@keyframes tick-neutral{0%{background:rgba(250,204,21,.15)}100%{background:transparent}}
+.tick-up{animation:tick-up .8s ease-out}
+.tick-down{animation:tick-down .8s ease-out}
+.tick-neutral{animation:tick-neutral .8s ease-out}
+
+/* Live clock chip */
+.live-clock-chip{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;color:var(--soft);
+  background:rgba(255,255,255,.04);border:1px solid var(--border2);
+  border-radius:6px;padding:4px 8px;letter-spacing:.04em;
+}
+[data-theme="light"] .live-clock-chip{background:rgba(0,0,0,.04)}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -2454,6 +2526,13 @@ body.mode-beginner .operator-only{display:none!important}
     </div>
 
     <div class="hero-right">
+      <!-- Language Switcher -->
+      <div class="mode-toggle-wrap" title="Language / Idioma" style="gap:2px">
+        <button class="mode-pill active" id="lang-en-btn" onclick="_setLang('en')" style="padding:3px 8px;font-size:10px;letter-spacing:.05em">EN</button>
+        <button class="mode-pill" id="lang-es-btn" onclick="_setLang('es')" style="padding:3px 8px;font-size:10px;letter-spacing:.05em">ES</button>
+      </div>
+      <!-- Theme Toggle -->
+      <button id="theme-toggle-btn" class="btn-g btn-sm" onclick="_toggleTheme()" title="Toggle Light / Dark mode" style="font-size:12px;padding:5px 10px" data-i18n="theme_toggle">☀ Light</button>
       <div class="mode-toggle-wrap" title="Beginner: simple view · Operator: full technical access">
         <button class="mode-pill" id="mode-beginner-btn" onclick="setMode('beginner')">Simple</button>
         <button class="mode-pill active" id="mode-operator-btn" onclick="setMode('operator')">Operator</button>
@@ -2898,24 +2977,25 @@ body.mode-beginner .operator-only{display:none!important}
       <div style="font-size:11px;color:var(--soft);margin-top:2px">Institutional Intelligence · <span style="color:#44f0ff;font-weight:700">LIVE READ-ONLY</span> · <span style="color:#a78bfa">real_trade: false always</span></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="live-clock-chip" id="ck-live-clock">--:--:--</div>
       <div style="display:flex;align-items:center;gap:5px">
         <div id="mkt-live-dot" class="live-dot stale-dot"></div>
         <span id="mkt-connection-label" style="font-size:10px;color:var(--soft)">offline</span>
       </div>
       <span id="mkt-regime-badge" class="badge b-idle" style="font-size:11px">REGIME --</span>
       <span style="font-size:10px;color:var(--soft)" id="mkt-snapshot-time"></span>
-      <button class="btn-p btn-sm" onclick="loadCockpit(this)" id="port-refresh-btn" style="font-size:11px;padding:5px 12px">↻ Refresh All</button>
+      <button class="btn-g btn-sm" onclick="loadCockpit(this)" id="port-refresh-btn" style="font-size:11px;padding:5px 12px" data-i18n="refresh_all">↻ Refresh All</button>
     </div>
   </div>
 
   <!-- ══ Sub-Navigation ═════════════════════════════════════════════════ -->
   <div class="mkt-subnav" role="tablist">
-    <button class="mkt-subnav-btn active" id="mkt-nav-cockpit"  onclick="switchMarketPanel('cockpit')"  role="tab">Cockpit</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-radar"    onclick="switchMarketPanel('radar')"    role="tab">Market Radar</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-intel"    onclick="switchMarketPanel('intel')"    role="tab">Intelligence</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-lab"      onclick="switchMarketPanel('lab')"      role="tab">Paper Lab</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-learning" onclick="switchMarketPanel('learning')" role="tab">AI Learning</button>
-    <button class="mkt-subnav-btn"        id="mkt-nav-analysis" onclick="switchMarketPanel('analysis')" role="tab">Analysis</button>
+    <button class="mkt-subnav-btn active" id="mkt-nav-cockpit"  onclick="switchMarketPanel('cockpit')"  role="tab" data-i18n="cockpit">Cockpit</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-radar"    onclick="switchMarketPanel('radar')"    role="tab" data-i18n="market_radar">Market Radar</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-intel"    onclick="switchMarketPanel('intel')"    role="tab" data-i18n="intelligence">Intelligence</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-lab"      onclick="switchMarketPanel('lab')"      role="tab" data-i18n="paper_lab">Paper Lab</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-learning" onclick="switchMarketPanel('learning')" role="tab" data-i18n="ai_learning">AI Learning</button>
+    <button class="mkt-subnav-btn"        id="mkt-nav-analysis" onclick="switchMarketPanel('analysis')" role="tab" data-i18n="analysis">Analysis</button>
   </div>
 
   <!-- ─────────────────────────────────────────────────────────────────── -->
@@ -2991,16 +3071,71 @@ body.mode-beginner .operator-only{display:none!important}
       </div>
     </div>
 
-    <!-- Row 2: 8 KPI Metrics -->
-    <div class="metric-grid" style="margin-bottom:12px" id="ck-kpi-grid">
-      <div class="metric-card"><div class="ml">Daily P&L</div><div class="mv" id="ck-daily-pnl">—</div><div class="ms" id="ck-daily-pct"></div></div>
-      <div class="metric-card"><div class="ml">Unrealized P&L</div><div class="mv" id="ck-unrealized">—</div></div>
-      <div class="metric-card"><div class="ml">Cash %</div><div class="mv" id="ck-cash-pct">—</div><div class="ms">of total portfolio</div></div>
-      <div class="metric-card"><div class="ml">Risk Score</div><div class="mv" id="ck-risk-score">—</div><div class="ms" id="ck-risk-label"></div></div>
-      <div class="metric-card"><div class="ml">Paper P&L</div><div class="mv" id="ck-paper-pnl-metric">—</div><div class="ms" id="ck-paper-pnl-pct"></div></div>
-      <div class="metric-card"><div class="ml">Positions</div><div class="mv" id="ck-positions">—</div><div class="ms">real holdings</div></div>
-      <div class="metric-card"><div class="ml">Brokers</div><div class="mv" id="ck-broker-count">—</div><div class="ms">connected</div></div>
-      <div class="metric-card"><div class="ml">Paper Positions</div><div class="mv" id="ck-paper-pos">—</div><div class="ms">simulated</div></div>
+    <!-- Row 2: Institutional Account KPIs (12 metrics, 4-col grid) -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px" id="ck-kpi-grid">
+      <!-- Row A: P&L metrics -->
+      <div class="metric-card" style="border-left:2px solid rgba(74,222,128,.35)">
+        <div class="ml" data-i18n="daily_pnl">Daily P&amp;L</div>
+        <div class="mv" id="ck-daily-pnl">—</div>
+        <div class="ms" id="ck-daily-pct"></div>
+      </div>
+      <div class="metric-card" style="border-left:2px solid rgba(68,240,255,.3)">
+        <div class="ml" data-i18n="unrealized_pnl">Unrealized P&amp;L</div>
+        <div class="mv" id="ck-unrealized">—</div>
+        <div class="ms" style="font-size:10px;color:var(--soft)">open positions</div>
+      </div>
+      <div class="metric-card" style="border-left:2px solid rgba(167,139,250,.35)">
+        <div class="ml" data-i18n="realized_pnl">Realized P&amp;L</div>
+        <div class="mv" id="ck-realized-pnl">—</div>
+        <div class="ms" style="font-size:10px;color:var(--soft)">closed trades</div>
+      </div>
+      <div class="metric-card" style="border-left:2px solid rgba(250,204,21,.3)">
+        <div class="ml" data-i18n="risk_score">Health Score</div>
+        <div class="mv" id="ck-risk-score">—</div>
+        <div class="ms" id="ck-risk-label"></div>
+      </div>
+      <!-- Row B: Account metrics -->
+      <div class="metric-card">
+        <div class="ml" data-i18n="net_liquidation">Net Liquidation</div>
+        <div class="mv" id="ck-net-liq">—</div>
+        <div class="ms" style="font-size:10px;color:var(--soft)">account value</div>
+      </div>
+      <div class="metric-card">
+        <div class="ml" data-i18n="available_cash">Available Cash</div>
+        <div class="mv" id="ck-avail-cash">—</div>
+        <div class="ms" id="ck-cash-pct" style="font-size:10px">of portfolio</div>
+      </div>
+      <div class="metric-card">
+        <div class="ml" data-i18n="buying_power">Buying Power</div>
+        <div class="mv" id="ck-buying-power">—</div>
+        <div class="ms" style="font-size:10px;color:var(--soft)">available margin</div>
+      </div>
+      <div class="metric-card">
+        <div class="ml" data-i18n="positions">Positions</div>
+        <div class="mv" id="ck-positions">—</div>
+        <div class="ms" id="ck-broker-count" style="font-size:10px;color:var(--soft)">real holdings</div>
+      </div>
+      <!-- Row C: Performance + Paper -->
+      <div class="metric-card">
+        <div class="ml" data-i18n="paper_pnl">Paper P&amp;L</div>
+        <div class="mv" id="ck-paper-pnl-metric">—</div>
+        <div class="ms" id="ck-paper-pnl-pct"></div>
+      </div>
+      <div class="metric-card">
+        <div class="ml" data-i18n="paper_positions">Paper Positions</div>
+        <div class="mv" id="ck-paper-pos">—</div>
+        <div class="ms" style="font-size:10px;color:var(--soft)">simulated</div>
+      </div>
+      <div class="metric-card" id="ck-winner-card" style="cursor:pointer" title="Largest winner — click to inspect">
+        <div class="ml" data-i18n="top_winner">Top Winner</div>
+        <div class="mv" id="ck-top-winner">—</div>
+        <div class="ms" id="ck-top-winner-pct" style="font-size:10px;color:#4ade80"></div>
+      </div>
+      <div class="metric-card" id="ck-loser-card" style="cursor:pointer" title="Largest loser — click to inspect">
+        <div class="ml" data-i18n="top_loser">Top Loser</div>
+        <div class="mv" id="ck-top-loser">—</div>
+        <div class="ms" id="ck-top-loser-pct" style="font-size:10px;color:#f87171"></div>
+      </div>
     </div>
 
     <!-- Row 3: AI Insights + Risk Gauge + Broker Status -->
@@ -3057,7 +3192,7 @@ body.mode-beginner .operator-only{display:none!important}
     <!-- Row 5: Top Holdings -->
     <div class="card" style="padding:14px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <span style="font-size:13px;font-weight:700">Holdings</span>
+        <span style="font-size:13px;font-weight:700" data-i18n="holdings">Holdings</span>
         <div style="display:flex;gap:8px;align-items:center">
           <div style="position:relative">
             <input id="asset-search-input" type="text" placeholder="Search symbol…"
@@ -3115,11 +3250,11 @@ body.mode-beginner .operator-only{display:none!important}
       <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:flex;align-items:center;gap:6px">Your Position<span id="drawer-pos-source"></span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         <div><div style="color:var(--soft);font-size:10px">Qty</div><div id="drawer-pos-qty" style="font-weight:700">—</div></div>
-        <div><div style="color:var(--soft);font-size:10px">Avg Cost</div><div id="drawer-pos-cost" style="font-weight:700">—</div></div>
-        <div><div style="color:var(--soft);font-size:10px">Mkt Value</div><div id="drawer-pos-val" style="font-weight:700">—</div></div>
-        <div><div style="color:var(--soft);font-size:10px">Unrealized P&L</div><div id="drawer-pos-upnl" style="font-weight:700">—</div></div>
-        <div><div style="color:var(--soft);font-size:10px">Return %</div><div id="drawer-pos-ret" style="font-weight:700">—</div></div>
-        <div><div style="color:var(--soft);font-size:10px">Weight</div><div id="drawer-pos-wt" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px" data-i18n="avg_cost">Avg Cost</div><div id="drawer-pos-cost" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px" data-i18n="mkt_value">Mkt Value</div><div id="drawer-pos-val" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px" data-i18n="unrealized_pnl">Unrealized P&L</div><div id="drawer-pos-upnl" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px" data-i18n="return_pct">Return %</div><div id="drawer-pos-ret" style="font-weight:700">—</div></div>
+        <div><div style="color:var(--soft);font-size:10px" data-i18n="weight">Weight</div><div id="drawer-pos-wt" style="font-weight:700">—</div></div>
       </div>
     </div>
 
@@ -3507,8 +3642,8 @@ body.mode-beginner .operator-only{display:none!important}
       <div class="radar-tile"><div class="radar-label">Loading…</div></div>
     </div>
 
-    <!-- Top Movers -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <!-- Top Movers + Volatility Context (Row 1) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="card" style="padding:14px">
         <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Top Movers Today</div>
         <div id="radar-movers"></div>
@@ -3519,10 +3654,26 @@ body.mode-beginner .operator-only{display:none!important}
       </div>
     </div>
 
+    <!-- Macro Pulse + Sector Context (Row 2) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Macro Pulse</div>
+        <div id="radar-macro-pulse" style="display:flex;flex-direction:column;gap:8px">
+          <div class="skel"></div><div class="skel" style="width:75%"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Market Context</div>
+        <div id="radar-market-context" style="font-size:12px;line-height:1.7;color:var(--soft)">
+          <div class="skel"></div><div class="skel" style="width:80%"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Radar timestamp -->
-    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:10px;color:var(--soft)">
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:10px;color:var(--soft)">
       <div class="pulse-wrap pulse-green" style="transform:scale(.8)"><div class="pulse-ring"></div><div class="pulse-core"></div></div>
-      <span>Data via Yahoo Finance · </span><span id="radar-fetched-at">—</span>
+      <span>Data via Yahoo Finance (~15min delay) · </span><span id="radar-fetched-at">—</span>
     </div>
   </div><!-- /radar -->
 
@@ -6310,12 +6461,40 @@ let _holdingsData = [];
 
 async function loadTopHoldings() {
   try {
-    const d = await _fetchWithTimeout("/api/portfolio/positions", {}, 10000);
-    _holdingsData = (d.positions || []).slice(0, 20);
+    // Phase 1: Show IBKR data immediately (fast, no delay)
+    const d1 = await _fetchWithTimeout("/api/portfolio/positions", {}, 10000);
+    _holdingsData = (d1.positions || []).slice(0, 25);
     renderHoldingsTable(_holdingsData);
+
+    // Phase 2: Enrich with live yfinance quotes (non-blocking, ~15min delayed)
+    // Runs in background so holdings appear instantly even if yfinance is slow
+    fetch("/api/portfolio/positions/enriched")
+      .then(r => r.json())
+      .then(d2 => {
+        if (d2.positions && d2.positions.length) {
+          const enriched = d2.positions.slice(0, 25);
+          // Flash tick on rows whose daily_pnl changed
+          const prevMap = {};
+          _holdingsData.forEach(p => { prevMap[p.symbol] = p.daily_pnl || 0; });
+          _holdingsData = enriched;
+          renderHoldingsTable(enriched, prevMap);
+        }
+      })
+      .catch(() => {}); // silently ignore yfinance failures
   } catch(e) {
     console.warn("loadTopHoldings:", e);
   }
+}
+
+// Auto-refresh holdings every 45 seconds in the background
+let _holdingsRefreshTimer = null;
+function _startHoldingsRefresh() {
+  if (_holdingsRefreshTimer) clearInterval(_holdingsRefreshTimer);
+  _holdingsRefreshTimer = setInterval(() => {
+    if (document.getElementById("mkt-panel-cockpit")?.classList.contains("active")) {
+      loadTopHoldings();
+    }
+  }, 45000);
 }
 
 function _safe$(v, decimals=0) {
@@ -6340,78 +6519,118 @@ function _safePct(v) {
   return `<span style="color:${color}">${n >= 0 ? "+" : ""}${n.toFixed(2)}%</span>`;
 }
 
-function renderHoldingsTable(positions) {
+function renderHoldingsTable(positions, prevDailyMap) {
   const tableEl = document.getElementById("port-holdings-table");
   if (!tableEl) return;
-  if (!positions.length) {
+  if (!positions || !positions.length) {
     tableEl.innerHTML = '<div style="color:var(--soft);font-size:12px;padding:8px">No positions — connect IBKR or Hapi</div>';
     return;
   }
 
-  // Columns: Symbol | Name | Qty | Avg Cost | Price | Value | Unrealized | Return% | Daily | Wt% | Sector
-  const COL = "52px 1fr 44px 68px 70px 72px 72px 60px 68px 46px 62px";
-  const HDR = ["Sym","Name","Qty","Avg Cost","Price","Value","Unreal","Ret%","Daily","Wt","Sector"];
-  const RIGHT = [false,false,true,true,true,true,true,true,true,true,false];
+  // 12-column institutional grid
+  // Sym | Name | Qty | Avg Cost | Price (live) | Value | Unreal $ | Ret% | Daily $ | Daily% | Wt | Sector
+  const COL = "54px 1fr 44px 68px 76px 76px 76px 58px 70px 54px 44px 64px";
+  const HDR = ["Sym","Name","Qty","Avg","Price","Value","Unreal","Ret%","Daily $","Day%","Wt","Sector"];
+  const RIGHT = [false,false,true,true,true,true,true,true,true,true,true,false];
 
-  const headerCells = HDR.map((h,i) =>
-    `<div style="${RIGHT[i]?'text-align:right':''}">${h}</div>`
+  const headerHtml = HDR.map((h,i) =>
+    `<div style="${RIGHT[i]?'text-align:right':''};font-size:9px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px">${h}</div>`
   ).join("");
 
   const rows = positions.map(p => {
-    const sym     = _esc(p.symbol || "");
-    const src     = p.data_source || "";
-    const srcBadge = src === "ibkr_live"
-      ? `<span style="font-size:8px;background:rgba(68,240,255,.1);color:var(--cyan);border:1px solid rgba(68,240,255,.2);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:middle">LIVE</span>`
-      : src ? `<span style="font-size:8px;background:rgba(110,155,181,.1);color:var(--soft);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:middle">${_esc(src.toUpperCase().slice(0,5))}</span>` : "";
+    const sym = _esc(p.symbol || "");
 
-    const sector  = (p.sector && p.sector !== "unknown") ? _esc(p.sector) : "—";
-    const qty     = p.quantity != null ? Number(p.quantity).toLocaleString("en-US") : "—";
-    const avgCost = p.avg_cost  ? "$"+Number(p.avg_cost).toFixed(2) : "—";
-    const price   = (p.market_price && p.market_price > 0) ? "$"+Number(p.market_price).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
-    const val     = (p.market_value && p.market_value > 0) ? "$"+Number(p.market_value).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0}) : "—";
+    // Badge: LIVE from IBKR, YF if enriched by yfinance
+    const src = p.data_source || "";
+    const hasYf = !!p.yf_price;
+    let srcBadge = "";
+    if (src === "ibkr_live")
+      srcBadge = `<span style="font-size:7.5px;background:rgba(68,240,255,.1);color:var(--cyan);border:1px solid rgba(68,240,255,.2);border-radius:3px;padding:0 3px;margin-left:3px">LIVE</span>`;
+    if (hasYf)
+      srcBadge += `<span style="font-size:7.5px;background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2);border-radius:3px;padding:0 3px;margin-left:2px">YF</span>`;
 
-    // Unrealized P&L — prefer IBKR-provided, fallback to calculated
-    let upnl = p.unrealized_pnl;
-    let upnlSrc = p.data_source || "";
-    if ((upnl == null || upnl === 0) && p.avg_cost && p.market_price && p.quantity && p.market_price > 0) {
-      upnl = (p.market_price - p.avg_cost) * p.quantity;
-      upnlSrc = "calc";
+    // Prices — prefer yfinance live price for display when available
+    const displayPrice = hasYf ? p.yf_price : (p.market_price && p.market_price > 0 ? p.market_price : null);
+    const priceStr     = displayPrice ? "$"+Number(displayPrice).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
+    const avgCost      = p.avg_cost ? "$"+Number(p.avg_cost).toFixed(2) : "—";
+
+    // Market value — recalc from live price if yfinance available
+    const qty          = p.quantity ?? 0;
+    const mktVal       = hasYf && qty ? qty * p.yf_price : (p.market_value && p.market_value > 0 ? p.market_value : null);
+    const valStr       = mktVal ? "$"+Number(mktVal).toLocaleString("en-US",{maximumFractionDigits:0}) : "—";
+
+    // Unrealized P&L: priority order: yfinance-recalculated → IBKR → calculated from avg_cost
+    let upnl = p.unrealized_pnl, upnlCalc = false;
+    if (hasYf && qty && p.avg_cost && p.yf_price > 0) {
+      upnl = (p.yf_price - p.avg_cost) * qty;
+      upnlCalc = !p.unrealized_pnl || p.unrealized_pnl === 0;
+    } else if ((upnl == null || upnl === 0) && p.avg_cost && p.market_price && qty && p.market_price > 0) {
+      upnl = (p.market_price - p.avg_cost) * qty;
+      upnlCalc = true;
     }
 
-    // Return % — unrealized_pnl_pct from enriched backend, else calculate
-    let ret = p.unrealized_pnl_pct ?? p.total_return_pct;
-    if ((ret == null || ret === 0) && p.avg_cost && p.market_price && p.market_price > 0) {
+    // Return %
+    let ret = null;
+    if (hasYf && p.avg_cost && p.yf_price > 0)
+      ret = (p.yf_price - p.avg_cost) / p.avg_cost * 100;
+    else if (p.unrealized_pnl_pct != null && p.unrealized_pnl_pct !== 0)
+      ret = p.unrealized_pnl_pct;
+    else if (p.avg_cost && p.market_price && p.market_price > 0)
       ret = (p.market_price - p.avg_cost) / p.avg_cost * 100;
+
+    // Daily P&L: prefer yfinance estimate, fall back to IBKR daily_pnl
+    const dailyPnl    = (p.daily_pnl_est != null && p.daily_pnl_est !== 0) ? p.daily_pnl_est : p.daily_pnl;
+    const dailyPct    = p.daily_chg_pct ?? p.daily_pnl_pct ?? null;
+    const dailySrc    = p.daily_pnl_source;
+
+    // Tick flash class
+    let tickClass = "";
+    if (prevDailyMap) {
+      const prev = prevDailyMap[p.symbol] || 0;
+      if ((dailyPnl||0) > prev) tickClass = " tick-up";
+      else if ((dailyPnl||0) < prev) tickClass = " tick-down";
     }
 
-    const wt = p.weight_pct != null ? Number(p.weight_pct).toFixed(1)+"%" : "—";
-    const name = _esc(p.name || p.asset_class || "");
+    const wt     = p.weight_pct != null ? Number(p.weight_pct).toFixed(1)+"%" : "—";
+    const qtyStr = qty ? Number(qty).toLocaleString("en-US") : "—";
+    const sector = (p.sector && p.sector !== "unknown") ? _esc(p.sector) : "—";
+    const name   = _esc((p.name||"").split(" ").slice(0,3).join(" ") || p.asset_class || "");
 
     const posJson = JSON.stringify(p).replace(/"/g,"&quot;");
-    return `<div onclick="openAssetDrawer('${sym}',${posJson})"
-      style="display:grid;grid-template-columns:${COL};gap:3px;font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center;cursor:pointer"
+    return `<div id="row-${sym}" onclick="openAssetDrawer('${sym}',${posJson})"
+      class="${tickClass.trim()}"
+      style="display:grid;grid-template-columns:${COL};gap:2px;font-size:11px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center;cursor:pointer;border-radius:4px"
       onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background=''">
-      <div style="font-weight:800;color:var(--cyan)">${sym}${srcBadge}</div>
-      <div style="color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px">${name}</div>
-      <div style="text-align:right;color:var(--soft2)">${qty}</div>
-      <div style="text-align:right;color:var(--soft)">${avgCost}</div>
-      <div style="text-align:right;font-weight:600">${price}</div>
-      <div style="text-align:right">${val}</div>
-      <div style="text-align:right">${_safePnl(upnl)}${upnlSrc==="calc"?'<span style="font-size:8px;color:var(--soft);margin-left:2px">~</span>':""}</div>
-      <div style="text-align:right">${_safePct(ret)}</div>
-      <div style="text-align:right">${_safePnl(p.daily_pnl)}</div>
-      <div style="text-align:right;color:var(--soft)">${wt}</div>
-      <div style="font-size:10px;color:var(--soft)">${sector}</div>
+      <div style="font-weight:800;color:var(--cyan);font-size:11.5px">${sym}${srcBadge}</div>
+      <div style="color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">${name}</div>
+      <div style="text-align:right;color:var(--soft2)">${qtyStr}</div>
+      <div style="text-align:right;color:var(--soft);font-size:10.5px">${avgCost}</div>
+      <div style="text-align:right;font-weight:700">${priceStr}</div>
+      <div style="text-align:right;font-weight:600">${valStr}</div>
+      <div style="text-align:right">${_safePnl(upnl)}${upnlCalc?'<span style="font-size:7px;color:var(--soft);margin-left:2px">~</span>':""}</div>
+      <div style="text-align:right">${ret != null ? _safePct(ret) : '<span style="color:var(--soft)">—</span>'}</div>
+      <div style="text-align:right">${_safePnl(dailyPnl)}${dailySrc==="yfinance"?'<span style="font-size:7px;color:#a78bfa;margin-left:2px">~</span>':""}</div>
+      <div style="text-align:right">${dailyPct != null ? _safePct(dailyPct) : '<span style="color:var(--soft)">—</span>'}</div>
+      <div style="text-align:right;color:var(--soft);font-size:10px">${wt}</div>
+      <div style="font-size:10px;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sector}</div>
     </div>`;
   }).join("");
 
+  const enrichedCount = positions.filter(p => p.yf_price).length;
+  const enrichLabel = enrichedCount > 0
+    ? `${enrichedCount}/${positions.length} prices from yfinance (~15min delay)`
+    : "prices from IBKR bridge";
+
   tableEl.innerHTML = `
-    <div style="display:grid;grid-template-columns:${COL};gap:3px;font-size:9px;font-weight:700;color:var(--soft);padding:0 0 5px;border-bottom:1px solid rgba(255,255,255,.1);text-transform:uppercase;letter-spacing:.4px">
-      ${headerCells}
+    <div style="display:grid;grid-template-columns:${COL};gap:2px;padding:0 0 6px;border-bottom:1px solid rgba(255,255,255,.1)">
+      ${headerHtml}
     </div>
     ${rows}
-    <div style="font-size:9px;color:var(--soft);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.04)">
-      ~ = calculated from avg cost · LIVE = IBKR live data · Click row for full analysis
+    <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:9px;color:var(--soft);margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,.04)">
+      <span>~ = calculated from avg cost</span>
+      <span style="color:var(--cyan)">LIVE = IBKR live</span>
+      <span style="color:#a78bfa">YF = yfinance quote · ${enrichLabel}</span>
+      <span style="margin-left:auto">click row for full analysis</span>
     </div>
   `;
 }
@@ -6725,25 +6944,31 @@ async function loadMarketPulse(portfolioDailyPct) {
   try {
     const d = await fetch("/api/market/radar").then(r => r.json());
     const instruments = d.instruments || {};
-    const SHOW = ["SPY","QQQ","DIA","IWM","^VIX","BTC-USD"];
-    const LABELS = {"SPY":"SPY","QQQ":"QQQ","DIA":"DIA","IWM":"IWM","^VIX":"VIX","BTC-USD":"BTC"};
+    const SHOW   = ["SPY","QQQ","DIA","IWM","^IXIC","^VIX","BTC-USD","ETH-USD","^TNX","^DXY"];
+    const LABELS = {
+      "SPY":"S&P 500","QQQ":"NDX 100","DIA":"DOW","IWM":"Russell",
+      "^IXIC":"NASDAQ","^VIX":"VIX","BTC-USD":"BTC","ETH-USD":"ETH",
+      "^TNX":"10Y","^DXY":"DXY"
+    };
 
     const items = SHOW.map(sym => {
       const inst = instruments[sym];
       if (!inst) return null;
       const chg    = inst.change_pct ?? 0;
-      const clr    = chg >= 0 ? "#4ade80" : "#f87171";
+      const clr    = chg > 0 ? "#4ade80" : chg < 0 ? "#f87171" : "var(--soft)";
       const sign   = chg >= 0 ? "+" : "";
-      const price  = inst.price != null ? inst.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
+      const price  = inst.price != null ? Number(inst.price).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—";
       const lbl    = LABELS[sym] || sym;
-      return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;min-width:44px">
-        <span style="font-size:9px;font-weight:700;color:var(--soft);letter-spacing:.05em">${_esc(lbl)}</span>
-        <span style="font-size:12px;font-weight:700;color:var(--white)">${price}</span>
-        <span style="font-size:10px;font-weight:700;color:${clr}">${sign}${chg.toFixed(2)}%</span>
+      const arrow  = chg > 0 ? "▲" : chg < 0 ? "▼" : "—";
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;min-width:52px;padding:0 4px">
+        <span style="font-size:8.5px;font-weight:700;color:var(--soft);letter-spacing:.06em;white-space:nowrap">${_esc(lbl)}</span>
+        <span style="font-size:11.5px;font-weight:800;color:var(--white);letter-spacing:-.3px">${price}</span>
+        <span style="font-size:9.5px;font-weight:700;color:${clr}">${arrow}${sign}${chg.toFixed(2)}%</span>
       </div>`;
     }).filter(Boolean);
 
-    el.innerHTML = items.join(`<div style="width:1px;height:28px;background:rgba(255,255,255,.07)"></div>`);
+    const sep = `<div style="width:1px;height:28px;background:var(--border2);flex-shrink:0"></div>`;
+    el.innerHTML = items.join(sep);
 
     // Portfolio vs SPY strip
     const vsEl = document.getElementById("ck-portfolio-vs-spy");
@@ -7023,6 +7248,51 @@ async function loadRadar(btn) {
               ${vix > 25 ? "Current level indicates institutional hedging demand is elevated." : vix < 14 ? "Low VIX suggests market complacency — monitor for sudden reversal." : "VIX in normal range."}
             </div>
           </div>`;
+      }
+
+      // Macro Pulse: yields, dollar, oil, gold
+      const macroEl = document.getElementById("radar-macro-pulse");
+      if (macroEl) {
+        const MACRO_ITEMS = [
+          { sym:"^TNX", label:"10Y Treasury Yield", unit:"%" },
+          { sym:"^DXY", label:"US Dollar Index",    unit:"" },
+          { sym:"USO",  label:"Oil (USO ETF)",       unit:"" },
+          { sym:"GLD",  label:"Gold (GLD ETF)",      unit:"" },
+          { sym:"TLT",  label:"Long Bond (TLT)",     unit:"" },
+        ];
+        const instr = radar.instruments || {};
+        macroEl.innerHTML = MACRO_ITEMS.map(({sym, label, unit}) => {
+          const d = instr[sym];
+          if (!d) return `<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--soft)">${label}</span><span style="color:var(--soft)">—</span></div>`;
+          const chg = d.change_pct ?? 0;
+          const clr = chg >= 0 ? "#4ade80" : "#f87171";
+          const sign = chg >= 0 ? "+" : "";
+          return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+            <span style="color:var(--soft)">${label}</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-weight:700">${d.price != null ? Number(d.price).toFixed(2)+unit : "—"}</span>
+              <span style="font-weight:700;color:${clr}">${sign}${chg.toFixed(2)}%</span>
+            </div>
+          </div>`;
+        }).join("");
+      }
+
+      // Market context card
+      const ctxEl = document.getElementById("radar-market-context");
+      if (ctxEl) {
+        const instr      = radar.instruments || {};
+        const spy        = instr["SPY"];
+        const qqq        = instr["QQQ"];
+        const vixVal     = radar.vix ?? 20;
+        const tnx        = instr["^TNX"];
+        const regime     = radar.regime || "NEUTRAL";
+        const lines = [];
+        if (spy)  lines.push(`S&P 500 ${spy.change_pct >= 0 ? "up" : "down"} ${Math.abs(spy.change_pct).toFixed(2)}% today at $${Number(spy.price).toFixed(0)}.`);
+        if (qqq)  lines.push(`Nasdaq 100 ${qqq.change_pct >= 0 ? "up" : "down"} ${Math.abs(qqq.change_pct).toFixed(2)}%.`);
+        lines.push(`VIX at ${vixVal.toFixed(1)} — ${vixVal > 30 ? "extreme fear, hedging demand elevated" : vixVal > 20 ? "elevated risk, cautious positioning warranted" : vixVal < 14 ? "low vol / market complacency regime" : "normal volatility range"}.`);
+        if (tnx)  lines.push(`10Y Treasury at ${Number(tnx.price).toFixed(2)}% — ${tnx.price > 4.5 ? "restrictive rate environment" : tnx.price > 4 ? "elevated rate environment" : "moderate rate environment"}.`);
+        lines.push(`Regime signal: <strong style="color:${regime.includes("RISK_ON")?"#4ade80":regime.includes("RISK_OFF")||regime.includes("HIGH")?"#f87171":"#facc15"}">${regime.replace(/_/g," ")}</strong>`);
+        ctxEl.innerHTML = lines.map(l => `<div style="margin-bottom:5px">${l}</div>`).join("");
       }
 
       const fetchedAt = document.getElementById("radar-fetched-at");
@@ -7511,24 +7781,66 @@ async function loadCockpit(btn) {
     _set("ck-paper-cash",    _fmtVal(paper.cash));
     _set("ck-paper-trades",  String(paper.trade_count||0));
 
-    // 8 KPIs
+    // ── Institutional KPIs ──────────────────────────────────────────────
     const dpnlColor = (real.daily_pnl||0) >= 0 ? "#4ade80" : "#f87171";
     _set("ck-daily-pnl",  `<span style="color:${dpnlColor}">${_fmtPnl(real.daily_pnl)}</span>`);
     _set("ck-daily-pct",  real.daily_pnl_pct ? `${real.daily_pnl_pct > 0 ? "+" : ""}${(real.daily_pnl_pct||0).toFixed(2)}%` : "");
+
     const unrColor = (real.unrealized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
     _set("ck-unrealized", `<span style="color:${unrColor}">${_fmtPnl(real.unrealized_pnl)}</span>`);
-    const cashPct = real.total_value > 0 ? Math.round((real.cash||0) / (real.total_value + (real.cash||0)) * 100) : 0;
-    _set("ck-cash-pct",   `${cashPct}%`);
+
+    const rlzColor = (real.realized_pnl||0) >= 0 ? "#4ade80" : "#f87171";
+    if (real.realized_pnl != null)
+      _set("ck-realized-pnl", `<span style="color:${rlzColor}">${_fmtPnl(real.realized_pnl)}</span>`);
+
+    // Net liquidation (IBKR account value)
+    if (real.net_liquidation && real.net_liquidation > 0)
+      _set("ck-net-liq", `$${Number(real.net_liquidation).toLocaleString("en-US",{maximumFractionDigits:0})}`);
+    else if (real.total_value)
+      _set("ck-net-liq", `$${Number(real.total_value).toLocaleString("en-US",{maximumFractionDigits:0})}`);
+
+    // Available cash
+    const cashVal = real.available_cash || real.cash || 0;
+    _set("ck-avail-cash", cashVal > 0 ? `$${Number(cashVal).toLocaleString("en-US",{maximumFractionDigits:0})}` : "—");
+    const baseVal = real.net_liquidation || real.total_value || 0;
+    const cashPct = baseVal > 0 ? Math.round(cashVal / baseVal * 100) : 0;
+    _set("ck-cash-pct", cashPct > 0 ? `${cashPct}% of portfolio` : "of portfolio");
+
+    // Buying power
+    if (real.buying_power && real.buying_power > 0)
+      _set("ck-buying-power", `$${Number(real.buying_power).toLocaleString("en-US",{maximumFractionDigits:0})}`);
+
     const riskScore = intel.portfolio_score || 0;
     const riskColor = riskScore >= 65 ? "#4ade80" : riskScore >= 45 ? "#facc15" : "#f87171";
     _set("ck-risk-score", `<span style="color:${riskColor}">${riskScore}</span>`);
     _set("ck-risk-label", `<span style="color:${riskColor}">${(intel.risk_level||"—").toUpperCase()}</span>`);
+
     _set("ck-paper-pnl-metric", `<span style="color:${ppnlColor}">${_fmtPnl(paper.pnl_total)}</span>`);
     _set("ck-paper-pnl-pct",    paper.pnl_pct ? `${paper.pnl_pct > 0 ? "+" : ""}${(paper.pnl_pct||0).toFixed(2)}%` : "");
     _set("ck-positions",  String(real.position_count||0));
     const connectedBrokers = Object.values(d.brokers||{}).filter(b => !["not_connected","disconnected","not_configured"].includes(b.status)).length;
-    _set("ck-broker-count", String(connectedBrokers));
+    _set("ck-broker-count", `${connectedBrokers} broker${connectedBrokers !== 1 ? "s" : ""} connected`);
     _set("ck-paper-pos",  String(paper.position_count||0));
+
+    // Top winner / loser from largest positions
+    const allPos = (d.largest_positions || []);
+    if (allPos.length) {
+      const byUnreal = [...allPos].sort((a,b) => (b.unrealized_pnl||0) - (a.unrealized_pnl||0));
+      const winner   = byUnreal[0];
+      const loser    = byUnreal[byUnreal.length-1];
+      if (winner && (winner.unrealized_pnl||0) > 0) {
+        _set("ck-top-winner", winner.symbol);
+        _set("ck-top-winner-pct", `+${(winner.unrealized_pnl_pct||0).toFixed(1)}% · ${_fmtPnl(winner.unrealized_pnl)}`);
+        const wCard = document.getElementById("ck-winner-card");
+        if (wCard) wCard.onclick = () => openAssetDrawer(winner.symbol, winner);
+      }
+      if (loser && (loser.unrealized_pnl||0) < 0) {
+        _set("ck-top-loser", loser.symbol);
+        _set("ck-top-loser-pct", `${(loser.unrealized_pnl_pct||0).toFixed(1)}% · ${_fmtPnl(loser.unrealized_pnl)}`);
+        const lCard = document.getElementById("ck-loser-card");
+        if (lCard) lCard.onclick = () => openAssetDrawer(loser.symbol, loser);
+      }
+    }
 
     // Risk gauge ring
     const arc = document.getElementById("ck-risk-arc");
@@ -13754,10 +14066,142 @@ function saveOnboarding() {
   }
 })();
 
+/* ══════════════════════════════════════════════════════════════
+   THEME SYSTEM — Institutional Dark / Institutional Light
+══════════════════════════════════════════════════════════════ */
+(function _initTheme() {
+  const saved = localStorage.getItem("jarvis_theme") || "dark";
+  document.documentElement.setAttribute("data-theme", saved);
+  const btn = document.getElementById("theme-toggle-btn");
+  if (btn) btn.textContent = saved === "light" ? "🌙 Dark" : "☀ Light";
+})();
+
+function _toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  const next    = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("jarvis_theme", next);
+  const btn = document.getElementById("theme-toggle-btn");
+  if (btn) btn.textContent = next === "light" ? "🌙 Dark" : "☀ Light";
+}
+
+/* ══════════════════════════════════════════════════════════════
+   i18n — English / Spanish
+══════════════════════════════════════════════════════════════ */
+const _I18N = {
+  en: {
+    daily_pnl:       "Daily P&L",
+    unrealized_pnl:  "Unrealized P&L",
+    realized_pnl:    "Realized P&L",
+    risk_score:      "Health Score",
+    net_liquidation: "Net Liquidation",
+    available_cash:  "Available Cash",
+    buying_power:    "Buying Power",
+    positions:       "Positions",
+    paper_pnl:       "Paper P&L",
+    paper_positions: "Paper Positions",
+    top_winner:      "Top Winner",
+    top_loser:       "Top Loser",
+    theme_toggle:    "☀ Light",
+    refresh_all:     "↻ Refresh All",
+    holdings:        "Holdings",
+    market_radar:    "Market Radar",
+    intelligence:    "Intelligence",
+    cockpit:         "Cockpit",
+    paper_lab:       "Paper Lab",
+    ai_learning:     "AI Learning",
+    analysis:        "Analysis",
+    your_position:   "Your Position",
+    avg_cost:        "Avg Cost",
+    mkt_value:       "Mkt Value",
+    return_pct:      "Return %",
+    weight:          "Weight",
+  },
+  es: {
+    daily_pnl:       "P&L Diario",
+    unrealized_pnl:  "P&L No Realizado",
+    realized_pnl:    "P&L Realizado",
+    risk_score:      "Puntuación de Salud",
+    net_liquidation: "Liquidación Neta",
+    available_cash:  "Efectivo Disponible",
+    buying_power:    "Poder de Compra",
+    positions:       "Posiciones",
+    paper_pnl:       "P&L Simulado",
+    paper_positions: "Posiciones Simuladas",
+    top_winner:      "Mayor Ganador",
+    top_loser:       "Mayor Perdedor",
+    theme_toggle:    "☀ Claro",
+    refresh_all:     "↻ Actualizar",
+    holdings:        "Cartera",
+    market_radar:    "Radar de Mercado",
+    intelligence:    "Inteligencia",
+    cockpit:         "Cabina",
+    paper_lab:       "Lab Simulado",
+    ai_learning:     "Aprendizaje IA",
+    analysis:        "Análisis",
+    your_position:   "Tu Posición",
+    avg_cost:        "Costo Promedio",
+    mkt_value:       "Valor de Mercado",
+    return_pct:      "Retorno %",
+    weight:          "Peso",
+  }
+};
+
+let _currentLang = localStorage.getItem("jarvis_lang") || "en";
+
+function _t(key) {
+  return (_I18N[_currentLang] || _I18N.en)[key] || key;
+}
+
+function _applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    const val = _t(key);
+    if (val) el.innerHTML = val;
+  });
+  document.documentElement.setAttribute("lang", _currentLang === "es" ? "es" : "en");
+}
+
+function _setLang(lang) {
+  _currentLang = lang;
+  localStorage.setItem("jarvis_lang", lang);
+  const enBtn = document.getElementById("lang-en-btn");
+  const esBtn = document.getElementById("lang-es-btn");
+  if (enBtn) enBtn.classList.toggle("active", lang === "en");
+  if (esBtn) esBtn.classList.toggle("active", lang === "es");
+  _applyI18n();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LIVE CLOCK — Real-time clock in cockpit header
+══════════════════════════════════════════════════════════════ */
+function _startLiveClock() {
+  const el = document.getElementById("ck-live-clock");
+  if (!el) return;
+  function _tick() {
+    const now = new Date();
+    const t   = now.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+    const d   = now.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    el.textContent = d + " · " + t;
+  }
+  _tick();
+  setInterval(_tick, 1000);
+}
+
 /* ── Patch boot to run experience init ───────────────────── */
 const _origBoot = boot;
 // loadConnectionStatus and _loadHomeGolfCard are called after boot completes
 document.addEventListener("DOMContentLoaded", () => {
+  // Apply i18n on load
+  const savedLang = localStorage.getItem("jarvis_lang") || "en";
+  _setLang(savedLang);
+
+  // Start live clock
+  _startLiveClock();
+
+  // Start holdings auto-refresh
+  try { _startHoldingsRefresh(); } catch(e) {}
+
   setTimeout(() => {
     try { loadConnectionStatus(); } catch(e) {}
     try { _loadHomeGolfCard(); } catch(e) {}
