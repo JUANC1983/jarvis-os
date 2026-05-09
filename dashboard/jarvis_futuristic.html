@@ -3250,7 +3250,40 @@ body.mode-beginner .operator-only{display:none!important}
       </div>
     </div>
 
-    <!-- Row 3: AI Insights + Risk Gauge + Broker Status -->
+    <!-- SECTION 3: Holdings Table (institutional hierarchy: positions before analytics) -->
+    <div class="card" style="padding:14px;margin-bottom:12px;border:1px solid rgba(68,240,255,.08)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;font-weight:700" data-i18n="holdings">Holdings</span>
+          <span id="ck-holdings-source" style="font-size:9px;color:var(--soft);background:rgba(68,240,255,.07);border:1px solid rgba(68,240,255,.15);padding:2px 7px;border-radius:4px;letter-spacing:.5px">LOADING</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative">
+            <input id="asset-search-input" type="text" placeholder="Search symbol…"
+              style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--white);outline:none;width:150px"
+              oninput="assetSearchDebounce(this.value)" autocomplete="off" />
+            <div id="asset-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1f2e;border:1px solid rgba(255,255,255,.12);border-radius:0 0 6px 6px;z-index:200;max-height:200px;overflow-y:auto"></div>
+          </div>
+          <button class="btn-ol btn-sm" onclick="loadTopHoldings()" style="font-size:10px">↻</button>
+          <span style="font-size:10px;color:var(--soft)">click row to inspect</span>
+        </div>
+      </div>
+      <div id="port-holdings-table" style="font-size:12px"><div style="color:var(--soft);font-size:12px">No positions loaded.</div></div>
+    </div>
+
+    <!-- SECTION 4: Exposure Analytics -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Sector Exposure</div>
+        <div id="ck-sector-bars"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:75%;margin-bottom:6px"></div><div class="skel" style="width:50%"></div></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Asset Classes</div>
+        <div id="ck-asset-bars"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:60%"></div></div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: AI Portfolio Insights + Health Score + Broker Status -->
     <div style="display:grid;grid-template-columns:1fr 200px;gap:12px;margin-bottom:12px">
       <!-- AI Insights -->
       <div class="card" style="padding:14px">
@@ -3258,7 +3291,7 @@ body.mode-beginner .operator-only{display:none!important}
         <div id="ck-insights-stream"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:80%;margin-bottom:6px"></div><div class="skel" style="width:60%"></div></div>
         <div id="ck-port-summary" style="font-size:12px;color:var(--soft);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);line-height:1.6"></div>
       </div>
-      <!-- Risk Score + Broker Chips -->
+      <!-- Health Score + Broker Chips -->
       <div style="display:flex;flex-direction:column;gap:10px">
         <div class="card" style="padding:14px;text-align:center;flex:1">
           <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Health Score</div>
@@ -3283,46 +3316,21 @@ body.mode-beginner .operator-only{display:none!important}
       </div>
     </div>
 
-    <!-- Row 4: Sector Exposure + Asset Classes + Top Risks -->
+    <!-- SECTION 6: Concentration Warnings -->
+    <div class="card" style="padding:14px;margin-bottom:12px;border:1px solid rgba(250,204,21,.1)">
+      <div style="font-size:10px;font-weight:700;color:#facc15;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Concentration Warnings</div>
+      <div id="ck-warnings" style="font-size:12px;color:var(--soft);line-height:1.7">None detected.</div>
+    </div>
+
+    <!-- SECTION 7: Opportunities + Risks + Paper Ideas -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="card" style="padding:14px">
-        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Sector Exposure</div>
-        <div id="ck-sector-bars"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:75%;margin-bottom:6px"></div><div class="skel" style="width:50%"></div></div>
-      </div>
-      <div class="card" style="padding:14px">
-        <div style="font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Asset Classes</div>
-        <div id="ck-asset-bars"><div class="skel" style="margin-bottom:6px"></div><div class="skel" style="width:60%"></div></div>
-      </div>
-      <div class="card" style="padding:14px">
-        <div style="font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Top Risks</div>
-        <div id="ck-top-risks" style="font-size:12px;line-height:1.7"><span style="color:var(--soft)">—</span></div>
-        <div style="font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.7px;margin:10px 0 6px">Opportunities</div>
+        <div style="font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Opportunities</div>
         <div id="ck-opps" style="font-size:12px;line-height:1.7"><span style="color:var(--soft)">—</span></div>
       </div>
-    </div>
-
-    <!-- Row 5: Top Holdings -->
-    <div class="card" style="padding:14px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <span style="font-size:13px;font-weight:700" data-i18n="holdings">Holdings</span>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="position:relative">
-            <input id="asset-search-input" type="text" placeholder="Search symbol…"
-              style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--white);outline:none;width:150px"
-              oninput="assetSearchDebounce(this.value)" autocomplete="off" />
-            <div id="asset-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1f2e;border:1px solid rgba(255,255,255,.12);border-radius:0 0 6px 6px;z-index:200;max-height:200px;overflow-y:auto"></div>
-          </div>
-          <span style="font-size:11px;color:var(--soft)">click row to inspect</span>
-        </div>
-      </div>
-      <div id="port-holdings-table" style="font-size:12px"><div style="color:var(--soft);font-size:12px">No positions loaded.</div></div>
-    </div>
-
-    <!-- Row 6: Concentration Warnings + Paper Trade Ideas -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="card" style="padding:14px">
-        <div style="font-size:10px;font-weight:700;color:#facc15;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Concentration Warnings</div>
-        <div id="ck-warnings" style="font-size:12px;color:var(--soft);line-height:1.7">None detected.</div>
+        <div style="font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Top Risks</div>
+        <div id="ck-top-risks" style="font-size:12px;line-height:1.7"><span style="color:var(--soft)">—</span></div>
       </div>
       <div class="card" style="padding:14px">
         <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Paper Trade Ideas</div>
@@ -6731,17 +6739,19 @@ async function loadMarketSnapshot() {
    ══════════════════════════════════════════════════════════════ */
 
 function _fmtPnl(val) {
-  if (val == null || val === "" || val === 0) return '<span style="color:var(--soft)">—</span>';
+  if (val == null || val === "") return '<span style="color:var(--soft)">—</span>';
   const n = Number(val);
   if (isNaN(n) || !isFinite(n)) return '<span style="color:var(--soft)">—</span>';
+  if (n === 0) return '<span style="color:var(--soft)">$0</span>';
   const color = n >= 0 ? "#4ade80" : "#f87171";
   const sign  = n >= 0 ? "+" : "−";
   return `<span style="color:${color}">${sign}$${Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}</span>`;
 }
 function _fmtVal(val) {
-  if (val == null || val === "" || val === 0) return "—";
+  if (val == null || val === "") return "—";
   const n = Number(val);
-  if (isNaN(n) || !isFinite(n) || n === 0) return "—";
+  if (isNaN(n) || !isFinite(n)) return "—";
+  if (n === 0) return "$0";
   return "$" + n.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
@@ -6935,6 +6945,8 @@ async function loadTopHoldings() {
     const d1 = await _fetchWithTimeout("/api/portfolio/positions", {}, 10000);
     _holdingsData = (d1.positions || []).slice(0, 25);
     renderHoldingsTable(_holdingsData);
+    // Partial KPI update from raw positions (no yfinance yet)
+    _updateKpisFromHoldings(_holdingsData);
 
     // Phase 2: Enrich with live yfinance quotes (non-blocking, ~15min delayed)
     // Runs in background so holdings appear instantly even if yfinance is slow
@@ -6948,12 +6960,76 @@ async function loadTopHoldings() {
           _holdingsData.forEach(p => { prevMap[p.symbol] = p.daily_pnl || 0; });
           _holdingsData = enriched;
           renderHoldingsTable(enriched, prevMap);
+          // ── SINGLE SOURCE OF TRUTH ──
+          // Enriched positions have yfinance-computed PNL → these are the ground truth KPI values
+          _updateKpisFromHoldings(enriched);
         }
       })
       .catch(() => {}); // silently ignore yfinance failures
   } catch(e) {
     console.warn("loadTopHoldings:", e);
   }
+}
+
+// Recompute KPI card totals from the enriched holdings table.
+// This is the SINGLE SOURCE OF TRUTH: holdings data drives KPI cards.
+function _updateKpisFromHoldings(positions) {
+  if (!positions || !positions.length) return;
+
+  let totalUnrealized = 0, totalDaily = 0;
+  let topWinner = null, topLoser = null;
+  let totalValue = 0;
+
+  for (const p of positions) {
+    const qty = p.quantity ?? 0;
+    const avg = p.avg_cost ?? 0;
+
+    // Unrealized PNL: yfinance recalc > IBKR value > avg cost calc
+    let upnl = p.unrealized_pnl || 0;
+    if (p.yf_price && qty && avg && p.yf_price > 0) {
+      upnl = (p.yf_price - avg) * qty;
+    } else if (upnl === 0 && avg && p.market_price && p.market_price > 0) {
+      upnl = (p.market_price - avg) * qty;
+    }
+    totalUnrealized += upnl;
+
+    // Daily PNL
+    const dpnl = (p.daily_pnl_est != null && p.daily_pnl_est !== 0)
+      ? p.daily_pnl_est
+      : (p.daily_pnl || 0);
+    totalDaily += dpnl;
+
+    // Market value
+    const mktVal = (p.yf_price && qty) ? qty * p.yf_price
+      : (p.market_value && p.market_value > 0 ? p.market_value : 0);
+    totalValue += mktVal;
+
+    // Winner / Loser
+    if (!topWinner || upnl > (topWinner._upnl || 0)) topWinner = {...p, _upnl: upnl};
+    if (!topLoser  || upnl < (topLoser._upnl  || 0)) topLoser  = {...p, _upnl: upnl};
+  }
+
+  // Apply computed PNL (only if we have meaningful data)
+  if (totalUnrealized !== 0) _patchAcctState({ unrealized_pnl: totalUnrealized });
+  if (totalDaily      !== 0) _patchAcctState({ daily_pnl:      totalDaily });
+
+  // Winner / Loser
+  if (topWinner && topWinner._upnl > 0) {
+    const pct = (topWinner.avg_cost && topWinner.quantity)
+      ? (topWinner._upnl / (topWinner.avg_cost * topWinner.quantity) * 100) : null;
+    _patchAcctState({ top_winner_sym: topWinner.symbol, top_winner_pct: pct, top_winner_pnl: topWinner._upnl });
+    const wCard = document.getElementById("ck-winner-card");
+    if (wCard) wCard.onclick = () => openAssetDrawer(topWinner.symbol, topWinner);
+  }
+  if (topLoser && topLoser._upnl < 0) {
+    const pct = (topLoser.avg_cost && topLoser.quantity)
+      ? (topLoser._upnl / (topLoser.avg_cost * topLoser.quantity) * 100) : null;
+    _patchAcctState({ top_loser_sym: topLoser.symbol, top_loser_pct: pct, top_loser_pnl: topLoser._upnl });
+    const lCard = document.getElementById("ck-loser-card");
+    if (lCard) lCard.onclick = () => openAssetDrawer(topLoser.symbol, topLoser);
+  }
+
+  _renderAcctState();
 }
 
 // Auto-refresh holdings every 45 seconds in the background
@@ -8256,49 +8332,73 @@ async function loadCockpit(btn) {
     _set("ck-paper-cash",    _fmtVal(paper.cash));
     _set("ck-paper-trades",  String(paper.trade_count||0));
 
-    // ── Merge into Account State Engine (never overwrites valid data with zeros) ──
+    // ── Merge into Account State Engine ──────────────────────────────────────
     const latencyMs = Date.now() - t0;
+
+    // P&L fields: only accept if non-null, non-zero (broker aggregate may be missing)
     _patchAcctState({
       daily_pnl:       real.daily_pnl,
       daily_pnl_pct:   real.daily_pnl_pct,
       unrealized_pnl:  real.unrealized_pnl,
       realized_pnl:    real.realized_pnl,
-      net_liquidation: real.net_liquidation || real.total_value,
-      available_cash:  real.available_cash || real.cash,
+      paper_pnl:       paper.pnl_total,
+      paper_pnl_pct:   paper.pnl_pct,
+    });
+
+    // Cash / account fields: 0 is valid (explicitly from broker)
+    _patchAcctState({
+      net_liquidation: real.net_liquidation != null ? real.net_liquidation : real.total_value,
+      available_cash:  real.available_cash  != null ? real.available_cash  : real.cash,
       buying_power:    real.buying_power,
       invested:        real.invested,
       position_count:  real.position_count,
-      paper_pnl:       paper.pnl_total,
-      paper_pnl_pct:   paper.pnl_pct,
       paper_positions: paper.position_count,
-      broker_status:   ibkrLive ? "connected" : "offline",
-      from_cache:      fromCache,
-      latency_ms:      latencyMs,
-    });
+    }, true);
 
-    // Top winner / loser from positions
-    const allPos = (d.largest_positions || []);
-    if (allPos.length) {
-      const byUnreal = [...allPos].sort((a,b) => (b.unrealized_pnl||0) - (a.unrealized_pnl||0));
-      const winner   = byUnreal[0];
-      const loser    = byUnreal[byUnreal.length-1];
-      if (winner && (winner.unrealized_pnl||0) > 0) {
-        _patchAcctState({
-          top_winner_sym: winner.symbol,
-          top_winner_pct: winner.unrealized_pnl_pct,
-          top_winner_pnl: winner.unrealized_pnl,
-        });
-        const wCard = document.getElementById("ck-winner-card");
-        if (wCard) wCard.onclick = () => openAssetDrawer(winner.symbol, winner);
-      }
-      if (loser && (loser.unrealized_pnl||0) < 0) {
-        _patchAcctState({
-          top_loser_sym: loser.symbol,
-          top_loser_pct: loser.unrealized_pnl_pct,
-          top_loser_pnl: loser.unrealized_pnl,
-        });
-        const lCard = document.getElementById("ck-loser-card");
-        if (lCard) lCard.onclick = () => openAssetDrawer(loser.symbol, loser);
+    // Metadata
+    _patchAcctState({
+      broker_status: ibkrLive ? "connected" : "offline",
+      from_cache:    fromCache,
+      latency_ms:    latencyMs,
+    }, true);
+
+    // ── Winner / Loser — from API (computed from ALL positions server-side) ──
+    if (d.winner) {
+      _patchAcctState({
+        top_winner_sym: d.winner.symbol,
+        top_winner_pct: d.winner.unrealized_pnl_pct,
+        top_winner_pnl: d.winner.unrealized_pnl,
+      });
+      const wCard = document.getElementById("ck-winner-card");
+      if (wCard) wCard.onclick = () => openAssetDrawer(d.winner.symbol, d.winner);
+    }
+    if (d.loser) {
+      _patchAcctState({
+        top_loser_sym: d.loser.symbol,
+        top_loser_pct: d.loser.unrealized_pnl_pct,
+        top_loser_pnl: d.loser.unrealized_pnl,
+      });
+      const lCard = document.getElementById("ck-loser-card");
+      if (lCard) lCard.onclick = () => openAssetDrawer(d.loser.symbol, d.loser);
+    }
+
+    // Fallback winner/loser from largest_positions when broker PNL is available
+    if (!d.winner && !d.loser) {
+      const allPos = (d.largest_positions || []);
+      if (allPos.length) {
+        const byUnreal = [...allPos].sort((a,b) => (b.unrealized_pnl||0) - (a.unrealized_pnl||0));
+        const winner   = byUnreal[0];
+        const loser    = byUnreal[byUnreal.length-1];
+        if (winner && (winner.unrealized_pnl||0) > 0) {
+          _patchAcctState({ top_winner_sym: winner.symbol, top_winner_pct: winner.unrealized_pnl_pct, top_winner_pnl: winner.unrealized_pnl });
+          const wCard = document.getElementById("ck-winner-card");
+          if (wCard) wCard.onclick = () => openAssetDrawer(winner.symbol, winner);
+        }
+        if (loser && (loser.unrealized_pnl||0) < 0) {
+          _patchAcctState({ top_loser_sym: loser.symbol, top_loser_pct: loser.unrealized_pnl_pct, top_loser_pnl: loser.unrealized_pnl });
+          const lCard = document.getElementById("ck-loser-card");
+          if (lCard) lCard.onclick = () => openAssetDrawer(loser.symbol, loser);
+        }
       }
     }
 
@@ -15099,17 +15199,23 @@ const _acctState = {
   _refreshing:      false,
 };
 
-// Only update a state field if the new value is "better" than current
-// (non-null, non-zero, or explicitly provided as 0 with forceZero=true)
-function _patchAcctState(updates, forceZero = false) {
+// Cash and account fields where 0 is a valid, meaningful value
+const _ZERO_OK_FIELDS = new Set([
+  "available_cash","buying_power","net_liquidation","invested","position_count"
+]);
+
+// Update account state fields. Pass zeroOk=true (or array of field names) to allow
+// 0 as a valid value. Null always means "no data — preserve previous."
+function _patchAcctState(updates, zeroOk = false) {
   for (const [key, val] of Object.entries(updates)) {
     if (!(key in _acctState)) continue;
-    const isValid = val != null && val !== "" && (forceZero || val !== 0);
-    if (isValid || forceZero) {
+    if (val == null || val === "") continue;   // null = no data, never overwrite
+    const allowZero = zeroOk === true
+      || (Array.isArray(zeroOk) && zeroOk.includes(key))
+      || _ZERO_OK_FIELDS.has(key);
+    if (val !== 0 || allowZero) {
       _acctState[key] = val;
     }
-    // If invalid/zero but we have no previous value, preserve null (not 0)
-    // null → shows loading state; 0 → shows "$0" which is misleading
   }
   _acctState.last_update = Date.now();
 }

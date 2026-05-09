@@ -7512,19 +7512,63 @@ def portfolio_cockpit(current_user: dict = Depends(get_optional_user)):
             except Exception:
                 pass
 
+        # ── Position-level totals ─────────────────────────────────────────────
+        all_pos = snapshot.get("all_positions", [])
+
+        # Compute per-position sums as fallback when broker aggregate is zero
+        pos_unrealized = round(sum(float(p.get("unrealized_pnl") or 0) for p in all_pos), 2)
+        pos_daily      = round(sum(float(p.get("daily_pnl") or 0) for p in all_pos), 2)
+
+        daily_pnl_agg     = snapshot.get("total_daily_pnl") or 0
+        unrealized_pnl_agg = snapshot.get("total_unrealized_pnl") or 0
+
+        # Prefer broker aggregate; fall back to position sum
+        daily_pnl_final     = daily_pnl_agg if daily_pnl_agg != 0 else pos_daily
+        unrealized_pnl_final = unrealized_pnl_agg if unrealized_pnl_agg != 0 else pos_unrealized
+
+        # ── Winner / Loser — computed from ALL positions ──────────────────────
+        _winner: Optional[Dict] = None
+        _loser:  Optional[Dict] = None
+        if all_pos:
+            by_upnl = sorted(all_pos, key=lambda p: float(p.get("unrealized_pnl") or 0))
+            best = by_upnl[-1]
+            worst = by_upnl[0]
+            if float(best.get("unrealized_pnl") or 0) > 0:
+                _winner = {
+                    "symbol":      best.get("symbol", ""),
+                    "unrealized_pnl": float(best.get("unrealized_pnl") or 0),
+                    "unrealized_pnl_pct": float(best.get("unrealized_pnl_pct") or 0),
+                }
+            if float(worst.get("unrealized_pnl") or 0) < 0:
+                _loser = {
+                    "symbol":      worst.get("symbol", ""),
+                    "unrealized_pnl": float(worst.get("unrealized_pnl") or 0),
+                    "unrealized_pnl_pct": float(worst.get("unrealized_pnl_pct") or 0),
+                }
+
+        # ── Cash / buying power — never silently zero ─────────────────────────
+        snap_cash = snapshot.get("total_cash")                          # from broker sum
+        ibkr_bp   = ibkr_summary.get("buying_power")                   # IBKR margin account
+        ibkr_avail = (ibkr_cash.get("total_cash")
+                      or ibkr_summary.get("total_cash")
+                      or snap_cash)                                     # explicit cash figure
+        ibkr_netliq = (ibkr_summary.get("net_liquidation")
+                       or ibkr_cash.get("net_liquidation")
+                       or real_total or None)
+
         return {
             "status": "ok",
             "real": {
                 "total_value":       real_total,
                 "invested":          snapshot.get("total_market_value", 0),
-                "cash":              snapshot.get("total_cash", 0),
-                "daily_pnl":         snapshot.get("total_daily_pnl", 0),
-                "daily_pnl_pct":     snapshot.get("total_daily_pnl_pct", 0),
-                "unrealized_pnl":    snapshot.get("total_unrealized_pnl", 0),
-                "realized_pnl":      float(ibkr_pnl.get("realized_pnl") or ibkr_summary.get("realized_pnl") or 0),
-                "net_liquidation":   float(ibkr_summary.get("net_liquidation") or ibkr_cash.get("net_liquidation") or real_total or 0),
-                "buying_power":      float(ibkr_summary.get("buying_power") or 0),
-                "available_cash":    float(ibkr_cash.get("total_cash") or ibkr_summary.get("total_cash") or snapshot.get("total_cash") or 0),
+                "cash":              snap_cash,
+                "daily_pnl":         daily_pnl_final or None,
+                "daily_pnl_pct":     snapshot.get("total_daily_pnl_pct") or None,
+                "unrealized_pnl":    unrealized_pnl_final or None,
+                "realized_pnl":      float(ibkr_pnl.get("realized_pnl") or ibkr_summary.get("realized_pnl") or 0) or None,
+                "net_liquidation":   float(ibkr_netliq) if ibkr_netliq else None,
+                "buying_power":      float(ibkr_bp) if ibkr_bp else None,
+                "available_cash":    float(ibkr_avail) if ibkr_avail is not None else None,
                 "position_count":    snapshot.get("position_count", 0),
                 "_from_cache":       snapshot.get("_from_cache", False),
             },
@@ -7548,9 +7592,11 @@ def portfolio_cockpit(current_user: dict = Depends(get_optional_user)):
             },
             "sector_exposure":         snapshot.get("sector_exposure", [])[:6],
             "asset_class_exposure":    snapshot.get("asset_class_exposure", []),
-            "largest_positions":       snapshot.get("largest_positions", [])[:5],
+            "largest_positions":       snapshot.get("largest_positions", [])[:10],
             "concentration_warnings":  snapshot.get("concentration_warnings", [])[:3],
             "brokers":                 snapshot.get("brokers", {}),
+            "winner":                  _winner,
+            "loser":                   _loser,
             "real_trade": False,
         }
     except Exception as exc:
