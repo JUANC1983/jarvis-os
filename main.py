@@ -282,9 +282,48 @@ def _ge(user_id: str) -> GolfDashboardEngine:
         if user_id == "owner":
             _ge_cache[user_id] = golf_engine
         else:
-            bag_path = BASE_DIR / "data" / "golf" / f"bag_{user_id}.json"
-            _ge_cache[user_id] = GolfDashboardEngine(bag_file=str(bag_path))
+            golf_dir = BASE_DIR / "data" / "golf"
+            bag_path = golf_dir / f"bag_{user_id}.json"
+            stats_path = golf_dir / f"player_stats_{user_id}.json"
+            _ge_cache[user_id] = GolfDashboardEngine(
+                bag_file=str(bag_path),
+                stats_file=str(stats_path),
+            )
     return _ge_cache[user_id]
+
+def _safe_golf_empty_profile() -> dict:
+    return {
+        "handicap_index": None,
+        "rounds_logged": 0,
+        "recent_scores": [],
+        "best_score": None,
+        "avg_score": None,
+        "strengths": [],
+        "areas_to_improve": ["Sign in to load your golf profile."],
+        "last_round": None,
+    }
+
+def _golf_current_user_or_none(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict | None:
+    if not creds:
+        return None
+    return auth_engine.decode_token(creds.credentials)
+
+def _golf_audit(action: str, user_id: str, payload: dict | None = None) -> None:
+    try:
+        path = BASE_DIR / "data" / "golf" / "golf_audit.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "ts": datetime.utcnow().isoformat(),
+            "action": action,
+            "user_id": user_id,
+            "payload": payload or {},
+        }
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
 
 def _user_name(user_id: str) -> str:
     u = user_engine.get_user(user_id)
@@ -842,7 +881,7 @@ def _dispatch_tool(intent: str, message: str) -> dict | None:
         elif intent == "agents":
             return {"items": orchestrator.agent_status_snapshot()}
         elif intent == "golf":
-            return golf_engine.dashboard_summary(max_courses=4)
+            return golf_engine.dashboard_summary(max_courses=4, include_player=False)
         elif intent == "workspace":
             return workspace.home("Juan Camilo")
         elif intent == "medical":
@@ -1085,7 +1124,7 @@ def _agent_chat(message: str) -> dict | None:
         elif action == "agents":
             tool_result = {"items": orchestrator.agent_status_snapshot()}
         elif action == "golf":
-            tool_result = golf_engine.dashboard_summary(max_courses=4)
+            tool_result = golf_engine.dashboard_summary(max_courses=4, include_player=False)
         elif action == "workspace":
             tool_result = workspace.home("Juan Camilo")
         elif action in _COLLABORATED:
@@ -1704,14 +1743,19 @@ def news():
 # GOLF
 # =========================
 @app.get("/dashboard/golf")
-def golf():
+def golf(current_user: dict | None = Depends(_golf_current_user_or_none)):
     try:
-        return golf_engine.dashboard_summary(max_courses=6)
+        if not current_user:
+            summary = golf_engine.dashboard_summary(max_courses=6, include_player=False)
+            summary["player"] = _safe_golf_empty_profile()
+            summary["auth_required"] = True
+            return summary
+        return _ge(current_user["user_id"]).dashboard_summary(max_courses=6)
     except Exception as e:
         return {
             "courses":      [],
             "insights":     ["Golf data temporarily unavailable."],
-            "player":       {},
+            "player":       _safe_golf_empty_profile(),
             "generated_at": datetime.now().isoformat(),
             "error":        str(e),
         }
@@ -1771,15 +1815,16 @@ def golf_courses_search(q: str = "", limit: int = 10):
 
 
 @app.post("/api/golf/caddy")
-def golf_caddy(data: dict):
+def golf_caddy(data: dict, current_user: dict | None = Depends(_golf_current_user_or_none)):
     try:
+        ge = _ge(current_user["user_id"]) if current_user else golf_engine
         distance = float(data.get("distance") or 150)
         wind_mph = float(data.get("wind_mph") or 0)
         wind_direction = str(data.get("wind_direction") or "neutral")
         elevation_delta = float(data.get("elevation_delta_yards") or 0)
         lie = str(data.get("lie") or "fairway")
         temperature_c = float(data.get("temperature_c") or 22)
-        result = golf_engine.caddie(
+        result = ge.caddie(
             distance=distance,
             wind_mph=wind_mph,
             wind_direction=wind_direction,
@@ -1793,22 +1838,26 @@ def golf_caddy(data: dict):
 
 
 @app.get("/api/golf/profile")
-def golf_profile():
+def golf_profile(current_user: dict | None = Depends(_golf_current_user_or_none)):
+    if not current_user:
+        return {"status": "auth_required", "profile": _safe_golf_empty_profile()}
     try:
-        return {"status": "ok", "profile": golf_engine.get_profile()}
+        return {"status": "ok", "profile": _ge(current_user["user_id"]).get_profile()}
     except Exception as e:
-        return {"status": "error", "profile": {}, "error": str(e)}
+        return {"status": "error", "profile": _safe_golf_empty_profile(), "error": str(e)}
 
 
 @app.post("/api/golf/profile/round")
-def golf_log_round(data: dict):
+def golf_log_round(data: dict, current_user: dict = Depends(get_current_user)):
+    uid = current_user["user_id"]
     try:
         score = int(data.get("score") or 0)
         course_name = str(data.get("course_name") or "Unknown course")
         notes = str(data.get("notes") or "")
         if score < 18 or score > 200:
             raise HTTPException(status_code=400, detail="score must be between 18 and 200")
-        stats = golf_engine.log_round(score, course_name, notes)
+        stats = _ge(uid).log_round(score, course_name, notes)
+        _golf_audit("round_logged", uid, {"score": score, "course_name": course_name})
         return {"status": "ok", "profile": stats}
     except HTTPException:
         raise
@@ -2179,7 +2228,9 @@ def news_analyze(data: dict):
 # GOLF BAG API
 # ================================================================
 @app.get("/api/golf/bag")
-def get_golf_bag(current_user: dict = Depends(get_optional_user)):
+def get_golf_bag(current_user: dict | None = Depends(_golf_current_user_or_none)):
+    if not current_user:
+        return {"status": "auth_required", "bag": []}
     uid = current_user["user_id"]
     try:
         return {"status": "ok", "bag": _ge(uid).get_bag()}
@@ -2188,13 +2239,14 @@ def get_golf_bag(current_user: dict = Depends(get_optional_user)):
 
 
 @app.post("/api/golf/bag")
-def save_golf_bag(data: dict, current_user: dict = Depends(get_optional_user)):
+def save_golf_bag(data: dict, current_user: dict = Depends(get_current_user)):
     uid = current_user["user_id"]
     try:
         clubs = data.get("clubs", [])
         if not isinstance(clubs, list):
             raise HTTPException(status_code=400, detail="clubs must be a list")
         saved = _ge(uid).save_bag(clubs)
+        _golf_audit("bag_saved", uid, {"club_count": len(saved)})
         return {"status": "ok", "bag": saved}
     except HTTPException:
         raise
@@ -2203,22 +2255,24 @@ def save_golf_bag(data: dict, current_user: dict = Depends(get_optional_user)):
 
 
 @app.put("/api/golf/bag/{club_name}")
-def update_club(club_name: str, data: dict, current_user: dict = Depends(get_optional_user)):
+def update_club(club_name: str, data: dict, current_user: dict = Depends(get_current_user)):
     uid = current_user["user_id"]
     try:
         result = _ge(uid).upsert_club(club_name, data)
+        _golf_audit("club_upserted", uid, {"club": club_name})
         return {"status": "ok", "club": result}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 
 @app.delete("/api/golf/bag/{club_name}")
-def delete_golf_club(club_name: str, current_user: dict = Depends(get_optional_user)):
+def delete_golf_club(club_name: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["user_id"]
     try:
         removed = _ge(uid).delete_club(club_name)
         if not removed:
             raise HTTPException(status_code=404, detail=f"Club '{club_name}' not found in bag")
+        _golf_audit("club_deleted", uid, {"club": club_name})
         return {"status": "ok", "removed": club_name}
     except HTTPException:
         raise

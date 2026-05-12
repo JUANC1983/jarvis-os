@@ -137,7 +137,11 @@ class GolfDashboardEngine:
     STATS_FILE = Path("data/golf/player_stats.json")
     BAG_FILE   = Path("data/golf/player_bag.json")
 
-    def __init__(self, bag_file: "str | Path | None" = None) -> None:
+    def __init__(
+        self,
+        bag_file: "str | Path | None" = None,
+        stats_file: "str | Path | None" = None,
+    ) -> None:
         self.db = GolfCourseDatabase()
         self._weather_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
         self._cache_lock = threading.Lock()
@@ -146,6 +150,9 @@ class GolfDashboardEngine:
         if bag_file is not None:
             self.BAG_FILE = Path(bag_file)
             self.BAG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if stats_file is not None:
+            self.STATS_FILE = Path(stats_file)
+            self.STATS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
         # Instantiate heavy engines only once, guarded
         self._agent: Optional[Any] = _GolfAIAgent() if _AGENT_AVAILABLE else None
@@ -154,7 +161,7 @@ class GolfDashboardEngine:
     # ------------------------------------------------------------------ #
     # Public — dashboard summary                                           #
     # ------------------------------------------------------------------ #
-    def dashboard_summary(self, max_courses: int = 6) -> Dict[str, Any]:
+    def dashboard_summary(self, max_courses: int = 6, include_player: bool = True) -> Dict[str, Any]:
         courses_raw = self._load_featured_courses(max_courses)
         n = len(courses_raw)
         courses_out: List[Optional[Dict[str, Any]]] = [None] * n
@@ -203,7 +210,7 @@ class GolfDashboardEngine:
         courses_final: List[Dict[str, Any]] = [c for c in courses_out if c is not None]
 
         insights = self._generate_insights(courses_final)
-        player   = self._player_summary()
+        player   = self._player_summary() if include_player else {}
 
         return {
             "courses":      courses_final,
@@ -446,7 +453,7 @@ class GolfDashboardEngine:
 
         # 5. Player performance context (if rounds exist)
         try:
-            stats = self._load_player_stats()
+            stats = self.get_profile()
             if stats.get("rounds_logged", 0) >= 3 and stats.get("avg_score"):
                 avg = stats["avg_score"]
                 best_s = stats.get("best_score")
@@ -463,7 +470,7 @@ class GolfDashboardEngine:
     # Player — wires GolfBiomechanicsEngine when available               #
     # ------------------------------------------------------------------ #
     def _player_summary(self) -> Dict[str, Any]:
-        stats = self._load_player_stats()
+        stats = self.get_profile()
 
         swing_feedback     = "Upload a swing video to unlock biomechanics analysis."
         swing_recommendation = "Log your first round to get personalised coaching."
@@ -559,7 +566,7 @@ class GolfDashboardEngine:
         return self.db.search_by_name(query, limit=limit)
 
     def get_profile(self) -> Dict[str, Any]:
-        return self._load_player_stats()
+        return self._recompute_player_stats(self._load_player_stats())
 
     # ------------------------------------------------------------------ #
     # Player stats persistence                                            #
@@ -574,6 +581,7 @@ class GolfDashboardEngine:
         default: Dict[str, Any] = {
             "handicap_index":   None,
             "rounds_logged":    0,
+            "rounds":           [],
             "recent_scores":    [],
             "best_score":       None,
             "avg_score":        None,
@@ -588,23 +596,84 @@ class GolfDashboardEngine:
 
     # kept as public alias for backward compat
     def _player_stats(self) -> Dict[str, Any]:
-        return self._load_player_stats()
+        return self.get_profile()
+
+    def _rounds_from_stats(self, stats: Dict[str, Any]) -> List[Dict[str, Any]]:
+        rounds = stats.get("rounds")
+        if isinstance(rounds, list):
+            normalized: List[Dict[str, Any]] = []
+            for r in rounds:
+                if not isinstance(r, dict):
+                    continue
+                raw_score = r.get("score", r.get("total_score"))
+                if not isinstance(raw_score, (int, float)):
+                    continue
+                normalized.append({
+                    "date":   str(r.get("date") or r.get("ts") or ""),
+                    "course": str(r.get("course") or r.get("course_name") or "Unknown course"),
+                    "score":  int(raw_score),
+                    "notes":  str(r.get("notes") or ""),
+                })
+            if normalized:
+                return normalized
+
+        recent = stats.get("recent_scores", [])
+        if not isinstance(recent, list):
+            return []
+        scores = [int(s) for s in recent if isinstance(s, (int, float))]
+        if not scores:
+            return []
+
+        last = stats.get("last_round") if isinstance(stats.get("last_round"), dict) else {}
+        rounds_out: List[Dict[str, Any]] = []
+        for i, score in enumerate(scores):
+            is_last = i == len(scores) - 1
+            rounds_out.append({
+                "date":   str(last.get("date") or "") if is_last else "",
+                "course": str(last.get("course") or "Legacy round") if is_last else "Legacy round",
+                "score":  score,
+                "notes":  str(last.get("notes") or "") if is_last else "",
+            })
+        return rounds_out
+
+    def _recompute_player_stats(self, stats: Dict[str, Any]) -> Dict[str, Any]:
+        stats = dict(stats or {})
+        rounds = self._rounds_from_stats(stats)
+        scores = [r["score"] for r in rounds if isinstance(r.get("score"), (int, float))]
+        stats["rounds"] = rounds
+        stats["rounds_logged"] = len(rounds)
+        stats["recent_scores"] = scores[-10:]
+        if scores:
+            stats["best_score"] = min(scores)
+            stats["avg_score"] = round(sum(scores) / len(scores), 1)
+            try:
+                stats["handicap_index"] = round(max(0.0, stats["avg_score"] - 72), 1)
+            except Exception:
+                stats["handicap_index"] = None
+            stats["last_round"] = rounds[-1]
+        else:
+            stats.setdefault("handicap_index", None)
+            stats.setdefault("best_score", None)
+            stats.setdefault("avg_score", None)
+            stats.setdefault("last_round", None)
+        stats.setdefault("strengths", [])
+        stats.setdefault("areas_to_improve", ["Track a round to unlock insights"])
+        return stats
+
+    def get_rounds(self) -> List[Dict[str, Any]]:
+        return self._recompute_player_stats(self._load_player_stats()).get("rounds", [])
 
     def log_round(self, score: int, course_name: str, notes: str = "") -> Dict[str, Any]:
         stats = self._load_player_stats()
-        stats["rounds_logged"] = stats.get("rounds_logged", 0) + 1
-        stats["last_round"] = {
+        rounds = self._rounds_from_stats(stats)
+        rounds.append({
             "date":   datetime.utcnow().isoformat(),
             "course": course_name,
             "score":  score,
             "notes":  notes,
-        }
-        recent = stats.get("recent_scores", [])
-        recent.append(score)
-        recent = recent[-10:]
-        stats["recent_scores"] = recent
-        stats["best_score"] = min(recent)
-        stats["avg_score"]  = round(sum(recent) / len(recent), 1)
+        })
+        stats["rounds"] = rounds
+        stats = self._recompute_player_stats(stats)
         self.STATS_FILE.write_text(
             json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8"
         )
