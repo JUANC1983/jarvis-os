@@ -5985,6 +5985,8 @@ let _tabSwitchTimer = null;
 let _tabSwitchPendingName = null;
 function switchTab(name) {
   if (!name || window.JARVIS_TABS.loading[name]) return;
+  const prevTab = window.JARVIS_TABS.active;
+  if (prevTab === "golf" && name !== "golf" && window.__jarvisStopSwingVision) window.__jarvisStopSwingVision();
   window.JARVIS_TABS.loading[name] = true;
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".tab-btn,.mob-btn").forEach(b => b.classList.remove("active"));
@@ -10322,6 +10324,13 @@ const sv = {
   liveCueMs:       0,
   liveCueGap:      500,      // ms between live-cue POSTs
   mpLoaded:        false,
+  loopId:          null,
+  generation:      0,
+  frameInFlight:   false,
+  cueInFlight:     false,
+  analysisAbort:   null,
+  cueAbort:        null,
+  swingAbort:      null,
 };
 
 // ── lazy MediaPipe loader ─────────────────────────────────────────────
@@ -10453,6 +10462,9 @@ async function _startSwingCamera(facingMode, keepPose) {
 function _stopSwingCamera() {
   sv.active    = false;
   sv.recording = false;
+  sv.generation++;
+  if (sv.loopId) { cancelAnimationFrame(sv.loopId); sv.loopId = null; }
+  _abortSwingLiveRequests();
   if (sv.stream) { sv.stream.getTracks().forEach(t => t.stop()); sv.stream = null; }
   const video = qs("svVideo");
   if (video) video.srcObject = null;
@@ -10467,13 +10479,36 @@ function _stopSwingCamera() {
   _setRecordBarVisible(false);
 }
 
+function _abortSwingLiveRequests() {
+  try { sv.analysisAbort?.abort(); } catch(e) {}
+  try { sv.cueAbort?.abort(); } catch(e) {}
+  try { sv.swingAbort?.abort(); } catch(e) {}
+  sv.analysisAbort = null;
+  sv.cueAbort = null;
+  sv.swingAbort = null;
+  sv.frameInFlight = false;
+  sv.cueInFlight = false;
+}
+
+window.__jarvisStopSwingVision = function() {
+  if (sv.active) _stopSwingCamera();
+};
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && sv.active) _stopSwingCamera();
+});
+window.addEventListener("pagehide", () => {
+  if (sv.active) _stopSwingCamera();
+});
+
 async function _poseLoop() {
   if (!sv.active || !sv.pose) return;
+  const gen = sv.generation;
   const video = qs("svVideo");
   if (video && video.readyState >= 2) {
     await sv.pose.send({ image: video });
   }
-  requestAnimationFrame(_poseLoop);
+  if (sv.active && sv.generation === gen) sv.loopId = requestAnimationFrame(_poseLoop);
 }
 
 // ── pose results ──────────────────────────────────────────────────────
@@ -10555,32 +10590,56 @@ function _drawFallbackSkeleton(ctx, lms, w, h) {
 
 // ── real-time frame analysis ──────────────────────────────────────────
 async function _sendFrameAnalysis(landmarks) {
+  if (sv.frameInFlight || !sv.active) return;
+  const gen = sv.generation;
+  sv.frameInFlight = true;
+  sv.analysisAbort = new AbortController();
   try {
     const d = await fetch("/api/golf/vision/analyze", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
+      signal:  sv.analysisAbort.signal,
       body:    JSON.stringify({ landmarks }),
     }).then(r => r.json());
-    if (d.status === "ok") _renderLiveMetrics(d);
-  } catch(e) { /* real-time — silent fail */ }
+    if (d.status === "ok" && sv.active && sv.generation === gen) _renderLiveMetrics(d);
+  } catch(e) {
+    if (e.name !== "AbortError") { /* live stream: keep UI quiet */ }
+  } finally {
+    if (sv.generation === gen) {
+      sv.frameInFlight = false;
+      sv.analysisAbort = null;
+    }
+  }
 }
 
 async function _sendLiveCue(landmarks) {
   const cueEl = qs("sv-live-cue");
   if (!cueEl) return;
+  if (sv.cueInFlight || !sv.active) return;
+  const gen = sv.generation;
+  sv.cueInFlight = true;
+  sv.cueAbort = new AbortController();
   try {
     const d = await fetch("/api/golf/elite/live", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
+      signal:  sv.cueAbort.signal,
       body:    JSON.stringify({ landmarks, lang: _svLang }),
     }).then(r => r.json());
-    if (d.status === "ok" && d.cue) {
+    if (d.status === "ok" && d.cue && sv.active && sv.generation === gen) {
       cueEl.textContent    = d.cue;
       cueEl.style.display  = "";
       cueEl.style.color    = d.color || "#fff";
       cueEl.style.borderColor = d.color || "#888";
     }
-  } catch(e) { /* live coach — silent fail */ }
+  } catch(e) {
+    if (e.name !== "AbortError") { /* live coach: keep UI quiet */ }
+  } finally {
+    if (sv.generation === gen) {
+      sv.cueInFlight = false;
+      sv.cueAbort = null;
+    }
+  }
 }
 
 function _renderLiveMetrics(d) {
@@ -10650,13 +10709,18 @@ function svSetLang(lang) {
 
 async function _sendSwingAnalysis() {
   const club = qs("svClubSelect")?.value || "unknown";
+  const gen = sv.generation;
+  try { sv.swingAbort?.abort(); } catch(e) {}
+  sv.swingAbort = new AbortController();
   qs("svStatus").textContent = _svLang === "es" ? "Analizando swing…" : "Analyzing swing…";
   try {
     const d = await fetch("/api/golf/elite/analyze", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
+      signal:  sv.swingAbort.signal,
       body:    JSON.stringify({ frames: sv.frames, club, fps: 30.0, lang: _svLang }),
     }).then(r => r.json());
+    if (sv.generation !== gen) return;
     if (d.status === "ok") {
       _renderEliteResult(d);
       loadSwingHistory();
@@ -10667,7 +10731,10 @@ async function _sendSwingAnalysis() {
       qs("svStatus").textContent = "Error: " + (d.error || "unknown");
     }
   } catch(e) {
+    if (e.name === "AbortError") return;
     qs("svStatus").textContent = "Error: " + e.message;
+  } finally {
+    if (sv.generation === gen) sv.swingAbort = null;
   }
 }
 
