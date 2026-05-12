@@ -10238,14 +10238,23 @@ async function golfCaddie() {
     const club = d.recommended_club || "—";
     const adj  = d.adjusted_distance || distance;
     const why  = (d.why || []).join(" ");
+    const conf = (d.confidence || "medium").toLowerCase();
+    const confColor = conf === "high" ? "var(--ok)" : conf === "low" ? "var(--warn)" : "var(--cyan)";
+    const basis = d.recommendation_basis || (d.personalized ? "Your saved bag + shot conditions" : "Generic distance table + shot conditions");
+    const confidenceLabel = d.confidence_label || (d.personalized ? "Personalized" : "Generic estimate");
     resEl.innerHTML = `
       <div style="text-align:center;padding:16px 0">
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--soft);margin-bottom:6px">Recommended Club</div>
-        <div style="font-size:28px;font-weight:800;color:var(--cyan)">${club}</div>
+        <div style="font-size:28px;font-weight:800;color:var(--cyan)">${_esc(club)}</div>
         <div style="font-size:13px;color:var(--soft);margin-top:4px">Adjusted: ${adj} yds</div>
+        <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px">
+          <span class="badge" style="font-size:10px;background:transparent;border:1px solid ${confColor};color:${confColor};text-transform:uppercase">${_esc(confidenceLabel)}</span>
+          <span class="badge" style="font-size:10px;background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--soft)">${d.personalized ? "personalized" : "generic"}</span>
+        </div>
       </div>
-      ${why ? `<div class="golf-insight" style="font-size:13px">${why}</div>` : ""}
-      ${d.caddie_note ? `<div style="margin-top:8px;font-size:12px;color:var(--soft2)">${d.caddie_note}</div>` : ""}`;
+      <div style="font-size:11px;color:var(--soft);line-height:1.5;margin-bottom:8px">Basis: ${_esc(basis)}</div>
+      ${why ? `<div class="golf-insight" style="font-size:13px">${_esc(why)}</div>` : ""}
+      ${d.caddie_note ? `<div style="margin-top:8px;font-size:12px;color:var(--soft2)">${_esc(d.caddie_note)}</div>` : ""}`;
   } catch(e) {
     resEl.innerHTML = `<div style="color:var(--bad);font-size:13px">Connection error.</div>`;
     console.warn("golfCaddie:", e);

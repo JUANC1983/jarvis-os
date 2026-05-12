@@ -527,9 +527,10 @@ class GolfDashboardEngine:
         temperature_c: float = 22.0,
     ) -> Dict[str, Any]:
         """Club recommendation. Uses GolfAIAgent when available; pure-math fallback otherwise."""
+        agent_result: Optional[Dict[str, Any]] = None
         if self._agent is not None:
             try:
-                return self._agent.recommend_club(
+                agent_result = self._agent.recommend_club(
                     distance=distance,
                     wind_mph=wind_mph,
                     wind_direction=wind_direction,
@@ -553,13 +554,47 @@ class GolfDashboardEngine:
             adjusted += 5
         elif lie.lower() in ["bunker", "fairway_bunker"]:
             adjusted += 10
-        club = _club_from_distance(adjusted)
+        club = str((agent_result or {}).get("recommended_club") or _club_from_distance(adjusted))
+        basis = "AI model + current shot conditions" if agent_result else "Generic distance table + current shot conditions"
+        confidence = "medium"
+        confidence_label = "Model estimate" if agent_result else "Generic estimate"
+        personalized = False
+        matched_distance = None
+        distance_gap = None
+
+        # Trust rule: only claim personalization when a user-owned bag file exists.
+        if self.BAG_FILE.exists():
+            try:
+                bag = [
+                    c for c in self.get_bag()
+                    if isinstance(c, dict) and isinstance(c.get("carry_yards"), (int, float)) and c.get("carry_yards", 0) > 0
+                ]
+                if bag:
+                    best = min(bag, key=lambda c: abs(float(c.get("carry_yards", 0)) - adjusted))
+                    gap = abs(float(best.get("carry_yards", 0)) - adjusted)
+                    if gap <= 25:
+                        club = str(best.get("club") or club)
+                        matched_distance = round(float(best.get("carry_yards", 0)), 1)
+                        distance_gap = round(gap, 1)
+                        personalized = True
+                        basis = "Your saved bag carry distances + current shot conditions"
+                        confidence = "high" if gap <= 8 else ("medium" if gap <= 15 else "low")
+                        confidence_label = f"Bag match within {distance_gap} yds"
+            except Exception:
+                pass
+
         return {
             "requested_distance": round(float(distance), 1),
             "adjusted_distance": round(float(adjusted), 1),
             "recommended_club": club,
-            "why": [f"Adjusted distance: {round(float(adjusted), 1)} yds.", f"Lie: {lie}.", f"Wind: {wind_direction} {wind_mph} mph."],
+            "why": (agent_result or {}).get("why") or [f"Adjusted distance: {round(float(adjusted), 1)} yds.", f"Lie: {lie}.", f"Wind: {wind_direction} {wind_mph} mph."],
             "caddie_note": f"With {club}, prioritize solid contact and conservative target.",
+            "personalized": personalized,
+            "recommendation_basis": basis,
+            "confidence": confidence,
+            "confidence_label": confidence_label,
+            "matched_club_distance": matched_distance,
+            "distance_gap_yards": distance_gap,
         }
 
     def search_courses(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
