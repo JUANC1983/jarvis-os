@@ -1390,6 +1390,82 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     grid-template-columns:1fr;overflow:auto;
   }
 }
+
+/* X14.5: outdoor and tripod optimization */
+.sv-fullscreen-active .sv-stage-card{
+  --sv-outdoor-stroke:0 2px 4px rgba(0,0,0,.92);
+}
+.sv-fullscreen-active .sv-stage-card .ch,
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode,
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn,
+.sv-fullscreen-active .sv-stage-actions #svFullscreenBtn,
+.sv-fullscreen-active .sv-stage-actions #svStartBtn,
+.sv-fullscreen-active .sv-switch-btn,
+.sv-fullscreen-active .sv-hud-pill,
+.sv-fullscreen-active .sv-record-hud{
+  background:rgba(0,0,0,.78)!important;border-color:rgba(255,255,255,.34)!important;
+  text-shadow:var(--sv-outdoor-stroke);backdrop-filter:blur(8px) saturate(1.1);
+}
+.sv-fullscreen-active .sv-hud-pill{
+  min-height:40px;padding:8px 13px;font-size:13px;letter-spacing:.03em;
+}
+.sv-fullscreen-active .sv-hud-dot{width:10px;height:10px}
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode,
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+  min-height:46px!important;height:46px!important;min-width:94px;font-size:13px!important;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn.active{
+  background:rgba(0,98,62,.82)!important;border-color:rgba(88,255,177,.7)!important;
+}
+.sv-fullscreen-active .sv-fit-box{
+  border-color:rgba(255,255,255,.74);box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.55);
+}
+.sv-fullscreen-active .sv-fit-box.good{border-color:rgba(74,255,164,.95)}
+.sv-fullscreen-active .sv-fit-box.warn{border-color:rgba(255,219,93,.98)}
+.sv-fullscreen-active .sv-fit-box.bad{border-color:rgba(255,100,100,.98)}
+.sv-fullscreen-active #svRecordBtn{
+  filter:contrast(1.08) saturate(1.08);
+}
+.sv-fullscreen-active #svRecordBtn::before{
+  content:"Range ready";font-size:9px;font-weight:1000;letter-spacing:.14em;color:rgba(255,255,255,.82);
+}
+.sv-fullscreen-active #svRecordBtn.btn-recording::before{
+  content:"Recording";
+  color:rgba(130,0,0,.78);
+}
+
+@media(min-width:701px) and (orientation:portrait){
+  .sv-fullscreen-active .sv-stage-card{--sv-camera-target:74dvh;--sv-drawer-height:clamp(104px,16dvh,142px)}
+  .sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode{left:max(22px,env(safe-area-inset-left) + 10px)}
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{right:max(22px,env(safe-area-inset-right) + 10px)}
+  .sv-fullscreen-active #svRecordBtn{bottom:calc(var(--sv-drawer-height) + max(28px,env(safe-area-inset-bottom) + 28px))}
+}
+
+@media(min-width:900px){
+  .sv-fullscreen-active .sv-hud-pill{font-size:14px;min-height:44px}
+  .sv-fullscreen-active #svRecordBtn{
+    width:clamp(224px,24vw,292px)!important;height:82px!important;font-size:20px!important;
+  }
+  .sv-fullscreen-active .sv-record-hud{font-size:18px;min-height:56px}
+  .sv-fullscreen-active #svRecordTimer{font-size:22px}
+}
+
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode,
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+    min-height:44px!important;height:44px!important;
+  }
+  .sv-fullscreen-active .sv-sports-hud{top:max(12px,env(safe-area-inset-top));gap:8px}
+  .sv-fullscreen-active .sv-hud-pill{min-height:38px;font-size:12px}
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
