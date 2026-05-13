@@ -11518,6 +11518,10 @@ const sv = {
   voiceLastText:   "",
   voiceLastByKey:  {},
   voiceCurrent:    null,
+  voiceCoachHistory: [],
+  maxVoiceCoachHistory: 8,
+  voiceSilentSwings: 0,
+  voiceSwingCount:  0,
   telemetry:       {
     startedMs: 0,
     lastFrameMs: 0,
@@ -12908,15 +12912,115 @@ function _buildSwingVoiceResultCue(card, score) {
   return `${score}${tendency}. ${card.action}`;
 }
 
+function _voiceCoachTendencyText(card) {
+  return String(card?.tendency || "").replace(/^possible tendency: |^inferred tendency: /, "").trim();
+}
+
+function _voiceCoachPrefix(confidence, phrase) {
+  const clean = String(phrase || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  if (confidence === "low") return `Possible ${clean}.`;
+  if (confidence === "medium") return `Likely ${clean}.`;
+  return clean.charAt(0).toUpperCase() + clean.slice(1) + ".";
+}
+
+function _tempoCoachScore(ratio) {
+  const value = Number(ratio || 0);
+  return value ? Math.round(Math.max(0, Math.min(100, 100 - Math.abs(value - 3.0) * 24))) : 0;
+}
+
+function _lastSpokenCoach(key, lookback = 4) {
+  const history = sv.voiceCoachHistory || [];
+  return history.slice(-lookback).reverse().find(item => item.spoken && item.key === key) || null;
+}
+
+function _rememberSwingVoiceDecision(entry) {
+  sv.voiceCoachHistory.push({ ts: Date.now(), ...entry });
+  const limit = Math.max(3, Math.min(12, sv.maxVoiceCoachHistory || 8));
+  if (sv.voiceCoachHistory.length > limit) sv.voiceCoachHistory.splice(0, sv.voiceCoachHistory.length - limit);
+}
+
+function _selectSwingVoiceCoachCue(analysis, cards) {
+  sv.voiceSwingCount++;
+  const previous = Array.isArray(sv.replaySessions) ? sv.replaySessions[0] : null;
+  const prevMetrics = previous?.metrics || {};
+  const current = sv.bioLatest || {};
+  const candidates = [];
+  const addCandidate = (key, text, confidence = "medium", priority = 1, repeatable = false) => {
+    if (!text) return;
+    candidates.push({ key, text, confidence, priority, repeatable });
+  };
+
+  const tempo = Number(current.tempo_ratio || analysis?.tempo_ratio || 0);
+  const prevTempo = Number(prevMetrics.tempo_ratio || 0);
+  if (tempo && prevTempo) {
+    const delta = _tempoCoachScore(tempo) - _tempoCoachScore(prevTempo);
+    if (delta >= 7) addCandidate("trend-tempo", "Tempo improving.", tempo > 2.4 && tempo < 3.6 ? "high" : "medium", 3, true);
+    else if (Math.abs(tempo - prevTempo) <= 0.12 && tempo > 2.5 && tempo < 3.5 && sv.voiceSilentSwings >= 2) {
+      addCandidate("stable-tempo", "Tempo staying consistent.", "medium", 1.2);
+    }
+  }
+
+  const balance = Number(current.balance_score || 0);
+  const prevBalance = Number(prevMetrics.balance_score || 0);
+  if (balance && prevBalance) {
+    const delta = balance - prevBalance;
+    if (delta >= 7) addCandidate("trend-balance", "Balance more stable.", balance >= 72 ? "high" : "medium", 3, true);
+    else if (delta <= -10) addCandidate("issue-balance", _voiceCoachPrefix(balance < 50 ? "medium" : "low", "balance looked less stable"), balance < 50 ? "medium" : "low", 2);
+  }
+
+  const stability = Number(current.stability_score || 0);
+  const prevStability = Number(prevMetrics.stability_score || 0);
+  if (stability && prevStability) {
+    const delta = stability - prevStability;
+    if (delta >= 7) addCandidate("trend-transition", "Transition smoother.", stability >= 72 ? "high" : "medium", 2.8, true);
+    else if (delta <= -10) addCandidate("issue-posture", _voiceCoachPrefix(stability < 50 ? "medium" : "low", "posture drift increased"), stability < 50 ? "medium" : "low", 2);
+  }
+
+  const club = sv.clubLatest;
+  const plane = club?.inferred?.planeLabel || "";
+  if (plane === "steep" && club?.confidence !== "low") {
+    const again = _lastSpokenCoach("issue-club-plane", 5) ? " again" : "";
+    addCandidate("issue-club-plane", _voiceCoachPrefix(club.confidence, `estimated club path looked steep${again}`), club.confidence, again ? 2.7 : 2.2);
+  }
+
+  for (const card of cards || []) {
+    const tendency = _voiceCoachTendencyText(card);
+    if (!tendency || card.observed?.startsWith("Selected capture angle")) continue;
+    const positive = /balanced tempo|stable finish|steady posture|good turn separation/.test(tendency);
+    if (positive && sv.voiceSilentSwings < 2) continue;
+    const key = `card-${tendency}`;
+    const text = positive
+      ? (tendency === "balanced tempo" ? "Good tempo." : `${tendency}.`)
+      : _buildSwingVoiceResultCue(card, "");
+    addCandidate(key, text, card.confidence, positive ? 1.1 : 1.8);
+  }
+
+  candidates.sort((a, b) => b.priority - a.priority);
+  const last = sv.voiceCoachHistory?.[sv.voiceCoachHistory.length - 1];
+  for (const candidate of candidates) {
+    if (candidate.confidence === "low" && candidate.priority < 2.4) continue;
+    if (!candidate.repeatable && _lastSpokenCoach(candidate.key, 3)) continue;
+    if (last?.spoken && candidate.priority < 2.5) continue;
+    return candidate;
+  }
+  return null;
+}
+
 function _speakSwingResult(analysis) {
   if (!sv.voiceEnabled) return;
   const cards = _buildGolfCoachCards(analysis || {}, (_svLang || "es") === "es");
-  const best = cards.find(c => c.confidence !== "low") || cards[0];
-  const score = analysis?.score != null ? `Score ${analysis.score}. ` : "";
-  const cue = _buildSwingVoiceResultCue(best, score);
-  _queueSwingVoice(cue, "result", {
-    confidence: best?.confidence || "medium",
-    key: best ? `result-${best.confidence}-${best.tendency}` : "result-reviewed",
+  const selected = _selectSwingVoiceCoachCue(analysis || {}, cards);
+  if (!selected) {
+    sv.voiceSilentSwings++;
+    _rememberSwingVoiceDecision({ spoken: false, key: "silent", confidence: "none" });
+    return;
+  }
+  sv.voiceSilentSwings = 0;
+  _rememberSwingVoiceDecision({ spoken: true, key: selected.key, confidence: selected.confidence, text: selected.text });
+  _queueSwingVoice(selected.text, "result", {
+    confidence: selected.confidence || "medium",
+    key: selected.key,
   });
 }
 
