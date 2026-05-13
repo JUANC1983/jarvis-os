@@ -6028,7 +6028,7 @@ function switchTab(name) {
       if (name === "overview") { try { loadUnifiedPriorities(); } catch(_) {} }
       if (name === "intelligence") { try { loadNews(); loadAgents(); } catch(_) {} }
       if (["running","cycling","gym","tennis"].includes(name)) fitLoadModule(name);
-      if (name === "golf") { _loadSwingDrills(); }
+      if (name === "golf") { loadGolfPanelData(); }
       if (name === "markets")  { try { _initMarketsTab(); } catch(_) { try { loadPortfolioSummary(null); } catch(__) {} } }
       if (name === "infra")    { try { loadInfraPanel(); } catch(_) {} }
     } finally {
@@ -10149,6 +10149,26 @@ function initUpload() {
 }
 
 /* ── Golf ───────────────────────────── */
+const _golfPanelState = { loaded: false, loading: false };
+
+async function loadGolfPanelData(force=false) {
+  if (_golfPanelState.loading) return;
+  if (_golfPanelState.loaded && !force) return;
+  _golfPanelState.loading = true;
+  try {
+    await Promise.allSettled([
+      loadGolf(),
+      loadCoursesLibrary(),
+      loadGolfBag(),
+      loadSwingHistory(),
+      _loadSwingDrills(),
+    ]);
+    _golfPanelState.loaded = true;
+  } finally {
+    _golfPanelState.loading = false;
+  }
+}
+
 async function loadGolf() {
   try {
     const [golfResult, profileResult] = await Promise.allSettled([
@@ -13065,10 +13085,7 @@ async function boot() {
     _bootModule("marketNews",    loadMarketNews),
     _bootModule("agents",        loadAgents),
     _bootModule("news",          loadNews),
-    _bootModule("golf",          loadGolf),
     _bootModule("marketSnapshot", loadMarketSnapshot),
-    _bootModule("coursesLibrary", loadCoursesLibrary),
-    _bootModule("golfBag",       loadGolfBag),
     _bootModule("projects",      loadProjects),
     _bootModule("calendar",      () => loadCalendarEvents("day")),
     _bootModule("analytics",     loadAnalytics),
@@ -13077,7 +13094,6 @@ async function boot() {
 
   // Phase 4: background / non-critical
   try { loadNotifications(); }    catch(e) {}
-  try { loadSwingHistory(); }     catch(e) {}
   try { _loadHomeTrustScore(); }  catch(e) {}
   try { applyExecutiveMode(); }   catch(e) {}
   try { loadUnifiedPriorities(); } catch(e) {}
