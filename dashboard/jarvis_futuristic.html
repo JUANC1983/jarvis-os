@@ -1298,6 +1298,53 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-fullscreen-active .sv-record-hud{bottom:82px;min-height:44px;font-size:14px}
   .sv-fullscreen-active #svRecordTimer{font-size:17px}
 }
+
+/* X14.3: minimal sports HUD, camera-first */
+.sv-fullscreen-active .sv-stage-card .sv-status-bar,
+.sv-fullscreen-active .sv-stage-card .sv-record-bar,
+.sv-fullscreen-active .sv-phase-timeline,
+.sv-fullscreen-active #svHudAI,
+.sv-fullscreen-active #svHudPerf,
+.sv-fullscreen-active #sv-live-cue,
+.sv-fullscreen-active .sv-fit-confidence,
+.sv-fullscreen-active .sv-fit-guide{
+  display:none!important;
+}
+.sv-fullscreen-active .sv-sports-hud{
+  top:calc(max(10px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 14px);
+  left:50%;right:auto;transform:translateX(-50%);
+  width:min(92vw,430px);justify-content:center;gap:8px;
+  padding:0;pointer-events:none;
+}
+.sv-fullscreen-active #svHudAngle{order:1}
+.sv-fullscreen-active #svHudTracking{order:2}
+.sv-fullscreen-active #svHudFraming{order:3}
+.sv-fullscreen-active .sv-hud-pill{
+  min-height:36px;padding:7px 11px;background:rgba(0,0,0,.72);
+  border-color:rgba(255,255,255,.24);font-size:12px;font-weight:1000;
+  box-shadow:0 10px 30px rgba(0,0,0,.26);
+}
+.sv-fullscreen-active .sv-hud-pill span:last-child{
+  max-width:104px;overflow:hidden;text-overflow:ellipsis;
+}
+.sv-fullscreen-active .sv-record-hud{
+  z-index:29;
+}
+.sv-fullscreen-active .sv-metrics-panel{
+  z-index:21;
+}
+
+@media(max-width:520px){
+  .sv-fullscreen-active .sv-sports-hud{width:min(96vw,390px);gap:5px}
+  .sv-fullscreen-active .sv-hud-pill{min-height:34px;padding:6px 8px;font-size:11px}
+  .sv-fullscreen-active .sv-hud-pill span:last-child{max-width:86px}
+}
+
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-sports-hud{
+    left:50%;top:max(10px,env(safe-area-inset-top));width:min(52vw,420px);
+  }
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
