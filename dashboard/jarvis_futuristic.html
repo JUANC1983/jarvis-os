@@ -851,6 +851,8 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-bio-chip.good{border-color:rgba(67,255,155,.42)}
 .sv-bio-chip.warn{border-color:rgba(255,190,75,.46)}
 .sv-bio-chip.bad{border-color:rgba(255,91,91,.48)}
+.sv-bio-chip.estimate{border-color:rgba(68,240,255,.32);background:rgba(3,12,18,.64)}
+.sv-bio-note{display:block;font-size:8px;font-weight:900;color:rgba(255,255,255,.52);text-transform:uppercase;letter-spacing:.06em;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sv-sports-hud{
   position:absolute;left:12px;right:12px;top:12px;z-index:17;display:flex;align-items:center;gap:8px;
   color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.78);pointer-events:none;
@@ -4740,6 +4742,10 @@ body.mode-beginner .operator-only{display:none!important}
           <div class="sv-bio-chip warn" id="svBioBalance"><div class="sv-bio-label">Balance</div><div class="sv-bio-value">--</div></div>
           <div class="sv-bio-chip warn" id="svBioRotation"><div class="sv-bio-label">Rotation</div><div class="sv-bio-value">--</div></div>
           <div class="sv-bio-chip warn" id="svBioStability"><div class="sv-bio-label">Stability</div><div class="sv-bio-value">--</div></div>
+          <div class="sv-bio-chip estimate" id="svClubShaft"><div class="sv-bio-label">Shaft</div><div class="sv-bio-value">--</div><span class="sv-bio-note">estimated</span></div>
+          <div class="sv-bio-chip estimate" id="svClubPath"><div class="sv-bio-label">Path</div><div class="sv-bio-value">--</div><span class="sv-bio-note">estimated</span></div>
+          <div class="sv-bio-chip estimate" id="svClubPlane"><div class="sv-bio-label">Plane</div><div class="sv-bio-value">--</div><span class="sv-bio-note">estimated</span></div>
+          <div class="sv-bio-chip estimate" id="svClubRelease"><div class="sv-bio-label">Release</div><div class="sv-bio-value">--</div><span class="sv-bio-note">estimated</span></div>
         </div>
         <div id="sv-live-cue" class="elite-live-cue" style="display:none;color:#fff;border-color:#888"></div>
         <div class="sv-cam-placeholder" id="svPlaceholder">
@@ -10796,6 +10802,9 @@ const sv = {
   bioPhaseTimes:   {},
   bioLastPhase:    "address",
   bioLatest:       {},
+  clubSamples:     [],
+  maxClubSamples:  24,
+  clubLatest:      null,
   voiceEnabled:    localStorage.getItem("sv_voice_enabled") === "1",
   voiceMode:       localStorage.getItem("sv_voice_mode") || "concise",
   voiceQueue:      [],
@@ -10917,6 +10926,9 @@ function _resetSwingAutoState() {
   sv.bioPhaseTimes = {};
   sv.bioLastPhase = "address";
   sv.bioLatest = {};
+  sv.clubSamples = [];
+  sv.clubLatest = null;
+  _resetSwingClubHud();
   _renderSwingPhaseTimeline("address");
 }
 
@@ -11146,6 +11158,8 @@ function _onPoseResults(results) {
   _updateSwingFraming(landmarks);
   _updateSwingAutoCapture(landmarks);
   _updateSwingBioMetrics(landmarks);
+  const clubSignal = _updateSwingClubTracking(landmarks);
+  _drawSwingClubOverlay(ctx, clubSignal, w, h);
 
   // Record frame
   if (sv.recording) {
@@ -11367,6 +11381,169 @@ function _setBioChip(id, state, value) {
   el.className = `sv-bio-chip ${state}`;
   const valueEl = el.querySelector(".sv-bio-value");
   if (valueEl) valueEl.textContent = value;
+}
+
+function _setClubChip(id, state, value, note = "estimated") {
+  const el = qs(id);
+  if (!el) return;
+  el.className = `sv-bio-chip estimate ${state || ""}`.trim();
+  const valueEl = el.querySelector(".sv-bio-value");
+  if (valueEl) valueEl.textContent = value;
+  const noteEl = el.querySelector(".sv-bio-note");
+  if (noteEl) noteEl.textContent = note;
+}
+
+function _resetSwingClubHud() {
+  _setClubChip("svClubShaft", "warn", "--", "estimated");
+  _setClubChip("svClubPath", "warn", "--", "estimated");
+  _setClubChip("svClubPlane", "warn", "--", "estimated");
+  _setClubChip("svClubRelease", "warn", "--", "estimated");
+}
+
+function _clubVec(a, b) {
+  return (!a || !b) ? { x: 0, y: 0 } : { x: b.x - a.x, y: b.y - a.y };
+}
+
+function _clubVecLen(v) {
+  return Math.hypot(v?.x || 0, v?.y || 0);
+}
+
+function _clubNorm(v) {
+  const len = _clubVecLen(v);
+  return len ? { x: v.x / len, y: v.y / len } : { x: 0, y: 1 };
+}
+
+function _clubAngle(v) {
+  return Math.atan2(v.y || 0, v.x || 0) * 180 / Math.PI;
+}
+
+function _clubConfidenceLabel(score) {
+  if (score >= 74) return "high";
+  if (score >= 48) return "medium";
+  return "low";
+}
+
+function _updateSwingClubTracking(landmarks) {
+  const lw = _point(landmarks, 15), rw = _point(landmarks, 16);
+  const le = _point(landmarks, 13), re = _point(landmarks, 14);
+  if (!lw || !rw) {
+    sv.clubLatest = null;
+    _resetSwingClubHud();
+    return null;
+  }
+
+  const now = Date.now();
+  const grip = { x: (lw.x + rw.x) / 2, y: (lw.y + rw.y) / 2 };
+  const trailElbow = re || le;
+  const leadElbow = le || re;
+  const handSpread = Math.abs(lw.x - rw.x) + Math.abs(lw.y - rw.y);
+  const armVec = _clubNorm(_clubVec(leadElbow, grip));
+  const prev = sv.clubSamples.length ? sv.clubSamples[sv.clubSamples.length - 1] : null;
+  const motionVec = prev ? _clubVec(prev.grip, grip) : { x: 0, y: 0 };
+  const motionLen = _clubVecLen(motionVec);
+  const motionDir = motionLen > 0.003 ? _clubNorm(motionVec) : null;
+  const phase = sv.autoPhase || "address";
+
+  let shaftDir = armVec;
+  if (motionDir && ["takeaway", "top", "impact", "finish"].includes(phase)) {
+    const blend = phase === "impact" ? 0.62 : 0.42;
+    shaftDir = _clubNorm({
+      x: armVec.x * (1 - blend) + motionDir.x * blend,
+      y: armVec.y * (1 - blend) + motionDir.y * blend,
+    });
+  }
+  if (phase === "address" && trailElbow) {
+    const trailVec = _clubNorm(_clubVec(trailElbow, grip));
+    shaftDir = _clubNorm({ x: (armVec.x + trailVec.x) / 2, y: (armVec.y + trailVec.y) / 2 });
+  }
+
+  const shaftLen = Math.max(0.13, Math.min(0.34, handSpread * 2.8 + 0.12));
+  const clubhead = {
+    x: Math.max(-0.15, Math.min(1.15, grip.x + shaftDir.x * shaftLen)),
+    y: Math.max(-0.15, Math.min(1.15, grip.y + shaftDir.y * shaftLen)),
+  };
+  const shaftAngle = _clubAngle(shaftDir);
+  const sample = { ts: now, grip, clubhead, shaftAngle, phase, motion: motionLen };
+  sv.clubSamples.push(sample);
+  if (sv.clubSamples.length > sv.maxClubSamples) sv.clubSamples.splice(0, sv.clubSamples.length - sv.maxClubSamples);
+
+  const samples = sv.clubSamples;
+  const first = samples[0] || sample;
+  const pathDx = clubhead.x - first.clubhead.x;
+  const pathDy = clubhead.y - first.clubhead.y;
+  const pathMag = Math.hypot(pathDx, pathDy);
+  const takeaway = Math.abs(pathDx) < 0.018 && pathMag < 0.045
+    ? "neutral"
+    : pathDx < -0.018 ? "inside" : "outside";
+  const recentAngles = samples.slice(-8).map(s => s.shaftAngle).filter(Number.isFinite);
+  const planeSpan = recentAngles.length > 1 ? Math.max(...recentAngles) - Math.min(...recentAngles) : 0;
+  const planeLabel = planeSpan < 18 ? "stable" : planeSpan < 38 ? "shifting" : "steep";
+  const releaseSample = samples.slice(-10).find(s => s.phase === "impact") || sample;
+  const releaseDelta = Math.abs(shaftAngle - releaseSample.shaftAngle);
+  const releaseLabel = phase === "impact"
+    ? releaseDelta > 28 ? "early" : "timed"
+    : phase === "finish" && releaseDelta < 18 ? "held" : "pending";
+
+  const wristVisibility = ((lw.visibility ?? 1) + (rw.visibility ?? 1)) / 2;
+  const handsTogether = handSpread < 0.14 ? 1 : Math.max(0, 1 - (handSpread - 0.14) / 0.18);
+  const motionQuality = Math.min(1, Math.max(0.25, motionLen / 0.018));
+  const sampleQuality = Math.min(1, samples.length / 10);
+  const confidenceScore = Math.round(Math.max(0, Math.min(100,
+    (wristVisibility * 0.4 + handsTogether * 0.25 + motionQuality * 0.2 + sampleQuality * 0.15) * 100
+  )));
+  const confidence = _clubConfidenceLabel(confidenceScore);
+  const state = confidence === "high" ? "good" : confidence === "medium" ? "warn" : "bad";
+  const signal = {
+    observed: { grip, wrists: [lw, rw] },
+    inferred: { clubhead, shaftDir, shaftAngle, shaftLen, takeaway, planeLabel, releaseLabel },
+    confidence,
+    confidenceScore,
+    state,
+  };
+  sv.clubLatest = signal;
+
+  _setClubChip("svClubShaft", state, `${Math.round(Math.abs(shaftAngle))} deg`, `${confidence} estimated`);
+  _setClubChip("svClubPath", state, takeaway, `${confidence} estimated`);
+  _setClubChip("svClubPlane", state, planeLabel, `${confidence} estimated`);
+  _setClubChip("svClubRelease", state, releaseLabel, `${confidence} estimated`);
+  return signal;
+}
+
+function _drawSwingClubOverlay(ctx, signal, w, h) {
+  if (!ctx || !signal?.observed?.grip || !signal?.inferred?.clubhead) return;
+  const grip = signal.observed.grip;
+  const head = signal.inferred.clubhead;
+  const color = signal.confidence === "high" ? "rgba(67,255,155,.92)" :
+    signal.confidence === "medium" ? "rgba(255,190,75,.9)" : "rgba(255,255,255,.58)";
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineWidth = signal.confidence === "low" ? 2 : 3;
+  ctx.setLineDash(signal.confidence === "low" ? [7, 6] : []);
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(grip.x * w, grip.y * h);
+  ctx.lineTo(head.x * w, head.y * h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(head.x * w, head.y * h, signal.confidence === "low" ? 4 : 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,.62)";
+  ctx.strokeStyle = "rgba(255,255,255,.16)";
+  const label = `club ${signal.confidence} est.`;
+  const lx = Math.max(8, Math.min(w - 118, head.x * w + 8));
+  const ly = Math.max(24, Math.min(h - 10, head.y * h - 10));
+  ctx.font = "700 12px system-ui,-apple-system,Segoe UI,sans-serif";
+  const tw = Math.min(112, ctx.measureText(label).width + 16);
+  ctx.beginPath();
+  ctx.roundRect?.(lx, ly - 18, tw, 22, 8);
+  if (!ctx.roundRect) ctx.rect(lx, ly - 18, tw, 22);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.fillText(label, lx + 8, ly - 3);
+  ctx.restore();
 }
 
 function _updateSwingBioMetrics(landmarks) {
@@ -11625,10 +11802,19 @@ async function _sendSwingAnalysis() {
 
 function _recordGolfSwingMemory(analysis) {
   const coachCards = _buildGolfCoachCards(analysis || {}, (_svLang || "es") === "es");
+  const clubEstimate = sv.clubLatest ? {
+    source: "inferred_from_observed_pose",
+    confidence: sv.clubLatest.confidence,
+    confidence_score: sv.clubLatest.confidenceScore,
+    shaft_angle: Math.round(sv.clubLatest.inferred?.shaftAngle || 0),
+    takeaway_path: sv.clubLatest.inferred?.takeaway || "",
+    downswing_plane: sv.clubLatest.inferred?.planeLabel || "",
+    release_timing: sv.clubLatest.inferred?.releaseLabel || "",
+  } : null;
   const payload = {
     club: qs("svClubSelect")?.value || "unknown",
     phase: sv.autoPhase || "",
-    metrics: sv.bioLatest || {},
+    metrics: { ...(sv.bioLatest || {}), club_tracking: clubEstimate },
     analysis: {
       score: analysis?.score ?? null,
       level: analysis?.level || "",
