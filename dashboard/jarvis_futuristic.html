@@ -1333,6 +1333,47 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-fullscreen-active .sv-metrics-panel{
   z-index:21;
 }
+.sv-drawer-toggle{
+  display:none;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);
+  color:#fff;border-radius:999px;font-size:11px;font-weight:950;min-height:32px;padding:6px 12px;
+  cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.sv-drawer-summary{
+  display:none;padding:7px 9px;border-radius:9px;background:rgba(68,240,255,.045);
+  border:1px solid rgba(68,240,255,.13);font-size:11px;font-weight:800;color:var(--soft2);
+}
+.sv-fullscreen-active .sv-drawer-toggle{
+  display:inline-flex;align-items:center;justify-content:center;position:absolute;left:50%;top:6px;
+  transform:translateX(-50%);z-index:2;min-width:108px;background:rgba(255,255,255,.14);
+}
+.sv-fullscreen-active .sv-metrics-panel::before{display:none}
+.sv-fullscreen-active .sv-drawer-summary{display:block;grid-column:1/-1}
+.sv-fullscreen-active .sv-metrics-panel{
+  transition:none;
+}
+.sv-fullscreen-active:not(.sv-insights-expanded) .sv-metrics-panel{
+  height:clamp(76px,12dvh,104px)!important;max-height:clamp(76px,12dvh,104px)!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden;padding-top:32px;
+}
+.sv-fullscreen-active:not(.sv-insights-expanded) .sv-metrics-panel .sv-metrics-title,
+.sv-fullscreen-active:not(.sv-insights-expanded) #svLiveTips,
+.sv-fullscreen-active:not(.sv-insights-expanded) #svTelemetryPanel,
+.sv-fullscreen-active:not(.sv-insights-expanded) #svProductionReadiness{
+  display:none!important;
+}
+.sv-fullscreen-active:not(.sv-insights-expanded) #svLiveMetrics{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;grid-column:1/-1;
+}
+.sv-fullscreen-active:not(.sv-insights-expanded) #svLiveMetrics .sv-metric:nth-child(n+3){display:none}
+.sv-fullscreen-active.sv-insights-expanded .sv-stage-card{
+  --sv-drawer-height:clamp(250px,42dvh,420px);
+}
+.sv-fullscreen-active.sv-insights-expanded .sv-metrics-panel{
+  grid-template-columns:repeat(2,minmax(0,1fr));padding-top:34px;
+}
+.sv-fullscreen-active.sv-insights-expanded .sv-drawer-toggle{
+  background:rgba(68,240,255,.16);border-color:rgba(68,240,255,.32);color:var(--cyan);
+}
 
 @media(max-width:520px){
   .sv-fullscreen-active .sv-sports-hud{width:min(96vw,390px);gap:5px}
@@ -1343,6 +1384,10 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 @media(orientation:landscape) and (max-height:640px){
   .sv-fullscreen-active .sv-sports-hud{
     left:50%;top:max(10px,env(safe-area-inset-top));width:min(52vw,420px);
+  }
+  .sv-fullscreen-active.sv-insights-expanded .sv-stage-card{--sv-drawer-height:0px}
+  .sv-fullscreen-active.sv-insights-expanded .sv-metrics-panel{
+    grid-template-columns:1fr;overflow:auto;
   }
 }
 .sv-history-item{
@@ -5096,6 +5141,7 @@ body.mode-beginner .operator-only{display:none!important}
         </div>
       </div>
       <div class="sv-metrics-panel">
+        <button id="svDrawerToggle" class="sv-drawer-toggle" onclick="toggleSwingInsightsDrawer()" aria-expanded="false">Insights</button>
         <div class="sv-metrics-title">Live Biomechanics</div>
         <div id="svLiveMetrics">
           <div class="sv-metric"><span>Spine angle</span><span>—</span></div>
@@ -5127,6 +5173,7 @@ body.mode-beginner .operator-only{display:none!important}
             <button class="vb-btn" onclick="showGolfPrivacySummary()">Privacy</button>
           </div>
         </div>
+        <div id="svDrawerReplaySummary" class="sv-drawer-summary">Replay summary appears after a swing.</div>
       </div>
     </div>
 
@@ -11275,6 +11322,7 @@ const sv = {
   cueAbort:        null,
   swingAbort:      null,
   fullscreen:      false,
+  insightsExpanded: false,
   recordMode:      "30",
   swingAngle:      localStorage.getItem("sv_swing_angle") || "face_on",
   recordStartMs:   0,
@@ -11339,6 +11387,7 @@ function _setSwingFullscreen(enabled) {
   const wasFullscreen = sv.fullscreen;
   sv.fullscreen = !!enabled;
   document.body.classList.toggle("sv-fullscreen-active", sv.fullscreen);
+  _setSwingInsightsDrawer(false);
   const root = _golfMobileRoot();
   if (root) root.dataset.golfCapture = sv.fullscreen ? "active" : "idle";
   const btn = qs("svFullscreenBtn");
@@ -11347,6 +11396,33 @@ function _setSwingFullscreen(enabled) {
     btn.setAttribute("aria-pressed", sv.fullscreen ? "true" : "false");
   }
   if (wasFullscreen && !sv.fullscreen) _cleanupSwingReplay("fullscreen_exit");
+}
+
+function _setSwingInsightsDrawer(expanded) {
+  sv.insightsExpanded = !!expanded && sv.fullscreen && !sv.recording;
+  document.body.classList.toggle("sv-insights-expanded", sv.insightsExpanded);
+  const btn = qs("svDrawerToggle");
+  if (btn) {
+    btn.setAttribute("aria-expanded", sv.insightsExpanded ? "true" : "false");
+    btn.textContent = sv.insightsExpanded ? "Hide insights" : "Insights";
+  }
+}
+
+function toggleSwingInsightsDrawer() {
+  _setSwingInsightsDrawer(!sv.insightsExpanded);
+}
+
+function _renderSwingDrawerSummary() {
+  const el = qs("svDrawerReplaySummary");
+  if (!el) return;
+  const latest = Array.isArray(sv.replaySessions) ? sv.replaySessions[0] : null;
+  if (!latest) {
+    el.textContent = "Replay summary appears after a swing.";
+    return;
+  }
+  const angle = latest.angleLabel || _swingAngleMeta(latest.angle).label;
+  const score = latest.score != null ? `Score ${latest.score}` : "Score pending";
+  el.textContent = `${angle} replay saved - ${score} - ${latest.frameCount || 0} frames sampled.`;
 }
 
 function toggleSwingFullscreen() {
@@ -12397,6 +12473,7 @@ function toggleSwingRecording() {
 function _startSwingRecording(options = {}) {
   const preRoll = Array.isArray(options.preRoll) ? options.preRoll : [];
   _rememberSwingRecoveryState(options.auto ? "auto_record_start" : "record_start");
+  _setSwingInsightsDrawer(false);
   sv.frames        = preRoll.map(f => ({ landmarks: f.landmarks, frame_time: f.frame_time }));
   sv.recording     = true;
   sv.recordMode    = qs("svRecordMode")?.value || "30";
@@ -12422,6 +12499,7 @@ function _startSwingRecording(options = {}) {
 async function _stopSwingRecording(options = {}) {
   sv.recording = false;
   _rememberSwingRecoveryState(options.autoTrim ? "auto_record_stop" : "record_stop");
+  _setSwingInsightsDrawer(false);
   _clearSwingRecordingTimer();
   _setSwingRecordingHud(false);
   qs("svRecordBtn").textContent = "Record";
@@ -12814,6 +12892,7 @@ function _captureSwingReplay(analysis) {
   if (sv.replaySessions.length > replayLimit) sv.replaySessions.splice(replayLimit);
   sv.replaySelectedId = session.id;
   _rememberSwingRecoveryState("replay_capture");
+  _renderSwingDrawerSummary();
   _renderSwingReplayPanel();
 }
 
@@ -12821,6 +12900,7 @@ function _cleanupSwingReplay(reason = "cleanup") {
   sv.replaySessions = [];
   sv.replaySelectedId = null;
   if (sv.telemetry?.samples) sv.telemetry.samples = sv.telemetry.samples.slice(-4);
+  _renderSwingDrawerSummary();
   _renderSwingReplayPanel(reason);
   _renderSwingTelemetry(true);
 }
