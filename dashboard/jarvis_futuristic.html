@@ -723,6 +723,13 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 /* ── Phase 5K-2: Golf Swing Vision Pro ──────────────────────────── */
 .sv-main{display:grid;grid-template-columns:1fr 220px;gap:14px;margin-top:10px}
 @media(max-width:700px){.sv-main{grid-template-columns:1fr}}
+.sv-stage-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sv-fullscreen-btn{
+  min-height:38px;padding:8px 12px;border-radius:8px;border:1px solid rgba(68,240,255,.22);
+  background:rgba(68,240,255,.08);color:var(--cyan);font-size:12px;font-weight:800;
+  cursor:pointer;transition:all .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.sv-fullscreen-btn:hover,.sv-fullscreen-btn:active{background:rgba(68,240,255,.15);border-color:rgba(68,240,255,.38);color:#fff}
 .sv-cam-wrap{
   position:relative;border-radius:var(--rs);overflow:hidden;
   background:#000;aspect-ratio:4/3;min-height:200px;
@@ -737,6 +744,29 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-switch-btn:hover,.sv-switch-btn:active{background:rgba(68,240,255,.3)}
 .sv-video{width:100%;height:100%;object-fit:cover;display:block;border-radius:var(--rs)}
 .sv-canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:var(--rs)}
+.sv-framing-overlay{position:absolute;inset:0;pointer-events:none;z-index:12;border-radius:var(--rs)}
+.sv-fit-box{
+  position:absolute;left:18%;top:8%;width:64%;height:84%;border:2px dashed rgba(255,255,255,.42);
+  border-radius:22px;background:rgba(0,0,0,.04);box-shadow:inset 0 0 42px rgba(0,0,0,.22);
+}
+.sv-fit-box.good{border-color:rgba(67,255,155,.82);background:rgba(67,255,155,.04)}
+.sv-fit-box.warn{border-color:rgba(255,190,75,.9);background:rgba(255,190,75,.05)}
+.sv-fit-box.bad{border-color:rgba(255,91,91,.88);background:rgba(255,91,91,.05)}
+.sv-fit-guide{
+  position:absolute;left:50%;bottom:14px;transform:translateX(-50%);max-width:min(86%,520px);
+  padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.66);border:1px solid rgba(255,255,255,.2);
+  color:#fff;font-size:12px;font-weight:800;text-align:center;letter-spacing:.01em;
+  backdrop-filter:blur(8px);text-shadow:0 1px 2px rgba(0,0,0,.65);
+}
+.sv-fit-confidence{
+  position:absolute;left:12px;top:12px;padding:6px 9px;border-radius:999px;
+  background:rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.18);color:#fff;
+  font-size:11px;font-weight:800;backdrop-filter:blur(8px);
+}
+.sv-fit-bodybox{
+  position:absolute;border:2px solid rgba(68,240,255,.82);border-radius:16px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.3),0 0 28px rgba(68,240,255,.2);
+}
 .sv-cam-placeholder{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   background:rgba(0,0,0,.75);border-radius:var(--rs);transition:opacity .3s;pointer-events:none;
@@ -759,6 +789,40 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-tip{font-size:11px;color:var(--soft2);padding:4px 0;border-bottom:1px solid var(--border3);line-height:1.4}
 .sv-record-bar{height:4px;background:var(--border2);border-radius:2px;margin-bottom:10px;overflow:hidden}
 .sv-record-progress{height:100%;width:0%;background:#ff4d4d;transition:width .1s;border-radius:2px}
+.sv-record-mode{
+  min-height:38px;padding:7px 10px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--s3);color:var(--soft2);font-size:12px;font-weight:700;
+}
+.sv-record-action{
+  min-height:44px;min-width:138px;padding:10px 16px!important;border-radius:999px!important;
+  font-size:13px!important;font-weight:900!important;
+}
+.sv-record-hud{
+  position:absolute;right:12px;bottom:14px;z-index:18;display:flex;align-items:center;gap:9px;
+  padding:8px 11px;border-radius:999px;background:rgba(0,0,0,.66);border:1px solid rgba(255,255,255,.2);
+  color:#fff;font-size:12px;font-weight:900;backdrop-filter:blur(8px);text-shadow:0 1px 2px rgba(0,0,0,.7);
+}
+.sv-record-hud .rec-dot{width:9px;height:9px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 14px rgba(255,77,77,.85)}
+.sv-record-hud.recording .rec-dot{animation:blink .8s ease-in-out infinite}
+.sv-record-hud .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px rgba(68,240,255,.65)}
+.sv-record-hud .hud-muted{color:rgba(255,255,255,.72);font-size:11px}
+.sv-sports-hud{
+  position:absolute;left:12px;right:12px;top:12px;z-index:17;display:flex;align-items:center;gap:8px;
+  color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.78);pointer-events:none;
+}
+.sv-hud-pill{
+  display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:6px 10px;border-radius:999px;
+  background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px);
+  font-size:11px;font-weight:900;letter-spacing:.02em;white-space:nowrap;
+}
+.sv-hud-pill.good{border-color:rgba(67,255,155,.45);color:#caffdf}
+.sv-hud-pill.warn{border-color:rgba(255,190,75,.48);color:#ffe1a6}
+.sv-hud-pill.bad{border-color:rgba(255,91,91,.52);color:#ffc2c2}
+.sv-hud-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.48);box-shadow:0 0 10px rgba(255,255,255,.24)}
+.sv-hud-pill.good .sv-hud-dot{background:#43ff9b;box-shadow:0 0 12px rgba(67,255,155,.65)}
+.sv-hud-pill.warn .sv-hud-dot{background:#ffbe4b;box-shadow:0 0 12px rgba(255,190,75,.6)}
+.sv-hud-pill.bad .sv-hud-dot{background:#ff5b5b;box-shadow:0 0 12px rgba(255,91,91,.62)}
+.sv-hud-spacer{flex:1}
 .sv-result-header{
   display:flex;align-items:center;gap:16px;padding:12px 0;
   border-bottom:1px solid var(--border3);margin-bottom:10px;
@@ -783,6 +847,70 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .18s;
 }
 .sv-tab.active{color:var(--white);border-bottom-color:var(--cyan)}
+.sv-fullscreen-active{overflow:hidden}
+.sv-fullscreen-active #tab-golf{position:relative;z-index:3000}
+.sv-fullscreen-active #tab-golf .section-intro,
+.sv-fullscreen-active #tab-golf > .g2{display:none}
+.sv-fullscreen-active .sv-stage-card{
+  position:fixed;inset:0;z-index:5000;margin:0!important;border-radius:0;
+  display:flex;flex-direction:column;background:#05070a;border:0;padding:clamp(10px,2vw,18px);
+}
+.sv-fullscreen-active .sv-stage-card .ch{flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:10px}
+.sv-fullscreen-active .sv-stage-card .sv-status-bar{flex-shrink:0;margin-top:10px;font-size:13px;color:#fff}
+.sv-fullscreen-active .sv-stage-card .sv-record-bar{flex-shrink:0;height:7px;border-radius:999px;background:rgba(255,255,255,.18)}
+.sv-fullscreen-active .sv-main{
+  flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,240px);
+  gap:12px;margin-top:12px;
+}
+.sv-fullscreen-active .sv-cam-wrap{
+  width:100%;height:100%;min-height:0;aspect-ratio:auto;border-radius:14px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12),0 24px 80px rgba(0,0,0,.55);
+}
+.sv-fullscreen-active .sv-video,.sv-fullscreen-active .sv-canvas{border-radius:14px}
+.sv-fullscreen-active .sv-metrics-panel{
+  min-height:0;overflow:auto;background:rgba(9,16,24,.82);backdrop-filter:blur(10px);
+}
+.sv-fullscreen-active .sv-tabs,
+.sv-fullscreen-active #svTabHistory,
+.sv-fullscreen-active #svTabDrills,
+.sv-fullscreen-active #svTabProgress,
+.sv-fullscreen-active #svSwingResult{display:none!important}
+.sv-fullscreen-active #svFullscreenBtn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff}
+@media(max-width:900px),(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-stage-card{padding:10px;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .sv-fullscreen-active .sv-stage-card .ch{gap:10px}
+  .sv-fullscreen-active .sv-main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  .sv-fullscreen-active .sv-metrics-panel{
+    max-height:30vh;display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding:10px 12px;
+  }
+  .sv-fullscreen-active .sv-metrics-title{margin:0}
+}
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-stage-card .ch{align-items:center}
+  .sv-fullscreen-active .sv-stage-card .cs{display:none}
+  .sv-fullscreen-active .sv-main{grid-template-columns:minmax(0,1fr) minmax(180px,220px);grid-template-rows:1fr}
+  .sv-fullscreen-active .sv-metrics-panel{max-height:none;display:flex}
+  .sv-fullscreen-active .sv-cam-placeholder>div{padding:12px!important}
+  .sv-fullscreen-active .sv-fit-guide{bottom:10px;font-size:13px}
+  .sv-fullscreen-active .sv-fit-confidence{font-size:12px}
+  .sv-fullscreen-active .sv-record-hud{right:12px;bottom:12px;font-size:13px}
+  .sv-fullscreen-active .sv-record-action{min-width:156px;min-height:50px;font-size:14px!important}
+  .sv-fullscreen-active .sv-sports-hud{top:12px}
+  .sv-fullscreen-active .sv-hud-pill{min-height:34px;font-size:12px}
+}
+@media(max-width:520px){
+  .sv-stage-actions{width:100%}
+  .sv-stage-actions .btn-p,.sv-stage-actions .vb-btn,.sv-stage-actions .sv-fullscreen-btn{min-height:44px}
+  .sv-stage-actions #svRecordBtn,.sv-stage-actions #svStartBtn{flex:1}
+  .sv-stage-actions #svRecordMode{flex:1 1 110px}
+  .sv-fullscreen-active .sv-stage-card .ct{font-size:13px}
+  .sv-fullscreen-active .sv-lang-toggle,.sv-fullscreen-active #svClubSelect{display:none}
+  .sv-fit-guide{font-size:11px;padding:7px 10px}
+  .sv-record-hud{left:12px;right:12px;justify-content:center}
+  .sv-sports-hud{top:10px;gap:6px;flex-wrap:wrap}
+  .sv-hud-pill{min-height:30px;padding:6px 9px;font-size:10px}
+  .sv-hud-spacer{display:none}
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
@@ -799,6 +927,12 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   border-color:#ff4d4d!important;color:#ff4d4d!important;
   animation:blink .8s ease-in-out infinite;
 }
+.golf-mobile-root{
+  --golf-touch-target:44px;
+  --golf-capture-radius:14px;
+  scroll-margin-top:76px;
+}
+.golf-mobile-root[data-golf-capture="active"] .sv-stage-card{outline:1px solid rgba(68,240,255,.14)}
 
 /* ── Golf Elite v9 result styles ──────────────────────────────── */
 .elite-result{display:flex;flex-direction:column;gap:14px;margin-top:12px}
@@ -4383,20 +4517,20 @@ body.mode-beginner .operator-only{display:none!important}
 </div>
 
 <!-- ══════════════ GOLF ══════════════ -->
-<div id="tab-golf" class="tab-panel">
+<div id="tab-golf" class="tab-panel golf-mobile-root" data-golf-module="mobile-foundation" data-golf-lazy="true" data-golf-capture="idle">
   <div class="section-intro">
     <span class="section-intro-icon">⛳</span>
     <span class="section-intro-text"><strong>Golf</strong> — AI swing analysis with live pose detection, round tracking, bag management, course library, and personalized coaching drills powered by JARVIS.</span>
   </div>
 
   <!-- ── Swing Vision Pro ── -->
-  <div class="card" style="margin-bottom:18px">
+  <div class="card sv-stage-card" data-golf-surface="swing-capture" style="margin-bottom:18px">
     <div class="ch">
       <div>
         <span class="ct">🎯 Swing Vision Pro</span>
         <span class="cs">AI biomechanics · real-time pose analysis</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="sv-stage-actions">
         <div class="sv-lang-toggle">
           <button id="sv-lang-es" class="active" onclick="svSetLang('es')">ES</button>
           <button id="sv-lang-en" onclick="svSetLang('en')">EN</button>
@@ -4433,8 +4567,14 @@ body.mode-beginner .operator-only{display:none!important}
             <option value="putter">Putter</option>
           </optgroup>
         </select>
+        <button class="sv-fullscreen-btn" id="svFullscreenBtn" onclick="toggleSwingFullscreen()" aria-pressed="false">Fullscreen</button>
         <button class="btn-p btn-sm" id="svStartBtn" onclick="toggleSwingCamera()">📷 Start Camera</button>
-        <button class="vb-btn"       id="svRecordBtn" onclick="toggleSwingRecording()" disabled>⏺ Record Swing</button>
+        <select id="svRecordMode" class="sv-record-mode" aria-label="Recording duration">
+          <option value="15">15s</option>
+          <option value="30" selected>30s</option>
+          <option value="unlimited">Unlimited</option>
+        </select>
+        <button class="vb-btn sv-record-action" id="svRecordBtn" onclick="toggleSwingRecording()" disabled>Record</button>
       </div>
     </div>
 
@@ -4451,6 +4591,25 @@ body.mode-beginner .operator-only{display:none!important}
       <div class="sv-cam-wrap">
         <video  id="svVideo"  class="sv-video" autoplay muted playsinline></video>
         <canvas id="svCanvas" class="sv-canvas"></canvas>
+        <div id="svFramingOverlay" class="sv-framing-overlay" aria-hidden="true">
+          <div id="svFitBox" class="sv-fit-box"></div>
+          <div id="svFitBodyBox" class="sv-fit-bodybox" style="display:none"></div>
+          <div id="svFitConfidence" class="sv-fit-confidence">Framing --</div>
+          <div id="svFitGuide" class="sv-fit-guide">Fit your full body inside the guide</div>
+        </div>
+        <div id="svRecordHud" class="sv-record-hud" style="display:none" aria-live="polite">
+          <span class="rec-dot"></span>
+          <span id="svRecordHudState">REC</span>
+          <span id="svRecordTimer">00:00</span>
+          <span class="ai-dot"></span>
+          <span class="hud-muted">AI tracking</span>
+        </div>
+        <div id="svSportsHud" class="sv-sports-hud" aria-live="polite">
+          <div id="svHudAI" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>AI standby</span></div>
+          <div id="svHudTracking" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Tracking --</span></div>
+          <span class="sv-hud-spacer"></span>
+          <div id="svHudFraming" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Framing --</span></div>
+        </div>
         <button id="svSwitchBtn" class="sv-switch-btn" onclick="switchSwingCamera()" aria-label="Switch camera">🔄</button>
         <div id="sv-live-cue" class="elite-live-cue" style="display:none;color:#fff;border-color:#888"></div>
         <div class="sv-cam-placeholder" id="svPlaceholder">
@@ -10149,12 +10308,44 @@ function initUpload() {
 }
 
 /* ── Golf ───────────────────────────── */
+window.JARVIS_GOLF_MOBILE = Object.freeze({
+  rootId: "tab-golf",
+  captureSelector: "[data-golf-surface='swing-capture']",
+  lazyLoader: "loadGolfPanelData",
+  lifecycleStop: "__jarvisStopSwingVision",
+  endpoints: Object.freeze([
+    "/dashboard/golf",
+    "/api/golf/profile",
+    "/api/golf/profile/round",
+    "/api/golf/caddy",
+    "/api/golf/courses",
+    "/api/golf/courses/all",
+    "/api/golf/bag",
+    "/api/golf/vision/analyze",
+    "/api/golf/vision/history",
+    "/api/golf/vision/drills",
+    "/api/golf/elite/live",
+    "/api/golf/elite/analyze",
+    "/api/golf/elite/progress",
+  ]),
+});
+
+function _golfMobileRoot() {
+  return qs(window.JARVIS_GOLF_MOBILE.rootId);
+}
+
+function _setGolfMobileLifecycle(state) {
+  const root = _golfMobileRoot();
+  if (root) root.dataset.golfLifecycle = state;
+}
+
 const _golfPanelState = { loaded: false, loading: false };
 
 async function loadGolfPanelData(force=false) {
   if (_golfPanelState.loading) return;
   if (_golfPanelState.loaded && !force) return;
   _golfPanelState.loading = true;
+  _setGolfMobileLifecycle("loading");
   try {
     await Promise.allSettled([
       loadGolf(),
@@ -10166,6 +10357,7 @@ async function loadGolfPanelData(force=false) {
     _golfPanelState.loaded = true;
   } finally {
     _golfPanelState.loading = false;
+    _setGolfMobileLifecycle(_golfPanelState.loaded ? "ready" : "idle");
   }
 }
 
@@ -10334,6 +10526,7 @@ function closeModal(id) {
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
+    if (typeof window.__jarvisExitSwingFullscreen === "function") window.__jarvisExitSwingFullscreen();
     ["newsModal","stockModal","schedModal","clubModal"].forEach(closeModal);
   }
 });
@@ -10360,6 +10553,32 @@ const sv = {
   analysisAbort:   null,
   cueAbort:        null,
   swingAbort:      null,
+  fullscreen:      false,
+  recordMode:      "30",
+  recordStartMs:   0,
+  recordTimerId:   null,
+  recordDurationMs: 30000,
+  maxStoredFrames: 900,
+};
+
+function _setSwingFullscreen(enabled) {
+  sv.fullscreen = !!enabled;
+  document.body.classList.toggle("sv-fullscreen-active", sv.fullscreen);
+  const root = _golfMobileRoot();
+  if (root) root.dataset.golfCapture = sv.fullscreen ? "active" : "idle";
+  const btn = qs("svFullscreenBtn");
+  if (btn) {
+    btn.textContent = sv.fullscreen ? "Exit Fullscreen" : "Fullscreen";
+    btn.setAttribute("aria-pressed", sv.fullscreen ? "true" : "false");
+  }
+}
+
+function toggleSwingFullscreen() {
+  _setSwingFullscreen(!sv.fullscreen);
+}
+
+window.__jarvisExitSwingFullscreen = function() {
+  _setSwingFullscreen(false);
 };
 
 // ── lazy MediaPipe loader ─────────────────────────────────────────────
@@ -10485,6 +10704,7 @@ async function _startSwingCamera(facingMode, keepPose) {
   const label = sv.facingMode === "environment" ? "rear" : "front";
   qs("svStartBtn").textContent = "⏹ Stop Camera";
   qs("svRecordBtn").disabled = false;
+  _updateSwingSportsHud({ active: true, tracking: 0, framing: null });
   qs("svStatus").textContent = `Camera active (${label}) — align yourself and start recording`;
 }
 
@@ -10504,6 +10724,10 @@ function _stopSwingCamera() {
   qs("svStartBtn").textContent = "📷 Start Camera";
   qs("svRecordBtn").disabled = true;
   qs("svRecordBtn").classList.remove("btn-recording");
+  qs("svRecordBtn").textContent = "Record";
+  _clearSwingRecordingTimer();
+  _setSwingRecordingHud(false);
+  _updateSwingSportsHud({ active: false, tracking: 0, framing: null });
   qs("svStatus").textContent = "Camera stopped.";
   _setRecordBarVisible(false);
 }
@@ -10520,13 +10744,18 @@ function _abortSwingLiveRequests() {
 }
 
 window.__jarvisStopSwingVision = function() {
+  _setSwingFullscreen(false);
   if (sv.active) _stopSwingCamera();
 };
 
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden && sv.active) _stopSwingCamera();
+  if (document.hidden) {
+    _setSwingFullscreen(false);
+    if (sv.active) _stopSwingCamera();
+  }
 });
 window.addEventListener("pagehide", () => {
+  _setSwingFullscreen(false);
   if (sv.active) _stopSwingCamera();
 });
 
@@ -10554,7 +10783,7 @@ function _onPoseResults(results) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, w, h);
 
-  if (!results.poseLandmarks) return;
+  if (!results.poseLandmarks) { _updateSwingFraming(null); return; }
 
   // Draw skeleton
   if (typeof drawConnectors !== "undefined" && typeof POSE_CONNECTIONS !== "undefined") {
@@ -10569,14 +10798,19 @@ function _onPoseResults(results) {
   const landmarks = results.poseLandmarks.map(p => ({
     x: p.x, y: p.y, z: p.z, visibility: p.visibility,
   }));
+  _updateSwingFraming(landmarks);
 
   // Record frame
   if (sv.recording) {
     sv.frames.push({ landmarks, frame_time: Date.now() });
-    const pct = Math.min(100, sv.frames.length / sv.maxFrames * 100);
+    if (sv.frames.length > sv.maxStoredFrames) sv.frames.splice(0, sv.frames.length - sv.maxStoredFrames);
+    const elapsed = Date.now() - sv.recordStartMs;
+    const pct = sv.recordMode === "unlimited"
+      ? 100
+      : Math.min(100, elapsed / Math.max(sv.recordDurationMs, 1) * 100);
     const bar = qs("svRecordProgress");
     if (bar) bar.style.width = pct + "%";
-    if (sv.frames.length >= sv.maxFrames) _stopSwingRecording();
+    if (sv.recordMode !== "unlimited" && elapsed >= sv.recordDurationMs) _stopSwingRecording();
 
     // Live coach cue (throttled)
     const nowCue = Date.now();
@@ -10592,6 +10826,97 @@ function _onPoseResults(results) {
     sv.lastAnalysisMs = now;
     _sendFrameAnalysis(landmarks);
   }
+}
+
+function _updateSwingFraming(landmarks) {
+  const fitBox = qs("svFitBox");
+  const bodyBox = qs("svFitBodyBox");
+  const guide = qs("svFitGuide");
+  const conf = qs("svFitConfidence");
+  if (!fitBox || !bodyBox || !guide || !conf) return;
+
+  const visible = (landmarks || []).filter(p =>
+    p && Number.isFinite(p.x) && Number.isFinite(p.y) && (p.visibility ?? 1) >= 0.35
+  );
+  const trackingScore = landmarks?.length
+    ? Math.round(Math.min(100, Math.max(0, visible.length / Math.min(33, landmarks.length) * 100)))
+    : 0;
+  if (visible.length < 8) {
+    fitBox.className = "sv-fit-box warn";
+    bodyBox.style.display = "none";
+    guide.textContent = "Step into frame";
+    conf.textContent = "Framing low";
+    _updateSwingSportsHud({ active: sv.active, tracking: trackingScore, framing: null });
+    return;
+  }
+
+  const xs = visible.map(p => Math.max(0, Math.min(1, p.x)));
+  const ys = visible.map(p => Math.max(0, Math.min(1, p.y)));
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+
+  bodyBox.style.display = "block";
+  bodyBox.style.left = `${minX * 100}%`;
+  bodyBox.style.top = `${minY * 100}%`;
+  bodyBox.style.width = `${Math.max(width * 100, 3)}%`;
+  bodyBox.style.height = `${Math.max(height * 100, 3)}%`;
+
+  let message = "Framing good";
+  let state = "good";
+  if (height > 0.86 || width > 0.76 || minY < 0.025 || maxY > 0.985) {
+    message = "Too Close - step back";
+    state = "bad";
+  } else if (height < 0.48 || width < 0.2) {
+    message = "Too Far - step closer";
+    state = "warn";
+  } else if (centerX < 0.43) {
+    message = "Move Right";
+    state = "warn";
+  } else if (centerX > 0.57) {
+    message = "Move Left";
+    state = "warn";
+  } else if (centerY < 0.43) {
+    message = "Camera Too Low";
+    state = "warn";
+  } else if (centerY > 0.68) {
+    message = "Raise camera slightly";
+    state = "warn";
+  }
+
+  const sizeScore = Math.max(0, 1 - Math.abs(height - 0.66) / 0.38);
+  const centerScore = Math.max(0, 1 - Math.abs(centerX - 0.5) / 0.22);
+  const verticalScore = Math.max(0, 1 - Math.abs(centerY - 0.55) / 0.28);
+  const confidence = Math.round(Math.min(100, Math.max(0, (sizeScore * 0.42 + centerScore * 0.34 + verticalScore * 0.24) * 100)));
+
+  fitBox.className = `sv-fit-box ${state}`;
+  guide.textContent = message;
+  conf.textContent = `Framing ${confidence}%`;
+  _updateSwingSportsHud({ active: sv.active, tracking: trackingScore, framing: confidence, framingState: state });
+}
+
+function _setHudPill(id, state, text) {
+  const el = qs(id);
+  if (!el) return;
+  el.className = `sv-hud-pill ${state}`;
+  const label = el.querySelector("span:last-child");
+  if (label) label.textContent = text;
+}
+
+function _updateSwingSportsHud({ active, tracking, framing, framingState } = {}) {
+  const isActive = !!active;
+  _setHudPill("svHudAI", isActive ? "good" : "warn", isActive ? "AI active" : "AI standby");
+
+  const trackingPct = Number.isFinite(tracking) ? Math.round(tracking) : 0;
+  const trackingState = trackingPct >= 70 ? "good" : trackingPct >= 35 ? "warn" : "bad";
+  _setHudPill("svHudTracking", isActive ? trackingState : "warn", isActive ? `Tracking ${trackingPct}%` : "Tracking --");
+
+  const framingPct = Number.isFinite(framing) ? Math.round(framing) : null;
+  const frameState = framingState || (framingPct == null ? "warn" : framingPct >= 72 ? "good" : framingPct >= 45 ? "warn" : "bad");
+  _setHudPill("svHudFraming", isActive ? frameState : "warn", isActive && framingPct != null ? `Framing ${framingPct}%` : "Framing --");
 }
 
 function _drawFallbackSkeleton(ctx, lms, w, h) {
@@ -10703,18 +11028,26 @@ function toggleSwingRecording() {
 }
 
 function _startSwingRecording() {
-  sv.frames    = [];
-  sv.recording = true;
-  qs("svRecordBtn").textContent = "⏹ Stop";
+  sv.frames        = [];
+  sv.recording     = true;
+  sv.recordMode    = qs("svRecordMode")?.value || "30";
+  sv.recordStartMs = Date.now();
+  sv.recordDurationMs = sv.recordMode === "15" ? 15000 : sv.recordMode === "30" ? 30000 : 0;
+  qs("svRecordBtn").textContent = "Stop";
   qs("svRecordBtn").classList.add("btn-recording");
   _setRecordBarVisible(true);
   qs("svRecordProgress").style.width = "0%";
-  qs("svStatus").textContent = "Recording… swing when ready. Auto-stops at 3 s.";
+  _setSwingRecordingHud(true);
+  _startSwingRecordingTimer();
+  const modeLabel = sv.recordMode === "unlimited" ? "manual stop" : `${Number(sv.recordMode)} s`;
+  qs("svStatus").textContent = `Recording - swing when ready. Mode: ${modeLabel}.`;
 }
 
 async function _stopSwingRecording() {
   sv.recording = false;
-  qs("svRecordBtn").textContent = "⏺ Record Swing";
+  _clearSwingRecordingTimer();
+  _setSwingRecordingHud(false);
+  qs("svRecordBtn").textContent = "Record";
   qs("svRecordBtn").classList.remove("btn-recording");
   _setRecordBarVisible(false);
   const cueEl = qs("sv-live-cue"); if (cueEl) cueEl.style.display = "none";
@@ -10989,6 +11322,48 @@ function svShowTab(tab, btn) {
 function _setRecordBarVisible(v) {
   const bar = qs("svRecordBar");
   if (bar) bar.style.display = v ? "" : "none";
+}
+
+function _formatSwingRecordTime(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const min = String(Math.floor(total / 60)).padStart(2, "0");
+  const sec = String(total % 60).padStart(2, "0");
+  return `${min}:${sec}`;
+}
+
+function _setSwingRecordingHud(visible) {
+  const hud = qs("svRecordHud");
+  if (!hud) return;
+  hud.style.display = visible ? "" : "none";
+  hud.classList.toggle("recording", !!visible);
+  if (!visible) {
+    const timer = qs("svRecordTimer");
+    if (timer) timer.textContent = "00:00";
+  }
+}
+
+function _updateSwingRecordingTimer() {
+  const elapsed = sv.recordStartMs ? Date.now() - sv.recordStartMs : 0;
+  const timer = qs("svRecordTimer");
+  if (timer) timer.textContent = _formatSwingRecordTime(elapsed);
+  const state = qs("svRecordHudState");
+  if (state) state.textContent = sv.recordMode === "unlimited" ? "REC" : `REC ${sv.recordMode}s`;
+}
+
+function _clearSwingRecordingTimer() {
+  if (sv.recordTimerId) {
+    clearInterval(sv.recordTimerId);
+    sv.recordTimerId = null;
+  }
+}
+
+function _startSwingRecordingTimer() {
+  _clearSwingRecordingTimer();
+  _updateSwingRecordingTimer();
+  sv.recordTimerId = setInterval(() => {
+    if (!sv.recording) { _clearSwingRecordingTimer(); return; }
+    _updateSwingRecordingTimer();
+  }, 250);
 }
 
 /* ═══════════════════════════════════════
