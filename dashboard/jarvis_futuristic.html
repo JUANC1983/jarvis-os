@@ -5229,9 +5229,9 @@ body.mode-beginner .operator-only{display:none!important}
         <button class="sv-auto-toggle" id="svAutoBtn" onclick="toggleSwingAutoCapture()" aria-pressed="false">Auto</button>
         <button class="sv-voice-toggle" id="svVoiceBtn" onclick="toggleSwingVoiceCoach()" aria-pressed="false">Voice</button>
         <select id="svVoiceMode" class="sv-voice-mode" onchange="setSwingVoiceMode(this.value)" aria-label="Voice coaching intensity">
-          <option value="concise" selected>Concise</option>
-          <option value="normal">Normal</option>
           <option value="quiet">Quiet</option>
+          <option value="normal" selected>Normal</option>
+          <option value="aggressive">Aggressive</option>
         </select>
         <button class="vb-btn sv-record-action" id="svRecordBtn" onclick="toggleSwingRecording()" disabled>Record</button>
       </div>
@@ -11505,11 +11505,14 @@ const sv = {
   maxClubSamples:  24,
   clubLatest:      null,
   voiceEnabled:    localStorage.getItem("sv_voice_enabled") === "1",
-  voiceMode:       localStorage.getItem("sv_voice_mode") || "concise",
+  voiceMode:       localStorage.getItem("sv_voice_mode") || "normal",
   voiceQueue:      [],
+  voiceQueueMax:   3,
   voiceSpeaking:   false,
   voiceLastMs:     0,
   voiceLastText:   "",
+  voiceLastByKey:  {},
+  voiceCurrent:    null,
   telemetry:       {
     startedMs: 0,
     lastFrameMs: 0,
@@ -11606,6 +11609,7 @@ function toggleSwingAutoCapture() {
 }
 
 function _syncSwingVoiceControls() {
+  sv.voiceMode = _normalizeSwingVoiceMode(sv.voiceMode);
   const btn = qs("svVoiceBtn");
   if (btn) {
     btn.classList.toggle("active", !!sv.voiceEnabled);
@@ -11613,7 +11617,39 @@ function _syncSwingVoiceControls() {
     btn.textContent = sv.voiceEnabled ? "Voice On" : "Voice";
   }
   const mode = qs("svVoiceMode");
-  if (mode) mode.value = sv.voiceMode || "concise";
+  if (mode) mode.value = sv.voiceMode || "normal";
+}
+
+function _normalizeSwingVoiceMode(mode) {
+  if (mode === "concise") return "normal";
+  return ["quiet", "normal", "aggressive"].includes(mode) ? mode : "normal";
+}
+
+function _swingVoiceCooldownMs(priority = "normal") {
+  const mode = _normalizeSwingVoiceMode(sv.voiceMode);
+  if (priority === "result") return mode === "aggressive" ? 1800 : mode === "quiet" ? 6500 : 2800;
+  if (priority === "live") return mode === "aggressive" ? 4500 : mode === "quiet" ? 14000 : 8000;
+  return mode === "aggressive" ? 3500 : mode === "quiet" ? 12000 : 6500;
+}
+
+function _swingVoiceRate() {
+  const mode = _normalizeSwingVoiceMode(sv.voiceMode);
+  return mode === "aggressive" ? 1.0 : mode === "quiet" ? 0.92 : 0.96;
+}
+
+function _swingVoiceKey(text, meta = {}) {
+  return String(meta.key || text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 48);
+}
+
+function _pruneSwingVoiceMemory(now) {
+  const entries = Object.entries(sv.voiceLastByKey || {});
+  entries.forEach(([key, ts]) => {
+    if (now - ts > 60000) delete sv.voiceLastByKey[key];
+  });
+  const fresh = Object.entries(sv.voiceLastByKey || {});
+  if (fresh.length > 8) {
+    fresh.sort((a, b) => a[1] - b[1]).slice(0, fresh.length - 8).forEach(([key]) => delete sv.voiceLastByKey[key]);
+  }
 }
 
 function _swingAngleMeta(angle = sv.swingAngle) {
@@ -11666,43 +11702,68 @@ function toggleSwingVoiceCoach() {
 }
 
 function setSwingVoiceMode(mode) {
-  sv.voiceMode = ["quiet", "concise", "normal"].includes(mode) ? mode : "concise";
+  sv.voiceMode = _normalizeSwingVoiceMode(mode);
   localStorage.setItem("sv_voice_mode", sv.voiceMode);
   _syncSwingVoiceControls();
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = `Voice mode: ${sv.voiceMode}. Confidence-aware coaching preserved.`;
 }
 
-function _queueSwingVoice(text, priority = "normal") {
-  if (!sv.voiceEnabled || !text || !("speechSynthesis" in window)) return;
-  const clean = String(text).replace(/\s+/g, " ").trim().slice(0, 120);
+function _queueSwingVoice(text, priority = "normal", meta = {}) {
+  if (!sv.voiceEnabled || !text || document.hidden || !("speechSynthesis" in window)) return;
+  const clean = String(text).replace(/\s+/g, " ").trim().slice(0, priority === "result" ? 150 : 100);
   if (!clean) return;
   const now = Date.now();
-  const cooldown = sv.voiceMode === "quiet" ? 12000 : sv.voiceMode === "normal" ? 5000 : 8000;
-  if (priority !== "result" && (now - sv.voiceLastMs < cooldown || clean === sv.voiceLastText)) return;
-  if (sv.voiceQueue.length >= 2) sv.voiceQueue.shift();
-  sv.voiceQueue.push(clean);
+  const key = _swingVoiceKey(clean, meta);
+  _pruneSwingVoiceMemory(now);
+  const cooldown = _swingVoiceCooldownMs(priority);
+  if (now - sv.voiceLastMs < cooldown || clean === sv.voiceLastText) return;
+  if (key && sv.voiceLastByKey[key] && now - sv.voiceLastByKey[key] < Math.max(cooldown, 18000)) return;
+  const maxQueue = Math.max(1, Math.min(3, sv.voiceQueueMax || 3));
+  if (sv.voiceQueue.length >= maxQueue) {
+    if (priority !== "result") return;
+    sv.voiceQueue.shift();
+  }
+  sv.voiceQueue.push({ text: clean, priority, key, confidence: meta.confidence || "" });
   _drainSwingVoiceQueue();
 }
 
 function _drainSwingVoiceQueue() {
   if (sv.voiceSpeaking || !sv.voiceQueue.length || !("speechSynthesis" in window)) return;
-  const text = sv.voiceQueue.shift();
+  if (speechSynthesis.speaking) {
+    try { speechSynthesis.cancel(); } catch(e) {}
+  }
+  const item = sv.voiceQueue.shift();
+  const text = typeof item === "string" ? item : item.text;
+  if (!text || document.hidden) return;
   sv.voiceSpeaking = true;
+  sv.voiceCurrent = item;
   sv.voiceLastMs = Date.now();
   sv.voiceLastText = text;
+  if (item?.key) sv.voiceLastByKey[item.key] = sv.voiceLastMs;
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = (_svLang || "es") === "es" ? "es-ES" : "en-US";
-  utt.rate = sv.voiceMode === "normal" ? 1.02 : 0.96;
+  utt.rate = _swingVoiceRate();
   utt.pitch = 1.0;
+  utt.volume = 1.0;
   utt.onend = utt.onerror = () => {
     sv.voiceSpeaking = false;
+    sv.voiceCurrent = null;
     setTimeout(_drainSwingVoiceQueue, 200);
   };
-  try { speechSynthesis.speak(utt); } catch(e) { sv.voiceSpeaking = false; }
+  try {
+    if (typeof speechSynthesis.resume === "function") speechSynthesis.resume();
+    speechSynthesis.speak(utt);
+  } catch(e) {
+    sv.voiceSpeaking = false;
+    sv.voiceCurrent = null;
+  }
 }
 
 function _stopSwingVoiceCoach() {
   sv.voiceQueue = [];
   sv.voiceSpeaking = false;
+  sv.voiceCurrent = null;
   try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e) {}
 }
 
@@ -11932,12 +11993,14 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     _setSwingFullscreen(false);
     _cleanupSwingReplay("visibilitychange");
+    _stopSwingVoiceCoach();
     if (sv.active) _stopSwingCamera();
   }
 });
 window.addEventListener("pagehide", () => {
   _setSwingFullscreen(false);
   _cleanupSwingReplay("pagehide");
+  _stopSwingVoiceCoach();
   if (sv.active) _stopSwingCamera();
 });
 
@@ -12760,15 +12823,24 @@ function _recordGolfSwingMemory(analysis) {
   }).catch(() => {});
 }
 
+function _buildSwingVoiceResultCue(card, score) {
+  if (!card) return `${score}Swing analyzed. Review the coach read.`;
+  const tendency = card.tendency.replace(/^possible tendency: |^inferred tendency: /, "");
+  if (card.confidence === "low") return `${score}Possible ${tendency}. ${card.action}`;
+  if (card.confidence === "medium") return `${score}Likely ${tendency}. ${card.action}`;
+  return `${score}${tendency}. ${card.action}`;
+}
+
 function _speakSwingResult(analysis) {
   if (!sv.voiceEnabled) return;
   const cards = _buildGolfCoachCards(analysis || {}, (_svLang || "es") === "es");
   const best = cards.find(c => c.confidence !== "low") || cards[0];
   const score = analysis?.score != null ? `Score ${analysis.score}. ` : "";
-  const cue = best
-    ? `${score}${best.confidence === "low" ? "Possible tendency" : "Coach read"}: ${best.tendency.replace(/^possible tendency: |^inferred tendency: /, "")}. ${best.action}`
-    : `${score}Swing analyzed. Review the coach read.`;
-  _queueSwingVoice(cue, "result");
+  const cue = _buildSwingVoiceResultCue(best, score);
+  _queueSwingVoice(cue, "result", {
+    confidence: best?.confidence || "medium",
+    key: best ? `result-${best.confidence}-${best.tendency}` : "result-reviewed",
+  });
 }
 
 function _renderEliteResult(d) {
