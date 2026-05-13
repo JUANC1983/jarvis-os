@@ -793,6 +793,18 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 }
 .sv-metric span:last-child{color:var(--cyan);font-weight:700}
 .sv-tip{font-size:11px;color:var(--soft2);padding:4px 0;border-bottom:1px solid var(--border3);line-height:1.4}
+.sv-telemetry{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:4px;
+}
+.sv-telemetry-chip{
+  min-width:0;border-radius:8px;padding:7px 8px;background:rgba(255,255,255,.035);
+  border:1px solid var(--border3);
+}
+.sv-telemetry-chip.good{border-color:rgba(67,255,155,.32)}
+.sv-telemetry-chip.warn{border-color:rgba(255,190,75,.36)}
+.sv-telemetry-chip.bad{border-color:rgba(255,91,91,.38)}
+.sv-telemetry-label{font-size:9px;font-weight:900;color:var(--soft2);text-transform:uppercase;letter-spacing:.08em}
+.sv-telemetry-value{font-size:12px;font-weight:900;color:var(--white);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sv-record-bar{height:4px;background:var(--border2);border-radius:2px;margin-bottom:10px;overflow:hidden}
 .sv-record-progress{height:100%;width:0%;background:#ff4d4d;transition:width .1s;border-radius:2px}
 .sv-record-mode{
@@ -4738,6 +4750,7 @@ body.mode-beginner .operator-only{display:none!important}
           <div id="svHudAI" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>AI standby</span></div>
           <div id="svHudTracking" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Tracking --</span></div>
           <div id="svHudAngle" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Face-on</span></div>
+          <div id="svHudPerf" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Perf --</span></div>
           <span class="sv-hud-spacer"></span>
           <div id="svHudFraming" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Framing --</span></div>
         </div>
@@ -4772,6 +4785,13 @@ body.mode-beginner .operator-only{display:none!important}
         </div>
         <div class="sv-metrics-title">Real-time Tips</div>
         <div id="svLiveTips"></div>
+        <div class="sv-metrics-title">Mobile Telemetry</div>
+        <div id="svTelemetryPanel" class="sv-telemetry">
+          <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">FPS</div><div class="sv-telemetry-value">--</div></div>
+          <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">Dropped</div><div class="sv-telemetry-value">--</div></div>
+          <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">Heat</div><div class="sv-telemetry-value">--</div></div>
+          <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">Cleanup</div><div class="sv-telemetry-value">ready</div></div>
+        </div>
       </div>
     </div>
 
@@ -10818,6 +10838,21 @@ const sv = {
   voiceSpeaking:   false,
   voiceLastMs:     0,
   voiceLastText:   "",
+  telemetry:       {
+    startedMs: 0,
+    lastFrameMs: 0,
+    windowStartMs: 0,
+    frameCount: 0,
+    droppedCount: 0,
+    renderLastMs: 0,
+    fps: 0,
+    pressure: "idle",
+    heatRisk: "low",
+    batteryImpact: "low",
+    cleanupReady: true,
+    samples: [],
+    maxSamples: 20,
+  },
   replaySessions:  [],
   replaySelectedId: null,
   maxReplaySessions: 4,
@@ -10976,6 +11011,25 @@ function _resetSwingAutoState() {
   _renderSwingPhaseTimeline("address");
 }
 
+function _resetSwingTelemetry() {
+  sv.telemetry = {
+    startedMs: sv.active ? Date.now() : 0,
+    lastFrameMs: 0,
+    windowStartMs: 0,
+    frameCount: 0,
+    droppedCount: 0,
+    renderLastMs: 0,
+    fps: 0,
+    pressure: sv.active ? "warming" : "idle",
+    heatRisk: "low",
+    batteryImpact: "low",
+    cleanupReady: true,
+    samples: [],
+    maxSamples: 20,
+  };
+  _renderSwingTelemetry(true);
+}
+
 // ── lazy MediaPipe loader ─────────────────────────────────────────────
 function _loadMediaPipe() {
   return new Promise((resolve, reject) => {
@@ -11065,6 +11119,7 @@ async function _startSwingCamera(facingMode, keepPose) {
 
   sv.stream = stream;
   video.srcObject = stream;
+  _resetSwingTelemetry();
 
   // iOS Safari requires a manual play() call after srcObject assignment
   try { await video.play(); } catch(e) { /* autoplay policy — user gesture already present */ }
@@ -11125,6 +11180,7 @@ function _stopSwingCamera() {
   _stopSwingVoiceCoach();
   _resetSwingAutoState();
   _cleanupSwingReplay("camera_stop");
+  _resetSwingTelemetry();
   _updateSwingSportsHud({ active: false, tracking: 0, framing: null });
   qs("svStatus").textContent = "Camera stopped.";
   _setRecordBarVisible(false);
@@ -11183,6 +11239,7 @@ function _onPoseResults(results) {
 
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, w, h);
+  _updateSwingTelemetry();
 
   if (!results.poseLandmarks) { _updateSwingFraming(null); return; }
 
@@ -11315,6 +11372,9 @@ function _updateSwingSportsHud({ active, tracking, framing, framingState } = {})
   const isActive = !!active;
   _setHudPill("svHudAI", isActive ? "good" : "warn", isActive ? "AI active" : "AI standby");
   _setHudPill("svHudAngle", isActive ? "good" : "warn", _swingAngleMeta().label);
+  const perf = sv.telemetry?.pressure || "idle";
+  const perfState = perf === "stable" || perf === "idle" ? "good" : perf === "watch" || perf === "warming" ? "warn" : "bad";
+  _setHudPill("svHudPerf", isActive ? perfState : "warn", isActive ? `Perf ${perf}` : "Perf --");
 
   const trackingPct = Number.isFinite(tracking) ? Math.round(tracking) : 0;
   const trackingState = trackingPct >= 70 ? "good" : trackingPct >= 35 ? "warn" : "bad";
@@ -11323,6 +11383,96 @@ function _updateSwingSportsHud({ active, tracking, framing, framingState } = {})
   const framingPct = Number.isFinite(framing) ? Math.round(framing) : null;
   const frameState = framingState || (framingPct == null ? "warn" : framingPct >= 72 ? "good" : framingPct >= 45 ? "warn" : "bad");
   _setHudPill("svHudFraming", isActive ? frameState : "warn", isActive && framingPct != null ? `Framing ${framingPct}%` : "Framing --");
+}
+
+function _telemetryBand(kind, value) {
+  if (kind === "fps") return value >= 24 ? "good" : value >= 16 ? "warn" : "bad";
+  if (kind === "dropped") return value <= 2 ? "good" : value <= 7 ? "warn" : "bad";
+  if (kind === "heat") return value === "low" ? "good" : value === "watch" ? "warn" : "bad";
+  if (kind === "cleanup") return value ? "good" : "warn";
+  return "warn";
+}
+
+function _setTelemetryChip(index, label, value, state) {
+  const panel = qs("svTelemetryPanel");
+  const chip = panel?.children?.[index];
+  if (!chip) return;
+  chip.className = `sv-telemetry-chip ${state}`;
+  const labelEl = chip.querySelector(".sv-telemetry-label");
+  const valueEl = chip.querySelector(".sv-telemetry-value");
+  if (labelEl) labelEl.textContent = label;
+  if (valueEl) valueEl.textContent = value;
+}
+
+function _estimateSwingMemoryPressure() {
+  const framePressure = Array.isArray(sv.frames) ? sv.frames.length / Math.max(sv.maxStoredFrames, 1) : 0;
+  const replayPressure = Array.isArray(sv.replaySessions) ? sv.replaySessions.length / Math.max(sv.maxReplaySessions, 1) : 0;
+  const clubPressure = Array.isArray(sv.clubSamples) ? sv.clubSamples.length / Math.max(sv.maxClubSamples, 1) : 0;
+  let heapPressure = 0;
+  const mem = performance?.memory;
+  if (mem?.usedJSHeapSize && mem?.jsHeapSizeLimit) heapPressure = mem.usedJSHeapSize / Math.max(mem.jsHeapSizeLimit, 1);
+  return Math.max(framePressure, replayPressure, clubPressure, heapPressure);
+}
+
+function _updateSwingTelemetry() {
+  const t = sv.telemetry;
+  if (!t) return;
+  const now = performance.now();
+  if (!t.startedMs) t.startedMs = Date.now();
+  if (!t.windowStartMs) t.windowStartMs = now;
+  if (t.lastFrameMs) {
+    const delta = now - t.lastFrameMs;
+    if (delta > 55) t.droppedCount++;
+  }
+  t.lastFrameMs = now;
+  t.frameCount++;
+
+  const elapsed = now - t.windowStartMs;
+  if (elapsed >= 1000) {
+    t.fps = Math.round(t.frameCount * 1000 / Math.max(elapsed, 1));
+    const pressure = _estimateSwingMemoryPressure();
+    const sessionMin = t.startedMs ? (Date.now() - t.startedMs) / 60000 : 0;
+    const dropRate = t.droppedCount / Math.max(t.frameCount, 1);
+    t.heatRisk = (sessionMin > 12 && (t.fps < 18 || dropRate > 0.18 || pressure > 0.78)) ? "high"
+      : (sessionMin > 6 || t.fps < 22 || dropRate > 0.1 || pressure > 0.62) ? "watch" : "low";
+    t.batteryImpact = sv.recording || t.heatRisk === "high" ? "high" : (sv.active || t.heatRisk === "watch") ? "medium" : "low";
+    t.cleanupReady = !!sv.active && !!sv.stream && !!sv.pose && !sv.frameInFlight && !sv.cueInFlight && !sv.swingAbort;
+    t.pressure = t.heatRisk === "high" || t.fps < 16 ? "stress" : t.heatRisk === "watch" || t.fps < 24 ? "watch" : "stable";
+    t.samples.push({
+      ts: Date.now(),
+      fps: t.fps,
+      dropped: t.droppedCount,
+      memory_pressure: Number(pressure.toFixed(3)),
+      heat: t.heatRisk,
+      battery: t.batteryImpact,
+      cleanup_ready: t.cleanupReady,
+    });
+    if (t.samples.length > t.maxSamples) t.samples.splice(0, t.samples.length - t.maxSamples);
+    _renderSwingTelemetry();
+    t.frameCount = 0;
+    t.droppedCount = 0;
+    t.windowStartMs = now;
+  } else if (now - t.renderLastMs > 1200) {
+    _renderSwingTelemetry();
+  }
+}
+
+function _renderSwingTelemetry(force = false) {
+  const t = sv.telemetry || {};
+  const now = performance.now();
+  if (!force && t.renderLastMs && now - t.renderLastMs < 900) return;
+  t.renderLastMs = now;
+  const fps = Math.round(t.fps || 0);
+  const dropped = Math.round(t.droppedCount || 0);
+  const heat = t.heatRisk || "low";
+  const cleanupReady = !!t.cleanupReady;
+  _setTelemetryChip(0, "FPS", fps ? `${fps}` : "--", _telemetryBand("fps", fps || 30));
+  _setTelemetryChip(1, "Dropped", `${dropped}/s`, _telemetryBand("dropped", dropped));
+  _setTelemetryChip(2, "Heat", `${heat} / ${t.batteryImpact || "low"}`, _telemetryBand("heat", heat));
+  _setTelemetryChip(3, "Cleanup", cleanupReady ? "ready" : "busy", _telemetryBand("cleanup", cleanupReady));
+  const perf = t.pressure || "idle";
+  const perfState = perf === "stable" || perf === "idle" ? "good" : perf === "watch" || perf === "warming" ? "warn" : "bad";
+  _setHudPill("svHudPerf", sv.active ? perfState : "warn", sv.active ? `Perf ${perf}` : "Perf --");
 }
 
 function _swingAutoSample(landmarks) {
@@ -12174,7 +12324,9 @@ function _captureSwingReplay(analysis) {
 function _cleanupSwingReplay(reason = "cleanup") {
   sv.replaySessions = [];
   sv.replaySelectedId = null;
+  if (sv.telemetry?.samples) sv.telemetry.samples = sv.telemetry.samples.slice(-4);
   _renderSwingReplayPanel(reason);
+  _renderSwingTelemetry(true);
 }
 
 function _renderSwingReplayPanel(reason = "") {
