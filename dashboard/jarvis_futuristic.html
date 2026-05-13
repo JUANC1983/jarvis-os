@@ -1164,6 +1164,73 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-fullscreen-active .sv-fit-guide{bottom:16px}
   .sv-fullscreen-active .sv-record-hud{bottom:76px}
 }
+
+/* X14.1: floating sports controls */
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode,
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+  position:fixed;z-index:31;width:auto;min-width:82px;max-width:124px;height:40px!important;
+  min-height:40px!important;padding:0 12px!important;border-radius:999px!important;
+  background:rgba(0,0,0,.66)!important;border:1px solid rgba(255,255,255,.24)!important;
+  color:#fff!important;box-shadow:0 10px 30px rgba(0,0,0,.34);backdrop-filter:blur(10px);
+  font-size:12px!important;font-weight:950!important;text-shadow:0 1px 2px rgba(0,0,0,.82);
+}
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode{
+  left:max(12px,env(safe-area-inset-left));
+}
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect{bottom:calc(var(--sv-drawer-height) + max(86px,env(safe-area-inset-bottom) + 86px))}
+.sv-fullscreen-active .sv-stage-actions #svRecordMode{bottom:calc(var(--sv-drawer-height) + max(38px,env(safe-area-inset-bottom) + 38px))}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+  right:max(12px,env(safe-area-inset-right));min-width:74px;text-align:center;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn{bottom:calc(var(--sv-drawer-height) + max(86px,env(safe-area-inset-bottom) + 86px))}
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn{bottom:calc(var(--sv-drawer-height) + max(38px,env(safe-area-inset-bottom) + 38px))}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn.active,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn.active{
+  border-color:rgba(67,255,155,.52)!important;background:rgba(25,77,56,.72)!important;color:#d8ffe9!important;
+}
+.sv-fullscreen-active .sv-stage-actions #svVoiceMode{display:none!important}
+.sv-fullscreen-active .sv-stage-actions #svFullscreenBtn{
+  position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));
+  z-index:33;min-width:88px!important;height:38px!important;background:rgba(0,0,0,.7)!important;
+}
+.sv-fullscreen-active .sv-stage-actions #svStartBtn{
+  position:fixed;left:max(12px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));
+  z-index:33;min-width:104px!important;height:38px!important;background:rgba(0,0,0,.7)!important;
+}
+.sv-fullscreen-active .sv-switch-btn{
+  position:fixed;right:max(12px,env(safe-area-inset-right));
+  top:calc(max(12px,env(safe-area-inset-top)) + 48px);z-index:32;
+  min-width:46px;min-height:42px;border-radius:999px;background:rgba(0,0,0,.68);
+  border-color:rgba(255,255,255,.24);box-shadow:0 10px 30px rgba(0,0,0,.32);
+}
+.sv-fullscreen-active .sv-stage-card .ch{
+  min-height:42px;width:auto;right:auto;max-width:min(42vw,260px);padding:8px 10px;
+  pointer-events:none;
+}
+.sv-fullscreen-active .sv-stage-actions,
+.sv-fullscreen-active .sv-stage-actions *{pointer-events:auto}
+
+@media(max-width:700px){
+  .sv-fullscreen-active .sv-stage-actions #svStartBtn{display:none!important}
+  .sv-fullscreen-active .sv-stage-card .ch{max-width:42vw}
+  .sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode,
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{height:42px!important;min-height:42px!important;font-size:12px!important}
+}
+
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode{left:max(12px,env(safe-area-inset-left))}
+  .sv-fullscreen-active .sv-stage-actions #svAngleSelect{bottom:max(66px,env(safe-area-inset-bottom) + 66px)}
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode{bottom:max(18px,env(safe-area-inset-bottom) + 18px)}
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn{bottom:max(66px,env(safe-area-inset-bottom) + 66px)}
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{bottom:max(18px,env(safe-area-inset-bottom) + 18px)}
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
