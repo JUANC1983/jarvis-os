@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#08131f"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="JARVIS Golf"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="manifest" href="/dashboard/manifest.json"/>
 <title>JARVIS OS // Command Center</title>
 <style>
 /* ═══════════════════════════════════════════
@@ -891,6 +897,23 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-coach-tag.high{color:#caffdf;border-color:rgba(67,255,155,.35)}
 .sv-coach-tag.medium{color:#ffe1a6;border-color:rgba(255,190,75,.38)}
 .sv-coach-tag.low{color:#ffc2c2;border-color:rgba(255,91,91,.4)}
+.sv-replay-panel{
+  margin-top:10px;padding:10px;border-radius:8px;background:rgba(68,240,255,.03);
+  border:1px solid rgba(68,240,255,.1);display:flex;flex-direction:column;gap:10px;
+}
+.sv-replay-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sv-replay-title{font-size:12px;font-weight:900;color:var(--white)}
+.sv-replay-meta{font-size:11px;color:var(--soft)}
+.sv-replay-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sv-replay-frame{
+  min-width:0;border-radius:8px;background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.09);
+  padding:7px;
+}
+.sv-replay-frame canvas{display:block;width:100%;aspect-ratio:4/3;border-radius:6px;background:#05070a}
+.sv-replay-label{font-size:10px;font-weight:900;color:var(--soft2);margin-top:5px;text-align:center}
+.sv-replay-compare{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.sv-replay-empty{font-size:12px;color:var(--soft);line-height:1.4}
+@media(max-width:700px){.sv-replay-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sv-replay-compare{grid-template-columns:1fr}}
 .sv-sev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
 .sv-dot-high{background:#ff4d4d}.sv-dot-medium{background:#ffaa00}
 .sv-dot-low{background:var(--cyan)}.sv-dot-ok{background:var(--ok)}
@@ -934,6 +957,15 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-fullscreen-active #svTabProgress,
 .sv-fullscreen-active #svSwingResult{display:none!important}
 .sv-fullscreen-active #svFullscreenBtn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff}
+.jarvis-standalone,
+.jarvis-standalone body{min-height:100dvh;overscroll-behavior-y:none}
+.jarvis-standalone .nav-glass{padding-top:max(8px,env(safe-area-inset-top))}
+.jarvis-standalone #tab-golf{min-height:calc(100dvh - 72px)}
+.jarvis-golf-standalone #tab-golf{scroll-margin-top:0}
+.golf-mobile-root[data-golf-app-shell="standalone"]{
+  --golf-app-safe-bottom:max(12px,env(safe-area-inset-bottom));
+  padding-bottom:var(--golf-app-safe-bottom);
+}
 @media(max-width:900px),(orientation:landscape) and (max-height:640px){
   .sv-fullscreen-active .sv-stage-card{padding:max(5px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left))}
   .sv-fullscreen-active .sv-stage-card .ch{gap:6px}
@@ -4743,6 +4775,9 @@ body.mode-beginner .operator-only{display:none!important}
     </div>
     <div id="svTabHistory">
       <div id="svHistoryList" style="font-size:12px;color:var(--soft)">No swings recorded yet.</div>
+      <div id="svReplayPanel" class="sv-replay-panel">
+        <div class="sv-replay-empty">Lightweight replay appears here after this session records a swing.</div>
+      </div>
     </div>
     <div id="svTabDrills" style="display:none">
       <div id="svDrillsList" style="font-size:12px;color:var(--soft)">Cargando drills…</div>
@@ -6278,6 +6313,7 @@ function switchTab(name) {
       b.classList.toggle("active", b.dataset.section === _sec));
     _activateSub && _activateSub(name);
   }
+  if (name === "golf" || prevTab === "golf") _applyGolfStandaloneShell();
   // Debounce lazy-loads to prevent race conditions on rapid tab switching
   if (_tabSwitchPendingName && _tabSwitchPendingName !== name) {
     delete window.JARVIS_TABS.loading[_tabSwitchPendingName];
@@ -10422,6 +10458,16 @@ window.JARVIS_GOLF_MOBILE = Object.freeze({
   captureSelector: "[data-golf-surface='swing-capture']",
   lazyLoader: "loadGolfPanelData",
   lifecycleStop: "__jarvisStopSwingVision",
+  pwa: Object.freeze({
+    scope: "/dashboard/",
+    startUrl: "/dashboard/app?module=golf",
+    offlineShell: "/dashboard/app",
+    standaloneReady: true,
+    extractionStage: "dashboard-compatible",
+    routeParam: "module",
+    routeValue: "golf",
+    supportedModes: Object.freeze(["dashboard", "capture"]),
+  }),
   endpoints: Object.freeze([
     "/dashboard/golf",
     "/api/golf/profile",
@@ -10447,6 +10493,37 @@ function _golfMobileRoot() {
 function _setGolfMobileLifecycle(state) {
   const root = _golfMobileRoot();
   if (root) root.dataset.golfLifecycle = state;
+}
+
+function _isJarvisStandalone() {
+  return window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    window.navigator.standalone === true;
+}
+
+function _applyGolfStandaloneShell() {
+  const root = _golfMobileRoot();
+  const standalone = _isJarvisStandalone();
+  document.documentElement.classList.toggle("jarvis-standalone", standalone);
+  document.documentElement.classList.toggle("jarvis-golf-standalone", standalone && window.JARVIS_TABS?.active === "golf");
+  document.body?.classList.toggle("jarvis-standalone", standalone);
+  if (root) root.dataset.golfAppShell = standalone ? "standalone" : "dashboard";
+}
+
+function _hydrateGolfMobileRoute(params = new URLSearchParams(window.location.search)) {
+  const cfg = window.JARVIS_GOLF_MOBILE?.pwa || {};
+  if (params.get(cfg.routeParam || "module") !== (cfg.routeValue || "golf")) return false;
+  const mode = params.get("mode") || "dashboard";
+  switchSection("life");
+  switchTab("golf");
+  _applyGolfStandaloneShell();
+  if (mode === "capture") {
+    setTimeout(() => {
+      const card = document.querySelector(window.JARVIS_GOLF_MOBILE.captureSelector);
+      card?.scrollIntoView({ block: "start", behavior: "smooth" });
+    }, 220);
+  }
+  try { sessionStorage.setItem("jarvis_golf_mobile_route", JSON.stringify({ mode, ts: Date.now() })); } catch(e) {}
+  return true;
 }
 
 const _golfPanelState = { loaded: false, loading: false };
@@ -10725,9 +10802,13 @@ const sv = {
   voiceSpeaking:   false,
   voiceLastMs:     0,
   voiceLastText:   "",
+  replaySessions:  [],
+  replaySelectedId: null,
+  maxReplaySessions: 4,
 };
 
 function _setSwingFullscreen(enabled) {
+  const wasFullscreen = sv.fullscreen;
   sv.fullscreen = !!enabled;
   document.body.classList.toggle("sv-fullscreen-active", sv.fullscreen);
   const root = _golfMobileRoot();
@@ -10737,6 +10818,7 @@ function _setSwingFullscreen(enabled) {
     btn.textContent = sv.fullscreen ? "Exit Fullscreen" : "Fullscreen";
     btn.setAttribute("aria-pressed", sv.fullscreen ? "true" : "false");
   }
+  if (wasFullscreen && !sv.fullscreen) _cleanupSwingReplay("fullscreen_exit");
 }
 
 function toggleSwingFullscreen() {
@@ -10986,6 +11068,7 @@ function _stopSwingCamera() {
   _setSwingRecordingHud(false);
   _stopSwingVoiceCoach();
   _resetSwingAutoState();
+  _cleanupSwingReplay("camera_stop");
   _updateSwingSportsHud({ active: false, tracking: 0, framing: null });
   qs("svStatus").textContent = "Camera stopped.";
   _setRecordBarVisible(false);
@@ -11004,17 +11087,20 @@ function _abortSwingLiveRequests() {
 
 window.__jarvisStopSwingVision = function() {
   _setSwingFullscreen(false);
+  _cleanupSwingReplay("tab_exit");
   if (sv.active) _stopSwingCamera();
 };
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     _setSwingFullscreen(false);
+    _cleanupSwingReplay("visibilitychange");
     if (sv.active) _stopSwingCamera();
   }
 });
 window.addEventListener("pagehide", () => {
   _setSwingFullscreen(false);
+  _cleanupSwingReplay("pagehide");
   if (sv.active) _stopSwingCamera();
 });
 
@@ -11521,6 +11607,7 @@ async function _sendSwingAnalysis() {
       _renderEliteResult(d);
       _speakSwingResult(d);
       _recordGolfSwingMemory(d);
+      _captureSwingReplay(d);
       loadSwingHistory();
       _loadEliteProgress();
       const tempoStr = d.tempo_ratio ? `· Tempo ${d.tempo_ratio.toFixed(1)}:1` : "";
@@ -11791,6 +11878,144 @@ function _renderCoachCard(card) {
 }
 
 // ── history & drills ─────────────────────────────────────────────────
+// Lightweight session replay: sampled landmarks only, no video persistence.
+function _cloneReplayLandmarks(landmarks) {
+  return (landmarks || []).slice(0, 33).map(p => ({
+    x: Number(Number(p.x || 0).toFixed(4)),
+    y: Number(Number(p.y || 0).toFixed(4)),
+    v: Number(Number((p.visibility ?? p.v ?? 1)).toFixed(3)),
+  }));
+}
+
+function _sampleSwingReplayFrames(frames) {
+  const src = Array.isArray(frames) ? frames.filter(f => Array.isArray(f.landmarks)) : [];
+  if (src.length < 4) return [];
+  const picks = [
+    ["Address", 0],
+    ["Top", Math.round((src.length - 1) * 0.42)],
+    ["Impact", Math.round((src.length - 1) * 0.72)],
+    ["Finish", src.length - 1],
+  ];
+  return picks.map(([label, idx]) => ({
+    label,
+    landmarks: _cloneReplayLandmarks(src[Math.max(0, Math.min(src.length - 1, idx))].landmarks),
+  }));
+}
+
+function _captureSwingReplay(analysis) {
+  const keyFrames = _sampleSwingReplayFrames(sv.frames);
+  if (!keyFrames.length) return;
+  const session = {
+    id: `replay-${Date.now()}`,
+    club: qs("svClubSelect")?.value || analysis?.club || "unknown",
+    score: analysis?.score ?? null,
+    frameCount: Array.isArray(sv.frames) ? sv.frames.length : 0,
+    createdAt: Date.now(),
+    keyFrames,
+    metrics: {
+      tempo_ratio: sv.bioLatest?.tempo_ratio ?? analysis?.tempo_ratio ?? null,
+      balance_score: sv.bioLatest?.balance_score ?? null,
+      stability_score: sv.bioLatest?.stability_score ?? null,
+    },
+  };
+  sv.replaySessions.unshift(session);
+  if (sv.replaySessions.length > sv.maxReplaySessions) sv.replaySessions.splice(sv.maxReplaySessions);
+  sv.replaySelectedId = session.id;
+  _renderSwingReplayPanel();
+}
+
+function _cleanupSwingReplay(reason = "cleanup") {
+  sv.replaySessions = [];
+  sv.replaySelectedId = null;
+  _renderSwingReplayPanel(reason);
+}
+
+function _renderSwingReplayPanel(reason = "") {
+  const el = qs("svReplayPanel");
+  if (!el) return;
+  const sessions = Array.isArray(sv.replaySessions) ? sv.replaySessions : [];
+  if (!sessions.length) {
+    const suffix = reason ? ` Cleared on ${reason.replace(/_/g, " ")}.` : "";
+    el.innerHTML = `<div class="sv-replay-empty">Lightweight replay appears here after this session records a swing.${suffix}</div>`;
+    return;
+  }
+  const current = sessions.find(s => s.id === sv.replaySelectedId) || sessions[0];
+  const previous = sessions.find(s => s.id !== current.id) || null;
+  const meta = [
+    current.club,
+    current.frameCount ? `${current.frameCount} frames sampled` : "",
+    current.score != null ? `score ${current.score}` : "",
+  ].filter(Boolean).join(" · ");
+  el.innerHTML = `
+    <div class="sv-replay-head">
+      <div>
+        <div class="sv-replay-title">Swing replay and comparison</div>
+        <div class="sv-replay-meta">${_esc(meta || "Session replay")}</div>
+      </div>
+      <button class="vb-btn" onclick="_cleanupSwingReplay('manual_clear')">Clear replay</button>
+    </div>
+    <div class="sv-replay-grid">
+      ${current.keyFrames.map((f, i) => `<div class="sv-replay-frame">
+        <canvas id="svReplayFrame${i}" width="180" height="135"></canvas>
+        <div class="sv-replay-label">${_esc(f.label)}</div>
+      </div>`).join("")}
+    </div>
+    <div class="sv-replay-compare">
+      <div class="sv-replay-frame">
+        <canvas id="svReplayCompareCurrent" width="260" height="195"></canvas>
+        <div class="sv-replay-label">Current impact</div>
+      </div>
+      <div class="sv-replay-frame">
+        <canvas id="svReplayComparePrevious" width="260" height="195"></canvas>
+        <div class="sv-replay-label">${previous ? "Previous vs current" : "Previous swing unavailable"}</div>
+      </div>
+    </div>`;
+  current.keyFrames.forEach((frame, i) => _drawReplayCanvas(qs(`svReplayFrame${i}`), frame.landmarks, "#44f0ff"));
+  const impact = current.keyFrames.find(f => f.label === "Impact") || current.keyFrames[0];
+  _drawReplayCanvas(qs("svReplayCompareCurrent"), impact?.landmarks, "#43ff9b");
+  if (previous) {
+    const prevImpact = previous.keyFrames.find(f => f.label === "Impact") || previous.keyFrames[0];
+    _drawReplayCanvas(qs("svReplayComparePrevious"), prevImpact?.landmarks, "rgba(68,240,255,.52)");
+    _drawReplayCanvas(qs("svReplayComparePrevious"), impact?.landmarks, "#43ff9b", true);
+  }
+}
+
+function _drawReplayCanvas(canvas, landmarks, color = "#44f0ff", overlay = false) {
+  if (!canvas || !Array.isArray(landmarks) || !landmarks.length) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width || 180;
+  const h = canvas.height || 135;
+  if (!overlay) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#05070a";
+    ctx.fillRect(0, 0, w, h);
+  }
+  const pairs = [
+    [11,12],[11,13],[13,15],[12,14],[14,16],
+    [11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],
+    [27,31],[28,32],
+  ];
+  ctx.save();
+  ctx.lineWidth = overlay ? 2.5 : 2;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  pairs.forEach(([a, b]) => {
+    const pa = landmarks[a], pb = landmarks[b];
+    if (!pa || !pb || pa.v < .25 || pb.v < .25) return;
+    ctx.beginPath();
+    ctx.moveTo(pa.x * w, pa.y * h);
+    ctx.lineTo(pb.x * w, pb.y * h);
+    ctx.stroke();
+  });
+  landmarks.forEach(p => {
+    if (!p || p.v < .35) return;
+    ctx.beginPath();
+    ctx.arc(p.x * w, p.y * h, overlay ? 2.8 : 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
 async function loadSwingHistory() {
   try {
     const d = await _fetchWithTimeout("/api/golf/vision/history?limit=6", {}, 8000);
@@ -11879,6 +12104,7 @@ function svShowTab(tab, btn) {
   if (target) target.style.display = "";
   document.querySelectorAll(".sv-tab").forEach(b => b.classList.remove("active"));
   if (btn) btn.classList.add("active");
+  if (tab === "history") _renderSwingReplayPanel();
   if (tab === "drills") _loadSwingDrills();
   if (tab === "progress") _loadEliteProgress();
 }
@@ -14058,6 +14284,7 @@ async function boot() {
       showToast("Outlook connected successfully!", "success");
       history.replaceState(null, "", window.location.pathname);
     }
+    _hydrateGolfMobileRoute(_urlParams);
   } catch(e) {}
 
   window.JARVIS_RUNTIME.initialized = true;
@@ -16519,6 +16746,12 @@ function _startLiveClock() {
 }
 
 /* ── Patch boot to run experience init ───────────────────── */
+function _registerJarvisPwaShell() {
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+  navigator.serviceWorker.register("/dashboard/sw.js", { scope: "/dashboard/" })
+    .catch(e => console.warn("[JARVIS] PWA shell registration skipped:", e));
+}
+
 const _origBoot = boot;
 // loadConnectionStatus and _loadHomeGolfCard are called after boot completes
 document.addEventListener("DOMContentLoaded", () => {
@@ -16531,6 +16764,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Start live status bar ticker
   try { _startStatusBar(); } catch(e) {}
+
+  // Prepare dashboard-compatible PWA shell; does not alter routing or Golf state.
+  try { _registerJarvisPwaShell(); } catch(e) {}
+  try { _applyGolfStandaloneShell(); } catch(e) {}
 
   // Start holdings auto-refresh
   try { _startHoldingsRefresh(); } catch(e) {}

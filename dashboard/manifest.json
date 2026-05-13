@@ -1,10 +1,27 @@
 {
+  "id": "/dashboard/app",
   "name": "JARVIS Command Center",
   "short_name": "JARVIS",
-  "start_url": "/dashboard/app",
+  "start_url": "/dashboard/app?module=golf",
+  "scope": "/dashboard/",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
   "background_color": "#06111b",
   "theme_color": "#08131f",
   "description": "Strategic AI Operating System dashboard",
+  "categories": ["sports", "productivity", "finance"],
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "shortcuts": [
+    {
+      "name": "Golf Swing Vision",
+      "short_name": "Golf",
+      "description": "Open JARVIS Golf swing capture and coaching.",
+      "url": "/dashboard/app?module=golf&mode=capture"
+    }
+  ],
   "icons": []
 }
