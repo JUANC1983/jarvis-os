@@ -1865,6 +1865,43 @@ def golf_log_round(data: dict, current_user: dict = Depends(get_current_user)):
         return {"status": "error", "error": str(e)}
 
 
+class _GolfSwingMemoryRequest(BaseModel):
+    club: str = "unknown"
+    phase: str = ""
+    metrics: dict = {}
+    analysis: dict = {}
+
+
+@app.post("/api/golf/profile/swing-memory")
+def golf_swing_memory(req: _GolfSwingMemoryRequest, current_user: dict = Depends(get_current_user)):
+    uid = current_user["user_id"]
+    try:
+        stats = _ge(uid).record_swing_session(req.dict())
+        _golf_audit("swing_memory_recorded", uid, {"club": req.club, "score": req.analysis.get("score")})
+        return {"status": "ok", "profile": stats, "memory": stats.get("memory", {})}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/golf/practice")
+def golf_practice(current_user: dict | None = Depends(_golf_current_user_or_none)):
+    if not current_user:
+        return {
+            "status": "auth_required",
+            "focus": "baseline",
+            "title": "Baseline capture",
+            "session_score": None,
+            "summary": "Sign in to unlock adaptive practice suggestions.",
+            "drills": [],
+            "metrics": {"sessions": 0},
+            "trends": [],
+        }
+    try:
+        return _ge(current_user["user_id"]).practice_plan()
+    except Exception as e:
+        return {"status": "error", "error": str(e), "drills": [], "trends": []}
+
+
 # =========================
 # AGENT PERFORMANCE STATS
 # =========================

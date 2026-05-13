@@ -806,6 +806,45 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-record-hud.recording .rec-dot{animation:blink .8s ease-in-out infinite}
 .sv-record-hud .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px rgba(68,240,255,.65)}
 .sv-record-hud .hud-muted{color:rgba(255,255,255,.72);font-size:11px}
+.sv-auto-toggle{
+  min-height:38px;padding:7px 10px;border-radius:999px;border:1px solid rgba(68,240,255,.22);
+  background:rgba(68,240,255,.06);color:var(--soft2);font-size:12px;font-weight:900;
+  cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.sv-auto-toggle.active{background:rgba(68,240,255,.16);border-color:rgba(68,240,255,.45);color:var(--cyan)}
+.sv-voice-toggle{
+  min-height:38px;padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.055);color:var(--soft2);font-size:12px;font-weight:900;
+  cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.sv-voice-toggle.active{background:rgba(67,255,155,.12);border-color:rgba(67,255,155,.36);color:#caffdf}
+.sv-voice-mode{
+  min-height:38px;padding:7px 9px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--s3);color:var(--soft2);font-size:12px;font-weight:700;
+}
+.sv-phase-timeline{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:0 0 8px;
+}
+.sv-phase-step{
+  min-width:0;padding:5px 6px;border-radius:999px;background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.09);color:rgba(255,255,255,.58);
+  font-size:10px;font-weight:900;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sv-phase-step.active{border-color:rgba(68,240,255,.55);color:#fff;background:rgba(68,240,255,.14)}
+.sv-phase-step.done{border-color:rgba(67,255,155,.35);color:#caffdf;background:rgba(67,255,155,.08)}
+.sv-bio-hud{
+  position:absolute;left:12px;bottom:58px;z-index:16;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;width:min(92%,620px);pointer-events:none;
+}
+.sv-bio-chip{
+  min-width:0;padding:7px 9px;border-radius:10px;background:rgba(0,0,0,.58);
+  border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);text-shadow:0 1px 2px rgba(0,0,0,.78);
+}
+.sv-bio-label{font-size:9px;font-weight:900;color:rgba(255,255,255,.62);text-transform:uppercase;letter-spacing:.08em}
+.sv-bio-value{font-size:13px;font-weight:950;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-bio-chip.good{border-color:rgba(67,255,155,.42)}
+.sv-bio-chip.warn{border-color:rgba(255,190,75,.46)}
+.sv-bio-chip.bad{border-color:rgba(255,91,91,.48)}
 .sv-sports-hud{
   position:absolute;left:12px;right:12px;top:12px;z-index:17;display:flex;align-items:center;gap:8px;
   color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.78);pointer-events:none;
@@ -838,6 +877,20 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
   border-radius:6px;background:rgba(255,255,255,.03);font-size:12px;color:var(--soft2);line-height:1.5;
 }
+.sv-coach-read{display:flex;flex-direction:column;gap:8px}
+.sv-coach-card{
+  padding:9px 10px;border-radius:8px;background:rgba(68,240,255,.035);
+  border:1px solid rgba(68,240,255,.12);font-size:12px;line-height:1.45;color:var(--soft2);
+}
+.sv-coach-card strong{color:var(--white)}
+.sv-coach-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.sv-coach-tag{
+  padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.14);
+  color:var(--soft);font-size:10px;font-weight:800;text-transform:uppercase;
+}
+.sv-coach-tag.high{color:#caffdf;border-color:rgba(67,255,155,.35)}
+.sv-coach-tag.medium{color:#ffe1a6;border-color:rgba(255,190,75,.38)}
+.sv-coach-tag.low{color:#ffc2c2;border-color:rgba(255,91,91,.4)}
 .sv-sev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
 .sv-dot-high{background:#ff4d4d}.sv-dot-medium{background:#ffaa00}
 .sv-dot-low{background:var(--cyan)}.sv-dot-ok{background:var(--ok)}
@@ -847,20 +900,25 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .18s;
 }
 .sv-tab.active{color:var(--white);border-bottom-color:var(--cyan)}
-.sv-fullscreen-active{overflow:hidden}
-.sv-fullscreen-active #tab-golf{position:relative;z-index:3000}
+.sv-fullscreen-active{overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+.sv-fullscreen-active #tab-golf{
+  position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;
+  z-index:3000;margin:0!important;padding:0!important;overflow:hidden;background:#05070a;
+}
 .sv-fullscreen-active #tab-golf .section-intro,
 .sv-fullscreen-active #tab-golf > .g2{display:none}
 .sv-fullscreen-active .sv-stage-card{
-  position:fixed;inset:0;z-index:5000;margin:0!important;border-radius:0;
-  display:flex;flex-direction:column;background:#05070a;border:0;padding:clamp(10px,2vw,18px);
+  position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;
+  z-index:5000;margin:0!important;border-radius:0;overflow:hidden;
+  display:flex;flex-direction:column;background:#05070a;border:0;
+  padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));
 }
-.sv-fullscreen-active .sv-stage-card .ch{flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:10px}
-.sv-fullscreen-active .sv-stage-card .sv-status-bar{flex-shrink:0;margin-top:10px;font-size:13px;color:#fff}
-.sv-fullscreen-active .sv-stage-card .sv-record-bar{flex-shrink:0;height:7px;border-radius:999px;background:rgba(255,255,255,.18)}
+.sv-fullscreen-active .sv-stage-card .ch{flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:6px;margin-bottom:0}
+.sv-fullscreen-active .sv-stage-card .sv-status-bar{flex-shrink:0;margin:5px 0 6px;font-size:12px;color:#fff;min-height:14px}
+.sv-fullscreen-active .sv-stage-card .sv-record-bar{flex-shrink:0;height:5px;border-radius:999px;background:rgba(255,255,255,.18);margin-bottom:6px}
 .sv-fullscreen-active .sv-main{
   flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,240px);
-  gap:12px;margin-top:12px;
+  gap:6px;margin-top:0;overflow:hidden;
 }
 .sv-fullscreen-active .sv-cam-wrap{
   width:100%;height:100%;min-height:0;aspect-ratio:auto;border-radius:14px;
@@ -877,11 +935,11 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-fullscreen-active #svSwingResult{display:none!important}
 .sv-fullscreen-active #svFullscreenBtn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff}
 @media(max-width:900px),(orientation:landscape) and (max-height:640px){
-  .sv-fullscreen-active .sv-stage-card{padding:10px;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
-  .sv-fullscreen-active .sv-stage-card .ch{gap:10px}
+  .sv-fullscreen-active .sv-stage-card{padding:max(5px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left))}
+  .sv-fullscreen-active .sv-stage-card .ch{gap:6px}
   .sv-fullscreen-active .sv-main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
   .sv-fullscreen-active .sv-metrics-panel{
-    max-height:30vh;display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding:10px 12px;
+    max-height:24dvh;display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:8px 10px;
   }
   .sv-fullscreen-active .sv-metrics-title{margin:0}
 }
@@ -897,18 +955,27 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-fullscreen-active .sv-record-action{min-width:156px;min-height:50px;font-size:14px!important}
   .sv-fullscreen-active .sv-sports-hud{top:12px}
   .sv-fullscreen-active .sv-hud-pill{min-height:34px;font-size:12px}
+  .sv-fullscreen-active .sv-bio-hud{bottom:62px;width:min(78%,680px)}
 }
 @media(max-width:520px){
   .sv-stage-actions{width:100%}
   .sv-stage-actions .btn-p,.sv-stage-actions .vb-btn,.sv-stage-actions .sv-fullscreen-btn{min-height:44px}
   .sv-stage-actions #svRecordBtn,.sv-stage-actions #svStartBtn{flex:1}
   .sv-stage-actions #svRecordMode{flex:1 1 110px}
+  .sv-stage-actions #svAutoBtn{flex:1 1 92px}
+  .sv-stage-actions #svVoiceBtn{flex:1 1 92px}
+  .sv-stage-actions #svVoiceMode{flex:1 1 112px}
   .sv-fullscreen-active .sv-stage-card .ct{font-size:13px}
   .sv-fullscreen-active .sv-lang-toggle,.sv-fullscreen-active #svClubSelect{display:none}
   .sv-fit-guide{font-size:11px;padding:7px 10px}
   .sv-record-hud{left:12px;right:12px;justify-content:center}
   .sv-sports-hud{top:10px;gap:6px;flex-wrap:wrap}
   .sv-hud-pill{min-height:30px;padding:6px 9px;font-size:10px}
+  .sv-bio-hud{left:10px;right:10px;bottom:62px;width:auto;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sv-bio-chip{padding:6px 8px}
+  .sv-bio-value{font-size:12px}
+  .sv-phase-timeline{gap:3px;margin-bottom:6px}
+  .sv-phase-step{font-size:9px;padding:5px 4px}
   .sv-hud-spacer{display:none}
 }
 .sv-history-item{
@@ -933,6 +1000,17 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   scroll-margin-top:76px;
 }
 .golf-mobile-root[data-golf-capture="active"] .sv-stage-card{outline:1px solid rgba(68,240,255,.14)}
+.golf-practice-plan{display:flex;flex-direction:column;gap:8px}
+.golf-practice-head{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  padding:9px 10px;border-radius:8px;background:rgba(68,240,255,.045);border:1px solid rgba(68,240,255,.13);
+}
+.golf-practice-title{font-size:13px;font-weight:850;color:var(--white)}
+.golf-practice-summary{font-size:12px;color:var(--soft2);line-height:1.45;margin-top:3px}
+.golf-practice-score{font-size:22px;font-weight:950;color:var(--cyan);line-height:1}
+.golf-practice-drill{padding:8px 10px;border-radius:7px;background:rgba(255,255,255,.035);border:1px solid var(--border3)}
+.golf-practice-drill strong{font-size:12px;color:var(--white)}
+.golf-practice-drill div{font-size:11px;color:var(--soft2);margin-top:3px;line-height:1.45}
 
 /* ── Golf Elite v9 result styles ──────────────────────────────── */
 .elite-result{display:flex;flex-direction:column;gap:14px;margin-top:12px}
@@ -4574,6 +4652,13 @@ body.mode-beginner .operator-only{display:none!important}
           <option value="30" selected>30s</option>
           <option value="unlimited">Unlimited</option>
         </select>
+        <button class="sv-auto-toggle" id="svAutoBtn" onclick="toggleSwingAutoCapture()" aria-pressed="false">Auto</button>
+        <button class="sv-voice-toggle" id="svVoiceBtn" onclick="toggleSwingVoiceCoach()" aria-pressed="false">Voice</button>
+        <select id="svVoiceMode" class="sv-voice-mode" onchange="setSwingVoiceMode(this.value)" aria-label="Voice coaching intensity">
+          <option value="concise" selected>Concise</option>
+          <option value="normal">Normal</option>
+          <option value="quiet">Quiet</option>
+        </select>
         <button class="vb-btn sv-record-action" id="svRecordBtn" onclick="toggleSwingRecording()" disabled>Record</button>
       </div>
     </div>
@@ -4584,6 +4669,13 @@ body.mode-beginner .operator-only{display:none!important}
     <!-- Recording progress bar -->
     <div class="sv-record-bar" id="svRecordBar" style="display:none">
       <div class="sv-record-progress" id="svRecordProgress"></div>
+    </div>
+    <div class="sv-phase-timeline" id="svPhaseTimeline" aria-label="Swing phase timeline">
+      <div class="sv-phase-step active" data-phase="address">Address</div>
+      <div class="sv-phase-step" data-phase="takeaway">Takeaway</div>
+      <div class="sv-phase-step" data-phase="top">Top</div>
+      <div class="sv-phase-step" data-phase="impact">Impact</div>
+      <div class="sv-phase-step" data-phase="finish">Finish</div>
     </div>
 
     <!-- Camera feed + live metrics -->
@@ -4611,6 +4703,12 @@ body.mode-beginner .operator-only{display:none!important}
           <div id="svHudFraming" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Framing --</span></div>
         </div>
         <button id="svSwitchBtn" class="sv-switch-btn" onclick="switchSwingCamera()" aria-label="Switch camera">🔄</button>
+        <div id="svBioHud" class="sv-bio-hud" aria-live="polite">
+          <div class="sv-bio-chip warn" id="svBioTempo"><div class="sv-bio-label">Tempo</div><div class="sv-bio-value">--</div></div>
+          <div class="sv-bio-chip warn" id="svBioBalance"><div class="sv-bio-label">Balance</div><div class="sv-bio-value">--</div></div>
+          <div class="sv-bio-chip warn" id="svBioRotation"><div class="sv-bio-label">Rotation</div><div class="sv-bio-value">--</div></div>
+          <div class="sv-bio-chip warn" id="svBioStability"><div class="sv-bio-label">Stability</div><div class="sv-bio-value">--</div></div>
+        </div>
         <div id="sv-live-cue" class="elite-live-cue" style="display:none;color:#fff;border-color:#888"></div>
         <div class="sv-cam-placeholder" id="svPlaceholder">
           <div style="text-align:center;padding:20px">
@@ -4757,6 +4855,17 @@ body.mode-beginner .operator-only{display:none!important}
           <button class="btn-ol btn-sm" onclick="golfLogRound()">+ Log Round</button>
         </div>
         <div id="golf-player"></div>
+      </div>
+
+      <!-- Practice Intelligence -->
+      <div class="card card-sm">
+        <div class="ch" style="margin-bottom:10px">
+          <span class="ct">Practice Intelligence</span>
+          <button class="btn-g btn-sm" onclick="loadGolfPractice(true)">↻</button>
+        </div>
+        <div id="golf-practice" class="golf-practice-plan">
+          <div style="color:var(--soft);font-size:13px;padding:8px 0">Loading practice plan…</div>
+        </div>
       </div>
 
       <!-- Course Conditions -->
@@ -10317,6 +10426,7 @@ window.JARVIS_GOLF_MOBILE = Object.freeze({
     "/dashboard/golf",
     "/api/golf/profile",
     "/api/golf/profile/round",
+    "/api/golf/practice",
     "/api/golf/caddy",
     "/api/golf/courses",
     "/api/golf/courses/all",
@@ -10346,6 +10456,7 @@ async function loadGolfPanelData(force=false) {
   if (_golfPanelState.loaded && !force) return;
   _golfPanelState.loading = true;
   _setGolfMobileLifecycle("loading");
+  _syncSwingVoiceControls();
   try {
     await Promise.allSettled([
       loadGolf(),
@@ -10353,6 +10464,7 @@ async function loadGolfPanelData(force=false) {
       loadGolfBag(),
       loadSwingHistory(),
       _loadSwingDrills(),
+      loadGolfPractice(),
     ]);
     _golfPanelState.loaded = true;
   } finally {
@@ -10426,6 +10538,40 @@ function renderGolfProfile(p) {
     </div>
     ${p.recommendation ? `<div style="margin-top:10px;font-size:13px;line-height:1.55;color:var(--soft2)">${p.recommendation}</div>` : ""}
     ${p.last_round ? `<div style="margin-top:8px;font-size:12px;color:var(--soft)">Last: ${p.last_round.course||""} — ${p.last_round.score||""} · ${(p.last_round.date||"").slice(0,10)}</div>` : ""}`;
+}
+
+async function loadGolfPractice(force=false) {
+  const el = qs("golf-practice");
+  if (!el) return;
+  try {
+    const d = await _fetchWithTimeout("/api/golf/practice", {}, 8000);
+    if (d.status === "auth_required") {
+      el.innerHTML = `<div class="result-empty">${_esc(d.summary || "Sign in to unlock practice intelligence.")}</div>`;
+      return;
+    }
+    if (d.status !== "ok") throw new Error(d.error || "practice unavailable");
+    const drills = Array.isArray(d.drills) ? d.drills.slice(0, 3) : [];
+    const trends = Array.isArray(d.trends) && d.trends.length
+      ? `<div style="font-size:11px;color:var(--soft);margin-top:2px">Trend: ${d.trends.map(_esc).join(" · ")}</div>`
+      : "";
+    const score = d.session_score == null ? "—" : Math.round(d.session_score);
+    el.innerHTML = `
+      <div class="golf-practice-head">
+        <div>
+          <div class="golf-practice-title">${_esc(d.title || "Practice plan")}</div>
+          <div class="golf-practice-summary">${_esc(d.summary || "")}</div>
+          ${trends}
+        </div>
+        <div class="golf-practice-score">${score}</div>
+      </div>
+      ${drills.map(drill => `<div class="golf-practice-drill">
+        <strong>${_esc(drill.name || "Practice block")} · ${Number(drill.duration_min || 5)} min</strong>
+        <div>${_esc(drill.intent || "")}</div>
+      </div>`).join("")}`;
+  } catch(e) {
+    console.warn("loadGolfPractice:", e);
+    el.innerHTML = `<div class="result-empty">Practice plan temporarily unavailable.</div>`;
+  }
 }
 
 /* ── Golf Caddie ────────────────────── */
@@ -10559,6 +10705,26 @@ const sv = {
   recordTimerId:   null,
   recordDurationMs: 30000,
   maxStoredFrames: 900,
+  autoCapture:     false,
+  autoBuffer:      [],
+  autoPhase:       "address",
+  autoMotion:      0,
+  autoStableFrames: 0,
+  autoLastSample:  null,
+  autoSwingStartMs: 0,
+  autoLastMotionMs: 0,
+  autoStartedRecording: false,
+  bioBaseline:     null,
+  bioLastRenderMs: 0,
+  bioPhaseTimes:   {},
+  bioLastPhase:    "address",
+  bioLatest:       {},
+  voiceEnabled:    localStorage.getItem("sv_voice_enabled") === "1",
+  voiceMode:       localStorage.getItem("sv_voice_mode") || "concise",
+  voiceQueue:      [],
+  voiceSpeaking:   false,
+  voiceLastMs:     0,
+  voiceLastText:   "",
 };
 
 function _setSwingFullscreen(enabled) {
@@ -10580,6 +10746,97 @@ function toggleSwingFullscreen() {
 window.__jarvisExitSwingFullscreen = function() {
   _setSwingFullscreen(false);
 };
+
+function toggleSwingAutoCapture() {
+  sv.autoCapture = !sv.autoCapture;
+  _resetSwingAutoState();
+  const btn = qs("svAutoBtn");
+  if (btn) {
+    btn.classList.toggle("active", sv.autoCapture);
+    btn.setAttribute("aria-pressed", sv.autoCapture ? "true" : "false");
+  }
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = sv.autoCapture
+    ? "Auto capture armed - settle into address."
+    : "Auto capture off. Manual recording preserved.";
+}
+
+function _syncSwingVoiceControls() {
+  const btn = qs("svVoiceBtn");
+  if (btn) {
+    btn.classList.toggle("active", !!sv.voiceEnabled);
+    btn.setAttribute("aria-pressed", sv.voiceEnabled ? "true" : "false");
+    btn.textContent = sv.voiceEnabled ? "Voice On" : "Voice";
+  }
+  const mode = qs("svVoiceMode");
+  if (mode) mode.value = sv.voiceMode || "concise";
+}
+
+function toggleSwingVoiceCoach() {
+  sv.voiceEnabled = !sv.voiceEnabled;
+  localStorage.setItem("sv_voice_enabled", sv.voiceEnabled ? "1" : "0");
+  if (!sv.voiceEnabled) _stopSwingVoiceCoach();
+  _syncSwingVoiceControls();
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = sv.voiceEnabled ? "Voice coach on - concise cues enabled." : "Voice coach muted.";
+}
+
+function setSwingVoiceMode(mode) {
+  sv.voiceMode = ["quiet", "concise", "normal"].includes(mode) ? mode : "concise";
+  localStorage.setItem("sv_voice_mode", sv.voiceMode);
+  _syncSwingVoiceControls();
+}
+
+function _queueSwingVoice(text, priority = "normal") {
+  if (!sv.voiceEnabled || !text || !("speechSynthesis" in window)) return;
+  const clean = String(text).replace(/\s+/g, " ").trim().slice(0, 120);
+  if (!clean) return;
+  const now = Date.now();
+  const cooldown = sv.voiceMode === "quiet" ? 12000 : sv.voiceMode === "normal" ? 5000 : 8000;
+  if (priority !== "result" && (now - sv.voiceLastMs < cooldown || clean === sv.voiceLastText)) return;
+  if (sv.voiceQueue.length >= 2) sv.voiceQueue.shift();
+  sv.voiceQueue.push(clean);
+  _drainSwingVoiceQueue();
+}
+
+function _drainSwingVoiceQueue() {
+  if (sv.voiceSpeaking || !sv.voiceQueue.length || !("speechSynthesis" in window)) return;
+  const text = sv.voiceQueue.shift();
+  sv.voiceSpeaking = true;
+  sv.voiceLastMs = Date.now();
+  sv.voiceLastText = text;
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = (_svLang || "es") === "es" ? "es-ES" : "en-US";
+  utt.rate = sv.voiceMode === "normal" ? 1.02 : 0.96;
+  utt.pitch = 1.0;
+  utt.onend = utt.onerror = () => {
+    sv.voiceSpeaking = false;
+    setTimeout(_drainSwingVoiceQueue, 200);
+  };
+  try { speechSynthesis.speak(utt); } catch(e) { sv.voiceSpeaking = false; }
+}
+
+function _stopSwingVoiceCoach() {
+  sv.voiceQueue = [];
+  sv.voiceSpeaking = false;
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e) {}
+}
+
+function _resetSwingAutoState() {
+  sv.autoBuffer = [];
+  sv.autoPhase = "address";
+  sv.autoMotion = 0;
+  sv.autoStableFrames = 0;
+  sv.autoLastSample = null;
+  sv.autoSwingStartMs = 0;
+  sv.autoLastMotionMs = 0;
+  sv.autoStartedRecording = false;
+  sv.bioBaseline = null;
+  sv.bioPhaseTimes = {};
+  sv.bioLastPhase = "address";
+  sv.bioLatest = {};
+  _renderSwingPhaseTimeline("address");
+}
 
 // ── lazy MediaPipe loader ─────────────────────────────────────────────
 function _loadMediaPipe() {
@@ -10727,6 +10984,8 @@ function _stopSwingCamera() {
   qs("svRecordBtn").textContent = "Record";
   _clearSwingRecordingTimer();
   _setSwingRecordingHud(false);
+  _stopSwingVoiceCoach();
+  _resetSwingAutoState();
   _updateSwingSportsHud({ active: false, tracking: 0, framing: null });
   qs("svStatus").textContent = "Camera stopped.";
   _setRecordBarVisible(false);
@@ -10799,6 +11058,8 @@ function _onPoseResults(results) {
     x: p.x, y: p.y, z: p.z, visibility: p.visibility,
   }));
   _updateSwingFraming(landmarks);
+  _updateSwingAutoCapture(landmarks);
+  _updateSwingBioMetrics(landmarks);
 
   // Record frame
   if (sv.recording) {
@@ -10919,6 +11180,162 @@ function _updateSwingSportsHud({ active, tracking, framing, framingState } = {})
   _setHudPill("svHudFraming", isActive ? frameState : "warn", isActive && framingPct != null ? `Framing ${framingPct}%` : "Framing --");
 }
 
+function _swingAutoSample(landmarks) {
+  const pts = [0, 11, 12, 15, 16, 23, 24, 27, 28]
+    .map(i => landmarks?.[i])
+    .filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.y) && (p.visibility ?? 1) >= 0.35);
+  if (pts.length < 5) return null;
+  const avg = pts.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+  return {
+    x: avg.x / pts.length,
+    y: avg.y / pts.length,
+    leadHandY: Math.min(landmarks[15]?.y ?? 1, landmarks[16]?.y ?? 1),
+    handSpread: Math.abs((landmarks[15]?.x ?? 0.5) - (landmarks[16]?.x ?? 0.5)),
+    hipY: ((landmarks[23]?.y ?? 0.7) + (landmarks[24]?.y ?? 0.7)) / 2,
+  };
+}
+
+function _updateSwingAutoCapture(landmarks) {
+  const sample = _swingAutoSample(landmarks);
+  const now = Date.now();
+  if (!sample) {
+    _renderSwingPhaseTimeline(sv.autoPhase || "address");
+    return;
+  }
+
+  let motion = 0;
+  if (sv.autoLastSample) {
+    motion = Math.hypot(sample.x - sv.autoLastSample.x, sample.y - sv.autoLastSample.y);
+    motion += Math.abs(sample.leadHandY - sv.autoLastSample.leadHandY) * 0.8;
+  }
+  sv.autoLastSample = sample;
+  sv.autoMotion = motion;
+  sv.autoBuffer.push({ landmarks, frame_time: now, motion });
+  if (sv.autoBuffer.length > 90) sv.autoBuffer.splice(0, sv.autoBuffer.length - 90);
+
+  if (motion < 0.006) sv.autoStableFrames++;
+  else sv.autoStableFrames = Math.max(0, sv.autoStableFrames - 2);
+
+  let phase = sv.autoPhase || "address";
+  if (!sv.recording && sv.autoStableFrames >= 18) phase = "address";
+  if (motion > 0.012) {
+    sv.autoLastMotionMs = now;
+    if (sample.leadHandY > sample.hipY - 0.08) phase = "takeaway";
+    else if (sample.leadHandY <= sample.hipY - 0.2) phase = "top";
+  }
+  if (sv.recording && sv.autoSwingStartMs) {
+    const elapsed = now - sv.autoSwingStartMs;
+    if (elapsed > 650 && motion > 0.014) phase = "impact";
+    if (elapsed > 1300 && motion < 0.008) phase = "finish";
+  }
+  sv.autoPhase = phase;
+  _renderSwingPhaseTimeline(phase);
+
+  if (sv.autoCapture && sv.active && !sv.recording && !sv.autoStartedRecording && sv.autoStableFrames >= 18 && motion > 0.018) {
+    sv.autoStartedRecording = true;
+    sv.autoSwingStartMs = now;
+    _startSwingRecording({ auto: true, preRoll: sv.autoBuffer.slice(-45) });
+  }
+
+  if (sv.autoCapture && sv.recording && sv.autoStartedRecording && sv.autoSwingStartMs && now - sv.autoSwingStartMs > 1300 && now - sv.autoLastMotionMs > 650) {
+    sv.autoPhase = "finish";
+    _renderSwingPhaseTimeline("finish");
+    _stopSwingRecording({ autoTrim: true });
+  }
+}
+
+function _renderSwingPhaseTimeline(activePhase) {
+  const order = ["address", "takeaway", "top", "impact", "finish"];
+  const activeIndex = Math.max(0, order.indexOf(activePhase));
+  _trackSwingPhaseTime(activePhase);
+  document.querySelectorAll("#svPhaseTimeline .sv-phase-step").forEach(step => {
+    const idx = order.indexOf(step.dataset.phase);
+    step.classList.toggle("active", idx === activeIndex);
+    step.classList.toggle("done", idx >= 0 && idx < activeIndex);
+  });
+}
+
+function _trackSwingPhaseTime(phase) {
+  if (!phase || phase === sv.bioLastPhase) return;
+  sv.bioLastPhase = phase;
+  sv.bioPhaseTimes[phase] = Date.now();
+}
+
+function _point(lms, i) {
+  const p = lms?.[i];
+  return p && Number.isFinite(p.x) && Number.isFinite(p.y) && (p.visibility ?? 1) >= 0.35 ? p : null;
+}
+
+function _angleDeg(a, b) {
+  if (!a || !b) return 0;
+  return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+}
+
+function _scoreBand(score) {
+  return score >= 72 ? "good" : score >= 45 ? "warn" : "bad";
+}
+
+function _setBioChip(id, state, value) {
+  const el = qs(id);
+  if (!el) return;
+  el.className = `sv-bio-chip ${state}`;
+  const valueEl = el.querySelector(".sv-bio-value");
+  if (valueEl) valueEl.textContent = value;
+}
+
+function _updateSwingBioMetrics(landmarks) {
+  const now = Date.now();
+  if (now - sv.bioLastRenderMs < 250) return;
+  sv.bioLastRenderMs = now;
+
+  const head = _point(landmarks, 0);
+  const ls = _point(landmarks, 11), rs = _point(landmarks, 12);
+  const lh = _point(landmarks, 23), rh = _point(landmarks, 24);
+  const la = _point(landmarks, 27), ra = _point(landmarks, 28);
+  if (!head || !ls || !rs || !lh || !rh) return;
+
+  const hipCenter = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 };
+  const shoulderAngle = _angleDeg(ls, rs);
+  const hipAngle = _angleDeg(lh, rh);
+  const separation = Math.min(60, Math.abs(shoulderAngle - hipAngle));
+  const footCenter = la && ra ? { x: (la.x + ra.x) / 2, y: (la.y + ra.y) / 2 } : hipCenter;
+
+  if (!sv.bioBaseline || sv.autoPhase === "address") {
+    sv.bioBaseline = { headX: head.x, headY: head.y, hipX: hipCenter.x, footX: footCenter.x, shoulderAngle, hipAngle };
+  }
+  const base = sv.bioBaseline;
+  const sway = Math.abs(hipCenter.x - base.hipX);
+  const headMove = Math.hypot(head.x - base.headX, head.y - base.headY);
+  const balanceOffset = Math.abs(hipCenter.x - footCenter.x);
+  const postureDrift = Math.abs(shoulderAngle - base.shoulderAngle) * 0.5 + Math.abs(hipAngle - base.hipAngle) * 0.35;
+
+  const balanceScore = Math.round(Math.max(0, Math.min(100, 100 - sway * 520 - balanceOffset * 260)));
+  const stabilityScore = Math.round(Math.max(0, Math.min(100, 100 - headMove * 460 - postureDrift * 2.3)));
+  const rotationScore = Math.round(Math.max(0, Math.min(100, separation / 45 * 100)));
+
+  const t = sv.bioPhaseTimes;
+  const backswingMs = t.top && t.takeaway ? Math.max(0, t.top - t.takeaway) : 0;
+  const downswingMs = t.impact && t.top ? Math.max(0, t.impact - t.top) : 0;
+  const tempoRatio = backswingMs && downswingMs ? backswingMs / Math.max(downswingMs, 1) : 0;
+  const tempoScore = tempoRatio ? Math.round(Math.max(0, Math.min(100, 100 - Math.abs(tempoRatio - 3.0) * 24))) : 0;
+  const tempoLabel = tempoRatio ? `${tempoRatio.toFixed(1)}:1` : "--";
+  sv.bioLatest = {
+    tempo_ratio: tempoRatio ? Number(tempoRatio.toFixed(2)) : null,
+    tempo_score: tempoRatio ? tempoScore : null,
+    balance_score: balanceScore,
+    stability_score: stabilityScore,
+    rotation_estimate: Math.round(separation),
+    sway_estimate: Number(sway.toFixed(4)),
+    head_movement: Number(headMove.toFixed(4)),
+    phase: sv.autoPhase || "address",
+  };
+
+  _setBioChip("svBioTempo", tempoRatio ? _scoreBand(tempoScore) : "warn", tempoLabel);
+  _setBioChip("svBioBalance", _scoreBand(balanceScore), `${balanceScore}%`);
+  _setBioChip("svBioRotation", _scoreBand(rotationScore), `${Math.round(separation)} deg`);
+  _setBioChip("svBioStability", _scoreBand(stabilityScore), `${stabilityScore}%`);
+}
+
 function _drawFallbackSkeleton(ctx, lms, w, h) {
   const conns = [[11,12],[11,13],[13,15],[12,14],[14,16],
                  [11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
@@ -10985,6 +11402,7 @@ async function _sendLiveCue(landmarks) {
       cueEl.style.display  = "";
       cueEl.style.color    = d.color || "#fff";
       cueEl.style.borderColor = d.color || "#888";
+      _queueSwingVoice(d.cue, "live");
     }
   } catch(e) {
     if (e.name !== "AbortError") { /* live coach: keep UI quiet */ }
@@ -11027,12 +11445,17 @@ function toggleSwingRecording() {
   else _startSwingRecording();
 }
 
-function _startSwingRecording() {
-  sv.frames        = [];
+function _startSwingRecording(options = {}) {
+  const preRoll = Array.isArray(options.preRoll) ? options.preRoll : [];
+  sv.frames        = preRoll.map(f => ({ landmarks: f.landmarks, frame_time: f.frame_time }));
   sv.recording     = true;
   sv.recordMode    = qs("svRecordMode")?.value || "30";
   sv.recordStartMs = Date.now();
   sv.recordDurationMs = sv.recordMode === "15" ? 15000 : sv.recordMode === "30" ? 30000 : 0;
+  if (!options.auto) {
+    sv.autoStartedRecording = false;
+    sv.autoSwingStartMs = 0;
+  }
   qs("svRecordBtn").textContent = "Stop";
   qs("svRecordBtn").classList.add("btn-recording");
   _setRecordBarVisible(true);
@@ -11040,10 +11463,12 @@ function _startSwingRecording() {
   _setSwingRecordingHud(true);
   _startSwingRecordingTimer();
   const modeLabel = sv.recordMode === "unlimited" ? "manual stop" : `${Number(sv.recordMode)} s`;
-  qs("svStatus").textContent = `Recording - swing when ready. Mode: ${modeLabel}.`;
+  qs("svStatus").textContent = options.auto
+    ? `Auto recording - swing detected. Mode: ${modeLabel}.`
+    : `Recording - swing when ready. Mode: ${modeLabel}.`;
 }
 
-async function _stopSwingRecording() {
+async function _stopSwingRecording(options = {}) {
   sv.recording = false;
   _clearSwingRecordingTimer();
   _setSwingRecordingHud(false);
@@ -11051,6 +11476,8 @@ async function _stopSwingRecording() {
   qs("svRecordBtn").classList.remove("btn-recording");
   _setRecordBarVisible(false);
   const cueEl = qs("sv-live-cue"); if (cueEl) cueEl.style.display = "none";
+  if (options.autoTrim) _trimSwingFrames();
+  sv.autoStartedRecording = false;
 
   if (sv.frames.length < 5) {
     qs("svStatus").textContent = "Too few frames — record a full swing.";
@@ -11058,6 +11485,13 @@ async function _stopSwingRecording() {
   }
   qs("svStatus").textContent = `Analyzing ${sv.frames.length} frames…`;
   await _sendSwingAnalysis();
+}
+
+function _trimSwingFrames() {
+  if (!Array.isArray(sv.frames) || sv.frames.length < 16) return;
+  const start = Math.max(0, Math.min(sv.frames.length - 8, 10));
+  const end = Math.max(start + 8, sv.frames.length - 10);
+  sv.frames = sv.frames.slice(start, end);
 }
 
 let _svLang = localStorage.getItem("sv_lang") || "es";
@@ -11085,6 +11519,8 @@ async function _sendSwingAnalysis() {
     if (sv.generation !== gen) return;
     if (d.status === "ok") {
       _renderEliteResult(d);
+      _speakSwingResult(d);
+      _recordGolfSwingMemory(d);
       loadSwingHistory();
       _loadEliteProgress();
       const tempoStr = d.tempo_ratio ? `· Tempo ${d.tempo_ratio.toFixed(1)}:1` : "";
@@ -11098,6 +11534,41 @@ async function _sendSwingAnalysis() {
   } finally {
     if (sv.generation === gen) sv.swingAbort = null;
   }
+}
+
+function _recordGolfSwingMemory(analysis) {
+  const coachCards = _buildGolfCoachCards(analysis || {}, (_svLang || "es") === "es");
+  const payload = {
+    club: qs("svClubSelect")?.value || "unknown",
+    phase: sv.autoPhase || "",
+    metrics: sv.bioLatest || {},
+    analysis: {
+      score: analysis?.score ?? null,
+      level: analysis?.level || "",
+      tempo_ratio: analysis?.tempo_ratio ?? null,
+      faults: analysis?.faults || analysis?.issues || analysis?.coaching || coachCards.map(c => ({
+        title: c.tendency,
+        confidence: c.confidence,
+        observed: c.observed,
+      })),
+    },
+  };
+  fetch("/api/golf/profile/swing-memory", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
+function _speakSwingResult(analysis) {
+  if (!sv.voiceEnabled) return;
+  const cards = _buildGolfCoachCards(analysis || {}, (_svLang || "es") === "es");
+  const best = cards.find(c => c.confidence !== "low") || cards[0];
+  const score = analysis?.score != null ? `Score ${analysis.score}. ` : "";
+  const cue = best
+    ? `${score}${best.confidence === "low" ? "Possible tendency" : "Coach read"}: ${best.tendency.replace(/^possible tendency: |^inferred tendency: /, "")}. ${best.action}`
+    : `${score}Swing analyzed. Review the coach read.`;
+  _queueSwingVoice(cue, "result");
 }
 
 function _renderEliteResult(d) {
@@ -11162,6 +11633,11 @@ function _renderEliteResult(d) {
         <div class="elite-progress-delta ${prog.delta > 0 ? 'elite-delta-pos' : prog.delta < 0 ? 'elite-delta-neg' : 'elite-delta-neu'}">${prog.delta > 0 ? "+" : ""}${prog.delta}</div>
         <div>${prog.message || ""} <span style="color:var(--soft)">(${isES?"vs sesión anterior":"vs last session"})</span></div>
        </div>` : "";
+  const coachCards = _buildGolfCoachCards(d, isES);
+  const coachHTML = coachCards.length ? `<div>
+        <div class="elite-section-title">${isES?"Lectura del Coach":"Coach Read"}</div>
+        <div class="sv-coach-read">${coachCards.map(_renderCoachCard).join("")}</div>
+      </div>` : "";
 
   el.innerHTML = `
     <div class="elite-result">
@@ -11196,6 +11672,8 @@ function _renderEliteResult(d) {
         <div class="elite-strengths">${strengths.map(s => `<div class="elite-strength-item">${_esc(s)}</div>`).join("")}</div>
       </div>` : ""}
 
+      ${coachHTML}
+
       <!-- Errors -->
       ${errors.length ? `<div>
         <div class="elite-section-title">${isES?"Top Errores (prioridad)":"Top Errors (priority)"}</div>
@@ -11224,6 +11702,92 @@ function _renderEliteResult(d) {
   // Auto-expand first error
   const firstHeader = el.querySelector(".elite-error-header");
   if (firstHeader) firstHeader.nextElementSibling.style.display = "flex";
+}
+
+function _coachConfidence(score, floor = "medium") {
+  if (score >= 72) return "high";
+  if (score >= 45) return "medium";
+  return floor === "low" ? "low" : "medium";
+}
+
+function _coachTendency(confidence, tendency) {
+  return confidence === "low" ? `possible tendency: ${tendency}` : `inferred tendency: ${tendency}`;
+}
+
+function _buildGolfCoachCards(d, isES) {
+  const metrics = sv.bioLatest || {};
+  const cards = [];
+  const tempoRatio = Number(metrics.tempo_ratio || d.tempo_ratio || 0);
+  const balance = Number(metrics.balance_score || 0);
+  const stability = Number(metrics.stability_score || 0);
+  const rotation = Number(metrics.rotation_estimate || 0);
+
+  if (tempoRatio) {
+    const tempoScore = Number(metrics.tempo_score || Math.max(0, 100 - Math.abs(tempoRatio - 3.0) * 24));
+    const confidence = _coachConfidence(tempoScore, "low");
+    const tendency = tempoRatio < 2.4 ? "quick transition" : tempoRatio > 3.8 ? "slow transition" : "balanced tempo";
+    cards.push({
+      confidence,
+      observed: `Tempo measured from phase timing: ${tempoRatio.toFixed(1)}:1.`,
+      tendency: _coachTendency(confidence, tendency),
+      action: tendency === "balanced tempo" ? "Keep the same rehearsal rhythm." : "Use a pause-at-the-top drill for 5 slow reps.",
+    });
+  }
+
+  if (balance) {
+    const confidence = _coachConfidence(balance);
+    const tendency = balance >= 72 ? "stable finish" : balance < 55 ? "balance inconsistency" : "minor finish drift";
+    cards.push({
+      confidence,
+      observed: `Balance estimate from hip/foot alignment: ${Math.round(balance)}%.`,
+      tendency: _coachTendency(confidence, tendency),
+      action: balance >= 72 ? "Hold your finish for two seconds." : "Make half-speed swings and hold the finish.",
+    });
+  }
+
+  if (stability) {
+    const confidence = _coachConfidence(stability);
+    const tendency = stability >= 72 ? "steady posture" : "posture drift";
+    cards.push({
+      confidence,
+      observed: `Head/posture stability estimate: ${Math.round(stability)}%.`,
+      tendency: _coachTendency(confidence, tendency),
+      action: stability >= 72 ? "Repeat this setup checkpoint." : "Rehearse chest-over-ball posture through impact.",
+    });
+  }
+
+  if (rotation) {
+    const confidence = rotation >= 18 ? "medium" : "low";
+    cards.push({
+      confidence,
+      observed: `2D shoulder/hip separation estimate: ${Math.round(rotation)} deg.`,
+      tendency: _coachTendency(confidence, rotation >= 28 ? "good turn separation" : "limited turn separation"),
+      action: rotation >= 28 ? "Keep the turn sequencing smooth." : "Try slow takeaway-to-top rehearsals.",
+    });
+  }
+
+  const unique = [];
+  const seen = new Set();
+  for (const card of cards) {
+    const key = card.tendency;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(card);
+    }
+  }
+  return unique.slice(0, 3);
+}
+
+function _renderCoachCard(card) {
+  return `<div class="sv-coach-card">
+    <div class="sv-coach-meta">
+      <span class="sv-coach-tag">${_esc(card.observed.startsWith("2D") ? "Observed 2D" : "Observed")}</span>
+      <span class="sv-coach-tag ${_esc(card.confidence)}">${_esc(card.confidence)} confidence</span>
+    </div>
+    <div><strong>Observed signal:</strong> ${_esc(card.observed)}</div>
+    <div><strong>${card.confidence === "low" ? "Possible tendency" : "Inferred tendency"}:</strong> ${_esc(card.tendency.replace(/^possible tendency: |^inferred tendency: /, ""))}</div>
+    <div><strong>Next drill:</strong> ${_esc(card.action)}</div>
+  </div>`;
 }
 
 // ── history & drills ─────────────────────────────────────────────────

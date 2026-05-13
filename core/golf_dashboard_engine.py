@@ -623,6 +623,7 @@ class GolfDashboardEngine:
             "strengths":        [],
             "areas_to_improve": ["Track a round to unlock insights"],
             "last_round":       None,
+            "memory":           self._default_memory(),
         }
         self.STATS_FILE.write_text(
             json.dumps(default, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -693,6 +694,7 @@ class GolfDashboardEngine:
             stats.setdefault("last_round", None)
         stats.setdefault("strengths", [])
         stats.setdefault("areas_to_improve", ["Track a round to unlock insights"])
+        stats["memory"] = self._normalize_memory(stats.get("memory"))
         return stats
 
     def get_rounds(self) -> List[Dict[str, Any]]:
@@ -713,6 +715,244 @@ class GolfDashboardEngine:
             json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         return stats
+
+    def _default_memory(self) -> Dict[str, Any]:
+        return {
+            "sessions": [],
+            "common_misses": [],
+            "tendencies": {},
+            "swing_patterns": {},
+            "tempo_tendencies": {},
+            "balance_tendencies": {},
+            "coaching_history": [],
+            "trend_summary": [],
+            "updated_at": None,
+        }
+
+    def _normalize_memory(self, memory: Any) -> Dict[str, Any]:
+        out = self._default_memory()
+        if isinstance(memory, dict):
+            out.update({k: v for k, v in memory.items() if k in out})
+        for key in ("sessions", "common_misses", "coaching_history", "trend_summary"):
+            if not isinstance(out.get(key), list):
+                out[key] = []
+        for key in ("tendencies", "swing_patterns", "tempo_tendencies", "balance_tendencies"):
+            if not isinstance(out.get(key), dict):
+                out[key] = {}
+        return out
+
+    def record_swing_session(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        stats = self._recompute_player_stats(self._load_player_stats())
+        memory = self._normalize_memory(stats.get("memory"))
+        metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+        analysis = payload.get("analysis") if isinstance(payload.get("analysis"), dict) else {}
+
+        session = {
+            "ts": datetime.utcnow().isoformat(),
+            "club": str(payload.get("club") or analysis.get("club") or "unknown")[:40],
+            "score": self._safe_number(analysis.get("score")),
+            "level": str(analysis.get("level") or "")[:40],
+            "tempo_ratio": self._safe_number(metrics.get("tempo_ratio") or analysis.get("tempo_ratio")),
+            "balance_score": self._safe_number(metrics.get("balance_score")),
+            "stability_score": self._safe_number(metrics.get("stability_score")),
+            "rotation_estimate": self._safe_number(metrics.get("rotation_estimate")),
+            "phase": str(payload.get("phase") or "")[:40],
+        }
+        memory["sessions"].append(session)
+        memory["sessions"] = memory["sessions"][-50:]
+
+        self._update_memory_tendencies(memory, session, analysis)
+        memory["updated_at"] = datetime.utcnow().isoformat()
+        stats["memory"] = memory
+        self.STATS_FILE.write_text(
+            json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return stats
+
+    def practice_plan(self) -> Dict[str, Any]:
+        stats = self._recompute_player_stats(self._load_player_stats())
+        memory = self._normalize_memory(stats.get("memory"))
+        sessions = [s for s in memory.get("sessions", []) if isinstance(s, dict)]
+        recent = sessions[-8:]
+
+        def _avg(key: str) -> Optional[float]:
+            vals = [float(s[key]) for s in recent if isinstance(s.get(key), (int, float))]
+            return round(sum(vals) / len(vals), 2) if vals else None
+
+        tempo = _avg("tempo_ratio")
+        balance = _avg("balance_score")
+        stability = _avg("stability_score")
+        rotation = _avg("rotation_estimate")
+
+        focus = "baseline"
+        if tempo is not None and (tempo < 2.4 or tempo > 3.8):
+            focus = "tempo"
+        elif balance is not None and balance < 68:
+            focus = "balance"
+        elif stability is not None and stability < 68:
+            focus = "posture"
+        elif rotation is not None and rotation < 24:
+            focus = "rotation"
+        elif recent:
+            focus = "consistency"
+
+        plans = {
+            "tempo": {
+                "title": "Tempo calibration",
+                "score": self._score_from_metric(tempo, target=3.0, tolerance=1.2),
+                "summary": "Smooth the transition and keep backswing-to-downswing rhythm repeatable.",
+                "drills": [
+                    {"name": "Pause at the top", "duration_min": 6, "intent": "Build transition awareness."},
+                    {"name": "3-count backswing", "duration_min": 8, "intent": "Match tempo without rushing."},
+                ],
+            },
+            "balance": {
+                "title": "Finish balance",
+                "score": int(balance or 0),
+                "summary": "Stabilize pressure and hold the finish after impact.",
+                "drills": [
+                    {"name": "Hold-finish swings", "duration_min": 8, "intent": "Finish under control."},
+                    {"name": "Feet-together half swings", "duration_min": 6, "intent": "Reduce sway."},
+                ],
+            },
+            "posture": {
+                "title": "Posture stability",
+                "score": int(stability or 0),
+                "summary": "Keep head and chest level through the strike window.",
+                "drills": [
+                    {"name": "Chest-over-ball rehearsals", "duration_min": 6, "intent": "Maintain posture depth."},
+                    {"name": "Slow impact checkpoint", "duration_min": 7, "intent": "Own impact posture."},
+                ],
+            },
+            "rotation": {
+                "title": "Turn separation",
+                "score": int(min(100, (rotation or 0) / 45 * 100)),
+                "summary": "Improve shoulder/hip separation without forcing speed.",
+                "drills": [
+                    {"name": "Takeaway-to-top holds", "duration_min": 7, "intent": "Feel a fuller turn."},
+                    {"name": "Step-through rotation", "duration_min": 6, "intent": "Sequence the body."},
+                ],
+            },
+            "consistency": {
+                "title": "Consistency session",
+                "score": self._consistency_score(recent),
+                "summary": "Keep your strongest pattern repeatable across swings.",
+                "drills": [
+                    {"name": "Same-shot ladder", "duration_min": 10, "intent": "Repeat setup and rhythm."},
+                    {"name": "Three-ball routine", "duration_min": 8, "intent": "Reset before each swing."},
+                ],
+            },
+            "baseline": {
+                "title": "Baseline capture",
+                "score": None,
+                "summary": "Record three swings to unlock adaptive practice suggestions.",
+                "drills": [
+                    {"name": "Three swing baseline", "duration_min": 6, "intent": "Capture address, top, impact, finish."},
+                    {"name": "Slow motion rehearsal", "duration_min": 5, "intent": "Improve camera-readable movement."},
+                ],
+            },
+        }
+        plan = plans[focus]
+        return {
+            "status": "ok",
+            "focus": focus,
+            "title": plan["title"],
+            "session_score": plan["score"],
+            "summary": plan["summary"],
+            "drills": plan["drills"],
+            "metrics": {
+                "tempo_ratio": tempo,
+                "balance_score": balance,
+                "stability_score": stability,
+                "rotation_estimate": rotation,
+                "sessions": len(sessions),
+            },
+            "trends": memory.get("trend_summary", [])[-4:],
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+    def _score_from_metric(self, value: Optional[float], target: float, tolerance: float) -> Optional[int]:
+        if value is None:
+            return None
+        return int(max(0, min(100, 100 - abs(value - target) / max(tolerance, 0.1) * 100)))
+
+    def _consistency_score(self, sessions: List[Dict[str, Any]]) -> Optional[int]:
+        scores = [s.get("score") for s in sessions if isinstance(s.get("score"), (int, float))]
+        if len(scores) < 2:
+            return None
+        avg = sum(float(s) for s in scores) / len(scores)
+        variance = sum((float(s) - avg) ** 2 for s in scores) / len(scores)
+        return int(max(0, min(100, 100 - variance)))
+
+    def _safe_number(self, value: Any) -> Optional[float]:
+        try:
+            if value is None or value == "":
+                return None
+            return round(float(value), 3)
+        except Exception:
+            return None
+
+    def _update_memory_tendencies(self, memory: Dict[str, Any], session: Dict[str, Any], analysis: Dict[str, Any]) -> None:
+        sessions = [s for s in memory.get("sessions", []) if isinstance(s, dict)]
+        recent = sessions[-10:]
+
+        def _avg(key: str, rows: List[Dict[str, Any]]) -> Optional[float]:
+            vals = [float(r[key]) for r in rows if isinstance(r.get(key), (int, float))]
+            return round(sum(vals) / len(vals), 2) if vals else None
+
+        tempo_avg = _avg("tempo_ratio", recent)
+        balance_avg = _avg("balance_score", recent)
+        stability_avg = _avg("stability_score", recent)
+
+        if tempo_avg is not None:
+            memory["tempo_tendencies"] = {
+                "rolling_avg": tempo_avg,
+                "label": "quick transition" if tempo_avg < 2.4 else ("slow transition" if tempo_avg > 3.8 else "balanced tempo"),
+            }
+        if balance_avg is not None:
+            memory["balance_tendencies"] = {
+                "rolling_avg": balance_avg,
+                "label": "stable finish" if balance_avg >= 72 else ("balance inconsistent" if balance_avg < 55 else "watch balance"),
+            }
+        if stability_avg is not None:
+            memory["swing_patterns"]["posture_stability"] = {
+                "rolling_avg": stability_avg,
+                "label": "steady posture" if stability_avg >= 72 else "posture drift tendency",
+            }
+
+        notes: List[str] = []
+        if len(sessions) >= 4:
+            prev = sessions[-4:-1]
+            prev_tempo = _avg("tempo_ratio", prev)
+            prev_balance = _avg("balance_score", prev)
+            if tempo_avg is not None and prev_tempo is not None:
+                if abs(tempo_avg - 3.0) < abs(prev_tempo - 3.0):
+                    notes.append("tempo improving")
+            if balance_avg is not None and prev_balance is not None:
+                if balance_avg >= prev_balance + 4:
+                    notes.append("balance improving")
+                elif balance_avg <= prev_balance - 6:
+                    notes.append("balance inconsistent")
+        memory["trend_summary"] = notes[-6:]
+
+        issues = analysis.get("faults") or analysis.get("issues") or analysis.get("coaching") or []
+        if isinstance(issues, list):
+            labels = []
+            for item in issues[:4]:
+                if isinstance(item, dict):
+                    labels.append(str(item.get("title") or item.get("fault") or item.get("message") or "")[:80])
+                else:
+                    labels.append(str(item)[:80])
+            labels = [x for x in labels if x]
+            if labels:
+                memory["coaching_history"] = (memory.get("coaching_history", []) + labels)[-30:]
+                counts: Dict[str, int] = {}
+                for label in memory["coaching_history"]:
+                    counts[label] = counts.get(label, 0) + 1
+                memory["common_misses"] = [
+                    {"label": k, "count": v}
+                    for k, v in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:5]
+                ]
 
     # ------------------------------------------------------------------ #
     # ------------------------------------------------------------------ #
