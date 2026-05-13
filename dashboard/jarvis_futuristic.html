@@ -1030,6 +1030,140 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-phase-step{font-size:9px;padding:5px 4px}
   .sv-hud-spacer{display:none}
 }
+
+/* X14: camera-first fullscreen hierarchy */
+.sv-fullscreen-active .sv-stage-card{
+  --sv-camera-target:72dvh;
+  --sv-topbar-height:52px;
+  --sv-drawer-height:clamp(108px,18dvh,154px);
+  padding:0!important;
+  background:#030609;
+}
+.sv-fullscreen-active .sv-stage-card .ch{
+  position:absolute;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));
+  top:max(8px,env(safe-area-inset-top));z-index:28;min-height:var(--sv-topbar-height);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;margin:0;
+  border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(0,0,0,.58);
+  backdrop-filter:blur(10px);box-shadow:0 12px 34px rgba(0,0,0,.36);
+}
+.sv-fullscreen-active .sv-stage-card .ct{font-size:12px;font-weight:950;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.sv-fullscreen-active .sv-stage-card .cs{display:none}
+.sv-fullscreen-active .sv-stage-actions{justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0}
+.sv-fullscreen-active .sv-stage-actions .select,
+.sv-fullscreen-active .sv-stage-actions .sv-record-mode,
+.sv-fullscreen-active .sv-stage-actions .sv-auto-toggle,
+.sv-fullscreen-active .sv-stage-actions .sv-voice-toggle,
+.sv-fullscreen-active .sv-stage-actions .sv-fullscreen-btn,
+.sv-fullscreen-active .sv-stage-actions .btn-p,
+.sv-fullscreen-active .sv-stage-actions .vb-btn{
+  min-height:36px;height:36px;max-width:112px;padding:6px 9px!important;border-radius:999px!important;
+  background:rgba(8,14,20,.72);border-color:rgba(255,255,255,.18);font-size:11px!important;
+  color:#fff;box-shadow:none;white-space:nowrap;
+}
+.sv-fullscreen-active #svRecordBtn{
+  position:absolute;left:50%;bottom:calc(var(--sv-drawer-height) + max(16px,env(safe-area-inset-bottom)));
+  transform:translateX(-50%);z-index:30;min-width:168px!important;height:56px!important;
+  border:2px solid rgba(255,255,255,.82)!important;background:rgba(255,77,77,.92)!important;
+  color:#fff!important;box-shadow:0 14px 42px rgba(255,77,77,.32),0 0 0 6px rgba(0,0,0,.25);
+  font-size:15px!important;letter-spacing:.02em;
+}
+.sv-fullscreen-active .sv-stage-card .sv-status-bar{
+  position:absolute;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));
+  top:calc(max(8px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 8px);z-index:24;
+  margin:0;min-height:0;padding:7px 10px;border-radius:999px;background:rgba(0,0,0,.56);
+  border:1px solid rgba(255,255,255,.13);font-size:12px;font-weight:850;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.8);
+}
+.sv-fullscreen-active .sv-stage-card .sv-record-bar{
+  position:absolute;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));
+  top:calc(max(8px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 47px);z-index:24;
+  margin:0;height:5px;background:rgba(255,255,255,.22);
+}
+.sv-fullscreen-active .sv-phase-timeline{
+  position:absolute;left:50%;top:calc(max(8px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 62px);
+  transform:translateX(-50%);z-index:24;width:min(92vw,520px);margin:0;gap:4px;
+}
+.sv-fullscreen-active .sv-phase-step{background:rgba(0,0,0,.52);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.72)}
+.sv-fullscreen-active .sv-main{
+  height:100%;min-height:0;display:grid!important;grid-template-columns:1fr!important;
+  grid-template-rows:var(--sv-camera-target) var(--sv-drawer-height)!important;
+  gap:8px;margin:0;padding:0 0 max(6px,env(safe-area-inset-bottom));overflow:hidden;
+}
+.sv-fullscreen-active .sv-cam-wrap{
+  height:var(--sv-camera-target)!important;min-height:68dvh;max-height:74dvh;width:100%;
+  border-radius:0!important;box-shadow:none;background:#000;
+}
+.sv-fullscreen-active .sv-video,.sv-fullscreen-active .sv-canvas,.sv-fullscreen-active .sv-framing-overlay,.sv-fullscreen-active .sv-cam-placeholder{border-radius:0!important}
+.sv-fullscreen-active .sv-video{object-fit:cover}
+.sv-fullscreen-active .sv-metrics-panel{
+  position:relative;height:var(--sv-drawer-height);max-height:var(--sv-drawer-height)!important;min-height:0;
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 10px;overflow:auto;
+  margin:0 8px;padding:26px 12px 10px;border-radius:18px 18px 0 0;background:rgba(7,12,18,.94);
+  border:1px solid rgba(255,255,255,.13);border-bottom:0;backdrop-filter:blur(12px);
+  box-shadow:0 -18px 44px rgba(0,0,0,.5);
+}
+.sv-fullscreen-active .sv-metrics-panel::before{
+  content:"Insights";position:absolute;left:50%;top:7px;transform:translateX(-50%);
+  width:92px;height:14px;border-radius:999px;background:rgba(255,255,255,.14);
+  color:rgba(255,255,255,.78);font-size:9px;font-weight:900;line-height:14px;text-align:center;text-transform:uppercase;
+}
+.sv-fullscreen-active .sv-metrics-title{font-size:9px;margin:0 0 2px;color:rgba(68,240,255,.86)}
+.sv-fullscreen-active .sv-metric,.sv-fullscreen-active .sv-tip,.sv-fullscreen-active .sv-readiness-row{font-size:11px;padding:4px 0}
+.sv-fullscreen-active .sv-telemetry,.sv-fullscreen-active .sv-readiness{gap:4px}
+.sv-fullscreen-active .sv-telemetry-chip{padding:5px 7px}
+.sv-fullscreen-active .sv-sports-hud{
+  top:calc(max(8px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 92px);
+  left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));
+  justify-content:center;gap:6px;flex-wrap:nowrap;
+}
+.sv-fullscreen-active .sv-hud-pill{
+  min-height:32px;padding:6px 9px;background:rgba(0,0,0,.68);border-color:rgba(255,255,255,.2);
+  font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.9);
+}
+.sv-fullscreen-active .sv-hud-spacer{display:none}
+.sv-fullscreen-active .sv-bio-hud{display:none}
+.sv-fullscreen-active .sv-fit-box{left:16%;top:11%;width:68%;height:78%;border-width:2px}
+.sv-fullscreen-active .sv-fit-guide{
+  bottom:calc(var(--sv-drawer-height) + 86px);font-size:14px;padding:9px 14px;
+  background:rgba(0,0,0,.72);border-color:rgba(255,255,255,.24);
+}
+.sv-fullscreen-active .sv-fit-confidence{top:calc(max(8px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 92px);font-size:12px}
+.sv-fullscreen-active .sv-record-hud{
+  left:50%;right:auto;bottom:calc(var(--sv-drawer-height) + 84px);transform:translateX(-50%);
+  min-height:38px;padding:8px 14px;background:rgba(0,0,0,.72);border-color:rgba(255,255,255,.24);
+  font-size:14px;
+}
+.sv-fullscreen-active .sv-switch-btn{
+  top:calc(max(8px,env(safe-area-inset-top)) + var(--sv-topbar-height) + 92px);
+  right:max(12px,env(safe-area-inset-right));min-width:44px;min-height:38px;border-radius:999px;
+}
+
+@media(max-width:700px){
+  .sv-fullscreen-active .sv-stage-actions #svVoiceMode,
+  .sv-fullscreen-active .sv-stage-actions #svStartBtn{display:none}
+  .sv-fullscreen-active .sv-stage-actions .sv-record-mode{max-width:94px}
+  .sv-fullscreen-active .sv-stage-actions .sv-auto-toggle,
+  .sv-fullscreen-active .sv-stage-actions .sv-voice-toggle,
+  .sv-fullscreen-active .sv-stage-actions .sv-fullscreen-btn{max-width:78px}
+  .sv-fullscreen-active .sv-metrics-panel{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sv-fullscreen-active .sv-readiness-actions{display:none}
+}
+
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-stage-card{--sv-camera-target:100dvh;--sv-drawer-height:0px}
+  .sv-fullscreen-active .sv-main{
+    grid-template-columns:minmax(0,1fr) minmax(168px,22vw)!important;
+    grid-template-rows:1fr!important;padding:0;
+  }
+  .sv-fullscreen-active .sv-cam-wrap{height:100dvh!important;min-height:0;max-height:none}
+  .sv-fullscreen-active .sv-metrics-panel{
+    height:100dvh;max-height:100dvh!important;margin:0;border-radius:0;display:flex!important;
+    padding:calc(max(8px,env(safe-area-inset-top)) + 62px) 8px max(8px,env(safe-area-inset-bottom));
+  }
+  .sv-fullscreen-active #svRecordBtn{bottom:max(14px,env(safe-area-inset-bottom))}
+  .sv-fullscreen-active .sv-fit-guide{bottom:16px}
+  .sv-fullscreen-active .sv-record-hud{bottom:76px}
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
