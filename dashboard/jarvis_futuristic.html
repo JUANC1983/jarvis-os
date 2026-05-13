@@ -1466,6 +1466,88 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-fullscreen-active .sv-sports-hud{top:max(12px,env(safe-area-inset-top));gap:8px}
   .sv-fullscreen-active .sv-hud-pill{min-height:38px;font-size:12px}
 }
+
+/* X14.6: premium sports polish and visual hierarchy */
+.sv-fullscreen-active .sv-stage-card{
+  background:radial-gradient(circle at 50% 0%,rgba(23,40,52,.42),rgba(3,6,9,1) 42%);
+}
+.sv-fullscreen-active .sv-cam-wrap::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 74px 86px rgba(0,0,0,.28),inset 0 -96px 98px rgba(0,0,0,.34);
+}
+.sv-fullscreen-active .sv-stage-card .ch{
+  border-color:rgba(255,255,255,.18)!important;box-shadow:0 12px 30px rgba(0,0,0,.28);
+}
+.sv-fullscreen-active .sv-stage-card .ct{
+  letter-spacing:.02em;
+}
+.sv-fullscreen-active .sv-metrics-panel{
+  border-color:rgba(255,255,255,.11);box-shadow:0 -14px 38px rgba(0,0,0,.42);
+}
+.sv-fullscreen-active.sv-insights-expanded .sv-metrics-panel{
+  row-gap:8px;
+}
+.sv-fullscreen-active .sv-metrics-title{
+  letter-spacing:.16em;color:rgba(68,240,255,.78);
+}
+.sv-fullscreen-active .sv-metric,
+.sv-fullscreen-active .sv-tip,
+.sv-fullscreen-active .sv-readiness-row{
+  border-bottom-color:rgba(255,255,255,.075);line-height:1.35;
+}
+.sv-fullscreen-active .sv-drawer-summary{
+  color:rgba(255,255,255,.82);background:rgba(68,240,255,.06);
+}
+.sv-fullscreen-active .sv-telemetry-chip,
+.sv-fullscreen-active .sv-bio-chip,
+.sv-fullscreen-active .sv-coach-card{
+  border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.035);
+}
+.sv-fullscreen-active .sv-cam-placeholder{
+  background:linear-gradient(180deg,rgba(0,0,0,.82),rgba(0,0,0,.58));
+}
+.sv-fullscreen-active .sv-cam-placeholder>div{
+  max-width:320px;padding:22px!important;border-radius:18px;background:rgba(0,0,0,.32);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 56px rgba(0,0,0,.32);
+}
+.sv-fullscreen-active .sv-cam-placeholder>div div:nth-child(2){
+  font-size:18px!important;letter-spacing:.01em;
+}
+.sv-fullscreen-active .sv-cam-placeholder>div div:nth-child(3){
+  font-size:13px!important;line-height:1.45;color:rgba(255,255,255,.76)!important;
+}
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode{
+  text-align:center;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn,
+.sv-fullscreen-active .sv-stage-actions #svFullscreenBtn,
+.sv-fullscreen-active .sv-stage-actions #svStartBtn,
+.sv-fullscreen-active .sv-switch-btn{
+  box-shadow:0 8px 24px rgba(0,0,0,.28);
+}
+.sv-fullscreen-active .sv-hud-pill{
+  border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.24);
+}
+.sv-fullscreen-active #svRecordBtn{
+  border-radius:999px!important;
+}
+.sv-fullscreen-active .sv-drawer-toggle{
+  letter-spacing:.08em;text-transform:uppercase;
+}
+
+@media(max-width:520px){
+  .sv-fullscreen-active .sv-stage-card .ct{font-size:12px}
+  .sv-fullscreen-active .sv-metrics-panel{margin-inline:6px}
+  .sv-fullscreen-active:not(.sv-insights-expanded) .sv-metrics-panel{height:clamp(72px,11dvh,96px)!important}
+}
+
+@media(min-width:900px){
+  .sv-fullscreen-active .sv-metrics-panel{
+    margin-inline:14px;border-radius:22px 22px 0 0;
+  }
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
