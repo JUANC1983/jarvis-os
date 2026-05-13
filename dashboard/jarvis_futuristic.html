@@ -805,6 +805,12 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
 .sv-telemetry-chip.bad{border-color:rgba(255,91,91,.38)}
 .sv-telemetry-label{font-size:9px;font-weight:900;color:var(--soft2);text-transform:uppercase;letter-spacing:.08em}
 .sv-telemetry-value{font-size:12px;font-weight:900;color:var(--white);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-readiness{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.sv-readiness-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border3);font-size:11px}
+.sv-readiness-row span:first-child{color:var(--soft2);font-weight:800}
+.sv-readiness-row span:last-child{color:var(--white);font-weight:900;text-align:right}
+.sv-readiness-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.sv-readiness-actions .vb-btn{flex:1 1 96px;text-align:center;justify-content:center}
 .sv-record-bar{height:4px;background:var(--border2);border-radius:2px;margin-bottom:10px;overflow:hidden}
 .sv-record-progress{height:100%;width:0%;background:#ff4d4d;transition:width .1s;border-radius:2px}
 .sv-record-mode{
@@ -4791,6 +4797,20 @@ body.mode-beginner .operator-only{display:none!important}
           <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">Dropped</div><div class="sv-telemetry-value">--</div></div>
           <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">Heat</div><div class="sv-telemetry-value">--</div></div>
           <div class="sv-telemetry-chip warn"><div class="sv-telemetry-label">Cleanup</div><div class="sv-telemetry-value">ready</div></div>
+        </div>
+        <div class="sv-metrics-title">Production Readiness</div>
+        <div id="svProductionReadiness" class="sv-readiness">
+          <div class="sv-readiness-row"><span>Network</span><span>checking</span></div>
+          <div class="sv-readiness-row"><span>Storage</span><span>checking</span></div>
+          <div class="sv-readiness-row"><span>Permissions</span><span>camera on demand</span></div>
+          <div class="sv-readiness-row"><span>Privacy</span><span>local video only</span></div>
+          <div class="sv-readiness-row"><span>Install</span><span>standalone ready</span></div>
+          <div class="sv-readiness-row"><span>Outdoor</span><span>high contrast HUD</span></div>
+          <div class="sv-readiness-row"><span>Battery</span><span>telemetry watch</span></div>
+          <div class="sv-readiness-actions">
+            <button class="vb-btn" onclick="exportSwingSessionSummary()">Export Session</button>
+            <button class="vb-btn" onclick="showGolfPrivacySummary()">Privacy</button>
+          </div>
         </div>
       </div>
     </div>
@@ -10557,6 +10577,136 @@ function _hydrateGolfMobileRoute(params = new URLSearchParams(window.location.se
   return true;
 }
 
+function _renderGolfProductionReadiness() {
+  const el = qs("svProductionReadiness");
+  if (!el) return;
+  const p = sv.production || {};
+  const onlineText = p.online ? "online" : "offline shell";
+  const storageText = p.storageUsage != null ? `${p.storageState} ${p.storageUsage}%` : p.storageState || "checking";
+  const permissionText = `camera ${p.cameraPermission || "on demand"} / mic ${p.micPermission || "not used"}`;
+  const privacyText = p.exportReady ? "metadata export ready" : "local video only";
+  const installText = p.installability || "standalone ready";
+  const outdoorText = p.sunlightReadiness || "high contrast HUD";
+  const batteryText = `impact ${sv.telemetry?.batteryImpact || "low"}`;
+  el.innerHTML = `
+    <div class="sv-readiness-row"><span>Network</span><span>${_esc(onlineText)}</span></div>
+    <div class="sv-readiness-row"><span>Storage</span><span>${_esc(storageText)}</span></div>
+    <div class="sv-readiness-row"><span>Permissions</span><span>${_esc(permissionText)}</span></div>
+    <div class="sv-readiness-row"><span>Privacy</span><span>${_esc(privacyText)}</span></div>
+    <div class="sv-readiness-row"><span>Install</span><span>${_esc(installText)}</span></div>
+    <div class="sv-readiness-row"><span>Outdoor</span><span>${_esc(outdoorText)}</span></div>
+    <div class="sv-readiness-row"><span>Battery</span><span>${_esc(batteryText)}</span></div>
+    <div class="sv-readiness-actions">
+      <button class="vb-btn" onclick="exportSwingSessionSummary()">Export Session</button>
+      <button class="vb-btn" onclick="showGolfPrivacySummary()">Privacy</button>
+    </div>`;
+}
+
+async function _prepareGolfProductionReadiness() {
+  sv.production.online = navigator.onLine !== false;
+  sv.production.micPermission = "not recorded";
+  sv.production.installability = window.JARVIS_GOLF_MOBILE?.pwa?.standaloneReady ? "standalone ready" : "dashboard";
+  sv.production.sunlightReadiness = "high contrast HUD";
+  try {
+    const estimate = await navigator.storage?.estimate?.();
+    if (estimate?.quota) {
+      const pct = Math.round((estimate.usage || 0) / Math.max(estimate.quota, 1) * 100);
+      sv.production.storageUsage = pct;
+      sv.production.storageState = pct >= 85 ? "pressure" : pct >= 65 ? "watch" : "ok";
+    } else {
+      sv.production.storageState = "limited";
+    }
+  } catch(e) {
+    sv.production.storageState = "unknown";
+  }
+  try {
+    const cam = await navigator.permissions?.query?.({ name: "camera" });
+    if (cam?.state) sv.production.cameraPermission = cam.state;
+  } catch(e) {
+    sv.production.cameraPermission = "on demand";
+  }
+  _renderGolfProductionReadiness();
+}
+
+function _setGolfConnectivityState(online = navigator.onLine !== false) {
+  sv.production.online = !!online;
+  const root = _golfMobileRoot();
+  if (root) root.dataset.golfConnectivity = online ? "online" : "offline";
+  const statusEl = qs("svStatus");
+  if (!online && statusEl && !sv.active) {
+    statusEl.textContent = "Offline mode: camera can run if MediaPipe is cached; live coaching sync resumes online.";
+  } else if (online && statusEl && !sv.active) {
+    statusEl.textContent = "Connection restored. Camera and coaching sync are ready.";
+  }
+  _renderGolfProductionReadiness();
+}
+
+function _cameraPermissionMessage(err) {
+  const name = err?.name || "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "Camera permission blocked. Enable camera access for this site, then start again.";
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") return "No camera found. Connect a camera or use a mobile device camera.";
+  if (name === "NotReadableError" || name === "TrackStartError") return "Camera is busy in another app. Close it and retry.";
+  if (!window.isSecureContext) return "Camera requires HTTPS or localhost in mobile browsers.";
+  if (navigator.onLine === false) return "Offline: camera model may need a cached app shell before first use.";
+  return "Camera unavailable. Check browser permission and retry.";
+}
+
+function _rememberSwingRecoveryState(reason = "checkpoint") {
+  const data = {
+    reason,
+    ts: Date.now(),
+    club: qs("svClubSelect")?.value || "unknown",
+    angle: sv.swingAngle || "face_on",
+    recordMode: sv.recordMode || qs("svRecordMode")?.value || "30",
+    active: !!sv.active,
+    recording: !!sv.recording,
+    replayCount: Array.isArray(sv.replaySessions) ? sv.replaySessions.length : 0,
+  };
+  try { sessionStorage.setItem("jarvis_golf_session_recovery", JSON.stringify(data)); } catch(e) {}
+  sv.production.lastRecoveryMs = data.ts;
+}
+
+function exportSwingSessionSummary() {
+  _rememberSwingRecoveryState("manual_export");
+  const payload = {
+    app: "JARVIS Golf",
+    generated_at: new Date().toISOString(),
+    privacy: "No raw video included. Pose/replay data is sampled landmarks and local session metadata.",
+    club: qs("svClubSelect")?.value || "unknown",
+    angle: sv.swingAngle || "face_on",
+    telemetry: sv.telemetry?.samples?.slice(-8) || [],
+    replay_sessions: (sv.replaySessions || []).map(s => ({
+      id: s.id,
+      club: s.club,
+      angle: s.angle,
+      score: s.score,
+      frameCount: s.frameCount,
+      createdAt: s.createdAt,
+    })),
+  };
+  sv.production.exportReady = true;
+  try { sessionStorage.setItem("jarvis_golf_last_export", JSON.stringify(payload)); } catch(e) {}
+  _renderGolfProductionReadiness();
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = "Session export prepared locally. No raw video included.";
+  return payload;
+}
+
+function showGolfPrivacySummary() {
+  const statusEl = qs("svStatus");
+  if (statusEl) {
+    statusEl.textContent = "Privacy: camera video stays local to the live view; exports use sampled landmarks, telemetry, and coaching metadata only.";
+  }
+  _renderGolfProductionReadiness();
+}
+
+function _bindGolfProductionEvents() {
+  if (window.__jarvisGolfProductionEventsBound) return;
+  window.__jarvisGolfProductionEventsBound = true;
+  window.addEventListener("online", () => _setGolfConnectivityState(true));
+  window.addEventListener("offline", () => _setGolfConnectivityState(false));
+}
+
 const _golfPanelState = { loaded: false, loading: false };
 
 async function loadGolfPanelData(force=false) {
@@ -10566,6 +10716,7 @@ async function loadGolfPanelData(force=false) {
   _setGolfMobileLifecycle("loading");
   _syncSwingVoiceControls();
   _syncSwingAngleControls();
+  _prepareGolfProductionReadiness();
   try {
     await Promise.allSettled([
       loadGolf(),
@@ -10853,6 +11004,17 @@ const sv = {
     samples: [],
     maxSamples: 20,
   },
+  production:      {
+    online: navigator.onLine !== false,
+    storageState: "checking",
+    storageUsage: null,
+    cameraPermission: "on demand",
+    micPermission: "not used",
+    installability: "standalone ready",
+    sunlightReadiness: "high contrast HUD",
+    lastRecoveryMs: 0,
+    exportReady: false,
+  },
   replaySessions:  [],
   replaySelectedId: null,
   maxReplaySessions: 4,
@@ -10945,9 +11107,13 @@ function toggleSwingVoiceCoach() {
   sv.voiceEnabled = !sv.voiceEnabled;
   localStorage.setItem("sv_voice_enabled", sv.voiceEnabled ? "1" : "0");
   if (!sv.voiceEnabled) _stopSwingVoiceCoach();
+  sv.production.micPermission = "not recorded";
+  _renderGolfProductionReadiness();
   _syncSwingVoiceControls();
   const statusEl = qs("svStatus");
-  if (statusEl) statusEl.textContent = sv.voiceEnabled ? "Voice coach on - concise cues enabled." : "Voice coach muted.";
+  if (statusEl) statusEl.textContent = sv.voiceEnabled
+    ? "Voice coach on. Microphone is not recorded."
+    : "Voice coach muted.";
 }
 
 function setSwingVoiceMode(mode) {
@@ -11056,12 +11222,18 @@ sv.facingMode = "environment";
 async function toggleSwingCamera() {
   if (sv.active) { _stopSwingCamera(); return; }
   const statusEl = qs("svStatus");
-  if (statusEl) statusEl.textContent = "Loading AI pose model…";
+  _rememberSwingRecoveryState("camera_start_request");
+  _setGolfConnectivityState(navigator.onLine !== false);
+  if (statusEl) statusEl.textContent = navigator.onLine === false
+    ? "Starting camera in offline mode. First launch may need connection for the pose model."
+    : "Camera permission may be requested. Loading AI pose model...";
   try {
     await _loadMediaPipe();
     await _startSwingCamera(sv.facingMode);
   } catch(e) {
-    if (statusEl) statusEl.textContent = "Error: " + e.message;
+    sv.production.cameraPermission = (e?.name === "NotAllowedError" || e?.name === "SecurityError") ? "blocked" : "unavailable";
+    _renderGolfProductionReadiness();
+    if (statusEl) statusEl.textContent = _cameraPermissionMessage(e);
     console.warn("SwingVision:", e);
   }
 }
@@ -11081,7 +11253,7 @@ async function switchSwingCamera() {
   } catch(e) {
     // Flip back on failure
     sv.facingMode = (sv.facingMode === "environment") ? "user" : "environment";
-    if (statusEl) statusEl.textContent = "Camera switch failed — try again";
+    if (statusEl) statusEl.textContent = _cameraPermissionMessage(e);
   }
 }
 
@@ -11116,6 +11288,8 @@ async function _startSwingCamera(facingMode, keepPose) {
       throw err;
     }
   }
+  sv.production.cameraPermission = "granted";
+  _renderGolfProductionReadiness();
 
   sv.stream = stream;
   video.srcObject = stream;
@@ -11155,7 +11329,8 @@ async function _startSwingCamera(facingMode, keepPose) {
   qs("svStartBtn").textContent = "⏹ Stop Camera";
   qs("svRecordBtn").disabled = false;
   _updateSwingSportsHud({ active: true, tracking: 0, framing: null });
-  qs("svStatus").textContent = `Camera active (${label}) — align yourself and start recording`;
+  const angleMeta = _swingAngleMeta();
+  qs("svStatus").textContent = `Camera active (${label}) - ${angleMeta.label}. ${angleMeta.tripod}`;
 }
 
 function _stopSwingCamera() {
@@ -11181,6 +11356,7 @@ function _stopSwingCamera() {
   _resetSwingAutoState();
   _cleanupSwingReplay("camera_stop");
   _resetSwingTelemetry();
+  _rememberSwingRecoveryState("camera_stop");
   _updateSwingSportsHud({ active: false, tracking: 0, framing: null });
   qs("svStatus").textContent = "Camera stopped.";
   _setRecordBarVisible(false);
@@ -11905,6 +12081,7 @@ function toggleSwingRecording() {
 
 function _startSwingRecording(options = {}) {
   const preRoll = Array.isArray(options.preRoll) ? options.preRoll : [];
+  _rememberSwingRecoveryState(options.auto ? "auto_record_start" : "record_start");
   sv.frames        = preRoll.map(f => ({ landmarks: f.landmarks, frame_time: f.frame_time }));
   sv.recording     = true;
   sv.recordMode    = qs("svRecordMode")?.value || "30";
@@ -11929,6 +12106,7 @@ function _startSwingRecording(options = {}) {
 
 async function _stopSwingRecording(options = {}) {
   sv.recording = false;
+  _rememberSwingRecoveryState(options.autoTrim ? "auto_record_stop" : "record_stop");
   _clearSwingRecordingTimer();
   _setSwingRecordingHud(false);
   qs("svRecordBtn").textContent = "Record";
@@ -12299,6 +12477,7 @@ function _sampleSwingReplayFrames(frames) {
 function _captureSwingReplay(analysis) {
   const keyFrames = _sampleSwingReplayFrames(sv.frames);
   if (!keyFrames.length) return;
+  const storagePressure = sv.production?.storageState === "pressure";
   const angleMeta = _swingAngleMeta();
   const session = {
     id: `replay-${Date.now()}`,
@@ -12316,8 +12495,10 @@ function _captureSwingReplay(analysis) {
     },
   };
   sv.replaySessions.unshift(session);
-  if (sv.replaySessions.length > sv.maxReplaySessions) sv.replaySessions.splice(sv.maxReplaySessions);
+  const replayLimit = storagePressure ? Math.max(2, Math.min(sv.maxReplaySessions, 2)) : sv.maxReplaySessions;
+  if (sv.replaySessions.length > replayLimit) sv.replaySessions.splice(replayLimit);
   sv.replaySelectedId = session.id;
+  _rememberSwingRecoveryState("replay_capture");
   _renderSwingReplayPanel();
 }
 
@@ -17169,6 +17350,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Prepare dashboard-compatible PWA shell; does not alter routing or Golf state.
   try { _registerJarvisPwaShell(); } catch(e) {}
   try { _applyGolfStandaloneShell(); } catch(e) {}
+  try { _bindGolfProductionEvents(); _setGolfConnectivityState(navigator.onLine !== false); _prepareGolfProductionReadiness(); } catch(e) {}
 
   // Start holdings auto-refresh
   try { _startHoldingsRefresh(); } catch(e) {}
