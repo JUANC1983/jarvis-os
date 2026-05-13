@@ -11496,6 +11496,11 @@ const sv = {
   autoSwingStartMs: 0,
   autoLastMotionMs: 0,
   autoStartedRecording: false,
+  handsFreeCountdownActive: false,
+  handsFreeArmed: false,
+  handsFreeReadyVoiceMs: 0,
+  handsFreeResetUntil: 0,
+  handsFreeCountdownTimers: [],
   bioBaseline:     null,
   bioLastRenderMs: 0,
   bioPhaseTimes:   {},
@@ -11627,6 +11632,7 @@ function _normalizeSwingVoiceMode(mode) {
 
 function _swingVoiceCooldownMs(priority = "normal") {
   const mode = _normalizeSwingVoiceMode(sv.voiceMode);
+  if (priority === "countdown") return 450;
   if (priority === "result") return mode === "aggressive" ? 1800 : mode === "quiet" ? 6500 : 2800;
   if (priority === "live") return mode === "aggressive" ? 4500 : mode === "quiet" ? 14000 : 8000;
   return mode === "aggressive" ? 3500 : mode === "quiet" ? 12000 : 6500;
@@ -11718,7 +11724,7 @@ function _queueSwingVoice(text, priority = "normal", meta = {}) {
   _pruneSwingVoiceMemory(now);
   const cooldown = _swingVoiceCooldownMs(priority);
   if (now - sv.voiceLastMs < cooldown || clean === sv.voiceLastText) return;
-  if (key && sv.voiceLastByKey[key] && now - sv.voiceLastByKey[key] < Math.max(cooldown, 18000)) return;
+  if (priority !== "countdown" && key && sv.voiceLastByKey[key] && now - sv.voiceLastByKey[key] < Math.max(cooldown, 18000)) return;
   const maxQueue = Math.max(1, Math.min(3, sv.voiceQueueMax || 3));
   if (sv.voiceQueue.length >= maxQueue) {
     if (priority !== "result") return;
@@ -11767,7 +11773,61 @@ function _stopSwingVoiceCoach() {
   try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e) {}
 }
 
+function _clearHandsFreeCountdown() {
+  (sv.handsFreeCountdownTimers || []).forEach(id => clearTimeout(id));
+  sv.handsFreeCountdownTimers = [];
+  sv.handsFreeCountdownActive = false;
+}
+
+function _resetHandsFreeTrainingState() {
+  _clearHandsFreeCountdown();
+  sv.handsFreeArmed = false;
+  sv.handsFreeReadyVoiceMs = 0;
+  sv.handsFreeResetUntil = 0;
+}
+
+function _setHandsFreeReadyStatus(message) {
+  const statusEl = qs("svStatus");
+  if (statusEl && sv.autoCapture && !sv.recording) statusEl.textContent = message;
+}
+
+function _startHandsFreeCountdown() {
+  if (!sv.autoCapture || sv.recording || sv.handsFreeCountdownActive || sv.handsFreeArmed) return;
+  if (Date.now() < (sv.handsFreeResetUntil || 0)) return;
+  sv.handsFreeCountdownActive = true;
+  sv.handsFreeArmed = false;
+  if (sv.voiceEnabled) _stopSwingVoiceCoach();
+  _setHandsFreeReadyStatus("Hands-free ready - hold address for countdown.");
+  const steps = [
+    { delay: 0, text: "3" },
+    { delay: 900, text: "2" },
+    { delay: 1800, text: "1" },
+    { delay: 2700, text: "Swing" },
+  ];
+  sv.handsFreeCountdownTimers = steps.map(step => setTimeout(() => {
+    if (!sv.autoCapture || sv.recording || !sv.active) return;
+    _queueSwingVoice(step.text, "countdown", { key: `countdown-${step.text}-${sv.generation}` });
+    if (step.text === "Swing") {
+      sv.handsFreeCountdownActive = false;
+      sv.handsFreeArmed = true;
+      sv.handsFreeReadyVoiceMs = Date.now();
+      _setHandsFreeReadyStatus("Hands-free armed - swing when ready.");
+    }
+  }, step.delay));
+}
+
+function _markHandsFreeSwingComplete() {
+  _clearHandsFreeCountdown();
+  sv.handsFreeArmed = false;
+  sv.handsFreeResetUntil = Date.now() + 1800;
+  if (sv.autoCapture && sv.active) {
+    _queueSwingVoice("Swing complete. Ready again soon.", "result", { key: `hands-free-complete-${sv.generation}` });
+    _setHandsFreeReadyStatus("Swing complete - reset to address for next rep.");
+  }
+}
+
 function _resetSwingAutoState() {
+  _resetHandsFreeTrainingState();
   sv.autoBuffer = [];
   sv.autoPhase = "address";
   sv.autoMotion = 0;
@@ -12314,9 +12374,15 @@ function _updateSwingAutoCapture(landmarks) {
   sv.autoPhase = phase;
   _renderSwingPhaseTimeline(phase);
 
-  if (sv.autoCapture && sv.active && !sv.recording && !sv.autoStartedRecording && sv.autoStableFrames >= 18 && motion > 0.018) {
+  if (sv.autoCapture && sv.active && !sv.recording && !sv.autoStartedRecording && sv.autoStableFrames >= 18 && !sv.handsFreeArmed) {
+    _startHandsFreeCountdown();
+  }
+
+  if (sv.autoCapture && sv.active && !sv.recording && !sv.autoStartedRecording && sv.handsFreeArmed && motion > 0.018) {
     sv.autoStartedRecording = true;
     sv.autoSwingStartMs = now;
+    _clearHandsFreeCountdown();
+    sv.handsFreeArmed = false;
     _startSwingRecording({ auto: true, preRoll: sv.autoBuffer.slice(-45) });
   }
 
@@ -12695,6 +12761,8 @@ function _startSwingRecording(options = {}) {
   const preRoll = Array.isArray(options.preRoll) ? options.preRoll : [];
   _rememberSwingRecoveryState(options.auto ? "auto_record_start" : "record_start");
   _setSwingInsightsDrawer(false);
+  _clearHandsFreeCountdown();
+  sv.handsFreeArmed = false;
   sv.frames        = preRoll.map(f => ({ landmarks: f.landmarks, frame_time: f.frame_time }));
   sv.recording     = true;
   sv.recordMode    = qs("svRecordMode")?.value || "30";
@@ -12719,6 +12787,7 @@ function _startSwingRecording(options = {}) {
 
 async function _stopSwingRecording(options = {}) {
   sv.recording = false;
+  const wasAutoTrim = !!options.autoTrim;
   _rememberSwingRecoveryState(options.autoTrim ? "auto_record_stop" : "record_stop");
   _setSwingInsightsDrawer(false);
   _clearSwingRecordingTimer();
@@ -12732,10 +12801,12 @@ async function _stopSwingRecording(options = {}) {
 
   if (sv.frames.length < 5) {
     qs("svStatus").textContent = "Too few frames — record a full swing.";
+    if (wasAutoTrim) _markHandsFreeSwingComplete();
     return;
   }
   qs("svStatus").textContent = `Analyzing ${sv.frames.length} frames…`;
   await _sendSwingAnalysis();
+  if (wasAutoTrim) _markHandsFreeSwingComplete();
 }
 
 function _trimSwingFrames() {
