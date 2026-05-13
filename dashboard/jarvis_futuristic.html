@@ -11561,7 +11561,10 @@ function _setSwingFullscreen(enabled) {
     btn.textContent = sv.fullscreen ? "Exit Fullscreen" : "Fullscreen";
     btn.setAttribute("aria-pressed", sv.fullscreen ? "true" : "false");
   }
-  if (wasFullscreen && !sv.fullscreen) _cleanupSwingReplay("fullscreen_exit");
+  if (wasFullscreen && !sv.fullscreen) {
+    _resetHandsFreeTrainingState();
+    _cleanupSwingReplay("fullscreen_exit");
+  }
 }
 
 function _setSwingInsightsDrawer(expanded) {
@@ -12045,6 +12048,7 @@ function _abortSwingLiveRequests() {
 
 window.__jarvisStopSwingVision = function() {
   _setSwingFullscreen(false);
+  _resetHandsFreeTrainingState();
   _cleanupSwingReplay("tab_exit");
   if (sv.active) _stopSwingCamera();
 };
@@ -12052,6 +12056,7 @@ window.__jarvisStopSwingVision = function() {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     _setSwingFullscreen(false);
+    _resetHandsFreeTrainingState();
     _cleanupSwingReplay("visibilitychange");
     _stopSwingVoiceCoach();
     if (sv.active) _stopSwingCamera();
@@ -12059,6 +12064,7 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", () => {
   _setSwingFullscreen(false);
+  _resetHandsFreeTrainingState();
   _cleanupSwingReplay("pagehide");
   _stopSwingVoiceCoach();
   if (sv.active) _stopSwingCamera();
