@@ -995,7 +995,7 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-stage-actions{width:100%}
   .sv-stage-actions .btn-p,.sv-stage-actions .vb-btn,.sv-stage-actions .sv-fullscreen-btn{min-height:44px}
   .sv-stage-actions #svRecordBtn,.sv-stage-actions #svStartBtn{flex:1}
-  .sv-stage-actions #svRecordMode{flex:1 1 110px}
+  .sv-stage-actions #svRecordMode,.sv-stage-actions #svAngleSelect{flex:1 1 110px}
   .sv-stage-actions #svAutoBtn{flex:1 1 92px}
   .sv-stage-actions #svVoiceBtn{flex:1 1 92px}
   .sv-stage-actions #svVoiceMode{flex:1 1 112px}
@@ -4679,6 +4679,10 @@ body.mode-beginner .operator-only{display:none!important}
             <option value="putter">Putter</option>
           </optgroup>
         </select>
+        <select id="svAngleSelect" class="sv-record-mode" onchange="setSwingAngle(this.value)" aria-label="Swing camera angle">
+          <option value="face_on">Face-on</option>
+          <option value="down_the_line">Down line</option>
+        </select>
         <button class="sv-fullscreen-btn" id="svFullscreenBtn" onclick="toggleSwingFullscreen()" aria-pressed="false">Fullscreen</button>
         <button class="btn-p btn-sm" id="svStartBtn" onclick="toggleSwingCamera()">📷 Start Camera</button>
         <select id="svRecordMode" class="sv-record-mode" aria-label="Recording duration">
@@ -4733,6 +4737,7 @@ body.mode-beginner .operator-only{display:none!important}
         <div id="svSportsHud" class="sv-sports-hud" aria-live="polite">
           <div id="svHudAI" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>AI standby</span></div>
           <div id="svHudTracking" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Tracking --</span></div>
+          <div id="svHudAngle" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Face-on</span></div>
           <span class="sv-hud-spacer"></span>
           <div id="svHudFraming" class="sv-hud-pill warn"><span class="sv-hud-dot"></span><span>Framing --</span></div>
         </div>
@@ -10540,6 +10545,7 @@ async function loadGolfPanelData(force=false) {
   _golfPanelState.loading = true;
   _setGolfMobileLifecycle("loading");
   _syncSwingVoiceControls();
+  _syncSwingAngleControls();
   try {
     await Promise.allSettled([
       loadGolf(),
@@ -10784,6 +10790,7 @@ const sv = {
   swingAbort:      null,
   fullscreen:      false,
   recordMode:      "30",
+  swingAngle:      localStorage.getItem("sv_swing_angle") || "face_on",
   recordStartMs:   0,
   recordTimerId:   null,
   recordDurationMs: 30000,
@@ -10863,6 +10870,42 @@ function _syncSwingVoiceControls() {
   if (mode) mode.value = sv.voiceMode || "concise";
 }
 
+function _swingAngleMeta(angle = sv.swingAngle) {
+  const map = {
+    face_on: {
+      id: "face_on",
+      label: "Face-on",
+      short: "FO",
+      focus: "setup, sway, rotation",
+      tripod: "Place phone chest-high, perpendicular to target line.",
+    },
+    down_the_line: {
+      id: "down_the_line",
+      label: "Down line",
+      short: "DTL",
+      focus: "alignment, takeaway, plane",
+      tripod: "Place phone hand-high, behind hands on target line.",
+    },
+  };
+  return map[angle] || map.face_on;
+}
+
+function _syncSwingAngleControls() {
+  const meta = _swingAngleMeta();
+  const select = qs("svAngleSelect");
+  if (select) select.value = meta.id;
+  _setHudPill("svHudAngle", sv.active ? "good" : "warn", meta.label);
+}
+
+function setSwingAngle(angle) {
+  const meta = _swingAngleMeta(angle);
+  sv.swingAngle = meta.id;
+  localStorage.setItem("sv_swing_angle", meta.id);
+  _syncSwingAngleControls();
+  const statusEl = qs("svStatus");
+  if (statusEl && !sv.recording) statusEl.textContent = `${meta.label} view selected - ${meta.tripod}`;
+}
+
 function toggleSwingVoiceCoach() {
   sv.voiceEnabled = !sv.voiceEnabled;
   localStorage.setItem("sv_voice_enabled", sv.voiceEnabled ? "1" : "0");
@@ -10929,6 +10972,7 @@ function _resetSwingAutoState() {
   sv.clubSamples = [];
   sv.clubLatest = null;
   _resetSwingClubHud();
+  _syncSwingAngleControls();
   _renderSwingPhaseTimeline("address");
 }
 
@@ -11270,6 +11314,7 @@ function _setHudPill(id, state, text) {
 function _updateSwingSportsHud({ active, tracking, framing, framingState } = {}) {
   const isActive = !!active;
   _setHudPill("svHudAI", isActive ? "good" : "warn", isActive ? "AI active" : "AI standby");
+  _setHudPill("svHudAngle", isActive ? "good" : "warn", _swingAngleMeta().label);
 
   const trackingPct = Number.isFinite(tracking) ? Math.round(tracking) : 0;
   const trackingState = trackingPct >= 70 ? "good" : trackingPct >= 35 ? "warn" : "bad";
@@ -11726,9 +11771,10 @@ function _startSwingRecording(options = {}) {
   _setSwingRecordingHud(true);
   _startSwingRecordingTimer();
   const modeLabel = sv.recordMode === "unlimited" ? "manual stop" : `${Number(sv.recordMode)} s`;
+  const angleMeta = _swingAngleMeta();
   qs("svStatus").textContent = options.auto
-    ? `Auto recording - swing detected. Mode: ${modeLabel}.`
-    : `Recording - swing when ready. Mode: ${modeLabel}.`;
+    ? `Auto recording - ${angleMeta.label} view. Mode: ${modeLabel}.`
+    : `Recording - ${angleMeta.label} view. Mode: ${modeLabel}.`;
 }
 
 async function _stopSwingRecording(options = {}) {
@@ -11802,6 +11848,7 @@ async function _sendSwingAnalysis() {
 
 function _recordGolfSwingMemory(analysis) {
   const coachCards = _buildGolfCoachCards(analysis || {}, (_svLang || "es") === "es");
+  const angleMeta = _swingAngleMeta();
   const clubEstimate = sv.clubLatest ? {
     source: "inferred_from_observed_pose",
     confidence: sv.clubLatest.confidence,
@@ -11813,8 +11860,9 @@ function _recordGolfSwingMemory(analysis) {
   } : null;
   const payload = {
     club: qs("svClubSelect")?.value || "unknown",
+    angle: angleMeta.id,
     phase: sv.autoPhase || "",
-    metrics: { ...(sv.bioLatest || {}), club_tracking: clubEstimate },
+    metrics: { ...(sv.bioLatest || {}), swing_angle: angleMeta.id, club_tracking: clubEstimate },
     analysis: {
       score: analysis?.score ?? null,
       level: analysis?.level || "",
@@ -12039,6 +12087,16 @@ function _buildGolfCoachCards(d, isES) {
     });
   }
 
+  const angleMeta = _swingAngleMeta();
+  cards.push({
+    confidence: "medium",
+    observed: `Selected capture angle: ${angleMeta.label}.`,
+    tendency: _coachTendency("medium", angleMeta.focus),
+    action: angleMeta.id === "down_the_line"
+      ? "Use this view for alignment, takeaway path, and plane checks."
+      : "Use this view for setup, sway, balance, and turn checks.",
+  });
+
   const unique = [];
   const seen = new Set();
   for (const card of cards) {
@@ -12048,7 +12106,7 @@ function _buildGolfCoachCards(d, isES) {
       unique.push(card);
     }
   }
-  return unique.slice(0, 3);
+  return unique.slice(0, 4);
 }
 
 function _renderCoachCard(card) {
@@ -12091,9 +12149,12 @@ function _sampleSwingReplayFrames(frames) {
 function _captureSwingReplay(analysis) {
   const keyFrames = _sampleSwingReplayFrames(sv.frames);
   if (!keyFrames.length) return;
+  const angleMeta = _swingAngleMeta();
   const session = {
     id: `replay-${Date.now()}`,
     club: qs("svClubSelect")?.value || analysis?.club || "unknown",
+    angle: angleMeta.id,
+    angleLabel: angleMeta.label,
     score: analysis?.score ?? null,
     frameCount: Array.isArray(sv.frames) ? sv.frames.length : 0,
     createdAt: Date.now(),
@@ -12126,9 +12187,11 @@ function _renderSwingReplayPanel(reason = "") {
     return;
   }
   const current = sessions.find(s => s.id === sv.replaySelectedId) || sessions[0];
-  const previous = sessions.find(s => s.id !== current.id) || null;
+  const previous = sessions.find(s => s.id !== current.id && (s.angle || "face_on") === (current.angle || "face_on")) ||
+    sessions.find(s => s.id !== current.id) || null;
   const meta = [
     current.club,
+    current.angleLabel || _swingAngleMeta(current.angle).label,
     current.frameCount ? `${current.frameCount} frames sampled` : "",
     current.score != null ? `score ${current.score}` : "",
   ].filter(Boolean).join(" · ");
@@ -12153,7 +12216,7 @@ function _renderSwingReplayPanel(reason = "") {
       </div>
       <div class="sv-replay-frame">
         <canvas id="svReplayComparePrevious" width="260" height="195"></canvas>
-        <div class="sv-replay-label">${previous ? "Previous vs current" : "Previous swing unavailable"}</div>
+        <div class="sv-replay-label">${previous ? `${_esc(previous.angleLabel || _swingAngleMeta(previous.angle).label)} previous vs current` : "Previous swing unavailable"}</div>
       </div>
     </div>`;
   current.keyFrames.forEach((frame, i) => _drawReplayCanvas(qs(`svReplayFrame${i}`), frame.landmarks, "#44f0ff"));
