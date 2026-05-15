@@ -11520,8 +11520,17 @@ const sv = {
   voiceCurrent:    null,
   voiceCoachHistory: [],
   maxVoiceCoachHistory: 8,
+  recentCoachingContexts: [],
+  maxRecentCoachingContexts: 8,
+  lastCoachingCategory: "",
+  lastCoachingCue: "",
+  recentRepeatedTendencies: [],
+  recentImprovements: [],
+  recentSuccessfulSwings: 0,
   voiceSilentSwings: 0,
   voiceSwingCount:  0,
+  voiceReplayLastId: "",
+  voiceReplayLastMs: 0,
   telemetry:       {
     startedMs: 0,
     lastFrameMs: 0,
@@ -11567,6 +11576,7 @@ function _setSwingFullscreen(enabled) {
   }
   if (wasFullscreen && !sv.fullscreen) {
     _resetHandsFreeTrainingState();
+    _resetSwingVoiceContext();
     _cleanupSwingReplay("fullscreen_exit");
   }
 }
@@ -11778,6 +11788,20 @@ function _stopSwingVoiceCoach() {
   sv.voiceSpeaking = false;
   sv.voiceCurrent = null;
   try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch(e) {}
+}
+
+function _resetSwingVoiceContext() {
+  sv.voiceCoachHistory = [];
+  sv.recentCoachingContexts = [];
+  sv.lastCoachingCategory = "";
+  sv.lastCoachingCue = "";
+  sv.recentRepeatedTendencies = [];
+  sv.recentImprovements = [];
+  sv.recentSuccessfulSwings = 0;
+  sv.voiceSilentSwings = 0;
+  sv.voiceSwingCount = 0;
+  sv.voiceReplayLastId = "";
+  sv.voiceReplayLastMs = 0;
 }
 
 function _clearHandsFreeCountdown() {
@@ -12030,6 +12054,7 @@ function _stopSwingCamera() {
   _clearSwingRecordingTimer();
   _setSwingRecordingHud(false);
   _stopSwingVoiceCoach();
+  _resetSwingVoiceContext();
   _resetSwingAutoState();
   _cleanupSwingReplay("camera_stop");
   _resetSwingTelemetry();
@@ -12053,6 +12078,7 @@ function _abortSwingLiveRequests() {
 window.__jarvisStopSwingVision = function() {
   _setSwingFullscreen(false);
   _resetHandsFreeTrainingState();
+  _resetSwingVoiceContext();
   _cleanupSwingReplay("tab_exit");
   if (sv.active) _stopSwingCamera();
 };
@@ -12061,6 +12087,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     _setSwingFullscreen(false);
     _resetHandsFreeTrainingState();
+    _resetSwingVoiceContext();
     _cleanupSwingReplay("visibilitychange");
     _stopSwingVoiceCoach();
     if (sv.active) _stopSwingCamera();
@@ -12069,6 +12096,7 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", () => {
   _setSwingFullscreen(false);
   _resetHandsFreeTrainingState();
+  _resetSwingVoiceContext();
   _cleanupSwingReplay("pagehide");
   _stopSwingVoiceCoach();
   if (sv.active) _stopSwingCamera();
@@ -12940,24 +12968,76 @@ function _rememberSwingVoiceDecision(entry) {
   if (sv.voiceCoachHistory.length > limit) sv.voiceCoachHistory.splice(0, sv.voiceCoachHistory.length - limit);
 }
 
+function _voiceCoachModeText(kind, quietText, normalText, aggressiveText) {
+  const mode = _normalizeSwingVoiceMode(sv.voiceMode);
+  if (mode === "quiet") return quietText || normalText;
+  if (mode === "aggressive") return aggressiveText || normalText;
+  return normalText || quietText;
+}
+
+function _voiceCoachCategory(key = "") {
+  if (key.includes("tempo")) return "tempo";
+  if (key.includes("balance")) return "balance";
+  if (key.includes("transition") || key.includes("posture")) return "transition";
+  if (key.includes("club") || key.includes("plane")) return "club";
+  return "general";
+}
+
+function _recentVoiceContextCount(match, lookback = 8) {
+  const contexts = sv.recentCoachingContexts || [];
+  return contexts.slice(-lookback).filter(ctx =>
+    typeof match === "function" ? match(ctx) : ctx.key === match || ctx.category === match
+  ).length;
+}
+
+function _rememberSwingCoachingContext(entry) {
+  const key = entry.key || "silent";
+  const category = entry.category || _voiceCoachCategory(key);
+  const context = { ts: Date.now(), category, ...entry, key };
+  sv.recentCoachingContexts.push(context);
+  const limit = Math.max(3, Math.min(8, sv.maxRecentCoachingContexts || 8));
+  if (sv.recentCoachingContexts.length > limit) sv.recentCoachingContexts.splice(0, sv.recentCoachingContexts.length - limit);
+  if (context.spoken) {
+    sv.lastCoachingCategory = category;
+    sv.lastCoachingCue = context.text || "";
+  }
+  if (context.improvement) {
+    sv.recentImprovements.push(category);
+    if (sv.recentImprovements.length > limit) sv.recentImprovements.splice(0, sv.recentImprovements.length - limit);
+  }
+  if (context.success) sv.recentSuccessfulSwings = Math.min(6, (sv.recentSuccessfulSwings || 0) + 1);
+  else if (context.spoken && !context.improvement) sv.recentSuccessfulSwings = Math.max(0, (sv.recentSuccessfulSwings || 0) - 1);
+  const repeated = _recentVoiceContextCount(ctx => ctx.key === key && ctx.spoken, 5);
+  if (repeated >= 2 && !sv.recentRepeatedTendencies.includes(key)) {
+    sv.recentRepeatedTendencies.push(key);
+    if (sv.recentRepeatedTendencies.length > limit) sv.recentRepeatedTendencies.splice(0, sv.recentRepeatedTendencies.length - limit);
+  }
+}
+
+function _voiceFatigueActive() {
+  const now = Date.now();
+  const recentSpoken = (sv.voiceCoachHistory || []).filter(item => item.spoken && now - item.ts < 75000).length;
+  return recentSpoken >= 3 || (!!sv.voiceReplayLastMs && now - sv.voiceReplayLastMs < 22000);
+}
+
 function _selectSwingVoiceCoachCue(analysis, cards) {
   sv.voiceSwingCount++;
   const previous = Array.isArray(sv.replaySessions) ? sv.replaySessions[0] : null;
   const prevMetrics = previous?.metrics || {};
   const current = sv.bioLatest || {};
   const candidates = [];
-  const addCandidate = (key, text, confidence = "medium", priority = 1, repeatable = false) => {
+  const addCandidate = (key, text, confidence = "medium", priority = 1, repeatable = false, extra = {}) => {
     if (!text) return;
-    candidates.push({ key, text, confidence, priority, repeatable });
+    candidates.push({ key, text, confidence, priority, repeatable, category: _voiceCoachCategory(key), ...extra });
   };
 
   const tempo = Number(current.tempo_ratio || analysis?.tempo_ratio || 0);
   const prevTempo = Number(prevMetrics.tempo_ratio || 0);
   if (tempo && prevTempo) {
     const delta = _tempoCoachScore(tempo) - _tempoCoachScore(prevTempo);
-    if (delta >= 7) addCandidate("trend-tempo", "Tempo improving.", tempo > 2.4 && tempo < 3.6 ? "high" : "medium", 3, true);
+    if (delta >= 7) addCandidate("trend-tempo", _voiceCoachModeText("positive", "Tempo better.", "Tempo improving.", "Good. Tempo is improving."), tempo > 2.4 && tempo < 3.6 ? "high" : "medium", 3, true, { improvement: true, success: tempo > 2.5 && tempo < 3.5 });
     else if (Math.abs(tempo - prevTempo) <= 0.12 && tempo > 2.5 && tempo < 3.5 && sv.voiceSilentSwings >= 2) {
-      addCandidate("stable-tempo", "Tempo staying consistent.", "medium", 1.2);
+      addCandidate("stable-tempo", _voiceCoachModeText("positive", "Tempo steady.", "Your tempo looks more consistent.", "Tempo is consistent. Keep that rhythm."), "medium", 1.5, false, { improvement: true, success: true });
     }
   }
 
@@ -12965,23 +13045,24 @@ function _selectSwingVoiceCoachCue(analysis, cards) {
   const prevBalance = Number(prevMetrics.balance_score || 0);
   if (balance && prevBalance) {
     const delta = balance - prevBalance;
-    if (delta >= 7) addCandidate("trend-balance", "Balance more stable.", balance >= 72 ? "high" : "medium", 3, true);
-    else if (delta <= -10) addCandidate("issue-balance", _voiceCoachPrefix(balance < 50 ? "medium" : "low", "balance looked less stable"), balance < 50 ? "medium" : "low", 2);
+    if (delta >= 7) addCandidate("trend-balance", _voiceCoachModeText("positive", "Balance better.", "Balance more stable.", "Better balance there. Hold that finish."), balance >= 72 ? "high" : "medium", 3, true, { improvement: true, success: balance >= 72 });
+    else if (delta <= -10) addCandidate("issue-balance", _voiceCoachPrefix(balance < 50 ? "medium" : "low", _recentVoiceContextCount("balance", 5) >= 2 ? "still seeing some balance drift" : "balance looked less stable"), balance < 50 ? "medium" : "low", 2);
   }
 
   const stability = Number(current.stability_score || 0);
   const prevStability = Number(prevMetrics.stability_score || 0);
   if (stability && prevStability) {
     const delta = stability - prevStability;
-    if (delta >= 7) addCandidate("trend-transition", "Transition smoother.", stability >= 72 ? "high" : "medium", 2.8, true);
-    else if (delta <= -10) addCandidate("issue-posture", _voiceCoachPrefix(stability < 50 ? "medium" : "low", "posture drift increased"), stability < 50 ? "medium" : "low", 2);
+    if (delta >= 7) addCandidate("trend-transition", _voiceCoachModeText("positive", "Transition better.", "Transition smoother.", "Good transition. Stay smooth through the top."), stability >= 72 ? "high" : "medium", 2.8, true, { improvement: true, success: stability >= 72 });
+    else if (delta <= -10) addCandidate("issue-posture", _voiceCoachPrefix(stability < 50 ? "medium" : "low", _recentVoiceContextCount("transition", 5) >= 2 ? "transition still unstable" : "posture drift increased"), stability < 50 ? "medium" : "low", 2);
   }
 
   const club = sv.clubLatest;
   const plane = club?.inferred?.planeLabel || "";
   if (plane === "steep" && club?.confidence !== "low") {
     const again = _lastSpokenCoach("issue-club-plane", 5) ? " again" : "";
-    addCandidate("issue-club-plane", _voiceCoachPrefix(club.confidence, `estimated club path looked steep${again}`), club.confidence, again ? 2.7 : 2.2);
+    const phrase = again ? "club path still looked steep" : "estimated club path looked steep";
+    addCandidate("issue-club-plane", _voiceCoachPrefix(club.confidence, phrase), club.confidence, again ? 2.4 : 2.2);
   }
 
   for (const card of cards || []) {
@@ -12991,16 +13072,30 @@ function _selectSwingVoiceCoachCue(analysis, cards) {
     if (positive && sv.voiceSilentSwings < 2) continue;
     const key = `card-${tendency}`;
     const text = positive
-      ? (tendency === "balanced tempo" ? "Good tempo." : `${tendency}.`)
+      ? (tendency === "balanced tempo"
+        ? _voiceCoachModeText("positive", "Good tempo.", "Good tempo.", "Good tempo. Repeat that feel.")
+        : _voiceCoachModeText("positive", `${tendency}.`, `${tendency}.`, `${tendency}. Keep it athletic.`))
       : _buildSwingVoiceResultCue(card, "");
-    addCandidate(key, text, card.confidence, positive ? 1.1 : 1.8);
+    addCandidate(key, text, card.confidence, positive ? 1.1 : 1.8, false, { success: positive, improvement: positive });
+  }
+
+  const spokenCount = _recentVoiceContextCount(ctx => ctx.spoken, 8);
+  const improvementCount = _recentVoiceContextCount(ctx => ctx.improvement, 8);
+  if (sv.voiceSwingCount >= 4 && sv.voiceSwingCount % 4 === 0 && improvementCount >= 2 && spokenCount < 5) {
+    addCandidate("session-trend-improving", _voiceCoachModeText("trend", "Session improving.", "Balance has improved this session.", "Good session trend. Balance is improving."), "medium", 2.6, false, { improvement: true });
+  } else if (sv.voiceSwingCount >= 5 && sv.voiceSwingCount % 5 === 0 && _recentVoiceContextCount("transition", 8) >= 3) {
+    addCandidate("session-trend-transition", _voiceCoachModeText("trend", "Transition still unstable.", "Transition still unstable.", "Transition is still the work. Smooth the top."), "medium", 2.6);
   }
 
   candidates.sort((a, b) => b.priority - a.priority);
   const last = sv.voiceCoachHistory?.[sv.voiceCoachHistory.length - 1];
+  const fatigued = _voiceFatigueActive();
   for (const candidate of candidates) {
     if (candidate.confidence === "low" && candidate.priority < 2.4) continue;
-    if (!candidate.repeatable && _lastSpokenCoach(candidate.key, 3)) continue;
+    if (fatigued && candidate.priority < 3) continue;
+    const repeated = _recentVoiceContextCount(ctx => ctx.key === candidate.key && ctx.spoken, 5);
+    if (!candidate.repeatable && repeated) continue;
+    if (candidate.repeatable && repeated >= 2 && sv.voiceSilentSwings < 1) continue;
     if (last?.spoken && candidate.priority < 2.5) continue;
     return candidate;
   }
@@ -13014,13 +13109,102 @@ function _speakSwingResult(analysis) {
   if (!selected) {
     sv.voiceSilentSwings++;
     _rememberSwingVoiceDecision({ spoken: false, key: "silent", confidence: "none" });
+    _rememberSwingCoachingContext({ spoken: false, key: "silent", category: "general" });
     return;
   }
   sv.voiceSilentSwings = 0;
   _rememberSwingVoiceDecision({ spoken: true, key: selected.key, confidence: selected.confidence, text: selected.text });
+  _rememberSwingCoachingContext({
+    spoken: true,
+    key: selected.key,
+    category: selected.category,
+    confidence: selected.confidence,
+    text: selected.text,
+    improvement: !!selected.improvement,
+    success: !!selected.success,
+  });
   _queueSwingVoice(selected.text, "result", {
     confidence: selected.confidence || "medium",
     key: selected.key,
+  });
+}
+
+function _metricDeltaLabel(current, previous, key, threshold = 6) {
+  const now = Number(current?.[key] || 0);
+  const before = Number(previous?.[key] || 0);
+  if (!now || !before) return "";
+  const delta = now - before;
+  if (Math.abs(delta) < threshold) return "";
+  return delta > 0 ? "improved" : "dropped";
+}
+
+function _buildSwingReplayNarration(current, previous) {
+  if (!current) return "Replay unavailable.";
+  const factors = [];
+  const metrics = current.metrics || {};
+  const prevMetrics = previous?.metrics || {};
+  const addFactor = (category, text, confidence = "medium", weight = 1, positive = false) => {
+    if (text) factors.push({ category, text, confidence, weight, positive });
+  };
+  const tempo = Number(metrics.tempo_ratio || 0);
+  const prevTempo = Number(prevMetrics.tempo_ratio || 0);
+  if (tempo && prevTempo) {
+    const delta = _tempoCoachScore(tempo) - _tempoCoachScore(prevTempo);
+    if (delta >= 6) addFactor("tempo", _voiceCoachModeText("positive", "Tempo improved.", "Tempo improved in this replay.", "Tempo improved. Keep that rhythm."), tempo > 2.5 && tempo < 3.5 ? "high" : "medium", Math.abs(delta), true);
+    else if (delta <= -8) addFactor("tempo", "Possible tempo regression in this replay.", "low", Math.abs(delta));
+    else if (tempo >= 2.5 && tempo <= 3.5) addFactor("tempo", "Tempo looked consistent.", "medium", 3, true);
+  } else if (tempo >= 2.5 && tempo <= 3.5) {
+    addFactor("tempo", "Good tempo on this replay.", "medium", 3, true);
+  }
+
+  const balanceDelta = _metricDeltaLabel(metrics, prevMetrics, "balance_score");
+  if (balanceDelta === "improved") addFactor("balance", "Balance more stable at the finish.", "medium", 7, true);
+  else if (balanceDelta === "dropped" || Number(metrics.balance_score || 100) < 55) addFactor("balance", "Possible balance instability at finish.", Number(metrics.balance_score || 100) < 50 ? "medium" : "low", 7);
+
+  const stabilityDelta = _metricDeltaLabel(metrics, prevMetrics, "stability_score");
+  if (stabilityDelta === "improved") addFactor("transition", "Transition and posture looked smoother.", "medium", 6, true);
+  else if (stabilityDelta === "dropped") addFactor("transition", "Possible posture drift increased.", "low", 6);
+
+  const club = metrics.club_tracking || {};
+  if (club.confidence && club.confidence !== "low" && club.downswing_plane === "steep") {
+    addFactor("club", `${club.confidence === "medium" ? "Likely" : "Estimated"} club path looked steep.`, club.confidence, 5);
+  }
+
+  if (!factors.length) {
+    const score = current.score != null ? `Score ${current.score}. ` : "";
+    return `${score}Replay saved. No major change worth calling out.`;
+  }
+  factors.sort((a, b) => b.weight - a.weight);
+  const primary = factors[0];
+  const positive = factors.find(f => f.positive && f.category !== primary.category);
+  const improvement = factors.find(f => f.positive) || null;
+  const lines = [primary.text];
+  if (improvement && improvement !== primary) lines.push(improvement.text);
+  else if (positive && positive !== primary) lines.push(positive.text);
+  return lines.slice(0, 2).join(" ");
+}
+
+function speakSwingReplayReview(id) {
+  if (!sv.voiceEnabled) {
+    const statusEl = qs("svStatus");
+    if (statusEl) statusEl.textContent = "Turn Voice on to hear replay review.";
+    return;
+  }
+  const sessions = Array.isArray(sv.replaySessions) ? sv.replaySessions : [];
+  const current = sessions.find(s => s.id === id) || sessions.find(s => s.id === sv.replaySelectedId) || sessions[0];
+  if (!current) return;
+  const now = Date.now();
+  if (sv.voiceReplayLastMs && now - sv.voiceReplayLastMs < 8000) return;
+  if (sv.voiceReplayLastId === current.id && now - sv.voiceReplayLastMs < 12000) return;
+  const previous = sessions.find(s => s.id !== current.id && (s.angle || "face_on") === (current.angle || "face_on")) ||
+    sessions.find(s => s.id !== current.id) || null;
+  sv.voiceReplayLastId = current.id;
+  sv.voiceReplayLastMs = now;
+  const narration = _buildSwingReplayNarration(current, previous);
+  _rememberSwingCoachingContext({ spoken: true, key: "replay-review", category: "replay", confidence: "medium", text: narration });
+  _queueSwingVoice(narration, "result", {
+    confidence: "medium",
+    key: `replay-review-${current.id}`,
   });
 }
 
@@ -13296,6 +13480,12 @@ function _captureSwingReplay(analysis) {
       tempo_ratio: sv.bioLatest?.tempo_ratio ?? analysis?.tempo_ratio ?? null,
       balance_score: sv.bioLatest?.balance_score ?? null,
       stability_score: sv.bioLatest?.stability_score ?? null,
+      club_tracking: sv.clubLatest ? {
+        confidence: sv.clubLatest.confidence,
+        takeaway_path: sv.clubLatest.inferred?.takeaway || "",
+        downswing_plane: sv.clubLatest.inferred?.planeLabel || "",
+        release_timing: sv.clubLatest.inferred?.releaseLabel || "",
+      } : null,
     },
   };
   sv.replaySessions.unshift(session);
@@ -13310,6 +13500,8 @@ function _captureSwingReplay(analysis) {
 function _cleanupSwingReplay(reason = "cleanup") {
   sv.replaySessions = [];
   sv.replaySelectedId = null;
+  sv.voiceReplayLastId = "";
+  sv.voiceReplayLastMs = 0;
   if (sv.telemetry?.samples) sv.telemetry.samples = sv.telemetry.samples.slice(-4);
   _renderSwingDrawerSummary();
   _renderSwingReplayPanel(reason);
@@ -13340,7 +13532,10 @@ function _renderSwingReplayPanel(reason = "") {
         <div class="sv-replay-title">Swing replay and comparison</div>
         <div class="sv-replay-meta">${_esc(meta || "Session replay")}</div>
       </div>
-      <button class="vb-btn" onclick="_cleanupSwingReplay('manual_clear')">Clear replay</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="vb-btn" onclick="speakSwingReplayReview('${_esc(current.id)}')">Voice review</button>
+        <button class="vb-btn" onclick="_cleanupSwingReplay('manual_clear')">Clear replay</button>
+      </div>
     </div>
     <div class="sv-replay-grid">
       ${current.keyFrames.map((f, i) => `<div class="sv-replay-frame">
