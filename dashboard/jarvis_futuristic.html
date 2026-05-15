@@ -1548,6 +1548,116 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
     margin-inline:14px;border-radius:22px 22px 0 0;
   }
 }
+
+/* X15.5: calm premium voice + sports camera polish */
+.sv-fullscreen-active .sv-stage-card{
+  background:linear-gradient(180deg,rgba(8,14,18,.98),#030609 54%,#05080b);
+}
+.sv-fullscreen-active .sv-cam-wrap::after{
+  box-shadow:inset 0 60px 72px rgba(0,0,0,.24),inset 0 -84px 88px rgba(0,0,0,.3);
+}
+.sv-fullscreen-active .sv-stage-card .ch{
+  background:rgba(4,8,12,.46)!important;border-color:rgba(255,255,255,.11)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.22)!important;
+}
+.sv-fullscreen-active .sv-stage-card .ct{font-weight:900;letter-spacing:0}
+.sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode,
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn,
+.sv-fullscreen-active .sv-stage-actions #svFullscreenBtn,
+.sv-fullscreen-active .sv-stage-actions #svStartBtn,
+.sv-fullscreen-active .sv-switch-btn{
+  background:rgba(6,10,14,.58)!important;border-color:rgba(255,255,255,.16)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.22)!important;letter-spacing:0!important;
+  transition:background .18s ease,border-color .18s ease,opacity .18s ease,transform .18s ease;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn,
+.sv-fullscreen-active .sv-stage-actions #svRecordMode{
+  opacity:.88;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn.active,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn.active{
+  background:rgba(32,78,58,.56)!important;border-color:rgba(112,255,181,.42)!important;
+}
+.sv-fullscreen-active #svRecordBtn{
+  background:linear-gradient(180deg,rgba(248,68,68,.96),rgba(178,28,28,.96))!important;
+  box-shadow:0 18px 46px rgba(255,47,47,.3),0 0 0 7px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22)!important;
+  letter-spacing:.035em!important;
+}
+.sv-fullscreen-active #svRecordBtn::after{content:"record";letter-spacing:.1em}
+.sv-fullscreen-active #svRecordBtn.btn-recording::after{content:"stop"}
+.sv-fullscreen-active .sv-sports-hud{
+  width:min(92vw,390px);gap:6px;
+}
+.sv-fullscreen-active .sv-hud-pill{
+  background:rgba(4,8,12,.54)!important;border-color:rgba(255,255,255,.14)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.2)!important;font-weight:850;
+}
+.sv-fullscreen-active .sv-hud-dot{box-shadow:0 0 8px rgba(255,255,255,.18)}
+.sv-fullscreen-active .sv-stage-card .sv-status-bar{
+  background:rgba(4,8,12,.48);border-color:rgba(255,255,255,.1);font-weight:760;
+}
+.sv-fullscreen-active:not(.sv-swing-recording) .sv-stage-card .sv-record-bar{
+  opacity:.45;
+}
+.sv-fullscreen-active:not(.sv-swing-recording) .sv-record-hud{
+  opacity:.92;
+}
+.sv-fullscreen-active .sv-fit-guide{
+  background:rgba(4,8,12,.58);border-color:rgba(255,255,255,.16);font-weight:850;
+}
+.sv-fullscreen-active .sv-metrics-panel{
+  background:rgba(5,9,13,.91);border-color:rgba(255,255,255,.09);
+  box-shadow:0 -14px 34px rgba(0,0,0,.38);
+}
+.sv-fullscreen-active:not(.sv-insights-expanded) .sv-metrics-panel{
+  opacity:.94;
+}
+.sv-fullscreen-active .sv-drawer-summary{
+  background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.08);
+  color:rgba(255,255,255,.78);font-weight:760;
+}
+.sv-fullscreen-active .sv-metrics-title{
+  color:rgba(68,240,255,.7);letter-spacing:.12em;
+}
+.sv-fullscreen-active .sv-metric,
+.sv-fullscreen-active .sv-tip,
+.sv-fullscreen-active .sv-readiness-row{
+  color:rgba(255,255,255,.72);line-height:1.42;
+}
+.sv-fullscreen-active .sv-telemetry-chip,
+.sv-fullscreen-active .sv-bio-chip,
+.sv-fullscreen-active .sv-coach-card,
+.sv-fullscreen-active .sv-replay-frame{
+  background:rgba(255,255,255,.028);border-color:rgba(255,255,255,.085);
+}
+.sv-fullscreen-active .sv-replay-panel{
+  background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.08);
+}
+.sv-fullscreen-active .sv-replay-title{font-size:12px;letter-spacing:0}
+.sv-fullscreen-active .sv-replay-meta{color:rgba(255,255,255,.58)}
+.sv-fullscreen-active .sv-replay-label{font-weight:800;color:rgba(255,255,255,.62)}
+.sv-fullscreen-active .sv-coach-tag.low{color:#ffd8d8;border-color:rgba(255,145,145,.32)}
+
+@media(max-width:520px){
+  .sv-fullscreen-active .sv-stage-actions #svAngleSelect,
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode,
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+    min-width:72px!important;padding-inline:10px!important;
+  }
+  .sv-fullscreen-active .sv-stage-card .sv-status-bar{font-size:11px}
+  .sv-fullscreen-active .sv-hud-pill{font-size:10.5px!important}
+}
+
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn,
+  .sv-fullscreen-active .sv-stage-actions #svRecordMode{opacity:.78}
+  .sv-fullscreen-active .sv-stage-card .ch{background:rgba(4,8,12,.38)!important}
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
@@ -12935,9 +13045,10 @@ function _recordGolfSwingMemory(analysis) {
 function _buildSwingVoiceResultCue(card, score) {
   if (!card) return `${score}Swing analyzed. Review the coach read.`;
   const tendency = card.tendency.replace(/^possible tendency: |^inferred tendency: /, "");
-  if (card.confidence === "low") return `${score}Possible ${tendency}. ${card.action}`;
-  if (card.confidence === "medium") return `${score}Likely ${tendency}. ${card.action}`;
-  return `${score}${tendency}. ${card.action}`;
+  const action = String(card.action || "").replace(/^Use /, "Try ").replace(/^Make /, "Try ");
+  if (card.confidence === "low") return `${score}Possible ${tendency}. ${action}`;
+  if (card.confidence === "medium") return `${score}Likely ${tendency}. ${action}`;
+  return `${score}${tendency}. ${action}`;
 }
 
 function _voiceCoachTendencyText(card) {
@@ -13020,6 +13131,11 @@ function _voiceFatigueActive() {
   return recentSpoken >= 3 || (!!sv.voiceReplayLastMs && now - sv.voiceReplayLastMs < 22000);
 }
 
+function _voiceMinimumPriority() {
+  const mode = _normalizeSwingVoiceMode(sv.voiceMode);
+  return mode === "quiet" ? 3 : mode === "aggressive" ? 2.2 : 2.5;
+}
+
 function _selectSwingVoiceCoachCue(analysis, cards) {
   sv.voiceSwingCount++;
   const previous = Array.isArray(sv.replaySessions) ? sv.replaySessions[0] : null;
@@ -13035,9 +13151,9 @@ function _selectSwingVoiceCoachCue(analysis, cards) {
   const prevTempo = Number(prevMetrics.tempo_ratio || 0);
   if (tempo && prevTempo) {
     const delta = _tempoCoachScore(tempo) - _tempoCoachScore(prevTempo);
-    if (delta >= 7) addCandidate("trend-tempo", _voiceCoachModeText("positive", "Tempo better.", "Tempo improving.", "Good. Tempo is improving."), tempo > 2.4 && tempo < 3.6 ? "high" : "medium", 3, true, { improvement: true, success: tempo > 2.5 && tempo < 3.5 });
+    if (delta >= 7) addCandidate("trend-tempo", _voiceCoachModeText("positive", "Nice tempo.", "Nice tempo there.", "Good rhythm. Keep that tempo."), tempo > 2.4 && tempo < 3.6 ? "high" : "medium", 3, true, { improvement: true, success: tempo > 2.5 && tempo < 3.5 });
     else if (Math.abs(tempo - prevTempo) <= 0.12 && tempo > 2.5 && tempo < 3.5 && sv.voiceSilentSwings >= 2) {
-      addCandidate("stable-tempo", _voiceCoachModeText("positive", "Tempo steady.", "Your tempo looks more consistent.", "Tempo is consistent. Keep that rhythm."), "medium", 1.5, false, { improvement: true, success: true });
+      addCandidate("stable-tempo", _voiceCoachModeText("positive", "Good rhythm.", "Your tempo looks more consistent.", "Tempo is consistent. Keep that rhythm."), "medium", 1.5, false, { improvement: true, success: true });
     }
   }
 
@@ -13045,23 +13161,23 @@ function _selectSwingVoiceCoachCue(analysis, cards) {
   const prevBalance = Number(prevMetrics.balance_score || 0);
   if (balance && prevBalance) {
     const delta = balance - prevBalance;
-    if (delta >= 7) addCandidate("trend-balance", _voiceCoachModeText("positive", "Balance better.", "Balance more stable.", "Better balance there. Hold that finish."), balance >= 72 ? "high" : "medium", 3, true, { improvement: true, success: balance >= 72 });
-    else if (delta <= -10) addCandidate("issue-balance", _voiceCoachPrefix(balance < 50 ? "medium" : "low", _recentVoiceContextCount("balance", 5) >= 2 ? "still seeing some balance drift" : "balance looked less stable"), balance < 50 ? "medium" : "low", 2);
+    if (delta >= 7) addCandidate("trend-balance", _voiceCoachModeText("positive", "Balance better.", "Balance looked better on that swing.", "Better balance there. Hold that finish."), balance >= 72 ? "high" : "medium", 3, true, { improvement: true, success: balance >= 72 });
+    else if (delta <= -10) addCandidate("issue-balance", _voiceCoachPrefix(balance < 50 ? "medium" : "low", _recentVoiceContextCount("balance", 5) >= 2 ? "still seeing some balance drift" : "try staying centered through impact"), balance < 50 ? "medium" : "low", 2);
   }
 
   const stability = Number(current.stability_score || 0);
   const prevStability = Number(prevMetrics.stability_score || 0);
   if (stability && prevStability) {
     const delta = stability - prevStability;
-    if (delta >= 7) addCandidate("trend-transition", _voiceCoachModeText("positive", "Transition better.", "Transition smoother.", "Good transition. Stay smooth through the top."), stability >= 72 ? "high" : "medium", 2.8, true, { improvement: true, success: stability >= 72 });
-    else if (delta <= -10) addCandidate("issue-posture", _voiceCoachPrefix(stability < 50 ? "medium" : "low", _recentVoiceContextCount("transition", 5) >= 2 ? "transition still unstable" : "posture drift increased"), stability < 50 ? "medium" : "low", 2);
+    if (delta >= 7) addCandidate("trend-transition", _voiceCoachModeText("positive", "Smoother.", "Transition was smoother.", "Good transition. Stay smooth through the top."), stability >= 72 ? "high" : "medium", 2.8, true, { improvement: true, success: stability >= 72 });
+    else if (delta <= -10) addCandidate("issue-posture", _voiceCoachPrefix(stability < 50 ? "medium" : "low", _recentVoiceContextCount("transition", 5) >= 2 ? "transition still needs a calmer top" : "try staying quieter through transition"), stability < 50 ? "medium" : "low", 2);
   }
 
   const club = sv.clubLatest;
   const plane = club?.inferred?.planeLabel || "";
   if (plane === "steep" && club?.confidence !== "low") {
     const again = _lastSpokenCoach("issue-club-plane", 5) ? " again" : "";
-    const phrase = again ? "club path still looked steep" : "estimated club path looked steep";
+    const phrase = again ? "club path still looked a little steep" : "try keeping the club path a touch shallower";
     addCandidate("issue-club-plane", _voiceCoachPrefix(club.confidence, phrase), club.confidence, again ? 2.4 : 2.2);
   }
 
@@ -13073,8 +13189,8 @@ function _selectSwingVoiceCoachCue(analysis, cards) {
     const key = `card-${tendency}`;
     const text = positive
       ? (tendency === "balanced tempo"
-        ? _voiceCoachModeText("positive", "Good tempo.", "Good tempo.", "Good tempo. Repeat that feel.")
-        : _voiceCoachModeText("positive", `${tendency}.`, `${tendency}.`, `${tendency}. Keep it athletic.`))
+        ? _voiceCoachModeText("positive", "Good tempo.", "Nice tempo there.", "Good tempo. Repeat that feel.")
+        : _voiceCoachModeText("positive", `${tendency}.`, `${tendency}.`, `${tendency}. Stay with that feel.`))
       : _buildSwingVoiceResultCue(card, "");
     addCandidate(key, text, card.confidence, positive ? 1.1 : 1.8, false, { success: positive, improvement: positive });
   }
@@ -13082,15 +13198,17 @@ function _selectSwingVoiceCoachCue(analysis, cards) {
   const spokenCount = _recentVoiceContextCount(ctx => ctx.spoken, 8);
   const improvementCount = _recentVoiceContextCount(ctx => ctx.improvement, 8);
   if (sv.voiceSwingCount >= 4 && sv.voiceSwingCount % 4 === 0 && improvementCount >= 2 && spokenCount < 5) {
-    addCandidate("session-trend-improving", _voiceCoachModeText("trend", "Session improving.", "Balance has improved this session.", "Good session trend. Balance is improving."), "medium", 2.6, false, { improvement: true });
+    addCandidate("session-trend-improving", _voiceCoachModeText("trend", "Session improving.", "Your balance has improved this session.", "Good session trend. Balance is improving."), "medium", 2.6, false, { improvement: true });
   } else if (sv.voiceSwingCount >= 5 && sv.voiceSwingCount % 5 === 0 && _recentVoiceContextCount("transition", 8) >= 3) {
-    addCandidate("session-trend-transition", _voiceCoachModeText("trend", "Transition still unstable.", "Transition still unstable.", "Transition is still the work. Smooth the top."), "medium", 2.6);
+    addCandidate("session-trend-transition", _voiceCoachModeText("trend", "Smooth the top.", "Transition still needs a calmer top.", "Transition is the focus. Smooth the top."), "medium", 2.6);
   }
 
   candidates.sort((a, b) => b.priority - a.priority);
   const last = sv.voiceCoachHistory?.[sv.voiceCoachHistory.length - 1];
   const fatigued = _voiceFatigueActive();
+  const minPriority = _voiceMinimumPriority();
   for (const candidate of candidates) {
+    if (candidate.priority < minPriority && sv.voiceSilentSwings < 2) continue;
     if (candidate.confidence === "low" && candidate.priority < 2.4) continue;
     if (fatigued && candidate.priority < 3) continue;
     const repeated = _recentVoiceContextCount(ctx => ctx.key === candidate.key && ctx.spoken, 5);
@@ -13151,23 +13269,23 @@ function _buildSwingReplayNarration(current, previous) {
   if (tempo && prevTempo) {
     const delta = _tempoCoachScore(tempo) - _tempoCoachScore(prevTempo);
     if (delta >= 6) addFactor("tempo", _voiceCoachModeText("positive", "Tempo improved.", "Tempo improved in this replay.", "Tempo improved. Keep that rhythm."), tempo > 2.5 && tempo < 3.5 ? "high" : "medium", Math.abs(delta), true);
-    else if (delta <= -8) addFactor("tempo", "Possible tempo regression in this replay.", "low", Math.abs(delta));
+    else if (delta <= -8) addFactor("tempo", "Possible tempo drift on this replay.", "low", Math.abs(delta));
     else if (tempo >= 2.5 && tempo <= 3.5) addFactor("tempo", "Tempo looked consistent.", "medium", 3, true);
   } else if (tempo >= 2.5 && tempo <= 3.5) {
-    addFactor("tempo", "Good tempo on this replay.", "medium", 3, true);
+    addFactor("tempo", "Good rhythm on this replay.", "medium", 3, true);
   }
 
   const balanceDelta = _metricDeltaLabel(metrics, prevMetrics, "balance_score");
-  if (balanceDelta === "improved") addFactor("balance", "Balance more stable at the finish.", "medium", 7, true);
-  else if (balanceDelta === "dropped" || Number(metrics.balance_score || 100) < 55) addFactor("balance", "Possible balance instability at finish.", Number(metrics.balance_score || 100) < 50 ? "medium" : "low", 7);
+  if (balanceDelta === "improved") addFactor("balance", "Balance looked better at the finish.", "medium", 7, true);
+  else if (balanceDelta === "dropped" || Number(metrics.balance_score || 100) < 55) addFactor("balance", "Possible balance drift at finish.", Number(metrics.balance_score || 100) < 50 ? "medium" : "low", 7);
 
   const stabilityDelta = _metricDeltaLabel(metrics, prevMetrics, "stability_score");
-  if (stabilityDelta === "improved") addFactor("transition", "Transition and posture looked smoother.", "medium", 6, true);
-  else if (stabilityDelta === "dropped") addFactor("transition", "Possible posture drift increased.", "low", 6);
+  if (stabilityDelta === "improved") addFactor("transition", "Transition looked smoother.", "medium", 6, true);
+  else if (stabilityDelta === "dropped") addFactor("transition", "Possible posture drift through transition.", "low", 6);
 
   const club = metrics.club_tracking || {};
   if (club.confidence && club.confidence !== "low" && club.downswing_plane === "steep") {
-    addFactor("club", `${club.confidence === "medium" ? "Likely" : "Estimated"} club path looked steep.`, club.confidence, 5);
+    addFactor("club", `${club.confidence === "medium" ? "Likely" : "Estimated"} club path looked a touch steep.`, club.confidence, 5);
   }
 
   if (!factors.length) {
@@ -13707,6 +13825,7 @@ function _formatSwingRecordTime(ms) {
 function _setSwingRecordingHud(visible) {
   const hud = qs("svRecordHud");
   if (!hud) return;
+  document.body.classList.toggle("sv-swing-recording", !!visible);
   hud.style.display = visible ? "" : "none";
   hud.classList.toggle("recording", !!visible);
   if (!visible) {
