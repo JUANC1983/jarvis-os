@@ -1658,6 +1658,65 @@ hr.div{border:none;border-top:1px solid var(--border2);margin:14px 0}
   .sv-fullscreen-active .sv-stage-actions #svRecordMode{opacity:.78}
   .sv-fullscreen-active .sv-stage-card .ch{background:rgba(4,8,12,.38)!important}
 }
+
+/* X15.6: interaction completion audit fixes */
+.sv-fullscreen-active #svRecordBtn{
+  min-width:clamp(190px,48vw,260px)!important;
+}
+.sv-fullscreen-active #svRecordBtn::after{content:"tap to start"!important}
+.sv-fullscreen-active #svRecordBtn.btn-recording::after{content:"recording - tap to stop"!important}
+.sv-fullscreen-active.sv-swing-processing #svRecordBtn{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(216,228,236,.94))!important;
+  color:#0b1116!important;border-color:rgba(255,255,255,.9)!important;text-shadow:none;
+  box-shadow:0 16px 46px rgba(68,240,255,.18),0 0 0 7px rgba(0,0,0,.28)!important;
+}
+.sv-fullscreen-active.sv-swing-processing #svRecordBtn::after{content:"coach is reading it"!important;color:rgba(11,17,22,.72)}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+  min-width:92px!important;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn:not(.active),
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn:not(.active){
+  opacity:.76;border-style:dashed!important;
+}
+.sv-fullscreen-active .sv-stage-actions #svAutoBtn.active,
+.sv-fullscreen-active .sv-stage-actions #svVoiceBtn.active{
+  opacity:1;
+}
+.sv-fullscreen-active .sv-stage-card .sv-status-bar{
+  font-size:clamp(11px,1.7vw,13px);text-align:center;
+}
+.sv-fullscreen-active .sv-drawer-summary{
+  min-height:30px;display:flex;align-items:center;justify-content:center;text-align:center;
+}
+.sv-fullscreen-active:not(.sv-insights-expanded) #svTelemetryPanel,
+.sv-fullscreen-active:not(.sv-insights-expanded) #svProductionReadiness{
+  display:none!important;
+}
+.sv-fullscreen-active .sv-replay-head .vb-btn{
+  min-height:38px;border-radius:999px;padding-inline:12px;
+}
+
+@media(max-width:520px){
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+    min-width:88px!important;font-size:11px!important;
+  }
+  .sv-fullscreen-active #svRecordBtn{
+    min-width:clamp(184px,58vw,236px)!important;
+  }
+}
+
+@media(orientation:landscape) and (max-height:640px){
+  .sv-fullscreen-active #svRecordBtn{
+    min-width:172px!important;height:56px!important;min-height:56px!important;
+  }
+  .sv-fullscreen-active .sv-stage-actions #svAutoBtn,
+  .sv-fullscreen-active .sv-stage-actions #svVoiceBtn{
+    min-width:84px!important;
+  }
+  .sv-fullscreen-active .sv-stage-card .sv-status-bar{max-width:54vw;margin-inline:auto}
+}
 .sv-history-item{
   display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border3);
 }
@@ -5348,7 +5407,7 @@ body.mode-beginner .operator-only{display:none!important}
     </div>
 
     <!-- Status -->
-    <div class="sv-status-bar" id="svStatus">Click "Start Camera" to begin pose analysis.</div>
+    <div class="sv-status-bar" id="svStatus">Start Camera, then tap Record. Voice and Auto are optional.</div>
 
     <!-- Recording progress bar -->
     <div class="sv-record-bar" id="svRecordBar" style="display:none">
@@ -11710,12 +11769,12 @@ function _renderSwingDrawerSummary() {
   if (!el) return;
   const latest = Array.isArray(sv.replaySessions) ? sv.replaySessions[0] : null;
   if (!latest) {
-    el.textContent = "Replay summary appears after a swing.";
+    el.textContent = "Replay will appear here after your swing.";
     return;
   }
   const angle = latest.angleLabel || _swingAngleMeta(latest.angle).label;
   const score = latest.score != null ? `Score ${latest.score}` : "Score pending";
-  el.textContent = `${angle} replay saved - ${score} - ${latest.frameCount || 0} frames sampled.`;
+  el.textContent = `Replay ready - ${angle} - ${score} - ${latest.frameCount || 0} frames sampled.`;
 }
 
 function toggleSwingFullscreen() {
@@ -11729,15 +11788,21 @@ window.__jarvisExitSwingFullscreen = function() {
 function toggleSwingAutoCapture() {
   sv.autoCapture = !sv.autoCapture;
   _resetSwingAutoState();
+  _syncSwingAutoControls();
+  const statusEl = qs("svStatus");
+  if (statusEl) statusEl.textContent = sv.autoCapture
+    ? "Auto Ready on - set the phone down, take address, and wait for 3-2-1."
+    : "Auto Ready off - tap Record when you are ready.";
+}
+
+function _syncSwingAutoControls() {
   const btn = qs("svAutoBtn");
   if (btn) {
     btn.classList.toggle("active", sv.autoCapture);
     btn.setAttribute("aria-pressed", sv.autoCapture ? "true" : "false");
+    btn.textContent = sv.autoCapture ? "Auto Ready" : "Auto Off";
+    btn.setAttribute("aria-label", sv.autoCapture ? "Auto capture ready" : "Auto capture off");
   }
-  const statusEl = qs("svStatus");
-  if (statusEl) statusEl.textContent = sv.autoCapture
-    ? "Auto capture armed - settle into address."
-    : "Auto capture off. Manual recording preserved.";
 }
 
 function _syncSwingVoiceControls() {
@@ -11746,7 +11811,8 @@ function _syncSwingVoiceControls() {
   if (btn) {
     btn.classList.toggle("active", !!sv.voiceEnabled);
     btn.setAttribute("aria-pressed", sv.voiceEnabled ? "true" : "false");
-    btn.textContent = sv.voiceEnabled ? "Voice On" : "Voice";
+    btn.textContent = sv.voiceEnabled ? "Voice On" : "Voice Off";
+    btn.setAttribute("aria-label", sv.voiceEnabled ? "Voice coaching on" : "Voice coaching off");
   }
   const mode = qs("svVoiceMode");
   if (mode) mode.value = sv.voiceMode || "normal";
@@ -11918,6 +11984,8 @@ function _clearHandsFreeCountdown() {
   (sv.handsFreeCountdownTimers || []).forEach(id => clearTimeout(id));
   sv.handsFreeCountdownTimers = [];
   sv.handsFreeCountdownActive = false;
+  const btn = qs("svRecordBtn");
+  if (btn && sv.active && !sv.recording) btn.textContent = "Record";
 }
 
 function _resetHandsFreeTrainingState() {
@@ -11930,6 +11998,12 @@ function _resetHandsFreeTrainingState() {
 function _setHandsFreeReadyStatus(message) {
   const statusEl = qs("svStatus");
   if (statusEl && sv.autoCapture && !sv.recording) statusEl.textContent = message;
+}
+
+function _setHandsFreeCountdownStep(text) {
+  const btn = qs("svRecordBtn");
+  if (btn && sv.autoCapture && !sv.recording) btn.textContent = text;
+  _setHandsFreeReadyStatus(text === "Swing" ? "Swing now - recording starts on motion." : `Auto countdown: ${text}`);
 }
 
 function _startHandsFreeCountdown() {
@@ -11947,6 +12021,7 @@ function _startHandsFreeCountdown() {
   ];
   sv.handsFreeCountdownTimers = steps.map(step => setTimeout(() => {
     if (!sv.autoCapture || sv.recording || !sv.active) return;
+    _setHandsFreeCountdownStep(step.text);
     _queueSwingVoice(step.text, "countdown", { key: `countdown-${step.text}-${sv.generation}` });
     if (step.text === "Swing") {
       sv.handsFreeCountdownActive = false;
@@ -12139,9 +12214,12 @@ async function _startSwingCamera(facingMode, keepPose) {
   const label = sv.facingMode === "environment" ? "rear" : "front";
   qs("svStartBtn").textContent = "⏹ Stop Camera";
   qs("svRecordBtn").disabled = false;
+  qs("svRecordBtn").textContent = "Record";
+  _syncSwingAutoControls();
+  _syncSwingVoiceControls();
   _updateSwingSportsHud({ active: true, tracking: 0, framing: null });
   const angleMeta = _swingAngleMeta();
-  qs("svStatus").textContent = `Camera active (${label}) - ${angleMeta.label}. ${angleMeta.tripod}`;
+  qs("svStatus").textContent = `Ready - ${angleMeta.label}. Tap Record, or use Auto Ready for tripod practice.`;
 }
 
 function _stopSwingCamera() {
@@ -12161,6 +12239,7 @@ function _stopSwingCamera() {
   qs("svRecordBtn").disabled = true;
   qs("svRecordBtn").classList.remove("btn-recording");
   qs("svRecordBtn").textContent = "Record";
+  document.body.classList.remove("sv-swing-processing");
   _clearSwingRecordingTimer();
   _setSwingRecordingHud(false);
   _stopSwingVoiceCoach();
@@ -12978,6 +13057,12 @@ async function _sendSwingAnalysis() {
   const gen = sv.generation;
   try { sv.swingAbort?.abort(); } catch(e) {}
   sv.swingAbort = new AbortController();
+  document.body.classList.add("sv-swing-processing");
+  const recordBtn = qs("svRecordBtn");
+  if (recordBtn) {
+    recordBtn.disabled = true;
+    recordBtn.textContent = "Analyzing";
+  }
   qs("svStatus").textContent = _svLang === "es" ? "Analizando swing…" : "Analyzing swing…";
   try {
     const d = await fetch("/api/golf/elite/analyze", {
@@ -13004,6 +13089,11 @@ async function _sendSwingAnalysis() {
     qs("svStatus").textContent = "Error: " + e.message;
   } finally {
     if (sv.generation === gen) sv.swingAbort = null;
+    document.body.classList.remove("sv-swing-processing");
+    if (recordBtn && sv.active) {
+      recordBtn.disabled = false;
+      recordBtn.textContent = "Record";
+    }
   }
 }
 
@@ -13826,6 +13916,7 @@ function _setSwingRecordingHud(visible) {
   const hud = qs("svRecordHud");
   if (!hud) return;
   document.body.classList.toggle("sv-swing-recording", !!visible);
+  if (visible) document.body.classList.remove("sv-swing-processing");
   hud.style.display = visible ? "" : "none";
   hud.classList.toggle("recording", !!visible);
   if (!visible) {
